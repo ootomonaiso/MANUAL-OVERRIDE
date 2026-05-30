@@ -1,0 +1,601 @@
+# ゲームフレームワーク仕様書
+
+> このドキュメントは現在の実装を正確に記述し、設計上の課題と未実装箇所を明示する。  
+> 新機能追加・リファクタリング前の読み物として位置づける。
+
+---
+
+## 目次
+
+1. [設計原則](#1-設計原則)
+2. [レイヤー構成](#2-レイヤー構成)
+3. [フレームライフサイクル](#3-フレームライフサイクル)
+4. [FeatureSystem インターフェース](#4-featuresystem-インターフェース)
+5. [GenrePlugin インターフェース](#5-genreplugin-インターフェース)
+6. [MutableWorld API](#6-mutableworld-api)
+7. [座標系](#7-座標系)
+8. [GameRegistry](#8-gameregistry)
+9. [実装ステータス一覧](#9-実装ステータス一覧)
+10. [🚧 課題と不足箇所](#10--課題と不足箇所)
+
+---
+
+## 1. 設計原則
+
+| 原則 | 説明 |
+|---|---|
+| **JSON 駆動** | ルール・ジャンル・スコア重みはすべて定数オブジェクトで定義。ロジックにハードコードしない |
+| **プラグイン登録** | ジャンルと機能は GameRegistry に登録する形で追加する。エンジン本体に if/else を追加しない |
+| **オプショナルフック** | インターフェースに必須メソッドを増やさない。新イベントは `?:` で宣言する |
+| **ゼロ循環依存** | domain → engine → game の一方向。逆方向インポートは禁止 |
+| **オフライン完結** | ビルド後の `dist/` はネットワーク不要で動作する |
+
+---
+
+## 2. レイヤー構成
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Vue UI Layer (App.vue / components/ / composables/)    │
+│  HUD・ManualPanel・ChoicePanel・ThrowOverlay・Ending    │
+└────────────────────┬──────────────────────────┬─────────┘
+                     │ RuntimeRules              │ GameSnapshot
+┌────────────────────▼──────────────────────────▼─────────┐
+│  Game Loop  (game/sideScroller.ts)                      │
+│  物理・衝突・スポーン・描画ルーティング                  │
+│  GameRegistry 経由で FeatureSystem / GenrePlugin を呼ぶ │
+└──────────┬───────────────────────────┬──────────────────┘
+           │                           │
+┌──────────▼────────┐       ┌──────────▼────────────────┐
+│  GenrePlugin      │       │  FeatureSystem             │
+│  (src/genres/)    │       │  (src/game/systems/)       │
+│  視覚テーマ        │       │  ゲームメカニクス           │
+│  スポーンテーブル  │       │  弾・リズム・移動・HP 等   │
+└──────────┬────────┘       └──────────┬────────────────┘
+           └──────────────┬────────────┘
+                 ┌────────▼──────────────┐
+                 │  GameRegistry         │
+                 │  registerGenre()      │
+                 │  registerFeature()    │
+                 │  getActiveSystems()   │
+                 └────────┬──────────────┘
+                 ┌────────▼──────────────┐
+                 │  Domain Layer         │
+                 │  domain/types.ts      │
+                 │  domain/ruleEngine    │
+                 │  domain/genreResolver │
+                 │  domain/scoreCalc     │
+                 └────────┬──────────────┘
+                 ┌────────▼──────────────┐
+                 │  Data Layer           │
+                 │  data/genres.ts       │
+                 │  data/gameBalance.ts  │
+                 │  data/tunables.ts     │
+                 │  data/manuals/*.json  │
+                 └───────────────────────┘
+```
+
+### レイヤー間の依存ルール
+
+- `domain/` は Vue にも Canvas にも依存しない純粋関数・型定義のみ
+- `engine/` は `domain/types` と `game/entities` に依存してよい
+- `game/systems/` は `engine/` と `data/` に依存してよい。`game/sideScroller` には依存しない
+- `sideScroller.ts` は `engine/GameRegistry` 経由でシステムを取得する。直接 import しない
+
+---
+
+## 3. フレームライフサイクル
+
+```
+requestAnimationFrame
+  │
+  ├─ _computeInputEdges()
+  │    justPressed / justReleased を this.keys と前フレームの差分で計算
+  │
+  ├─ _update(dt)  ← dead でない場合のみ
+  │
+  │  [1] PRE-PHYSICS フェーズ
+  │      buildWorld() → InputSnapshot を構築
+  │      for (sys of getActiveSystems(features)):
+  │        sys.preUpdate?(world, input, dt)
+  │      ↑ 主に MovementFeature が player.vx をセット
+  │
+  │  [2] PHYSICS フェーズ  ← scrollAxis === 'y' か 'x' で分岐
+  │    ┌─ 縦スクロール (scrollAxis='y') ─────────────────────┐
+  │    │  player.x += player.vx * dt  (左右移動のみ)         │
+  │    │  player は画面下部に固定 (重力なし)                  │
+  │    │  hazards が上から降下 (y += scrollSpeed * dt)       │
+  │    │  hazard スポーン (distance 累積)                    │
+  │    │  衝突判定 (スクリーン座標同士)                       │
+  │    │    isHazardous → _onPlayerHit(p)                   │
+  │    │    safe       → onSafeHazardTouch フック dispatch   │
+  │    └─────────────────────────────────────────────────────┘
+  │    ┌─ 横スクロール (scrollAxis='x') ───────────────────── ┐
+  │    │  ジャンプ: coyote + jumpBuffer + double_jump        │
+  │    │  重力: vy += gravity * fallMult * dt                │
+  │    │  着地: landSquash アニメ                             │
+  │    │  X移動: auto_run でなければ player.x += vx * dt     │
+  │    │  スクロール: distance += speed * dt                 │
+  │    │             cameraX  = distance - leadOffset        │
+  │    │  hazard スポーン・pulse 更新                        │
+  │    │  衝突判定 (hazard.x - cameraX でスクリーン変換)     │
+  │    │    beat_hazard 反転考慮                             │
+  │    │    isHazardous → _onPlayerHit(p)                   │
+  │    │    safe       → onSafeHazardTouch フック dispatch   │
+  │    └─────────────────────────────────────────────────────┘
+  │
+  │  [3] POST-PHYSICS フェーズ (共通)
+  │      buildWorld() → InputSnapshot を構築
+  │      for (sys of getActiveSystems(features)):
+  │        sys.update(world, input, dt)
+  │      アイテムクリーンアップ (dead / 画面外)
+  │      パーティクル物理
+  │      スコアポップアップ更新
+  │      画面シェイク減衰
+  │      距離スコア加算
+  │
+  └─ _render()
+       shakeX/Y 適用 (ctx.translate)
+       _drawBackground()  → GenrePlugin.drawFarLayer / drawMidLayer
+       items 描画
+       hazards 描画  → GenrePlugin.drawHazard?(可オーバーライド)
+       for (sys): sys.render?(ctx, world)  ← 弾・ビートマーカー等
+       パーティクル描画
+       スコアポップアップ描画
+       _drawPlayer()  → GenrePlugin.drawPlayer()
+       死亡オーバーレイ (dead のとき)
+```
+
+### フェーズ別の用途
+
+| フェーズ | 用途 | 呼ばれるフック |
+|---|---|---|
+| PRE-PHYSICS | 入力→速度マッピング | `preUpdate?` |
+| PHYSICS | 重力・衝突・座標更新 | `_onPlayerHit` → `onPlayerHit?` / `onSafeHazardTouch?` |
+| POST-PHYSICS | ゲームロジック・スコア・演出 | `update` |
+| RENDER | Canvas 描画 | `render?` |
+| イベント（随時） | ジャンル確定・ルール更新 | `onInit?` / `onManualUpdated?` |
+
+---
+
+## 4. FeatureSystem インターフェース
+
+```typescript
+interface FeatureSystem {
+  readonly handles: FeatureId | ReadonlyArray<FeatureId>
+
+  // ─── 必須 ───────────────────────────────────────────────
+  update(world: MutableWorld, input: InputSnapshot, dt: number): void
+
+  // ─── オプショナル ────────────────────────────────────────
+  preUpdate?(world: MutableWorld, input: InputSnapshot, dt: number): void
+  render?(ctx: CanvasRenderingContext2D, world: MutableWorld): void
+  onInit?(world: MutableWorld): void
+  onPlayerHit?(world: MutableWorld): void
+  onSafeHazardTouch?(world: MutableWorld, hazard: Hazard, screenX: number): void
+  onPlayerDeath?(world: MutableWorld): void         // ← sideScroller から未呼び出し
+  onManualUpdated?(world: MutableWorld, versionKey: string): void
+  onComboChange?(world: MutableWorld, combo: number): void  // ← 未呼び出し
+  onItemPickup?(world: MutableWorld, itemType: string): void // ← 未呼び出し
+  onBossSpawn?(world: MutableWorld): void                   // ← 未呼び出し
+  onPlayerJump?(world: MutableWorld): void                  // ← 未呼び出し
+}
+```
+
+### フック呼び出しタイミング（実装済み ✅ / 未呼び出し ⚠️）
+
+| フック | 呼び出し元 | 状態 |
+|---|---|---|
+| `preUpdate` | sideScroller._update → PRE-PHYSICS フェーズ | ✅ |
+| `update` | sideScroller._update → POST-PHYSICS フェーズ | ✅ |
+| `render` | sideScroller._render | ✅ |
+| `onInit` | sideScroller.updateRules + 各 Feature の onInit | ✅ |
+| `onPlayerHit` | sideScroller._onPlayerHit → dispatch | ✅ |
+| `onSafeHazardTouch` | 衝突ループの safe 分岐 | ✅ |
+| `onManualUpdated` | sideScroller.updateRules | ✅ |
+| `onPlayerDeath` | **未呼び出し** (`_die()` から dispatch していない) | ⚠️ |
+| `onComboChange` | **未呼び出し** | ⚠️ |
+| `onItemPickup` | **未呼び出し** | ⚠️ |
+| `onBossSpawn` | **未呼び出し** | ⚠️ |
+| `onPlayerJump` | **未呼び出し** | ⚠️ |
+
+### 登録
+
+```typescript
+// src/game/systems/index.ts
+registerFeature(new MyFeature())
+```
+
+一つのシステムが複数の FeatureId を handles に宣言できる。  
+`getActiveSystems(features)` は同一インスタンスを重複返却しない（Set でデdup）。
+
+---
+
+## 5. GenrePlugin インターフェース
+
+### 必須プロパティ（全ジャンルで定義が必要）
+
+| プロパティ | 型 | 説明 |
+|---|---|---|
+| `id` | `GenreId` | ジャンル識別子 |
+| `skyColors` | `[string, string]` | 空グラデーションの上端・下端色 |
+| `groundColors` | `[string, string]` | 地面グラデーション |
+| `palette` | `{danger, dangerGlow, safe, safeGlow}` | ハザード配色 |
+| `spawnTable` | `SpawnEntry[]` | ハザード出現テーブル（距離に応じた重み付き） |
+
+### 必須メソッド
+
+| メソッド | 説明 |
+|---|---|
+| `drawFarLayer(ctx, offsetX, W, gY)` | 遠景描画（山・星など） |
+| `drawMidLayer(ctx, offsetX, W, gY)` | 中景描画 |
+| `drawPlayer(ctx, w, h, onGround, runCycle)` | プレイヤー描画 |
+
+### オプショナルプロパティ
+
+| プロパティ | 説明 |
+|---|---|
+| `starColor?` | 星フィールドの色（null で非表示） |
+| `starConfig?` | 星の密度・サイズ・透明度レンジ |
+| `parallax?` | `{ stars, far, mid }` 視差倍率 |
+| `hazardConfig?` | pulseSpeed / pulseAmplitude / glowBlur のオーバーライド |
+| `groundLineAlpha?` / `groundDashAlpha?` | 地面ラインの透明度 |
+| `particleColors?` | `{ hit, jump, land, death }` パーティクル色 |
+| `scrollSpeedBonus?` | このジャンルのスクロール速度加算 |
+| `playerScale?` | プレイヤー描画スケール |
+
+### オプショナルフック
+
+| フック | 説明 |
+|---|---|
+| `onGenreLocked?(world)` | ジャンル確定時に1回 |
+| `onUpdate?(world, dt)` | 毎フレーム（ジャンル専用ロジック） |
+| `drawHazard?(ctx, h, sx, r)` | ハザード描画オーバーライド（true で標準描画をスキップ） |
+| `drawForeground?(ctx, cam, W, H, gY)` | 最前面レイヤー |
+| `drawGenreHUD?(ctx, world)` | ジャンル専用 HUD |
+| `onPlayerJump?(world)` | ジャンプ時の演出 |
+| `onPlayerLand?(world)` | 着地時の演出 |
+| `onHazardDestroyed?(world, h)` | ハザード破壊時 |
+| `onManualUpdated?(world, key)` | ルール更新時 |
+
+---
+
+## 6. MutableWorld API
+
+FeatureSystem と GenrePlugin が毎フレーム受け取るコンテキスト。  
+sideScroller の内部状態を直接公開せず、メソッド越しにのみ変更できる。
+
+### 読み取りプロパティ
+
+| プロパティ | 型 | 説明 |
+|---|---|---|
+| `player` | `Player` | x, y, vx, vy, w, h, hp, maxHp, exp, onGround, jumpsLeft, invincible, airTime, landSquash |
+| `hazards` | `Hazard[]` | 現フレームのハザード（参照は mutable） |
+| `items` | `Item[]` | 現フレームのアイテム（参照は mutable） |
+| `bullets` | `Bullet[]` | 弾リスト（ShootFeature が管理） |
+| `rules` | `RuntimeRules` | 現フレームのルールセット（イミュータブル） |
+| `distance` | `number` | 走行距離 px（フレーム開始時点のスナップショット） |
+| `survivedSec` | `number` | 生存時間 秒 |
+| `canvas` | `HTMLCanvasElement` | Canvas 要素 |
+| `ctx` | `CanvasRenderingContext2D` | 2D 描画コンテキスト |
+| `cameraX` | `number` | 横スクロール時のカメラ X（ワールド→スクリーン変換用） |
+| `gameStats` | `Readonly<GameStats>` | kills / combo / maxCombo / beatHits / beatHazardInverted |
+
+### 書き込みメソッド
+
+```typescript
+// スコア・UI
+addScore(amount: number): void
+addScorePopup(x: number, y: number, text: string, color: string): void
+triggerShake(intensity: number): void
+addParticle(x, y, vx, vy, life, color, size?): void
+
+// ワールド操作
+spawnHazard(h: Hazard): void
+spawnItem(item: Item): void
+removeHazardById(h: Hazard): void
+
+// ゲーム状態
+modifyPlayerHp(delta: number): void     // 0 以下で死亡
+resetCombo(): void
+setTimescale(scale, durationSec?): void // ← TODO: 未実装
+
+// 統計（FeatureSystem 専用）
+setKills(n: number): void
+setCombo(n: number): void               // maxCombo も自動更新
+addBeatHit(): void
+setBeatHazardInverted(v: boolean): void
+```
+
+### 注意点
+
+- `buildWorld()` はフレームごとに複数回コールされる（PRE, POST, 衝突ループ）。  
+  スナップショット値（`distance`, `cameraX`）はコール時点の値になる。
+- `player` の参照は mutable。`player.invincible = X` のような直接書き込みも可能だが、  
+  副作用が見えにくくなるため、できる限り write メソッドを通す。
+
+---
+
+## 7. 座標系
+
+### 現状（⚠️ モードで不統一）
+
+| | 横スクロール (`scrollAxis='x'`) | 縦スクロール (`scrollAxis='y'`) |
+|---|---|---|
+| `player.x` | **スクリーン座標** | **スクリーン座標** |
+| `hazard.x` | **ワールド座標** | **スクリーン座標** |
+| `bullet.x` | **ワールド座標** | **スクリーン座標** |
+| 衝突判定 | `sx = hazard.x - cameraX` で変換必要 | 変換不要 |
+
+### 変換ルール
+
+```typescript
+const isVertical = world.rules.scrollAxis === 'y'
+
+// ハザードのスクリーン X を求める
+const hazardScreenX = isVertical ? hazard.x : hazard.x - world.cameraX
+
+// プレイヤーのワールド X を求める（弾の発射位置など）
+const playerWorldX = isVertical ? player.x : player.x + world.cameraX
+```
+
+---
+
+## 8. GameRegistry
+
+```typescript
+// 登録（起動時に src/genres/index.ts と src/game/systems/index.ts で実行）
+registerGenre(plugin: GenrePlugin): void
+registerFeature(system: FeatureSystem): void
+
+// 取得（エンジン内から毎フレーム使用）
+getGenre(id: GenreId): GenrePlugin           // 未登録なら 'base' にフォールバック
+getActiveSystems(features: Set<FeatureId>): FeatureSystem[]  // 重複なし
+
+// 開発ユーティリティ
+devValidateRegistry(allFeatureIds): void    // 未登録 ID の警告
+debugPrint(): void
+```
+
+`getActiveSystems` は `features` に含まれる FeatureId のいずれかを `handles` に持つシステムを返す。  
+1つのシステムが複数の FeatureId を handles していても1回だけ含まれる。
+
+---
+
+## 9. 実装ステータス一覧
+
+### FeatureSystem
+
+| クラス | 担当 FeatureId | preUpdate | update | render | その他フック | 状態 |
+|---|---|---|---|---|---|---|
+| ShootFeature | shoot / three_way / charge_shot / spread_shot / bomb / enemy_hp | ─ | ✅ | ✅ | onManualUpdated | ✅ |
+| RhythmFeature | beat_hazard / just_input / beat_dash | ─ | ✅ | ✅ | onManualUpdated | ✅ |
+| MovementFeature | auto_run / slow_precise / double_jump / long_air | ✅ | ✅ | ─ | onInit | ✅ |
+| RpgFeature | hp / exp / item_pickup / shield | ─ | ✅ | ─ | onPlayerHit | ✅（shield のみスタブ） |
+| SpecialFeature | stealth_mode / time_bonus / tower / color_touch / boss | ─ | stub | ─ | onSafeHazardTouch (color_touch のみ) | ⚠️ |
+| ExtraMovementFeature | dash / wall_jump / slide / gravity_flip / vertical_scroll | ─ | stub | ─ | ─ | ❌ |
+| PuzzleFeature | grid_stop / puzzle_solve | ─ | stub | ─ | ─ | ❌ |
+
+### GenrePlugin
+
+| クラス | ジャンル | spawnTable | drawPlayer | 専用 HUD | 状態 |
+|---|---|---|---|---|---|
+| BasePlugin | base / runner | ✅ | ✅ | ─ | ✅ |
+| StgPlugin | stg | ✅ | ✅ | ─ | ✅ |
+| RpgPlugin | rpg | ✅ | ✅ | ─ | ✅ |
+| RhythmPlugin | rhythm | ✅ | ✅ | ─ | ✅ |
+| PuzzlePlugin | puzzle | ✅ | ✅ | ─ | ✅ |
+| AerialStgPlugin | aerial_stg | ✅ | ✅ | ─ | ✅ |
+| SurvivalPlugin | survival | ✅ | ✅ | ─ | ✅ |
+| BulletRunnerPlugin | bullet_runner | ✅ | ✅ | ─ | ✅ |
+| PlatformerPlugin | platformer | ✅ | ✅ | ─ | ✅ |
+| 未実装 | stealth_action / racing / dungeon / tower_def / sports / idle / arena / aquatic / horror / hack_slash | ─ | ─ | ─ | ❌ |
+
+### ドメイン・ユーティリティ
+
+| モジュール | 機能 | 状態 |
+|---|---|---|
+| domain/ruleEngine.ts | buildRuntimeRules — 選択履歴 → RuntimeRules 合成 | ✅ |
+| domain/genreResolver.ts | resolveGenre — genreParams → ジャンル収束 | ✅ |
+| domain/scoreCalc.ts | 最終スコア計算（play × 0.7 + throw × 0.3） | ✅ |
+| domain/learning.ts | 行動統計→ルール変更 | ❌ 未実装 |
+| framework/ | ManualLoader / ManualValidator | ❌ ディレクトリ自体が存在しない |
+
+---
+
+## 10. 🚧 課題と不足箇所
+
+### A. フック呼び出しの漏れ（優先度: 高）
+
+定義されているがゲームループから一切呼ばれていないフックが 5 個ある。  
+これらが呼ばれない限り、FeatureSystem を実装しても機能しない。
+
+| フック | 想定呼び出し元 | 影響 |
+|---|---|---|
+| `onPlayerDeath?(world)` | `sideScroller._die()` | 死亡演出を Feature 側で追加できない |
+| `onComboChange?(world, combo)` | コンボ変化時（ShootFeature がコンボを更新した後） | コンボエフェクト・倍率 HUD が実装できない |
+| `onItemPickup?(world, type)` | RpgFeature.update の item 収集後 | アイテム種別ごとの演出が Feature に持てない |
+| `onBossSpawn?(world)` | ボススポーン時（SpecialFeature 未実装のため現在未発火） | ボス登場演出が実装できない |
+| `onPlayerJump?(world)` | sideScroller のジャンプ発動箇所 | ジャンプ連動エフェクトが実装できない |
+
+```
+// 修正例: sideScroller._die() に追加
+private _die(p: Player): void {
+  this.dead = true
+  this.shakeIntensity = VFX.deathShakeIntensity
+  this._spawnDeathExplosion(p.x + p.w / 2, p.y + p.h / 2)
+  // ↓ 追加が必要
+  const world = this._buildWorld()
+  for (const sys of getActiveSystems(this.rules.features)) {
+    sys.onPlayerDeath?.(world)
+  }
+}
+```
+
+---
+
+### B. buildWorld() の多重コール（優先度: 中）
+
+現在 `_buildWorld()` は 1 フレームに最大 3 回コールされる：
+
+1. PRE-PHYSICS フェーズ（`preUpdate` 用）
+2. 衝突ループ（`onSafeHazardTouch` 用）
+3. POST-PHYSICS フェーズ（`update` 用）
+4. `_onPlayerHit`（`onPlayerHit` 用）
+
+`buildWorld()` はクロージャを持つオブジェクトを毎回 new するため、GC 負荷がある。  
+`distance` や `cameraX` はスナップショットなので「同じ world を使い回せない」課題があるが、  
+world を mutable にしてフレーム末に更新する方式に変えれば 1 インスタンスに統一できる。
+
+```typescript
+// 案: sideScroller が world を 1 インスタンス保持
+private _world: MutableWorld | null = null
+
+// フレーム開始時に距離・カメラを更新
+private _refreshWorld(): void {
+  this._world!.distance  = this.distance
+  this._world!.cameraX   = this.cameraX
+  // ...各フィールドをパッチ更新
+}
+```
+
+---
+
+### C. 座標系の不統一（優先度: 中）
+
+横スクロール時にハザードはワールド座標、プレイヤーはスクリーン座標という設計は  
+FeatureSystem を実装するたびに「どちらの座標か？」という認知コストを生む。
+
+**根本的な解決案:**
+
+```typescript
+// MutableWorld に座標変換ヘルパーを追加
+interface MutableWorld {
+  readonly scrollMode: 'x' | 'y'
+
+  // ハザードのスクリーン X を取得（モード非依存）
+  getHazardScreenX(h: Hazard): number
+
+  // プレイヤーのワールド X を取得（モード非依存）
+  getPlayerWorldX(): number
+}
+```
+
+これにより FeatureSystem の実装者は `isVertical` 分岐を書かなくてよくなる。
+
+---
+
+### D. sideScroller.ts の肥大化（優先度: 低〜中）
+
+現在 ~750 行。以下の責務が混在している：
+
+| 責務 | 行数（概算） |
+|---|---|
+| 入力処理（justPressed/justReleased） | ~30 行 |
+| 物理シミュレーション（重力・ジャンプ・コヨーテ） | ~100 行 |
+| 衝突検出 | ~60 行 |
+| スポーン | ~60 行 |
+| Feature/Genre ディスパッチ | ~30 行 |
+| レンダリング（背景・プレイヤー・ハザード） | ~300 行 |
+| パーティクル・ポップアップ | ~40 行 |
+| スコア計算 | ~20 行 |
+
+**推奨分割案:**
+
+```
+game/
+  sideScroller.ts       coordinator のみ（~200 行）
+  physics/
+    PhysicsEngine.ts    ジャンプ・重力・コヨーテ
+  collision/
+    CollisionSystem.ts  AABB・フック dispatch
+  rendering/
+    Renderer.ts         Canvas 描画のルーティング
+    ParticleSystem.ts   パーティクル管理
+```
+
+---
+
+### E. 未実装 Feature の空スタブ（優先度: 中）
+
+以下の FeatureId は登録済みだが `update()` が空の状態：
+
+```
+ExtraMovementFeature: dash / wall_jump / slide / gravity_flip / vertical_scroll
+PuzzleFeature:        grid_stop / puzzle_solve
+SpecialFeature:       stealth_mode / time_bonus / tower / boss
+RpgFeature:           shield
+```
+
+空のままでも `devValidateRegistry` は通るが、ゲーム内で feature が有効化されても何も起きない。  
+**最低限、有効化されたときに console.warn を出すスタブにすべき。**
+
+---
+
+### F. Learning System の未統合（優先度: 低）
+
+`domain/types.ts` に `LearningTrigger` / `LearningEffect` / `LearningRule` 型が定義されているが、  
+ゲームループと接続されていない。`ActionStats` も記録されるが参照されない。
+
+DESIGN.md の M6 に「学習ルール + 仕上げ」として計画されている機能。  
+現状は「定義だけある未実装機能」であり、混乱を避けるため状態を明記しておく。
+
+---
+
+### G. setTimescale の未実装（優先度: 低）
+
+```typescript
+// sideScroller._buildWorld() 内
+setTimescale(_s, _d) { /* TODO: timescale implementation */ },
+```
+
+`world.setTimescale(0.3, 1.0)` を呼んでもスロー演出が発生しない。  
+RhythmFeature の「ジャスト入力でスロー」などに使われる想定だが未接続。
+
+---
+
+### H. framework/ ディレクトリの欠如（優先度: 中）
+
+`docs/architecture.md` には以下が記載されているが、実際には存在しない：
+
+```
+src/framework/
+  ManualLoader.ts    JSON → ManualVersion のパース
+  ManualBuilder.ts   プログラム的な説明書生成 API
+  ManualValidator.ts 開発時バリデーション
+```
+
+現在は `data/manualDeck.ts` が JSON ロードを担当しており、バリデーションは手動。  
+説明書 JSON のスキーマが壊れていても実行時まで気づけない。
+
+---
+
+### I. GenrePlugin の基底クラス欠如（優先度: 低）
+
+`GenrePlugin` はインターフェースのみ。`drawFarLayer` や `drawMidLayer` の「星なし・山なし」  
+デフォルト実装をすべてのプラグインが重複して書いている（または空実装する）。
+
+```typescript
+// 推奨案: 追加する
+abstract class GenrePluginBase implements GenrePlugin {
+  drawFarLayer(ctx, cam, W, gY) { /* デフォルト: 空実装 */ }
+  drawMidLayer(ctx, cam, W, gY) { /* デフォルト: 空実装 */ }
+  // ...
+}
+```
+
+---
+
+## 課題サマリー
+
+| # | 課題 | 優先度 | 影響範囲 |
+|---|---|---|---|
+| A | フック呼び出し漏れ (5個) | **高** | Feature 拡張性が損なわれている |
+| B | buildWorld 多重コール | 中 | GC 負荷・フレーム内一貫性 |
+| C | 座標系の不統一 | 中 | FeatureSystem 実装のたびに混乱 |
+| D | sideScroller 肥大 | 中 | 保守性・テスト容易性 |
+| E | 空スタブで有効化が無症状 | 中 | デバッグ困難 |
+| F | Learning System 未統合 | 低 | デッドコード |
+| G | setTimescale 未実装 | 低 | スロー演出が機能しない |
+| H | framework/ ディレクトリ欠如 | 中 | JSON 仕様変更時に無音で壊れる |
+| I | GenrePlugin 基底クラス欠如 | 低 | プラグイン間のコード重複 |

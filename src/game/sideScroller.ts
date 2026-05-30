@@ -226,22 +226,28 @@ export class SideScroller {
     const shootKey = r.controls.shoot ?? 'z'
 
     const isVertical = r.scrollAxis === 'y'
-    const isAutoRun  = r.features.has('auto_run')
-    const isSlowPrec = r.features.has('slow_precise')
-    const isDouble   = r.features.has('double_jump')
 
-    const runSpeed = isSlowPrec ? PLAYER_PHYSICS.runSpeed * PHYSICS.slowPreciseRatio : PLAYER_PHYSICS.runSpeed
+    // ─── Pre-physics: 移動 Feature が vx をセット ────────────────────
+    {
+      const preWorld = this._buildWorld()
+      const preInput: InputSnapshot = {
+        keys: this.keys,
+        justPressed: this.justPressed,
+        justReleased: this.justReleased,
+      }
+      for (const sys of getActiveSystems(r.features)) {
+        sys.preUpdate?.(preWorld, preInput, dt)
+      }
+    }
 
     if (isVertical) {
       // ════════════════════════════════════════════════════════
       // 縦スクロールモード
       // 障害物が上から降ってくる。プレイヤーは画面下部を左右に移動。
       // ════════════════════════════════════════════════════════
-      const movingLeft  = this.keys.has(leftKey)
-      const movingRight = this.keys.has(rightKey)
-      p.vx = movingRight ? runSpeed : movingLeft ? -runSpeed : 0
-      if (movingLeft)  this.stats.moveLeft++
-      if (movingRight) this.stats.moveRight++
+      // vx は MovementFeature.preUpdate() がセット済み
+      if (this.keys.has(leftKey))  this.stats.moveLeft++
+      if (this.keys.has(rightKey)) this.stats.moveRight++
       p.x += p.vx * dt
       p.x = Math.max(0, Math.min(W - p.w, p.x))
 
@@ -274,21 +280,18 @@ export class SideScroller {
       // ─── 衝突判定（縦モード: 両者スクリーン座標） ───────────
       if (p.invincible > 0) p.invincible -= dt
       if (p.invincible <= 0) {
+        const collWorld = this._buildWorld()
         for (let i = this.hazards.length - 1; i >= 0; i--) {
           const h = this.hazards[i]
           if (!rectsOverlap(p.rect, h.rect)) continue
 
-          const isHazardous = !h.isSafe
-          if (isHazardous) {
-            this._onPlayerHit(p, r)
+          if (!h.isSafe) {
+            this._onPlayerHit(p)
             if (this.dead) return
-          } else if (r.features.has('color_touch')) {
-            // 安全色を踏む → 得点 + 消滅
-            const gain = r.colorTouchScore
-            this.playScore += gain
-            this.hazards.splice(i, 1)
-            this._addScorePopup(h.x + h.w / 2, h.y, `TOUCH! +${gain}`, '#00ffcc')
-            this._spawnHitParticles(h.x + h.w / 2, h.y + h.h / 2, '#00ffcc', 6)
+          } else {
+            for (const sys of getActiveSystems(r.features)) {
+              sys.onSafeHazardTouch?.(collWorld, h, h.x)
+            }
           }
         }
       }
@@ -300,17 +303,15 @@ export class SideScroller {
       // ════════════════════════════════════════════════════════
       // 横スクロールモード（従来）
       // ════════════════════════════════════════════════════════
-      const movingLeft  = !isAutoRun && this.keys.has(leftKey)
-      const movingRight = isAutoRun || this.keys.has(rightKey)
-
-      p.vx = movingRight ? runSpeed : movingLeft ? -runSpeed : 0
-      if (movingLeft)  this.stats.moveLeft++
-      if (movingRight) this.stats.moveRight++
+      // vx は MovementFeature.preUpdate() がセット済み
+      if (!r.features.has('auto_run') && this.keys.has(leftKey))  this.stats.moveLeft++
+      if ( r.features.has('auto_run') || this.keys.has(rightKey)) this.stats.moveRight++
       if (p.onGround) {
         this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
       }
 
       // ─── ジャンプ ─────────────────────────────────────────
+      const isDouble         = r.features.has('double_jump')
       const jumpJustPressed  = this.justPressed.has(jumpKey)
       const jumpJustReleased = this.justReleased.has(jumpKey)
 
@@ -374,7 +375,8 @@ export class SideScroller {
       }
       if (p.landSquash > 0) p.landSquash *= PHYSICS.landSquashDecay
 
-      if (!isAutoRun) p.x += p.vx * dt
+      // auto_run はスクロールで進む。画面上のX座標は変えない
+      if (!r.features.has('auto_run')) p.x += p.vx * dt
       p.x = Math.max(PHYSICS.playerMinX, Math.min(W * PHYSICS.playerMaxXRatio, p.x))
 
       // ─── スクロール ───────────────────────────────────────
@@ -397,9 +399,11 @@ export class SideScroller {
       // ─── 衝突判定 ─────────────────────────────────────────
       if (p.invincible > 0) p.invincible -= dt
       if (p.invincible <= 0) {
+        const collWorld = this._buildWorld()
         for (let i = this.hazards.length - 1; i >= 0; i--) {
           const h = this.hazards[i]
-          const hRect = { ...h.rect, x: h.rect.x - this.cameraX }
+          const sx = h.x - this.cameraX
+          const hRect = { ...h.rect, x: sx }
           if (!rectsOverlap(p.rect, hRect)) continue
 
           const isHazardous = this._gameStats.beatHazardInverted && r.features.has('beat_hazard')
@@ -407,16 +411,12 @@ export class SideScroller {
             : !h.isSafe
 
           if (isHazardous) {
-            this._onPlayerHit(p, r)
+            this._onPlayerHit(p)
             if (this.dead) return
-          } else if (r.features.has('color_touch')) {
-            // 安全色を踏む → 得点 + 消滅
-            const gain = r.colorTouchScore
-            this.playScore += gain
-            this.hazards.splice(i, 1)
-            const sx = h.x - this.cameraX
-            this._addScorePopup(sx + h.w / 2, h.y, `TOUCH! +${gain}`, '#00ffcc')
-            this._spawnHitParticles(sx + h.w / 2, h.y + h.h / 2, '#00ffcc', 6)
+          } else {
+            for (const sys of getActiveSystems(r.features)) {
+              sys.onSafeHazardTouch?.(collWorld, h, sx)
+            }
           }
         }
       }
@@ -443,27 +443,9 @@ export class SideScroller {
       sys.update(world, inputSnapshot, dt)
     }
 
-    // ─── アイテム (RPG) ───────────────────────────────────────────
-    if (r.features.has('item_pickup')) {
-      for (const item of this.items) {
-        if (!item.alive) continue
-        item.pulse += dt * 3
-        const iRect = { ...item.rect, x: item.rect.x - this.cameraX }
-        if (rectsOverlap(p.rect, iRect, 0)) {
-          item.alive = false
-          if (item.type === 'exp') {
-            p.exp += SPAWN.expItemExpGain
-            this.playScore += SPAWN.expItemScore
-            this._addScorePopup(item.x - this.cameraX, item.y, '+EXP', '#ffcc00')
-          }
-          if (item.type === 'hp' && p.hp < p.maxHp) {
-            p.hp++
-            this._addScorePopup(item.x - this.cameraX, item.y, '+HP', '#ff8888')
-          }
-        }
-      }
-      this.items = this.items.filter(i => i.alive && i.x - this.cameraX > SPAWN.itemCullLeft)
-    }
+    // ─── アイテムクリーンアップ ───────────────────────────────────
+    // 収集・パルスアニメは RpgFeature.update() が担当。ここは dead / 画面外除去のみ。
+    this.items = this.items.filter(i => i.alive && i.x - this.cameraX > SPAWN.itemCullLeft)
 
     // ─── パーティクル更新 ─────────────────────────────────────────
     for (const pt of this.particles) {
@@ -507,14 +489,13 @@ export class SideScroller {
   }
 
   // ─── 被弾処理 ────────────────────────────────────────────────────
-  private _onPlayerHit(p: Player, r: RuntimeRules): void {
-    if (r.features.has('hp')) {
-      p.hp--
-      p.invincible = VFX.invincibleDuration
-      this.shakeIntensity = VFX.hitShakeIntensity
-      this._spawnHitParticles(p.x + p.w / 2, p.y + p.h / 2, '#ff4444', VFX.hitParticleCount)
-      if (p.hp <= 0) this._die(p)
-    } else {
+  private _onPlayerHit(p: Player): void {
+    const world = this._buildWorld()
+    for (const sys of getActiveSystems(this.rules.features)) {
+      sys.onPlayerHit?.(world)
+    }
+    // どのシステムも死亡を処理しなかった場合（hp feature なし）は即死
+    if (!this.dead) {
       this._die(p)
     }
   }
@@ -999,18 +980,6 @@ export class SideScroller {
   // ─── パーティクル生成 ─────────────────────────────────────────────
   private _addParticle(x: number, y: number, vx: number, vy: number, life: number, color: string, size = 4): void {
     this.particles.push({ x, y, vx, vy, life, maxLife: life, color, size })
-  }
-
-  private _spawnHitParticles(x: number, y: number, color: string, count: number = VFX.hitParticleCount): void {
-    const plugin = getGenre(this.rules.genre)
-    const pColor = plugin.particleColors?.hit ?? color
-    for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2
-      const speed = VFX.hitParticleSpeedMin + Math.random() * (VFX.hitParticleSpeedMax - VFX.hitParticleSpeedMin)
-      const life  = VFX.hitParticleLifeMin + Math.random() * VFX.hitParticleLifeRange
-      const size  = VFX.hitParticleSizeBase + Math.random() * VFX.hitParticleSizeRange
-      this._addParticle(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed + VFX.hitParticleYBoost, life, pColor, size)
-    }
   }
 
   private _spawnJumpParticles(x: number, y: number): void {

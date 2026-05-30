@@ -15,7 +15,7 @@
 | `spread_shot` | 扇状5方向散弾 | ShootFeature |
 | `bomb` | 爆弾アイテム（画面全体攻撃） | ShootFeature |
 | `enemy_hp` | 敵が HP を持ち複数ヒット必要 | ShootFeature |
-| `boss` | ボスエネミー出現 | ShootFeature |
+| `boss` | ボスエネミー出現 | SpecialFeature (⚠️スタブ) |
 
 ---
 
@@ -23,15 +23,15 @@
 
 | FeatureId | 説明 | 対応 FeatureSystem |
 |---|---|---|
-| `auto_run` | 自動前進（プレイヤーは左右とジャンプのみ） | MovementFeature |
-| `slow_precise` | 低速精密移動（速度 × slowPreciseRatio） | MovementFeature |
-| `double_jump` | 空中でもう一度ジャンプ可能 | MovementFeature |
-| `long_air` | 空中での水平速度を持続（滑空） | MovementFeature |
-| `dash` | 短距離ダッシュ（Shift など） | MovementFeature |
-| `wall_jump` | 壁接触中に逆方向ジャンプ | MovementFeature |
-| `slide` | しゃがみスライド（障害物くぐり） | MovementFeature |
-| `gravity_flip` | 重力反転（天井を床として走る） | MovementFeature |
-| `vertical_scroll` | 縦スクロールモード（障害物が上下から来る） | MovementFeature |
+| `auto_run` | 自動前進（プレイヤーは左右とジャンプのみ） | MovementFeature ✅ |
+| `slow_precise` | 低速精密移動（速度 × slowPreciseRatio） | MovementFeature ✅ |
+| `double_jump` | 空中でもう一度ジャンプ可能 | MovementFeature ✅ |
+| `long_air` | 空中でスコアボーナス（0.8pt/sec） | MovementFeature ✅ |
+| `dash` | 短距離ダッシュ（Shift など） | ExtraMovementFeature (⚠️スタブ) |
+| `wall_jump` | 壁接触中に逆方向ジャンプ | ExtraMovementFeature (⚠️スタブ) |
+| `slide` | しゃがみスライド（障害物くぐり） | ExtraMovementFeature (⚠️スタブ) |
+| `gravity_flip` | 重力反転（天井を床として走る） | ExtraMovementFeature (⚠️スタブ) |
+| `vertical_scroll` | 縦スクロールモード | ExtraMovementFeature (⚠️スタブ) |
 
 ---
 
@@ -39,10 +39,10 @@
 
 | FeatureId | 説明 | 対応 FeatureSystem |
 |---|---|---|
-| `hp` | HP システム（複数回被弾許容） | ─（sideScroller 直接処理） |
-| `exp` | 経験値・レベルアップ | ─（sideScroller 直接処理） |
-| `item_pickup` | フィールドアイテム収集 | ─（sideScroller 直接処理） |
-| `shield` | シールド（1回ガード） | 未実装 |
+| `hp` | HP システム（複数回被弾許容） | RpgFeature ✅（onPlayerHit で HP 減算・無敵・エフェクト） |
+| `exp` | 経験値・レベルアップ | RpgFeature ✅（item_pickup と連動） |
+| `item_pickup` | フィールドアイテム収集 | RpgFeature ✅（update で収集・EXP / HP 付与） |
+| `shield` | シールド（1回ガード） | RpgFeature (⚠️スタブ) |
 
 ---
 
@@ -50,8 +50,8 @@
 
 | FeatureId | 説明 | 対応 FeatureSystem |
 |---|---|---|
-| `grid_stop` | スクロール停止してグリッド配置モード | 未実装 |
-| `puzzle_solve` | 正解が存在するパズル入力 | 未実装 |
+| `grid_stop` | スクロール停止してグリッド配置モード | PuzzleFeature (⚠️スタブ) |
+| `puzzle_solve` | 正解が存在するパズル入力 | PuzzleFeature (⚠️スタブ) |
 
 ---
 
@@ -59,9 +59,9 @@
 
 | FeatureId | 説明 | 対応 FeatureSystem |
 |---|---|---|
-| `beat_hazard` | BPM 同期でハザードが色変化・反転 | RhythmFeature |
-| `just_input` | ジャスト入力でボーナス | RhythmFeature |
-| `beat_dash` | リズムに合わせたダッシュで加速 | RhythmFeature |
+| `beat_hazard` | BPM 同期でハザードが色変化・反転 | RhythmFeature ✅ |
+| `just_input` | ジャスト入力でボーナス | RhythmFeature ✅ |
+| `beat_dash` | リズムに合わせたダッシュで加速 | RhythmFeature ✅ |
 
 ---
 
@@ -69,9 +69,9 @@
 
 | FeatureId | 説明 | 対応 FeatureSystem |
 |---|---|---|
-| `stealth_mode` | 透明化・一定時間ハザード無視 | 未実装 |
-| `time_bonus` | タイムアタック評価（早いほど高得点） | 未実装 |
-| `color_touch` | 安全色を踏むと得点（sideScroller が直接処理） | ─ |
+| `stealth_mode` | 透明化・一定時間ハザード無視 | SpecialFeature (⚠️スタブ) |
+| `time_bonus` | タイムアタック評価（早いほど高得点） | SpecialFeature (⚠️スタブ) |
+| `color_touch` | 安全色を踏むと得点 | SpecialFeature ✅（onSafeHazardTouch で得点・消滅・エフェクト） |
 
 ---
 
@@ -79,7 +79,7 @@
 
 | FeatureId | 説明 | 対応 FeatureSystem |
 |---|---|---|
-| `tower` | タワー設置（停止して配置） | 未実装 |
+| `tower` | タワー設置（停止して配置） | SpecialFeature (⚠️スタブ) |
 
 ---
 
@@ -87,11 +87,19 @@
 
 | ステータス | 意味 |
 |---|---|
-| ✅ ShootFeature | 弾発射・命中・コンボ・描画まで実装済み |
-| ✅ RhythmFeature | BPM同期・ジャスト入力・ビートマーカー描画実装済み |
-| ⚠️ MovementFeature | フィーチャー宣言のみ。ロジックは sideScroller.ts に内蔵 |
-| ❌ 未実装 | FeatureId のみ定義。FeatureSystem クラスが存在しない |
-| ─ sideScroller | FeatureSystem を経由せず sideScroller が直接処理 |
+| ✅ 完全実装 | preUpdate / update / render まで実装済み |
+| ⚠️ スタブ登録済み | FeatureSystem として登録済みだがロジック未移管 |
+| ─ sideScroller 直接処理 | FeatureSystem を経由せず sideScroller が処理（移管課題） |
+
+| FeatureSystem | 対象 FeatureId | ステータス |
+|---|---|---|
+| ShootFeature | shoot / three_way / charge_shot / spread_shot / bomb / enemy_hp | ✅ |
+| RhythmFeature | beat_hazard / just_input / beat_dash | ✅ |
+| MovementFeature | auto_run / slow_precise / double_jump / long_air | ✅ |
+| RpgFeature | hp / exp / item_pickup / shield | ✅（hp: onPlayerHit、item_pickup: update。shield は未実装） |
+| ExtraMovementFeature | dash / wall_jump / slide / gravity_flip / vertical_scroll | ⚠️ スタブ |
+| PuzzleFeature | grid_stop / puzzle_solve | ⚠️ スタブ |
+| SpecialFeature | stealth_mode / time_bonus / tower / color_touch / boss | ✅ color_touch: onSafeHazardTouch。他は未実装スタブ |
 
 ---
 

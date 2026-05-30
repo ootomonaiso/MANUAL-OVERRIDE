@@ -12,10 +12,18 @@
  */
 
 import { registerFeature } from '../../engine/GameRegistry'
-import { ShootFeature }    from './ShootFeature'
-import { RhythmFeature }  from './RhythmFeature'
-import { MovementFeature } from './MovementFeature'
+import { ShootFeature }         from './ShootFeature'
+import { RhythmFeature }        from './RhythmFeature'
+import { MovementFeature }      from './MovementFeature'
+import { RpgFeature }           from './RpgFeature'
+import { ExtraMovementFeature } from './ExtraMovementFeature'
+import { PuzzleFeature }        from './PuzzleFeature'
+import { SpecialFeature }       from './SpecialFeature'
 
 registerFeature(new ShootFeature())
 registerFeature(new RhythmFeature())
 registerFeature(new MovementFeature())
+registerFeature(new RpgFeature())
+registerFeature(new ExtraMovementFeature())
+registerFeature(new PuzzleFeature())
+registerFeature(new SpecialFeature())

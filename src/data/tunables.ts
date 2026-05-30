@@ -175,6 +175,8 @@ export const SPAWN = {
   expItemScore: 20,
   /** EXP アイテム1個あたりのEXP加算量 */
   expItemExpGain: 10,
+  /** アイテムのパルスアニメ角速度 rad/s */
+  itemPulseRate: 3,
 
   // ── ハザード生成オフセット ────────────────────────
   /** 画面右端からのハザードスポーンX距離 px */
@@ -433,6 +435,8 @@ export const UI = {
 export const SCORE = {
   /** scrollSpeed * dt * この値 が毎フレームのスコア加算量 */
   distanceScoreRate: 0.12,
+  /** long_air: 空中1秒あたりのスコアボーナス */
+  longAirScoreRate: 0.8,
 } as const
 
 // ─────────────────────────────────────────────────────────────

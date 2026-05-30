@@ -14,6 +14,7 @@
 
 import type { FeatureId } from '../domain/types'
 import type { MutableWorld, InputSnapshot } from './types'
+import type { Hazard } from '../game/entities'
 
 export interface FeatureSystem {
   /**
@@ -24,7 +25,14 @@ export interface FeatureSystem {
   readonly handles: FeatureId | ReadonlyArray<FeatureId>
 
   /**
-   * 毎フレーム呼ばれる更新処理。
+   * オプショナル: 物理計算前に呼ばれる更新処理。
+   * 移動フィーチャーがプレイヤーの速度（vx）をセットするために使う。
+   * 省略時はスキップ。
+   */
+  preUpdate?(world: MutableWorld, input: InputSnapshot, dt: number): void
+
+  /**
+   * 毎フレーム呼ばれる更新処理（物理計算後）。
    * world 経由でスコア加算・パーティクル生成・ハザード削除などを行う。
    */
   update(world: MutableWorld, input: InputSnapshot, dt: number): void
@@ -49,6 +57,15 @@ export interface FeatureSystem {
    * 省略可。
    */
   onPlayerHit?(world: MutableWorld): void
+
+  /**
+   * オプショナル: 安全なハザード（isSafe=true）にプレイヤーが触れた時に呼ばれる。
+   * color_touch など、安全色を踏んだ時の演出・スコア処理に使う。
+   * @param hazard  触れたハザードオブジェクト
+   * @param screenX ハザード左端のスクリーン座標 X
+   * 省略可。
+   */
+  onSafeHazardTouch?(world: MutableWorld, hazard: Hazard, screenX: number): void
 
   /**
    * オプショナル: プレイヤーが死亡した時に1回呼ばれる。
