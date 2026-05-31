@@ -14,6 +14,22 @@ const props = defineProps<{
 const showHistory = ref(false)
 const themeClass = computed(() => `theme-${props.theme}`)
 
+// auto_run が有効な場合、左右移動の説明を除外
+const filteredManualText = computed(() => {
+  if (!props.features?.has('auto_run')) return props.manual.manualText
+  return props.manual.manualText.filter(line =>
+    !line.includes('←') && !line.includes('→') && !line.includes('左右')
+  )
+})
+
+// 同様に差分ラインもフィルタ
+const filteredDiffLines = computed(() => {
+  if (!props.features?.has('auto_run')) return props.diffLines
+  return props.diffLines.filter(line =>
+    !line.text.includes('←') && !line.text.includes('→') && !line.text.includes('左右')
+  )
+})
+
 function keyLabel(key: string): string {
   const map: Record<string, string> = {
     Space: 'SPACE', ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓',
@@ -62,9 +78,9 @@ function keyLabel(key: string): string {
 
     <!-- 本文（差分強調） -->
     <div class="manual-body">
-      <template v-if="isAnimating && diffLines.length > 0">
+      <template v-if="isAnimating && filteredDiffLines.length > 0">
         <div
-          v-for="(line, i) in diffLines"
+          v-for="(line, i) in filteredDiffLines"
           :key="i"
           class="manual-line"
           :class="`line-${line.type}`"
@@ -76,7 +92,7 @@ function keyLabel(key: string): string {
         </div>
       </template>
       <template v-else>
-        <div v-for="line in manual.manualText" :key="line" class="manual-line line-unchanged">
+        <div v-for="line in filteredManualText" :key="line" class="manual-line line-unchanged">
           <span>{{ line }}</span>
         </div>
       </template>
