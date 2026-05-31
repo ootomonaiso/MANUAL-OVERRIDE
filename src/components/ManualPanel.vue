@@ -127,16 +127,16 @@ function keyLabel(key: string): string {
 .manual-panel {
   position: absolute;
   bottom: 58px; right: 16px;
-  width: 320px;
+  width: 340px;
   background: #fefdfb;
-  border: 2px solid #c9a876;
-  border-radius: 6px;
-  padding: 14px 16px;
+  border: 2.5px solid #c9a876;
+  border-radius: 8px;
+  padding: 16px 18px;
   font-family: 'Noto Sans JP', 'Courier New', sans-serif;
   font-size: 13px;
   line-height: 1.8;
   color: #2a1810;
-  box-shadow: 6px 6px 12px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+  box-shadow: 8px 8px 24px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.15);
   z-index: 20;
   transition: font-family 0.6s, background 0.6s, border-color 0.6s, box-shadow 0.6s;
   user-select: none;
