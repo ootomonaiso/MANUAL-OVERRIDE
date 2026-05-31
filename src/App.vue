@@ -10,7 +10,6 @@ import ChoicePanel from './components/ChoicePanel.vue'
 import ThrowOverlay from './components/ThrowOverlay.vue'
 import EndingPanel from './components/EndingPanel.vue'
 import TutorialHints from './components/TutorialHints.vue'
-import DebugPanel from './components/DebugPanel.vue'
 import PluginLoader from './components/PluginLoader.vue'
 import { GENRES } from './data/genres'
 import type { ThrowResult } from './domain/types'
@@ -296,14 +295,6 @@ onUnmounted(() => {
         @restart="restart"
       />
     </Transition>
-
-    <!-- ─── デバッグパネル（開発用） ─── -->
-    <DebugPanel
-      :choice-history="gameState.choiceHistory"
-      :current-manual="gameState.currentManual"
-      :locked-genre="gameState.lockedGenre.value"
-      :phase="gameState.phase.value"
-    />
 
     <!-- ─── プラグインローダー ─── -->
     <PluginLoader />
