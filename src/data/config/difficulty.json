@@ -1,0 +1,11 @@
+{
+  "$comment": "難易度（updateDistancesパラメータ化、tempoSpeedBonusを統合）",
+  "section": "difficulty",
+  "updateDistancesInitial": [1100, 2400, 3900],
+  "updateDistancesBaseInterval": 1500,
+  "updateDistancesCount": 100,
+  "genreLockedPlayDist": 400,
+  "tempoSpeedBonus": 28,
+  "enemyDensityRate": 0.08,
+  "globalDifficultyMult": 1.0
+}

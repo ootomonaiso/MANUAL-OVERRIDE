@@ -1,0 +1,20 @@
+{
+  "$comment": "プレイヤー物理パラメータ (旧 PHYSICS + PLAYER_PHYSICS 統合)",
+  "section": "physics",
+  "playerWidth": 36,
+  "playerHeight": 52,
+  "jumpVelocity": -720,
+  "doubleJumpVelocity": -610,
+  "jumpCutMultiplier": 0.45,
+  "gravity": 1650,
+  "fallGravityMult": 1.65,
+  "runSpeed": 240,
+  "slowPreciseRatio": 0.45,
+  "landSquashDecay": 0.72,
+  "landSquashAmount": 0.22,
+  "coyoteFrames": 9,
+  "jumpBufferFrames": 10,
+  "playerMinX": 40,
+  "playerMaxXRatio": 0.38,
+  "airFrictionX": 0
+}

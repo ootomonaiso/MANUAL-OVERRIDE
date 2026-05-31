@@ -1,0 +1,12 @@
+{
+  "$comment": "投擲エンジン",
+  "section": "throw",
+  "gravity": 800,
+  "maxPower": 1400,
+  "airFriction": 0.995,
+  "powerDistanceDivisor": 200,
+  "speedMultiplier": 5,
+  "outOfBoundsRight": 2400,
+  "outOfBoundsLeft": -200,
+  "landingMargin": 100
+}

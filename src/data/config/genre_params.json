@@ -1,0 +1,11 @@
+{
+  "$comment": "ジャンルパラメータ設計支援",
+  "section": "genre_params",
+  "recommendedSingleChoice": 3,
+  "recommendedMaxPerAxis": 6,
+  "thresholdGuide": {
+    "singleAxis": 5,
+    "dualAxis": 3,
+    "tripleAxis": 2
+  }
+}

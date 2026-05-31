@@ -1,0 +1,9 @@
+{
+  "$comment": "ステルス",
+  "section": "stealth",
+  "stealthAlpha": 0.25,
+  "stealthDurationSec": 3.0,
+  "stealthCooldownSec": 5.0,
+  "stealthSafeBonus": 1.5,
+  "detectionRange": 120
+}

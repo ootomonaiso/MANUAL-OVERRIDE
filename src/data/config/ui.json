@@ -1,0 +1,19 @@
+{
+  "$comment": "UI表示",
+  "section": "ui",
+  "popupLifeSec": 1.0,
+  "popupRiseVy": -55,
+  "popupFont": "bold 15px \"Courier New\", monospace",
+  "deathOverlayAlpha": 0.7,
+  "deathFadeSpeed": 2.5,
+  "deathTextDelayS": 0.4,
+  "deathTextFadeSpeed": 3.0,
+  "deathTitleFont": "bold 36px \"Courier New\", monospace",
+  "deathSubFont": "16px \"Courier New\", monospace",
+  "deathSubTextAlpha": 0.65,
+  "beatMarkerAlphaDivisor": 400,
+  "beatMarkerMaxAlpha": 0.3,
+  "beatMarkerColor": "#ff00ff",
+  "beatMarkerLineW": 2,
+  "beatMarkerDash": [6, 4]
+}

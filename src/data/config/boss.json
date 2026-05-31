@@ -1,0 +1,14 @@
+{
+  "$comment": "ボス",
+  "section": "boss",
+  "firstBossDist": 2000,
+  "bossRespawnDist": 1500,
+  "bossHp": 20,
+  "arenaHpBonus": 10,
+  "bossWidth": 100,
+  "bossHeight": 80,
+  "bossCollisionGrace": 8,
+  "bossSpawnShake": 18,
+  "bossDeathShake": 30,
+  "bossDeathParticles": 40
+}

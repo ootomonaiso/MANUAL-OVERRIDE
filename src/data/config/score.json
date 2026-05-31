@@ -1,0 +1,6 @@
+{
+  "$comment": "スコア",
+  "section": "score",
+  "distanceScoreRate": 0.28,
+  "longAirScoreRate": 1.6
+}

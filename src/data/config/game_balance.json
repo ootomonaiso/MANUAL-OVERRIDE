@@ -1,0 +1,13 @@
+{
+  "$comment": "スコア比率・スクロール速度 (gameBalaance.ts より)",
+  "section": "game_balance",
+  "scoreRatioPlay": 0.7,
+  "scoreRatioThrow": 0.3,
+  "throwScoreWeightsAirTime": 0.5,
+  "throwScoreWeightsArcHeight": 0.4,
+  "throwScoreWeightsSpeedPenalty": 0.1,
+  "baseScrollSpeed": 300,
+  "hazardSpawnBaseInterval": 2400,
+  "hazardSpawnMinInterval": 800,
+  "hazardSpawnDecayRate": 0.00015
+}

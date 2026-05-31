@@ -1,0 +1,22 @@
+{
+  "$comment": "ハザード・アイテムスポーン",
+  "section": "spawn",
+  "firstSpawnDist": 280,
+  "enemyHpAmount": 3,
+  "defaultFloatAmp": 14,
+  "airMinOffset": 60,
+  "airRandOffset": 80,
+  "floatMinOffset": 80,
+  "floatRandOffset": 60,
+  "hazardCullLeft": -200,
+  "itemCullLeft": -100,
+  "spawnWeightMaxDist": 3000,
+  "itemDropChance": 0.50,
+  "itemExpChance": 0.70,
+  "itemOffsetX": 70,
+  "itemGroundOffsetY": 50,
+  "expItemScore": 20,
+  "expItemExpGain": 10,
+  "itemPulseRate": 3,
+  "hazardSpawnOffsetX": 120
+}

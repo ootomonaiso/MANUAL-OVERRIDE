@@ -1,0 +1,13 @@
+{
+  "$comment": "射撃システム",
+  "section": "shoot",
+  "bulletSpeed": 900,
+  "bulletWidth": 14,
+  "bulletHeight": 5,
+  "bulletOutOfBoundsX": 2400,
+  "shotCooldown": 0.18,
+  "comboResetTime": 3.0,
+  "baseScorePerKill": 200,
+  "threeWaySpeedRatio": 0.8,
+  "threeWayYRatio": 0.6
+}

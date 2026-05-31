@@ -1,0 +1,14 @@
+{
+  "$comment": "リズムゲーム",
+  "section": "rhythm_tuning",
+  "minBpm": 80,
+  "maxBpm": 200,
+  "justWindowSec": 0.075,
+  "justMultiplier": 2.5,
+  "goodWindowMult": 2.0,
+  "goodMultiplier": 1.4,
+  "beatHazardFlipChance": 0.5,
+  "beatSpawnBurstRate": 0.3,
+  "beatDashMult": 1.8,
+  "beatDashFrames": 12
+}

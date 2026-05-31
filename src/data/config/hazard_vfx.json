@@ -1,0 +1,22 @@
+{
+  "$comment": "ハザード描画",
+  "section": "hazard_vfx",
+  "glowBlur": 12,
+  "pulseSpeed": 1.5,
+  "pulseAmplitude": 0.08,
+  "hpBarHeight": 5,
+  "hpBarOffsetY": 10,
+  "hpBarBgAlpha": 0.5,
+  "hpBarHighColor": "#00ff88",
+  "hpBarLowColor": "#ff4444",
+  "hpBarThreshold": 0.5,
+  "rectCornerRadius": 3,
+  "edgeHighlightLineW": 1.5,
+  "lightenTopAmount": 40,
+  "lightenEdgeAmount": 60,
+  "pillarCapOffset": 4,
+  "pillarCapHeight": 6,
+  "pillarHighlightStop": 0.4,
+  "pillarHighlightAmount": 50,
+  "diamondEdgeLineW": 2
+}

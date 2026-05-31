@@ -1,0 +1,9 @@
+{
+  "$comment": "カメラ・視差スクロール",
+  "section": "camera",
+  "leadOffset": 220,
+  "parallaxStars": 0.02,
+  "parallaxFar": 0.08,
+  "parallaxMid": 0.25,
+  "parallaxGround": 0.98
+}
