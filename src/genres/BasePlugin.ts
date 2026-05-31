@@ -136,10 +136,10 @@ export class BasePlugin extends DarkThemePlugin {
     safe:   '#3498db', safeGlow:   '#74b9ff',
   }
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',    placement: 'ground', weightStart: 10, weightEnd: 6,  wRange: [35, 70], hRange: [40, 80] },
-    { shape: 'spike',   placement: 'ground', weightStart: 0,  weightEnd: 3,  wRange: [35, 60], hRange: [45, 70] },
-    { shape: 'pillar',  placement: 'ground', weightStart: 0,  weightEnd: 2,  wRange: [18, 28], hRange: [80, 160] },
-    { shape: 'diamond', placement: 'float',  weightStart: 0,  weightEnd: 2,  wRange: [45, 55], hRange: [45, 55] },
+    { shape: 'rect',    placement: 'ground', weightStart: 10, weightEnd: 6,  wRange: [25, 45], hRange: [30, 55] },
+    { shape: 'spike',   placement: 'ground', weightStart: 0,  weightEnd: 3,  wRange: [22, 40], hRange: [35, 55] },
+    { shape: 'pillar',  placement: 'ground', weightStart: 0,  weightEnd: 2,  wRange: [14, 22], hRange: [60, 120] },
+    { shape: 'diamond', placement: 'float',  weightStart: 0,  weightEnd: 2,  wRange: [30, 38], hRange: [30, 38] },
   ]
 }
 
@@ -158,9 +158,9 @@ export class RunnerPlugin extends DarkThemePlugin {
     safe:   '#00cec9', safeGlow:   '#55efc4',
   }
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',    placement: 'ground', weightStart: 8,  weightEnd: 5,  wRange: [30, 60], hRange: [40, 75] },
-    { shape: 'rect',    placement: 'air',    weightStart: 2,  weightEnd: 4,  wRange: [40, 70], hRange: [35, 55] },
-    { shape: 'spike',   placement: 'ground', weightStart: 1,  weightEnd: 5,  wRange: [35, 55], hRange: [50, 80] },
-    { shape: 'pillar',  placement: 'ground', weightStart: 0,  weightEnd: 3,  wRange: [18, 24], hRange: [90, 170] },
+    { shape: 'rect',    placement: 'ground', weightStart: 8,  weightEnd: 5,  wRange: [22, 40], hRange: [30, 55] },
+    { shape: 'rect',    placement: 'air',    weightStart: 2,  weightEnd: 4,  wRange: [28, 48], hRange: [25, 40] },
+    { shape: 'spike',   placement: 'ground', weightStart: 1,  weightEnd: 5,  wRange: [22, 40], hRange: [40, 65] },
+    { shape: 'pillar',  placement: 'ground', weightStart: 0,  weightEnd: 3,  wRange: [14, 18], hRange: [70, 130] },
   ]
 }

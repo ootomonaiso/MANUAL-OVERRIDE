@@ -25,6 +25,8 @@ export interface GameSnapshot {
   statJumps: number
   statMoveLeft: number
   statMoveRight: number
+  // 最初のジャンプが完了したかを示すフラグ
+  firstJumpDone: boolean
 }
 
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string; size: number }
@@ -48,6 +50,7 @@ export class SideScroller {
   private survivedSec = 0
   private dead = false
   private paused = false
+  private firstJumpDone = false
 
   // カメラ
   private cameraX = 0
@@ -112,7 +115,13 @@ export class SideScroller {
       const key = this._normalizeKey(e)
       this.keys.add(key)
       // ゲームで使うキーのみ preventDefault
-      if (['Space', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'z', 'Z'].includes(key)) {
+      const gameKeys = [
+        rules.controls.jump,
+        rules.controls.moveLeft,
+        rules.controls.moveRight,
+        rules.controls.shoot ?? 'z'
+      ]
+      if (gameKeys.includes(key)) {
         e.preventDefault()
       }
     }
@@ -125,8 +134,8 @@ export class SideScroller {
 
   // ─── キー正規化 ──────────────────────────────────────────────────
   private _normalizeKey(e: KeyboardEvent): string {
-    // Space bar: e.key === ' '
     if (e.key === ' ') return 'Space'
+    if (e.key === 'z' || e.key === 'Z') return 'z'
     return e.key
   }
 
@@ -181,6 +190,7 @@ export class SideScroller {
       statJumps: this.stats.jumps,
       statMoveLeft: this.stats.moveLeft,
       statMoveRight: this.stats.moveRight,
+      firstJumpDone: this.firstJumpDone,
     }
   }
 
@@ -245,7 +255,7 @@ export class SideScroller {
     const jumpKey  = r.controls.jump
     const leftKey  = r.controls.moveLeft
     const rightKey = r.controls.moveRight
-    const shootKey = r.controls.shoot ?? 'z'
+    const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
 
     const isVertical = r.scrollAxis === 'y'
 
@@ -358,6 +368,7 @@ export class SideScroller {
           this.jumpBufferTimer = 0
           this.coyoteTimer = 0
           this.stats.jumps++
+          this.firstJumpDone = true
           this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
           // Hook: onPlayerJump
           {
@@ -1060,6 +1071,7 @@ export class SideScroller {
       ctx:              this.ctx,
       get cameraX()     { return self.cameraX },
       get gameStats()   { return self._gameStats },
+      get scrollMode()  { return self.rules.scrollAxis as 'x' | 'y' },
 
       addScore(amount)              { self.playScore += amount },
       addScorePopup(x, y, text, c) { self._addScorePopup(x, y, text, c) },
@@ -1084,6 +1096,13 @@ export class SideScroller {
       setTimescale(scale, durationSec) {
         self._timescaleScale = scale
         self._timescaleRemaining = durationSec ?? -1
+      },
+
+      getHazardScreenX(h) {
+        return self.rules.scrollAxis === 'x' ? h.x - self.cameraX : h.x
+      },
+      getPlayerWorldX() {
+        return self.rules.scrollAxis === 'x' ? self.player.x + self.cameraX : self.player.x
       },
 
       setKills(n)  { self._gameStats.kills = n },

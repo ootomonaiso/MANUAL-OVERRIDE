@@ -95,24 +95,31 @@ function pick(choiceId: string) {
 
 /* カード */
 .choice-card {
-  background: #fff;
-  border: 2px solid #1a1a1a;
-  border-radius: 3px;
-  padding: 26px 30px 20px;
-  max-width: 400px;
+  background: #faf7f3;
+  border: 2px solid #d4c9bc;
+  border-radius: 6px;
+  padding: 28px 32px 22px;
+  max-width: 420px;
   width: 92%;
   box-shadow:
-    6px 6px 0 #1a1a1a,
-    0 0 40px rgba(0,0,0,0.5);
-  font-family: 'Courier New', Courier, monospace;
+    8px 8px 0 rgba(0,0,0,0.12),
+    0 0 50px rgba(0,0,0,0.3),
+    inset 0 1px 2px rgba(255,255,255,0.7);
+  font-family: 'Noto Sans JP', 'Courier New', sans-serif;
   animation: cardEntrance 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 
-  /* 微細な紙質 */
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0px, transparent 22px,
-    rgba(0,0,0,0.022) 22px, rgba(0,0,0,0.022) 23px
-  );
+  /* 和紙のような質感 */
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0px, transparent 1px,
+      rgba(180,150,100,0.02) 1px, rgba(180,150,100,0.02) 2px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px, transparent 18px,
+      rgba(0,0,0,0.018) 18px, rgba(0,0,0,0.018) 19px
+    );
 }
 
 @keyframes cardEntrance {
@@ -123,36 +130,40 @@ function pick(choiceId: string) {
 /* ヘッダー */
 .choice-header {
   text-align: center;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #ddd;
+  margin-bottom: 22px;
+  border-bottom: 2px solid #d4c9bc;
   padding-bottom: 14px;
+  position: relative;
 }
 
 .choice-stamp {
   display: inline-block;
-  background: #cc0000;
+  background: #c94f3b;
   color: #fff;
-  font-size: 10px;
-  font-weight: bold;
-  letter-spacing: 3px;
-  padding: 3px 10px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 4px 12px;
   margin-bottom: 8px;
-  transform: rotate(-1.5deg);
-  box-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+  transform: rotate(-1.8deg);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.15);
+  border-radius: 2px;
 }
 
 .choice-ver {
-  font-size: 11px;
-  color: #999;
+  font-size: 10px;
+  color: #998876;
   letter-spacing: 1.5px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  font-family: 'Noto Sans JP', sans-serif;
 }
 
 .choice-prompt {
   font-size: 14px;
-  color: #222;
+  color: #3d2416;
   font-weight: 600;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
+  font-family: 'Noto Sans JP', sans-serif;
 }
 
 /* 選択肢リスト */
@@ -167,16 +178,17 @@ function pick(choiceId: string) {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #fff;
-  border: 2px solid #222;
-  padding: 13px 16px;
+  background: #fef7f1;
+  border: 2px solid #c9a876;
+  padding: 14px 18px;
   text-align: left;
   cursor: pointer;
   font-family: inherit;
-  border-radius: 2px;
-  transition: background 0.18s, border-color 0.18s, transform 0.1s;
+  border-radius: 8px;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.1s;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 
   /* 初期は非表示 */
   opacity: 0;
@@ -196,22 +208,24 @@ function pick(choiceId: string) {
   content: '';
   position: absolute;
   inset: 0;
-  background: #222;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.22s ease;
+  background: linear-gradient(135deg, rgba(200,100,50,0.15) 0%, rgba(180,80,40,0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.22s ease;
 }
 
-.choice-btn:hover::after { transform: scaleX(1); }
-.choice-btn:hover .choice-label,
-.choice-btn:hover .choice-index,
-.choice-btn:hover .choice-arrow { color: #fff; position: relative; z-index: 1; }
+.choice-btn:hover {
+  background: #fff5ed;
+  border-color: #b89a7d;
+  box-shadow: 0 4px 12px rgba(180,100,60,0.18);
+}
+.choice-btn:hover::after { opacity: 1; }
 
-.choice-btn:active { transform: translateY(1px); }
+.choice-btn:active { transform: translateY(2px); }
 
 .choice-btn.selected {
-  background: #cc0000;
-  border-color: #aa0000;
+  background: #d4673b;
+  border-color: #b84a1f;
+  box-shadow: 0 6px 16px rgba(212,103,59,0.28);
   animation: selectedFlash 0.35s ease;
 }
 .choice-btn.selected .choice-label,
@@ -219,9 +233,9 @@ function pick(choiceId: string) {
 .choice-btn.selected .choice-arrow { color: #fff; }
 
 @keyframes selectedFlash {
-  0%   { background: #fff; }
-  40%  { background: #ffcccc; }
-  100% { background: #cc0000; }
+  0%   { background: #fef7f1; }
+  40%  { background: #f5d5c8; }
+  100% { background: #d4673b; }
 }
 
 .choice-btn.faded {
@@ -233,41 +247,51 @@ function pick(choiceId: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  background: #222;
+  width: 24px;
+  height: 24px;
+  background: #c9a876;
   color: #fff;
   font-size: 11px;
-  font-weight: bold;
-  border-radius: 2px;
+  font-weight: 700;
+  border-radius: 5px;
   flex-shrink: 0;
-  transition: background 0.18s, color 0.18s;
+  transition: background 0.2s, color 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.12);
 }
 
-.choice-btn.selected .choice-index { background: rgba(255,255,255,0.2); }
+.choice-btn:hover .choice-index {
+  background: #b89a7d;
+}
+
+.choice-btn.selected .choice-index {
+  background: rgba(255,255,255,0.3);
+}
 
 .choice-label {
   flex: 1;
   font-size: 13px;
-  font-weight: 600;
-  color: #1a1a1a;
-  line-height: 1.4;
-  transition: color 0.18s;
+  font-weight: 500;
+  color: #3d2416;
+  line-height: 1.45;
+  transition: color 0.2s;
 }
 
 .choice-arrow {
   font-size: 14px;
-  color: #bbb;
-  transition: color 0.18s;
+  color: #c9a876;
+  transition: color 0.2s;
+  margin-left: 4px;
 }
 
 /* フッター */
 .choice-footnote {
   font-size: 10px;
-  color: #bbb;
+  color: #a89a8a;
   text-align: center;
   letter-spacing: 0.5px;
-  border-top: 1px solid #eee;
-  padding-top: 10px;
+  border-top: 1px solid #e8ddd0;
+  padding-top: 12px;
+  margin-top: 2px;
+  font-family: 'Noto Sans JP', sans-serif;
 }
 </style>

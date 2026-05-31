@@ -20,10 +20,10 @@ export class RpgPlugin extends GenrePluginBase {
 
   // 収集系: アイテムと障害物が混在するバランス重視の出現
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',    placement: 'ground', weightStart: 8,  weightEnd: 6,  wRange: [35, 65], hRange: [40, 70] },
-    { shape: 'pillar',  placement: 'ground', weightStart: 2,  weightEnd: 4,  wRange: [20, 30], hRange: [70, 140] },
-    { shape: 'spike',   placement: 'ground', weightStart: 1,  weightEnd: 3,  wRange: [30, 50], hRange: [40, 65] },
-    { shape: 'rect',    placement: 'air',    weightStart: 0,  weightEnd: 2,  wRange: [40, 65], hRange: [30, 50] },
+    { shape: 'rect',    placement: 'ground', weightStart: 8,  weightEnd: 6,  wRange: [25, 45], hRange: [30, 55] },
+    { shape: 'pillar',  placement: 'ground', weightStart: 2,  weightEnd: 4,  wRange: [15, 22], hRange: [55, 105] },
+    { shape: 'spike',   placement: 'ground', weightStart: 1,  weightEnd: 3,  wRange: [22, 38], hRange: [30, 50] },
+    { shape: 'rect',    placement: 'air',    weightStart: 0,  weightEnd: 2,  wRange: [28, 45], hRange: [22, 38] },
   ]
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {

@@ -10,6 +10,7 @@ import ChoicePanel from './components/ChoicePanel.vue'
 import ThrowOverlay from './components/ThrowOverlay.vue'
 import EndingPanel from './components/EndingPanel.vue'
 import TutorialHints from './components/TutorialHints.vue'
+import DebugPanel from './components/DebugPanel.vue'
 import { GENRES } from './data/genres'
 import type { ThrowResult } from './domain/types'
 
@@ -54,8 +55,9 @@ function beginSnapshotLoop() {
     snapshot.value = scroller.getSnapshot()
 
     // 更新トリガー（tutorial と playing 両方で発火する）
+    // 最初のジャンプまで待つ
     const activePlay = gameState.phase.value === 'playing' || gameState.phase.value === 'tutorial'
-    if (snapshot.value.shouldUpdate !== null && activePlay) {
+    if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
       scroller.setPaused(true)
       gameState.triggerUpdate()
     }
@@ -196,6 +198,7 @@ onUnmounted(() => {
         :diff-lines="manualCtl.diffLines.value"
         :is-animating="manualCtl.isAnimating.value"
         :history="manualCtl.history.value"
+        :features="gameState.rules.features"
       />
 
       <!-- チュートリアルヒント（序盤のみ表示） -->
@@ -262,14 +265,25 @@ onUnmounted(() => {
         @restart="restart"
       />
     </Transition>
+
+    <!-- ─── デバッグパネル（開発用） ─── -->
+    <DebugPanel
+      :choice-history="gameState.choiceHistory"
+      :current-manual="gameState.currentManual"
+      :locked-genre="gameState.lockedGenre.value"
+      :phase="gameState.phase.value"
+    />
   </div>
 </template>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Caveat:wght@400;700&display=swap');
+
 /* グローバルリセット */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #app { width: 100%; height: 100%; overflow: hidden; background: #111; }
 button { outline: none; }
+body { font-family: 'Noto Sans JP', 'Courier New', sans-serif; }
 </style>
 
 <style scoped>

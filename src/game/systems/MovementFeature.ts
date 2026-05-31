@@ -32,16 +32,19 @@ export class MovementFeature implements FeatureSystem {
       ? PLAYER_PHYSICS.runSpeed * PHYSICS.slowPreciseRatio
       : PLAYER_PHYSICS.runSpeed
 
+    // movement_enabled feature がない場合は左右移動を無効化
+    const movementEnabled = r.features.has('movement_enabled')
+
     if (r.scrollAxis === 'y') {
-      // 縦スクロール: 左右移動のみ
-      const movingLeft  = input.keys.has(leftKey)
-      const movingRight = input.keys.has(rightKey)
+      // 縦スクロール: 左右移動のみ（movement_enabled でのみ有効）
+      const movingLeft  = movementEnabled && input.keys.has(leftKey)
+      const movingRight = movementEnabled && input.keys.has(rightKey)
       p.vx = movingRight ? runSpeed : movingLeft ? -runSpeed : 0
     } else {
       // 横スクロール: auto_run は右方向を強制
       const isAutoRun   = r.features.has('auto_run')
-      const movingLeft  = !isAutoRun && input.keys.has(leftKey)
-      const movingRight =  isAutoRun || input.keys.has(rightKey)
+      const movingLeft  = movementEnabled && !isAutoRun && input.keys.has(leftKey)
+      const movingRight =  isAutoRun || (movementEnabled && input.keys.has(rightKey))
       p.vx = movingRight ? runSpeed : movingLeft ? -runSpeed : 0
     }
   }

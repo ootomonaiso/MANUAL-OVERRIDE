@@ -1,7 +1,7 @@
 import type { Controls } from '../domain/types'
 
 // 説明書更新が発動する走行距離（px）
-export const UPDATE_DISTANCES = [600, 1400, 2400] as const
+export const UPDATE_DISTANCES = [900, 2200, 3800] as const
 
 // スコア比率
 export const SCORE_RATIO = { play: 0.7, throw: 0.3 } as const
@@ -21,9 +21,9 @@ export const TEMPO_SPEED_BONUS = 28
 
 // 障害物の出現間隔カーブ
 export const HAZARD_SPAWN = {
-  baseInterval: 2400,
-  minInterval: 620,
-  decayRate: 0.00022,
+  baseInterval: 4000,
+  minInterval: 1500,
+  decayRate: 0.00008,
 } as const
 
 // プレイヤー物理

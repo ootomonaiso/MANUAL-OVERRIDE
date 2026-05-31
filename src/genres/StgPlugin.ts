@@ -20,10 +20,10 @@ export class StgPlugin extends GenrePluginBase {
 
   // 敵・弾幕っぽい配置（空中多め、ダイヤモンド多め）
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',    placement: 'ground', weightStart: 5,  weightEnd: 4,  wRange: [30, 55], hRange: [40, 70] },
-    { shape: 'rect',    placement: 'air',    weightStart: 3,  weightEnd: 5,  wRange: [35, 60], hRange: [35, 60] },
-    { shape: 'diamond', placement: 'float',  weightStart: 2,  weightEnd: 5,  wRange: [40, 55], hRange: [40, 55] },
-    { shape: 'pillar',  placement: 'air',    weightStart: 0,  weightEnd: 3,  wRange: [20, 30], hRange: [60, 100] },
+    { shape: 'rect',    placement: 'ground', weightStart: 5,  weightEnd: 4,  wRange: [22, 40], hRange: [30, 55] },
+    { shape: 'rect',    placement: 'air',    weightStart: 3,  weightEnd: 5,  wRange: [25, 42], hRange: [25, 42] },
+    { shape: 'diamond', placement: 'float',  weightStart: 2,  weightEnd: 5,  wRange: [28, 38], hRange: [28, 38] },
+    { shape: 'pillar',  placement: 'air',    weightStart: 0,  weightEnd: 3,  wRange: [15, 22], hRange: [45, 75] },
   ]
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {

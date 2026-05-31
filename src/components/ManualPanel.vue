@@ -8,6 +8,7 @@ const props = defineProps<{
   diffLines: Array<{ text: string; type: 'added' | 'removed' | 'unchanged' }>
   isAnimating: boolean
   history: ManualVersion[]
+  features?: Set<string>
 }>()
 
 const showHistory = ref(false)
@@ -85,10 +86,13 @@ function keyLabel(key: string): string {
     <div class="manual-controls">
       <div class="controls-title">操作</div>
       <div class="controls-grid">
-        <span class="key-badge">{{ keyLabel(manual.controls.moveLeft) }}</span>
-        <span class="key-action">左移動</span>
-        <span class="key-badge">{{ keyLabel(manual.controls.moveRight) }}</span>
-        <span class="key-action">右移動</span>
+        <!-- auto_run が有効な場合は左右キーを非表示 -->
+        <template v-if="!features?.has('auto_run')">
+          <span class="key-badge">{{ keyLabel(manual.controls.moveLeft) }}</span>
+          <span class="key-action">左移動</span>
+          <span class="key-badge">{{ keyLabel(manual.controls.moveRight) }}</span>
+          <span class="key-action">右移動</span>
+        </template>
         <span class="key-badge">{{ keyLabel(manual.controls.jump) }}</span>
         <span class="key-action">ジャンプ</span>
         <template v-if="manual.controls.shoot">
@@ -107,16 +111,16 @@ function keyLabel(key: string): string {
 .manual-panel {
   position: absolute;
   bottom: 58px; right: 16px;
-  width: 232px;
-  background: #fafafa;
-  border: 2px solid #1a1a1a;
-  border-radius: 2px;
-  padding: 10px 12px;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 11.5px;
-  line-height: 1.65;
-  color: #1a1a1a;
-  box-shadow: 4px 4px 0 #1a1a1a, 0 0 0 1px rgba(0,0,0,0.05);
+  width: 240px;
+  background: #faf7f3;
+  border: 2px solid #c9a876;
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-family: 'Noto Sans JP', 'Courier New', sans-serif;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #3d2416;
+  box-shadow: 5px 5px 0 rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.03);
   z-index: 20;
   transition: font-family 0.6s, background 0.6s, border-color 0.6s, box-shadow 0.6s;
   user-select: none;

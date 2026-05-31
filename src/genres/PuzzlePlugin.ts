@@ -20,9 +20,9 @@ export class PuzzlePlugin extends DarkThemePlugin {
     safe:   '#0984e3', safeGlow:   '#74b9ff',
   }
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',   placement: 'ground', weightStart: 8, weightEnd: 8, wRange: [40, 80], hRange: [40, 80] },
-    { shape: 'pillar', placement: 'ground', weightStart: 3, weightEnd: 5, wRange: [20, 28], hRange: [80, 160] },
-    { shape: 'rect',   placement: 'air',    weightStart: 1, weightEnd: 3, wRange: [50, 80], hRange: [30, 50] },
+    { shape: 'rect',   placement: 'ground', weightStart: 8, weightEnd: 8, wRange: [28, 56], hRange: [28, 56] },
+    { shape: 'pillar', placement: 'ground', weightStart: 3, weightEnd: 5, wRange: [15, 21], hRange: [60, 120] },
+    { shape: 'rect',   placement: 'air',    weightStart: 1, weightEnd: 3, wRange: [35, 56], hRange: [22, 36] },
   ]
 
   override drawFarLayer(_ctx: CanvasRenderingContext2D, _offsetX: number, _W: number, _gY: number): void {

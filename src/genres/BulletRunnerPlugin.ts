@@ -53,10 +53,10 @@ export class BulletRunnerPlugin extends GenrePluginBase {
   }
 
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',    placement: 'ground', weightStart: 5, weightEnd: 4, wRange: [30, 55], hRange: [40, 70] },
-    { shape: 'rect',    placement: 'air',    weightStart: 3, weightEnd: 5, wRange: [35, 60], hRange: [35, 60], safeChance: 0.2 },
-    { shape: 'diamond', placement: 'float',  weightStart: 2, weightEnd: 5, wRange: [38, 52], hRange: [38, 52] },
-    { shape: 'spike',   placement: 'ground', weightStart: 1, weightEnd: 4, wRange: [30, 50], hRange: [45, 70] },
+    { shape: 'rect',    placement: 'ground', weightStart: 5, weightEnd: 4, wRange: [22, 40], hRange: [30, 55] },
+    { shape: 'rect',    placement: 'air',    weightStart: 3, weightEnd: 5, wRange: [25, 42], hRange: [25, 42], safeChance: 0.2 },
+    { shape: 'diamond', placement: 'float',  weightStart: 2, weightEnd: 5, wRange: [26, 36], hRange: [26, 36] },
+    { shape: 'spike',   placement: 'ground', weightStart: 1, weightEnd: 4, wRange: [22, 36], hRange: [35, 55] },
   ]
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {

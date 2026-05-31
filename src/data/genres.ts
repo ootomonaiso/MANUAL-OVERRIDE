@@ -16,6 +16,22 @@ import type { GenreDef } from '../domain/types'
 export const GENRES: GenreDef[] = [
 
   // ────────────────────────────────────────────────────────────
+  // ベースジャンル（チュートリアル状態）
+  // ────────────────────────────────────────────────────────────
+  {
+    id: 'base',
+    label: '横スクロールアクション',
+    thresholds: {},
+    enableFeatures: ['auto_run'],
+    disableFeatures: [],
+    scoreFormula: 'distance * 0.8',
+    manualReveal: '',
+    endingFlavor: '',
+    theme: 'plain',
+    bgColor: '#1a1a2e',
+  },
+
+  // ────────────────────────────────────────────────────────────
   // コアジャンル（M3 実装済み）
   // ────────────────────────────────────────────────────────────
   {

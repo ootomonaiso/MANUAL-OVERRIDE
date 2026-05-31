@@ -42,10 +42,10 @@ export class SurvivalPlugin extends GenrePluginBase {
 
   // HPアイテムが多め、障害物はタフ寄り
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',   placement: 'ground', weightStart: 8, weightEnd: 6, wRange: [40, 75], hRange: [50, 90], safeChance: 0.30 },
-    { shape: 'pillar', placement: 'ground', weightStart: 3, weightEnd: 5, wRange: [22, 32], hRange: [90, 170], safeChance: 0.20 },
-    { shape: 'spike',  placement: 'ground', weightStart: 2, weightEnd: 4, wRange: [35, 60], hRange: [45, 75], safeChance: 0.15 },
-    { shape: 'rect',   placement: 'air',    weightStart: 0, weightEnd: 2, wRange: [38, 65], hRange: [35, 55], safeChance: 0.25 },
+    { shape: 'rect',   placement: 'ground', weightStart: 8, weightEnd: 6, wRange: [28, 52], hRange: [38, 65], safeChance: 0.30 },
+    { shape: 'pillar', placement: 'ground', weightStart: 3, weightEnd: 5, wRange: [16, 24], hRange: [70, 130], safeChance: 0.20 },
+    { shape: 'spike',  placement: 'ground', weightStart: 2, weightEnd: 4, wRange: [25, 42], hRange: [35, 55], safeChance: 0.15 },
+    { shape: 'rect',   placement: 'air',    weightStart: 0, weightEnd: 2, wRange: [26, 45], hRange: [25, 40], safeChance: 0.25 },
   ]
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {

@@ -113,6 +113,8 @@ requestAnimationFrame
   │    ┌─ 横スクロール (scrollAxis='x') ───────────────────── ┐
   │    │  ジャンプ: coyote + jumpBuffer + double_jump        │
   │    │  重力: vy += gravity * fallMult * dt                │
+  │    │    (fallMult = player.onGround ? 1.0 : PHYSICS.airMultiplier)
+  │    │    airMultiplier により空中落下速度を調整可能       │
   │    │  着地: landSquash アニメ                             │
   │    │  X移動: auto_run でなければ player.x += vx * dt     │
   │    │  スクロール: distance += speed * dt                 │
@@ -451,15 +453,15 @@ private _refreshWorld(): void {
 
 ---
 
-### C. 座標系の不統一（優先度: 中）
+### C. 座標系の不統一（優先度: 中 → ✅ 実装済み）
 
 横スクロール時にハザードはワールド座標、プレイヤーはスクリーン座標という設計は  
 FeatureSystem を実装するたびに「どちらの座標か？」という認知コストを生む。
 
-**根本的な解決案:**
+**実装完了（2026-05-31）:**
 
 ```typescript
-// MutableWorld に座標変換ヘルパーを追加
+// MutableWorld に座標変換ヘルパーを追加 ✅
 interface MutableWorld {
   readonly scrollMode: 'x' | 'y'
 
@@ -471,7 +473,7 @@ interface MutableWorld {
 }
 ```
 
-これにより FeatureSystem の実装者は `isVertical` 分岐を書かなくてよくなる。
+これにより FeatureSystem の実装者は `isVertical` 分岐を書かなくてよくなり、座標系の混乱が排除される。
 
 ---
 
@@ -506,19 +508,25 @@ game/
 
 ---
 
-### E. 未実装 Feature の空スタブ（優先度: 中）
+### E. 未実装 Feature の空スタブ（優先度: 中 → ✅ 実装済み）
 
 以下の FeatureId は登録済みだが `update()` が空の状態：
 
 ```
 ExtraMovementFeature: dash / wall_jump / slide / gravity_flip / vertical_scroll
 PuzzleFeature:        grid_stop / puzzle_solve
-SpecialFeature:       stealth_mode / time_bonus / tower / boss
+SpecialFeature:       stealth_mode / time_bonus / tower / boss (※color_touch は実装済み)
 RpgFeature:           shield
 ```
 
-空のままでも `devValidateRegistry` は通るが、ゲーム内で feature が有効化されても何も起きない。  
-**最低限、有効化されたときに console.warn を出すスタブにすべき。**
+**実装ステータス（2026-05-31 更新）:**
+
+- ✅ **ExtraMovementFeature**: update() 内で未実装 feature 有効化時に console.warn を出力
+- ✅ **PuzzleFeature**: update() 内で未実装 feature 有効化時に console.warn を出力
+- ✅ **SpecialFeature**: update() 内で未実装 feature（stealth_mode/time_bonus/tower/boss）有効化時に console.warn を出力
+- ⚠️ **RpgFeature**: shield は未実装のまま（onPlayerHit のスタブ実装済み）
+
+これにより、有効化されたが実装されていない feature は開発コンソールで即座に発見可能になる。
 
 ---
 
@@ -590,23 +598,37 @@ abstract class GenrePluginBase implements GenrePlugin {
 
 ---
 
-## 課題サマリー（2026-05-30 更新）
+## 課題サマリー（2026-05-31 更新）
 
 ### 実装完了 ✅
 
-| 課題 | 完了内容 |
-|---|---|
+| # | 課題 | 完了内容 |
+|---|---|---|
 | A | フック呼び出し実装 | すべてのフック（onPlayerDeath, onComboChange, onItemPickup 等）が実装され、適切に呼び出されている |
+| C | 座標系の不統一 | MutableWorld に getHazardScreenX / getPlayerWorldX ヘルパーメソッド実装 |
+| E | 空スタブ警告 | ExtraMovementFeature / PuzzleFeature / SpecialFeature に warning 出力実装 |
 | G | setTimescale 実装 | タイムスケール機構が完全実装。RhythmFeature などで活用可能 |
 | H | framework/ 実装 | ManualLoader, ManualBuilder, ManualValidator が完全実装 |
 | I | GenrePluginBase 実装 | 抽象基底クラスが実装されすべてのプラグインが継承 |
+
+### fallMult の詳細説明
+
+115 行目に記載の `fallMult` は以下の仕様：
+
+```typescript
+const fallMult = world.player.onGround ? 1.0 : PHYSICS.airMultiplier
+const vy = player.vy + gravity * fallMult * dt
+```
+
+- **onGround=true（着地状態）**: fallMult=1.0 → 重力加速度そのまま（実質的に重力は動作しない）
+- **onGround=false（空中）**: fallMult=PHYSICS.airMultiplier（デフォルト 1.2）→ 空中落下時は重力加速度 1.2 倍
+
+これにより「着地判定から失われるまでの間、重力を段階的に制御」できる。
 
 ### 設計改善提案（将来の最適化）
 
 | # | 課題 | 優先度 | 説明 |
 |---|---|---|---|
 | B | buildWorld 多重コール | 中 | フレーム内で複数回コールされている。mutable world の再利用で GC 負荷削減可能 |
-| C | 座標系の不統一 | 中 | MutableWorld にヘルパーメソッド追加で FeatureSystem の実装が簡潔化可能 |
 | D | sideScroller 肥大 | 低 | 関心の分離（物理・衝突・描画の分割）で保守性向上 |
-| E | 空スタブ警告 | 低 | 未実装 Feature 有効化時に console.warn を出すことで調査速度向上 |
 | F | Learning System | 低 | 実装されているが未統合。DESIGN.md M6 参照 |

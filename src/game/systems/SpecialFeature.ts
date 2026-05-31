@@ -2,9 +2,9 @@
  * game/systems/SpecialFeature.ts
  * ステルス / タワー / 特殊系フィーチャーを担当。
  *
- * onSafeHazardTouch() — color_touch: 安全色ハザードを踏んだ時の得点・消滅・パーティクル
+ * ✅ color_touch: 安全色ハザード接触時のスコア・消滅・パーティクル
  *
- * stealth_mode / time_bonus / tower / boss は未実装（スタブ）。
+ * ⚠️ stealth_mode / time_bonus / tower / boss は未実装。有効化時は console.warn で警告を出す。
  */
 
 import type { FeatureSystem } from '../../engine/FeatureSystem'
@@ -32,5 +32,12 @@ export class SpecialFeature implements FeatureSystem {
     }
   }
 
-  update(_world: MutableWorld, _input: InputSnapshot, _dt: number): void {}
+  update(world: MutableWorld, _input: InputSnapshot, _dt: number): void {
+    const unimplementedFeatures = ['stealth_mode', 'time_bonus', 'tower', 'boss'] as const
+    for (const feature of unimplementedFeatures) {
+      if (world.rules.features.has(feature)) {
+        console.warn(`⚠️ SpecialFeature: '${feature}' is not yet implemented`)
+      }
+    }
+  }
 }

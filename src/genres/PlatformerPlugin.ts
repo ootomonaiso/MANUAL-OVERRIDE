@@ -48,10 +48,10 @@ export class PlatformerPlugin extends DarkThemePlugin {
   }
 
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',   placement: 'ground', weightStart: 6, weightEnd: 5, wRange: [40, 75], hRange: [40, 70] },
-    { shape: 'rect',   placement: 'air',    weightStart: 4, weightEnd: 6, wRange: [45, 80], hRange: [30, 50], safeChance: 0.3 },
-    { shape: 'spike',  placement: 'ground', weightStart: 2, weightEnd: 4, wRange: [35, 60], hRange: [40, 60] },
-    { shape: 'diamond', placement: 'float', weightStart: 1, weightEnd: 3, wRange: [40, 55], hRange: [40, 55], safeChance: 0.4 },
+    { shape: 'rect',   placement: 'ground', weightStart: 6, weightEnd: 5, wRange: [28, 52], hRange: [30, 55] },
+    { shape: 'rect',   placement: 'air',    weightStart: 4, weightEnd: 6, wRange: [32, 56], hRange: [22, 36], safeChance: 0.3 },
+    { shape: 'spike',  placement: 'ground', weightStart: 2, weightEnd: 4, wRange: [25, 42], hRange: [30, 45] },
+    { shape: 'diamond', placement: 'float', weightStart: 1, weightEnd: 3, wRange: [28, 38], hRange: [28, 38], safeChance: 0.4 },
   ]
 
   override drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {

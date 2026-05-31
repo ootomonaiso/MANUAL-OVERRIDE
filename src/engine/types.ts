@@ -36,6 +36,8 @@ export interface MutableWorld {
   readonly cameraX: number
   /** ゲーム統計（kills/combo/beatHits 等）の現在値 */
   readonly gameStats: Readonly<GameStats>
+  /** スクロールモード（'x'=横 / 'y'=縦） */
+  readonly scrollMode: 'x' | 'y'
 
   // ─ スコア / UI ───────────────────────────────────────────────
   addScore(amount: number): void
@@ -71,6 +73,19 @@ export interface MutableWorld {
    * @param durationSec この秒数後に 1.0 に戻る（省略=永続）
    */
   setTimescale(scale: number, durationSec?: number): void
+
+  // ─ 座標系ヘルパー（FeatureSystem が scrollMode を意識しなくてよくする）
+  /**
+   * ハザードのスクリーン X 座標を取得（モード非依存）。
+   * 横スクロール時は (hazard.x - cameraX) を返し、縦スクロール時は hazard.x をそのまま返す。
+   */
+  getHazardScreenX(hazard: Hazard): number
+
+  /**
+   * プレイヤーのワールド X 座標を取得（モード非依存）。
+   * 横スクロール時は (player.x + cameraX) を返し、縦スクロール時は player.x をそのまま返す。
+   */
+  getPlayerWorldX(): number
 
   // ─ 統計書き込み（FeatureSystem 専用） ──────────────────────
   /** kills 数を直接セット（ShootFeature が使用） */

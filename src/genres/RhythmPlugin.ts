@@ -20,10 +20,10 @@ export class RhythmPlugin extends DarkThemePlugin {
     safe:   '#6c5ce7', safeGlow:   '#a29bfe',
   }
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',    placement: 'ground', weightStart: 6,  weightEnd: 5,  wRange: [30, 60], hRange: [40, 70] },
-    { shape: 'diamond', placement: 'float',  weightStart: 3,  weightEnd: 6,  wRange: [40, 60], hRange: [40, 60] },
-    { shape: 'spike',   placement: 'ground', weightStart: 1,  weightEnd: 4,  wRange: [30, 50], hRange: [45, 70] },
-    { shape: 'rect',    placement: 'air',    weightStart: 0,  weightEnd: 3,  wRange: [35, 60], hRange: [30, 50] },
+    { shape: 'rect',    placement: 'ground', weightStart: 6,  weightEnd: 5,  wRange: [22, 42], hRange: [30, 55] },
+    { shape: 'diamond', placement: 'float',  weightStart: 3,  weightEnd: 6,  wRange: [28, 42], hRange: [28, 42] },
+    { shape: 'spike',   placement: 'ground', weightStart: 1,  weightEnd: 4,  wRange: [22, 36], hRange: [35, 55] },
+    { shape: 'rect',    placement: 'air',    weightStart: 0,  weightEnd: 3,  wRange: [25, 42], hRange: [22, 36] },
   ]
 
   override drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {

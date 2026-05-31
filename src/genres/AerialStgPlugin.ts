@@ -51,10 +51,10 @@ export class AerialStgPlugin extends GenrePluginBase {
 
   // 縦モード: 全てのハザードが画面上端からスポーン。placement は無視される。
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',    placement: 'ground', weightStart: 6, weightEnd: 4, wRange: [32, 55], hRange: [30, 55], safeChance: 0.25 },
-    { shape: 'diamond', placement: 'float',  weightStart: 3, weightEnd: 6, wRange: [38, 52], hRange: [38, 52], safeChance: 0.2 },
-    { shape: 'pillar',  placement: 'air',    weightStart: 1, weightEnd: 4, wRange: [18, 26], hRange: [55, 90], safeChance: 0.15 },
-    { shape: 'spike',   placement: 'ground', weightStart: 0, weightEnd: 3, wRange: [30, 48], hRange: [40, 65], safeChance: 0.15 },
+    { shape: 'rect',    placement: 'ground', weightStart: 6, weightEnd: 4, wRange: [24, 40], hRange: [22, 40], safeChance: 0.25 },
+    { shape: 'diamond', placement: 'float',  weightStart: 3, weightEnd: 6, wRange: [26, 36], hRange: [26, 36], safeChance: 0.2 },
+    { shape: 'pillar',  placement: 'air',    weightStart: 1, weightEnd: 4, wRange: [13, 19], hRange: [42, 68], safeChance: 0.15 },
+    { shape: 'spike',   placement: 'ground', weightStart: 0, weightEnd: 3, wRange: [22, 35], hRange: [30, 48], safeChance: 0.15 },
   ]
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
