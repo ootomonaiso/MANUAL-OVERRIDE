@@ -259,6 +259,11 @@ export class SideScroller {
 
     const isVertical = r.scrollAxis === 'y'
 
+    // ─── 距離ベースの自動加速 ─────────────────────────────────────────
+    // 4000px で 20% 加速、8000px で 40% 加速 など段階的に難しくなる
+    const distanceAccelFactor = 1 + Math.min(this.distance / 20000, 0.5)
+    const effectiveScrollSpeed = r.scrollSpeed * distanceAccelFactor
+
     // ─── Pre-physics: 移動 Feature が vx をセット ────────────────────
     {
       const preWorld = this._getWorld()
@@ -290,12 +295,12 @@ export class SideScroller {
       this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
 
       // スクロール距離（時間経過でカウント）
-      this.distance += r.scrollSpeed * dt
+      this.distance += effectiveScrollSpeed * dt
       this.cameraX = 0  // 横カメラは動かない
 
       // ─── ハザード降下 ─────────────────────────────────────
       for (const h of this.hazards) {
-        h.y += r.scrollSpeed * dt
+        h.y += effectiveScrollSpeed * dt
         h.pulse += dt * VFX.hazardPulseRate
       }
       this.hazards = this.hazards.filter(h => h.y < H + 200)
@@ -306,7 +311,7 @@ export class SideScroller {
         const interval = HAZARD_SPAWN.baseInterval *
           Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
         const ms = Math.max(HAZARD_SPAWN.minInterval, interval)
-        this.nextSpawnDist += (ms / 1000) * r.scrollSpeed
+        this.nextSpawnDist += (ms / 1000) * effectiveScrollSpeed
       }
 
       // ─── 衝突判定（縦モード: 両者スクリーン座標） ───────────
@@ -426,7 +431,7 @@ export class SideScroller {
       p.x = Math.max(PHYSICS.playerMinX, Math.min(W * PHYSICS.playerMaxXRatio, p.x))
 
       // ─── スクロール ───────────────────────────────────────
-      this.distance += r.scrollSpeed * dt
+      this.distance += effectiveScrollSpeed * dt
       this.cameraX = this.distance - CAMERA.leadOffset
 
       // ─── ハザードスポーン ─────────────────────────────────
@@ -435,7 +440,7 @@ export class SideScroller {
         const interval = HAZARD_SPAWN.baseInterval *
           Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
         const ms = Math.max(HAZARD_SPAWN.minInterval, interval)
-        this.nextSpawnDist += (ms / 1000) * r.scrollSpeed
+        this.nextSpawnDist += (ms / 1000) * effectiveScrollSpeed
       }
 
       for (const h of this.hazards) {
@@ -515,7 +520,7 @@ export class SideScroller {
     this.shakeY = (Math.random() - 0.5) * this.shakeIntensity * 2
 
     // ─── 距離スコア加算 ───────────────────────────────────────────
-    this.playScore += r.scrollSpeed * dt * SCORE.distanceScoreRate
+    this.playScore += effectiveScrollSpeed * dt * SCORE.distanceScoreRate
   }
 
   // ─── 死亡演出更新 ────────────────────────────────────────────────
