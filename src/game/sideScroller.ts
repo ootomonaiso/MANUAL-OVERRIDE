@@ -172,9 +172,22 @@ export class SideScroller {
   setPaused(v: boolean): void { this.paused = v }
 
   getSnapshot(): GameSnapshot {
-    const pending = UPDATE_DISTANCES.findIndex(
+    let pending = UPDATE_DISTANCES.findIndex(
       (d, i) => this.distance >= d && !this.updateTriggeredFor.has(i)
     )
+
+    // UPDATE_DISTANCES の範囲外でも無限に更新を続ける（1500px 間隔）
+    if (pending < 0) {
+      const lastDist = UPDATE_DISTANCES[UPDATE_DISTANCES.length - 1]
+      const infiniteInterval = 1500
+      if (this.distance >= lastDist) {
+        const extraIdx = UPDATE_DISTANCES.length + Math.floor((this.distance - lastDist) / infiniteInterval)
+        if (!this.updateTriggeredFor.has(extraIdx)) {
+          pending = extraIdx
+        }
+      }
+    }
+
     return {
       distance: this.distance,
       playScore: this.playScore,

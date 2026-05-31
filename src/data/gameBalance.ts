@@ -11,8 +11,16 @@ import type { Controls } from '../domain/types'
 
 // 説明書更新が発動する走行距離（px）
 // DIFFICULTY.updateDistances と同じ値を保つこと
-// 8段階のマニュアル分岐に対応（最終ver 8.0 まで）
-export const UPDATE_DISTANCES = [1100, 2400, 3900, 5400, 6900, 8400, 9900] as const
+// 無制限に選択肢が続く（100段階まで、1500px間隔）
+const _generateUpdateDistances = () => {
+  const intervals: number[] = [1100, 2400, 3900]  // 初期値
+  const baseInterval = 1500
+  for (let i = 3; i < 100; i++) {
+    intervals.push(1100 + baseInterval * i)
+  }
+  return intervals as const
+}
+export const UPDATE_DISTANCES = _generateUpdateDistances()
 
 /** 最終スコア = プレイスコア * 70% + 投擲スコア * 30% */
 export const SCORE_RATIO = { play: 0.7, throw: 0.3 } as const

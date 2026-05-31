@@ -460,9 +460,16 @@ export const DIFFICULTY = {
   /**
    * 説明書更新が発動する走行距離（px）。配列の長さ = 更新回数
    * ⚠️ gameBalance.ts の UPDATE_DISTANCES と同じ値を保つこと
-   * 8段階のマニュアル分岐に対応（最終ver 8.0 まで）
+   * 無制限に選択肢が続く（100段階まで、1500px間隔）
    */
-  updateDistances: [1100, 2400, 3900, 5400, 6900, 8400, 9900] as readonly number[],
+  updateDistances: (() => {
+    const intervals: number[] = [1100, 2400, 3900]
+    const baseInterval = 1500
+    for (let i = 3; i < 100; i++) {
+      intervals.push(1100 + baseInterval * i)
+    }
+    return intervals as readonly number[]
+  })(),
 
   // ── ジャンル収束 ────────────────────────────────────────────
   /** ジャンル確定後のプレイ継続推奨距離 px（ギブアップ可能になる距離） */
