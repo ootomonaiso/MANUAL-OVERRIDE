@@ -445,7 +445,7 @@ export const SCORE = {
 export const DIFFICULTY = {
   // ── 説明書更新タイミング ────────────────────────────────────
   /** 説明書更新が発動する走行距離（px）。配列の長さ = 更新回数 */
-  updateDistances: [450, 1200, 2200] as readonly number[],
+  updateDistances: [1000, 2300, 3800] as readonly number[],
 
   // ── ジャンル収束 ────────────────────────────────────────────
   /** ジャンル確定後のプレイ継続推奨距離 px（ギブアップ可能になる距離） */

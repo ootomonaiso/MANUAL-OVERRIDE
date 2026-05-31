@@ -111,9 +111,13 @@ const currentTheme = computed(() => {
   return GENRES.find(g => g.id === genre)?.theme ?? 'plain'
 })
 
-// ─── 再開フェーズで一時停止解除 ────
+// ─── フェーズ遷移で一時停止/再開 ────
 watch(gameState.phase, (newPhase) => {
-  if (['playing', 'tutorial', 'genreLocked'].includes(newPhase)) {
+  if (newPhase === 'updating') {
+    // 選択肢が表示されるときはゲーム一時停止（スムーズに選択できるように）
+    scroller?.setPaused(true)
+  } else if (['playing', 'tutorial', 'genreLocked'].includes(newPhase)) {
+    // ゲーム再開
     scroller?.setPaused(false)
   }
 })

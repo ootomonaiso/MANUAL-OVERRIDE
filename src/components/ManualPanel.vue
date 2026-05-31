@@ -111,19 +111,21 @@ function keyLabel(key: string): string {
 .manual-panel {
   position: absolute;
   bottom: 58px; right: 16px;
-  width: 240px;
-  background: #faf7f3;
+  width: 320px;
+  background: #fefdfb;
   border: 2px solid #c9a876;
   border-radius: 6px;
-  padding: 12px 14px;
+  padding: 14px 16px;
   font-family: 'Noto Sans JP', 'Courier New', sans-serif;
-  font-size: 11px;
-  line-height: 1.7;
-  color: #3d2416;
-  box-shadow: 5px 5px 0 rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.03);
+  font-size: 13px;
+  line-height: 1.8;
+  color: #2a1810;
+  box-shadow: 6px 6px 12px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
   z-index: 20;
   transition: font-family 0.6s, background 0.6s, border-color 0.6s, box-shadow 0.6s;
   user-select: none;
+  max-height: 380px;
+  overflow-y: auto;
 }
 
 .manual-header {
@@ -197,7 +199,7 @@ function keyLabel(key: string): string {
 .manual-body { margin-bottom: 8px; }
 .manual-line { display: block; padding: 1px 0; }
 
-.line-unchanged { color: #1a1a1a; }
+.line-unchanged { color: #1a1a1a; font-weight: 500; }
 .line-removed {
   display: block;
   text-decoration: line-through;
@@ -233,30 +235,32 @@ function keyLabel(key: string): string {
   padding-top: 6px;
 }
 .controls-title {
-  font-size: 8.5px;
-  color: #bbb;
-  letter-spacing: 2px;
+  font-size: 10px;
+  color: #666;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
+  font-weight: 600;
 }
 .controls-grid {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 2px 6px;
+  gap: 4px 8px;
   align-items: center;
 }
 .key-badge {
   background: #1a1a1a;
   color: #fff;
-  padding: 1px 5px;
-  border-radius: 2px;
-  font-size: 9.5px;
-  min-width: 30px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  min-width: 35px;
   text-align: center;
   letter-spacing: 0.5px;
   border-bottom: 2px solid rgba(0,0,0,0.4);
+  font-weight: 600;
 }
-.key-action { font-size: 10.5px; color: #555; }
+.key-action { font-size: 12px; color: #333; font-weight: 500; }
 
 /* ── 履歴トランジション ── */
 .slide-enter-active, .slide-leave-active { transition: all 0.2s ease; max-height: 200px; }

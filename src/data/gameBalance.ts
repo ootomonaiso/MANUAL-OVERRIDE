@@ -1,7 +1,7 @@
 import type { Controls } from '../domain/types'
 
 // 説明書更新が発動する走行距離（px）
-export const UPDATE_DISTANCES = [450, 1200, 2200] as const
+export const UPDATE_DISTANCES = [1000, 2300, 3800] as const
 
 // スコア比率
 export const SCORE_RATIO = { play: 0.7, throw: 0.3 } as const
@@ -14,16 +14,16 @@ export const THROW_SCORE_WEIGHTS = {
 } as const
 
 // ベースのスクロール速度（px/s）
-export const BASE_SCROLL_SPEED = 260
+export const BASE_SCROLL_SPEED = 240
 
 // テンポ値ごとの速度加算（px/s）
 export const TEMPO_SPEED_BONUS = 28
 
 // 障害物の出現間隔カーブ
 export const HAZARD_SPAWN = {
-  baseInterval: 2800,
-  minInterval: 900,
-  decayRate: 0.00015,
+  baseInterval: 3200,
+  minInterval: 1100,
+  decayRate: 0.00012,
 } as const
 
 // プレイヤー物理
