@@ -1,7 +1,7 @@
 # 取扱説明書を読むゲーム — Framework ドキュメント
 
-**最終更新:** 2026-05-31  
-**最新実装:** 永遠システム・100+ 選択肢・距離ベース難易度曲線
+**最終更新:** 2026-06-09  
+**最新実装:** 永遠システム・100+ 選択肢・距離ベース難易度曲線・API リファレンス
 
 横スクロールを起点にジャンルが変容するゲームの技術フレームワーク完全ドキュメント。  
 このドキュメントセットは、プロジェクト構造・データフロー・拡張ガイドを網羅しています。
@@ -36,6 +36,18 @@
 | [feature-system.md](feature-system.md) | フィーチャー拡張 | FeatureSystem 実装ガイド・全フック一覧 |
 | [manual-json.md](manual-json.md) | 説明書 | JSON スキーマ・バージョン管理 |
 | [adding-content.md](adding-content.md) | コンテンツ追加 | ジャンル・フィーチャー・説明書の追加手順 |
+
+### API リファレンス（ファイル・関数・型の一覧）
+
+| ファイル | 対象 | 内容 |
+|---|---|---|
+| [api/domain.md](api/domain.md) | `src/domain/` | 型定義・ジャンル収束・ルール合成・スコア計算・学習システム |
+| [api/engine.md](api/engine.md) | `src/engine/` | GenrePlugin/FeatureSystem インターフェース・GameRegistry |
+| [api/game.md](api/game.md) | `src/game/` | SideScroller エンジン・エンティティ・FeatureSystem 実装 |
+| [api/genres.md](api/genres.md) | `src/genres/` | 全ジャンルプラグイン（10種）のテーマ・スポーン・描画 |
+| [api/framework.md](api/framework.md) | `src/framework/` | ManualLoader/Builder/Validator・ConfigLoader/Validator |
+| [api/data.md](api/data.md) | `src/data/` | GAME_CONFIG / MANUAL_DECK エントリポイント |
+| [api/composables_plugins.md](api/composables_plugins.md) | `src/composables/`・`src/plugins/` | useGameState/useManual/useThrow composable・Vite 検証プラグイン |
 
 ---
 
@@ -293,3 +305,4 @@ MutableWorld.cameraX を使い、座標変換を統一：
 | **エンジンの詳細を知りたい** | [framework.md](framework.md) |
 | **すべての FeatureId を知りたい** | [feature-ids.md](feature-ids.md) |
 | **全ジャンルの定義を知りたい** | [genre-system.md](genre-system.md) |
+| **ファイルの関数・型を一覧で知りたい** | [api/](api/) の各ファイル |
