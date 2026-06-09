@@ -200,11 +200,14 @@ const accumulated = { tempo: 5, enemy: 4, range: 3 }
 ### フェーズ遷移図
 
 ```
-title → tutorial → updating ↔ playing → genreLocked → throwing → ending
-         (スタート)    ↑
-                   ルール更新の度に
-                   このループに入る
+title → tutorialIntro → tutorial → updating ↔ playing → genreLocked → throwing → ending
+          (チュートリアル)  (スタート)    ↑
+                                  ルール更新の度に
+                                  このループに入る
 ```
+
+- `tutorialIntro`: チュートリアル画面表示。ゲームエンジンは一時停止状態。
+- `TUTORIAL_ENABLED = false` の場合、`tutorialIntro` をスキップして `tutorial` に直接遷移。
 
 ### 主要な状態
 
@@ -219,7 +222,11 @@ const finalScore = ref<FinalScore | null>(null)
 ### 主要なメソッド
 
 #### `startGame()`
-タイトルから tutorial フェーズに遷移。ゲーム開始。
+タイトルから tutorialIntro フェーズに遷移。ゲームエンジンを起動（一時停止状態）。
+`TUTORIAL_ENABLED = false` の場合は tutorial フェーズに直接遷移。
+
+#### `startTutorial()`
+チュートリアル画面から tutorial フェーズに遷移。ゲームエンジンを再開。
 
 #### `triggerUpdate()`
 playing/tutorial フェーズから updating フェーズに遷移。2択パネルを表示。

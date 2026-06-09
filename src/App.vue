@@ -13,6 +13,7 @@ import TutorialHints from './components/TutorialHints.vue'
 import PluginLoader from './components/PluginLoader.vue'
 import { GENRES } from './data/genres'
 import type { ThrowResult } from './domain/types'
+import { TUTORIAL_ENABLED, TutorialScreen } from './tutorial'
 
 // ─── 状態 ─────────────────────────────────────────────────────────
 const gameState = useGameState()
@@ -44,7 +45,19 @@ function startGame() {
   // 初期説明書を履歴に登録
   manualCtl.recordUpdate(gameState.currentManual())
   scroller.start()
+  // チュートリアル有効時は一時停止（チュートリアル画面の背後で静止）
+  if (TUTORIAL_ENABLED) {
+    scroller.setPaused(true)
+  }
   beginSnapshotLoop()
+}
+
+// ─── チュートリアル完了 → ゲームプレイ開始 ────────────────────
+function startTutorial() {
+  if (TUTORIAL_ENABLED) {
+    gameState.startTutorial()
+    scroller?.setPaused(false)
+  }
 }
 
 // ─── スナップショット監視ループ ──────────────────────────────────
@@ -56,7 +69,7 @@ function beginSnapshotLoop() {
 
     // 更新トリガー（tutorial と playing 両方で発火する）
     // 最初のジャンプまで待つ
-    const activePlay = gameState.phase.value === 'playing' || gameState.phase.value === 'tutorial'
+    const activePlay = ['playing', 'tutorial'].includes(gameState.phase.value)
     if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
       scroller.setPaused(true)
       gameState.triggerUpdate()
@@ -121,6 +134,7 @@ watch(gameState.phase, (newPhase) => {
     // ゲーム再開
     scroller?.setPaused(false)
   }
+  // tutorialIntro は startGame() で既に一時停止済み
 })
 
 // ─── ジャンル確定時の加速エフェクト ────
@@ -201,8 +215,16 @@ onUnmounted(() => {
       </div>
     </Transition>
 
+    <!-- ─── チュートリアル画面 ─── -->
+    <Transition name="fade">
+      <TutorialScreen
+        v-if="gameState.phase.value === 'tutorialIntro'"
+        @start="startTutorial"
+      />
+    </Transition>
+
     <!-- ─── ゲームプレイ中 HUD ─── -->
-    <template v-if="gameState.phase.value !== 'title' && gameState.phase.value !== 'ending'">
+    <template v-if="gameState.phase.value !== 'title' && gameState.phase.value !== 'ending' && gameState.phase.value !== 'tutorialIntro'">
       <Hud
         :distance="snapshot.distance"
         :play-score="snapshot.playScore"

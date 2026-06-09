@@ -50,7 +50,7 @@ export type GenreId =
   | 'horror'         // サバイバルホラー      { survive: 5, stealth: 3 }
   | 'hack_slash'     // ハックアンドスラッシュ { enemy: 4, combo: 5 }
 
-export type Phase = 'title' | 'tutorial' | 'updating' | 'playing' | 'genreLocked' | 'throwing' | 'ending'
+export type Phase = 'title' | 'tutorialIntro' | 'tutorial' | 'updating' | 'playing' | 'genreLocked' | 'throwing' | 'ending'
 
 // ─────────────────────────────────────────────────────────────
 // 説明書テーマ（UIの見た目クラスに対応）

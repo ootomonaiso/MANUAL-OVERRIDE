@@ -15,7 +15,7 @@
 | `GenreParam` | ジャンル分岐の軸パラメータ (12種: tempo, range, enemy, combo, growth, rhythm, stealth, vertical, aerial, survive, craft, speed) |
 | `GenreParams` | `Partial<Record<GenreParam, number>>` — 軸パラメータのマップ |
 | `GenreId` | ジャンルID (20種 + base: runner, stg, rpg, puzzle, rhythm, aerial_stg, bullet_hell, survival, stealth_action, racing, platformer, dungeon, tower_def, sports, idle, bullet_runner, arena, aquatic, horror, hack_slash) |
-| `Phase` | ゲームフェーズ (`title`, `tutorial`, `updating`, `playing`, `genreLocked`, `throwing`, `ending`) |
+| `Phase` | ゲームフェーズ (`title`, `tutorialIntro`, `tutorial`, `updating`, `playing`, `genreLocked`, `throwing`, `ending`) |
 | `ManualTheme` | 説明書テーマ (`plain`, `stg`, `rpg`, `puzzle`, `rhythm`, `horror`, `aquatic`) |
 | `ScrollDirection` | スクロール方向 (`horizontal`, `vertical`, `none`) |
 | `EnvironmentId` | 環境設定 (`ground`, `sky`, `space`, `ocean`, `dungeon`, `forest`, `city`) |

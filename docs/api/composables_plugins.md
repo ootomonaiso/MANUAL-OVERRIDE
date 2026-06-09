@@ -1,4 +1,29 @@
-# `src/composables/`・`src/plugins/` — Vue Composables と Vite プラグイン
+# `src/composables/`・`src/plugins/`・`src/tutorial/` — Vue Composables、Vite プラグイン、チュートリアル
+
+---
+
+## `src/tutorial/` — チュートリアルモジュール
+
+ゲームの本体から分離されたチュートリアル機能。`src/tutorial/` ディレクトリを削除/無効化することで、チュートリアルなしでゲームを動作可能。
+
+### `const.ts`
+
+| エクスポート | 型 | 概要 |
+|---|---|---|
+| `TUTORIAL_ENABLED` | `boolean` | チュートリアル有効/無効フラグ（`false` でスキップ） |
+
+### `TutorialScreen.vue`
+
+| プロパティ/イベント | 概要 |
+|---|---|
+| `@start` | 「わかった、プレイする」ボタンクリック時 |
+
+### `index.ts`
+
+| エクスポート | 概要 |
+|---|---|
+| `TUTORIAL_ENABLED` | `const.ts` から再エクスポート |
+| `TutorialScreen` | `TutorialScreen.vue` コンポーネント |
 
 ---
 
@@ -10,23 +35,21 @@
 
 | 戻り値プロパティ | 型 | 概要 |
 |---|---|---|
-| `phase` | `ref<Phase>` | ゲームフェーズ（title, tutorial, updating, playing, genreLocked, throwing, ending） |
-| `distance` | `ref<number>` | 走行距離 |
-| `playScore` | `ref<number>` | プレイスコア |
-| `throwScore` | `ref<number>` | 投擲スコア |
-| `totalScore` | `ref<number>` | 合計スコア |
-| `combo` | `ref<number>` | 現在コンボ |
-| `maxCombo` | `ref<number>` | 最高コンボ |
-| `kills` | `ref<number>` | 撃破数 |
-| `hp` | `ref<number>` | 現在HP |
-| `maxHp` | `ref<number>` | 最大HP |
-| `exp` | `ref<number>` | 累積EXP |
-| `beatHits` | `ref<number>` | ビートヒット数 |
-| `survivedSec` | `ref<number>` | 生存秒数 |
-| `shouldUpdate` | `ref<number \| null>` | 説明書更新トリガー（null = 更新不要） |
-| `firstJumpDone` | `ref<boolean>` | 初ジャンプ完了フラグ |
-| `dead` | `ref<boolean>` | 死亡フラグ |
-| `updateFromSnapshot(snapshot: GameSnapshot): void` | — | SideScroller のスナップショットから全状態を更新 |
+| `phase` | `readonly<Ref<Phase>>` | ゲームフェーズ（title → tutorialIntro → tutorial → updating → playing/genreLocked → throwing → ending） |
+| `rules` | `readonly<RuntimeRules>` | 現在有効なルール |
+| `currentVersionKey` | `readonly<Ref<string>>` | 現在表示中のマニュアルバージョンキー |
+| `choiceHistory` | `readonly<ChoiceRecord[]>` | 選択履歴 |
+| `lockedGenre` | `readonly<Ref<GenreId \| null>>` | 確定済みジャンル |
+| `finalScore` | `readonly<Ref<FinalScore \| null>>` | 最終スコア |
+| `currentManual()` | `() => ManualVersion` | 現在バージョンの ManualVersion を返す |
+| `lockedGenreDef()` | `() => GenreDef \| null` | 確定ジャンルの定義を返す |
+| `startGame(): void` | — | ゲーム開始（phase → tutorialIntro、ゲームエンジン一時停止） |
+| `startTutorial(): void` | — | チュートリアル完了（phase → tutorial、ゲーム再開） |
+| `triggerUpdate(): void` | — | 説明書更新トリガー（phase → updating） |
+| `choose(choiceId: string): void` | — | 選択肢選択（履歴記録・ジャンル収束チェック） |
+| `startThrowing(playScore: number): void` | — | 投擲フェーズ開始（phase → throwing） |
+| `finalizeThrowing(result, playScore): void` | — | 投擲完了・最終スコア計算（phase → ending） |
+| `restart(): void` | — | 全状態を初期化（phase → title） |
 
 ---
 

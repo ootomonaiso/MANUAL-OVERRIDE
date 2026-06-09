@@ -1,7 +1,7 @@
 # 取扱説明書を読むゲーム — Framework ドキュメント
 
-**最終更新:** 2026-06-09  
-**最新実装:** 永遠システム・100+ 選択肢・距離ベース難易度曲線・API リファレンス
+**最終更新:** 2026-06-10  
+**最新実装:** チュートリアル画面・永遠システム・100+ 選択肢・距離ベース難易度曲線・API リファレンス
 
 横スクロールを起点にジャンルが変容するゲームの技術フレームワーク完全ドキュメント。  
 このドキュメントセットは、プロジェクト構造・データフロー・拡張ガイドを網羅しています。
@@ -47,7 +47,7 @@
 | [api/genres.md](api/genres.md) | `src/genres/` | 全ジャンルプラグイン（10種）のテーマ・スポーン・描画 |
 | [api/framework.md](api/framework.md) | `src/framework/` | ManualLoader/Builder/Validator・ConfigLoader/Validator |
 | [api/data.md](api/data.md) | `src/data/` | GAME_CONFIG / MANUAL_DECK エントリポイント |
-| [api/composables_plugins.md](api/composables_plugins.md) | `src/composables/`・`src/plugins/` | useGameState/useManual/useThrow composable・Vite 検証プラグイン |
+| [api/composables_plugins.md](api/composables_plugins.md) | `src/tutorial/`・`src/composables/`・`src/plugins/` | チュートリアル・useGameState/useManual/useThrow composable・Vite 検証プラグイン |
 
 ---
 
