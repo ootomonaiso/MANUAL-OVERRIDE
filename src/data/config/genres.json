@@ -56,7 +56,7 @@
       "id": "puzzle",
       "label": "パズルゲーム",
       "thresholds": {"combo": 5},
-      "enableFeatures": ["grid_stop", "puzzle_solve"],
+      "enableFeatures": ["grid_stop"],
       "disableFeatures": ["auto_run", "shoot", "beat_hazard"],
       "scoreFormula": "combo * 200 + survivedSec * 3",
       "manualReveal": "これはパズルゲームになりました。正解を考えてください。",

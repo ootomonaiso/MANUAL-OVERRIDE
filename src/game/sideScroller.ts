@@ -62,11 +62,10 @@ export class SideScroller {
   private scoreVarsBossKills = 0      // ボス撃破数
   private scoreVarsStealthBonus = 0   // ステルス継続フレーム数の累積
   private scoreVarsColorTouches = 0   // 安全色タッチ回数
+  private deaths = 0                  // 死亡回数（hp 有効時は複数回あり得る）
 
   // カメラ
   private cameraX = 0
-  // 縦スクロールモード用: 色踏みのミスカウント
-  private colorTouchMisses = 0
 
   // スポーン
   private nextSpawnDist = 480
@@ -111,6 +110,8 @@ export class SideScroller {
   // ─── LearningSystem ──────────────────────────────────────────────
   private learningRules: LearningRule[] | null = null
   private learningCheckTimer = 0         // 次のチェック予定時刻
+  // disableAction エフェクト: action名 → 解除予定時刻(performance.now() ベース)
+  private _disabledActions = new Map<string, number>()
 
   // イベントハンドラ（解除用に保持）
   private _onKeyDown: (e: KeyboardEvent) => void
@@ -255,7 +256,7 @@ export class SideScroller {
       survivedSec: this.survivedSec,
       accuracy,
       maxCombo: this._gameStats.maxCombo,
-      deaths: 0, // TODO: 実装検討（現在は常に 0）
+      deaths: this.deaths,
       itemsCollected: this.scoreVarsItemsCollected,
       bossKills: this.scoreVarsBossKills,
       stealthBonus: this.scoreVarsStealthBonus,
@@ -427,7 +428,9 @@ export class SideScroller {
 
       // ─── ジャンプ ─────────────────────────────────────────
       const isDouble         = r.features.has('double_jump')
-      const jumpJustPressed  = this.justPressed.has(jumpKey)
+      // LearningSystem による 'jump' アクション無効化チェック
+      const jumpDisabled     = this._isActionDisabled('jump')
+      const jumpJustPressed  = !jumpDisabled && this.justPressed.has(jumpKey)
       const jumpJustReleased = this.justReleased.has(jumpKey)
 
       if (p.onGround) {
@@ -635,6 +638,7 @@ export class SideScroller {
   private _die(p: Player): void {
     if (this.dead) return  // 二重死亡防止
     this.dead = true
+    this.deaths++
     this.shakeIntensity = VFX.deathShakeIntensity
     this._spawnDeathExplosion(p.x + p.w / 2, p.y + p.h / 2)
     soundManager.onDeath()
@@ -1215,16 +1219,22 @@ export class SideScroller {
     }
   }
 
+  /** LearningSystem のアクション無効化チェック（期限切れエントリを自動削除） */
+  private _isActionDisabled(action: string): boolean {
+    const until = this._disabledActions.get(action)
+    if (until === undefined) return false
+    if (performance.now() < until) return true
+    this._disabledActions.delete(action)
+    return false
+  }
+
   private _applyLearningEffect(effect: LearningEffect): void {
     switch (effect.type) {
       case 'disableAction': {
-        // payload はアクション名（'jump', 'shoot' など）
-        // 以降のそのアクションの入力を無視する
         const actionKey = effect.payload
         const durationMs = (effect.durationSec ?? 10) * 1000
-        const disabledUntil = performance.now() + durationMs
-        // 一時的に disabledActions に追加（未実装の場合は簡易版）
-        console.log(`[LearningSystem] Disabled action "${actionKey}" for ${effect.durationSec ?? 10}s`)
+        this._disabledActions.set(actionKey, performance.now() + durationMs)
+        console.log(`[LearningSystem] アクション "${actionKey}" を ${effect.durationSec ?? 10}s 無効化`)
         break
       }
 
