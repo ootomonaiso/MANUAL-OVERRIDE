@@ -20,6 +20,11 @@ import { AerialStgPlugin }            from './AerialStgPlugin'
 import { SurvivalPlugin }             from './SurvivalPlugin'
 import { BulletRunnerPlugin }         from './BulletRunnerPlugin'
 import { PlatformerPlugin }           from './PlatformerPlugin'
+import { RacingPlugin }               from './RacingPlugin'
+import { ArenaPlugin }                from './ArenaPlugin'
+import { AquaticPlugin }              from './AquaticPlugin'
+import { DungeonPlugin }              from './DungeonPlugin'
+import { HackSlashPlugin }            from './HackSlashPlugin'
 import { pluginManager } from '../plugins/PluginManager'
 import { JSONGenrePlugin } from '../plugins/JSONGenrePlugin'
 
@@ -33,6 +38,11 @@ registerGenre(new AerialStgPlugin())
 registerGenre(new SurvivalPlugin())
 registerGenre(new BulletRunnerPlugin())
 registerGenre(new PlatformerPlugin())
+registerGenre(new RacingPlugin())
+registerGenre(new ArenaPlugin())
+registerGenre(new AquaticPlugin())
+registerGenre(new DungeonPlugin())
+registerGenre(new HackSlashPlugin())
 
 // Load user-installed genre plugins
 const installedPlugins = pluginManager.loadAll()
