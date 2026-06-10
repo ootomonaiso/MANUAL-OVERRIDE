@@ -285,6 +285,7 @@ MutableWorld.cameraX を使い、座標変換を統一：
 
 | 状況 | 対象ドキュメント |
 |---|---|
+| **プロジェクトに初めて参加した** | [guide/README.md](guide/README.md)（入門ガイド・順番に読む） |
 | **何もわからない** | このファイル → [architecture.md](architecture.md) |
 | **コアシステムの実装を理解したい** | [core-systems.md](core-systems.md) |
 | **新ジャンルを作りたい** | [genre-plugin.md](genre-plugin.md) → [adding-content.md](adding-content.md) |
