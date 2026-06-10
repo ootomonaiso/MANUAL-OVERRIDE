@@ -58,6 +58,9 @@ export function buildRuntimeRules(
     for (const f of fd) resolvedFeatures.delete(f)
   }
 
+  // 基本移動は常時有効（ジャンル・フェーズに関わらず左右移動を保証）
+  resolvedFeatures.add('movement')
+
   return {
     controls:        currentVersion.controls,
     hazardColors:    new Set(currentVersion.hazards.colors),
