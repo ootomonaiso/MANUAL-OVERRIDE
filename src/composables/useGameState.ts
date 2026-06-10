@@ -33,8 +33,13 @@ export function useGameState() {
 
   // ─── フェーズ遷移 ─────────────────────────────────────────
   function startGame() {
-    phase.value = 'tutorial'
+    phase.value = 'tutorialIntro'
     _rebuildRules()
+  }
+
+  // チュートリアル画面からゲームプレイへ移行
+  function startTutorial() {
+    phase.value = 'tutorial'
   }
 
   // 説明書更新が来たとき（sideScroller の snapshot.shouldUpdate が非 null）
@@ -123,6 +128,7 @@ export function useGameState() {
     currentManual,
     lockedGenreDef,
     startGame,
+    startTutorial,
     triggerUpdate,
     choose,
     startThrowing,

@@ -19,15 +19,20 @@ npm run test
 ### 基本テスト
 
 - **test_game.mjs** — ゲーム起動とプレイ確認
-  - タイトル画面、ゲーム開始、プレイ状態をスクリーンショット
+  - タイトル画面、チュートリアルスキップ、ゲーム開始、プレイ状態をスクリーンショット
 
 - **test_play.mjs** — ゲームプレイ検証
-  - ローディング時間計測、スコア表示確認
+  - ローディング時間計測、チュートリアルスキップ、スコア表示確認
+
+### チュートリアルテスト
+
+- **test_tutorial.mjs** — チュートリアル画面のフロー検証
+  - タイトル → チュートリアル表示 → 内容確認 → ゲーム開始 の全フローをテスト
 
 ### 選択肢テスト
 
 - **test_choices.mjs** — 基本的な選択肢分岐（5段階）
-  - 選択肢表示、クリック、ジャンル変化を確認
+  - チュートリアルスキップ後、選択肢表示・クリック・ジャンル変化を確認
 
 - **test_infinite_choices.mjs** — 無限選択肢システム（15段階）
   - ver 9.0+ の大量選択肢対応テスト
@@ -40,6 +45,7 @@ npm run test
 個別にテストを実行する場合：
 
 ```bash
+node tests/test_tutorial.mjs
 node tests/test_game.mjs
 node tests/test_choices.mjs
 node tests/test_infinite_choices.mjs
@@ -48,5 +54,6 @@ node tests/test_infinite_choices.mjs
 ## 注意事項
 
 - Playwright のブラウザが自動で起動・終了します
-- テスト中は localhost:5173 で dev サーバーが走っていることが必須です
-- スクリーンショットは `gameplay_*.png` ファイルとして保存されます
+- テスト中は localhost:5174 で dev サーバーが走っていることが必須です
+- スクリーンショットは `gameplay_*.png` / `tutorial_*.png` ファイルとして保存されます
+- チュートリアル画面は各テストで自動スキップされます（test_tutorial.mjs 除く）
