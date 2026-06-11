@@ -13,6 +13,7 @@ const emit = defineEmits<{ (e: 'restart'): void }>()
 
 const genreDef = GENRES.find(g => g.id === props.genre)
 const genreLabel = genreDef?.label ?? 'ゲーム'
+const endingFlavor = genreDef?.endingFlavor ?? ''
 
 const otherGenres = GENRES.filter(g => g.id !== props.genre && g.id !== 'base')
 
@@ -118,6 +119,13 @@ onMounted(() => {
             >{{ g.label }}</span>
           </div>
           <div class="alt-hint">になっていたかもしれません。</div>
+        </div>
+      </Transition>
+
+      <!-- エンディングフレーバー -->
+      <Transition name="fade-up">
+        <div v-if="altVisible && endingFlavor" class="ending-flavor">
+          {{ endingFlavor }}
         </div>
       </Transition>
 
@@ -305,6 +313,20 @@ onMounted(() => {
 @keyframes fadeUp {
   0%   { opacity: 0; transform: translateY(8px); }
   100% { opacity: 1; transform: translateY(0); }
+}
+
+/* ── エンディングフレーバー ── */
+.ending-flavor {
+  font-size: 11px;
+  color: rgba(184,255,184,0.35);
+  font-style: italic;
+  line-height: 1.8;
+  margin-bottom: 16px;
+  padding: 0 4px;
+  border-left: 2px solid rgba(0,255,65,0.2);
+  padding-left: 10px;
+  text-align: left;
+  font-family: 'M PLUS 1 Code', monospace;
 }
 
 /* ── リスタートボタン ── */

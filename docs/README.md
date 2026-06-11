@@ -1,7 +1,7 @@
 # 取扱説明書を読むゲーム — Framework ドキュメント
 
 **最終更新:** 2026-06-10  
-**最新実装:** チュートリアル画面・永遠システム・100+ 選択肢・距離ベース難易度曲線・API リファレンス
+**最新実装:** チュートリアル画面・永遠システム・100+ 選択肢・スコア/学習システム統合・API リファレンス
 
 横スクロールを起点にジャンルが変容するゲームの技術フレームワーク完全ドキュメント。  
 このドキュメントセットは、プロジェクト構造・データフロー・拡張ガイドを網羅しています。
@@ -15,6 +15,7 @@
 | ファイル | 対象読者 | 内容 |
 |---|---|---|
 | **このファイル** | すべて | フレームワーク全体図・クイックスタート |
+| [getting-started.md](getting-started.md) | 開発者・初参加 | セットアップ・はじめてのコーディングガイド |
 | [architecture.md](architecture.md) | 開発者 | レイヤー構成・依存関係・ファイルマップ |
 | [framework.md](framework.md) | 開発者 | エンジン仕様・ライフサイクル・実装ステータス |
 
@@ -48,6 +49,15 @@
 | [api/framework.md](api/framework.md) | `src/framework/` | ManualLoader/Builder/Validator・ConfigLoader/Validator |
 | [api/data.md](api/data.md) | `src/data/` | GAME_CONFIG / MANUAL_DECK エントリポイント |
 | [api/composables_plugins.md](api/composables_plugins.md) | `src/tutorial/`・`src/composables/`・`src/plugins/` | チュートリアル・useGameState/useManual/useThrow composable・Vite 検証プラグイン |
+
+### プロジェクト管理
+
+| ファイル | 対象 | 内容 |
+|---|---|---|
+| [TASKS.md](TASKS.md) | 開発者 | 未実装タスク・改善予定一覧（優先度順） |
+| [CHANGELOG.md](CHANGELOG.md) | 開発者 | 変更履歴・バグ修正ログ |
+| [design.md](design.md) | 開発者 | 実装設計書・型設計・モジュール詳細 |
+| [spec.md](spec.md) | 参照 | 初期仕様ドラフト（歴史的資料） |
 
 ---
 
@@ -277,12 +287,15 @@ MutableWorld.cameraX を使い、座標変換を統一：
 -  すべてのイベントフック完装備
 -  ManualLoader / Builder / Validator / genreResolver 完全実装
 
-### 永遠システム実装（2026-05-31）
+### 永遠システム・スコア/学習システム統合（2026-05-31）
 
 -  **無限選択肢** - UPDATE_DISTANCES 動的生成 + 1500px 無限トリガー
 -  **距離ベース難易度曲線** - 1.0倍 → 1.5倍 段階加速
 -  **advanced-branch.json** - ver 9.0～15.0 の 100+ 選択肢
 -  **複雑ナラティブ** - 複雑さ → 秩序 → 次元超越 → 創造の壮大な物語
+-  **scoreFormula 統合** - ゲーム終了時に各ジャンルのスコア計算式が適用される
+-  **ScoreVars 完全実装** - kills, combo, exp, beatHits 等の全変数が正確に記録
+-  **LearningSystem 統合** - ゲームループ内で1秒ごとに評価、ManualVersion と同期
 
 ### パフォーマンス & 品質
 
@@ -297,7 +310,9 @@ MutableWorld.cameraX を使い、座標変換を統一：
 
 | 状況 | 対象ドキュメント |
 |---|---|
+| **プロジェクトに初めて参加した** | [guide/README.md](guide/README.md)（入門ガイド・順番に読む） |
 | **何もわからない** | このファイル → [architecture.md](architecture.md) |
+| **はじめての開発** | [getting-started.md](getting-started.md) |
 | **コアシステムの実装を理解したい** | [core-systems.md](core-systems.md) |
 | **新ジャンルを作りたい** | [genre-plugin.md](genre-plugin.md) → [adding-content.md](adding-content.md) |
 | **新フィーチャーを作りたい** | [feature-system.md](feature-system.md) → [adding-content.md](adding-content.md) |

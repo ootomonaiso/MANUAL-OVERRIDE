@@ -22,10 +22,20 @@ const manualCtl = useManual(gameState.currentManual)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let scroller: SideScroller | null = null
 
+// ─── エラートースト ──────────────────────────────────────────────
+const toastMessage = ref<string | null>(null)
+let toastTimer: ReturnType<typeof setTimeout> | null = null
+function showToast(msg: string) {
+  toastMessage.value = msg
+  if (toastTimer !== null) clearTimeout(toastTimer)
+  toastTimer = window.setTimeout(() => { toastMessage.value = null }, 3500)
+}
+
 const snapshot = ref<GameSnapshot>({
   distance: 0, playScore: 0, combo: 0, kills: 0, exp: 0,
   beatHits: 0, survivedSec: 0, hp: 3, maxHp: 3, dead: false, shouldUpdate: null,
   statJumps: 0, statMoveLeft: 0, statMoveRight: 0, firstJumpDone: false,
+  learningNotification: null, scoreFormulaError: null,
 })
 
 // ─── Canvas サイズをウィンドウに合わせる ───────────────────────────
@@ -81,6 +91,16 @@ function beginSnapshotLoop() {
       gameState.startThrowing(snapshot.value.playScore)
     }
 
+    // LearningSystem エフェクト通知
+    if (snapshot.value.learningNotification) {
+      showToast(`🎯 ${snapshot.value.learningNotification}`)
+    }
+
+    // スコア計算式エラー（開発時のみ）
+    if (import.meta.env.DEV && snapshot.value.scoreFormulaError) {
+      showToast(`⚠ スコア式エラー: ${snapshot.value.scoreFormulaError}`)
+    }
+
     snapRaf = requestAnimationFrame(loop)
   }
   snapRaf = requestAnimationFrame(loop)
@@ -88,15 +108,23 @@ function beginSnapshotLoop() {
 
 // ─── 選択後の処理 ────────────────────────────────────────────────
 function onChoose(choiceId: string) {
+  if (!scroller) {
+    showToast('エラー: ゲームが初期化されていません')
+    return
+  }
   const idx = snapshot.value.shouldUpdate ?? 0
-  gameState.choose(choiceId)
+  const chooseError = gameState.choose(choiceId)
+  if (chooseError) {
+    showToast(`エラー: ${chooseError}`)
+    return
+  }
   // 新しい説明書を記録（差分演出）
   const currentManual = gameState.currentManual()
   manualCtl.recordUpdate(currentManual)
   // ルールをゲームエンジンへ反映（ManualVersion も渡して learningRules を同期）
-  scroller?.updateRules(gameState.rules, currentManual)
+  scroller.updateRules(gameState.rules, currentManual)
   // 更新完了を scroller に通知
-  scroller?.markUpdated(idx)
+  scroller.markUpdated(idx)
 }
 
 // ─── ギブアップ ───────────────────────────────────────────────────
@@ -259,6 +287,7 @@ onUnmounted(() => {
         :is-centered="manualCtl.isCentered.value"
         :history="manualCtl.history.value"
         :features="gameState.rules.features"
+        :highlight="gameState.phase.value === 'tutorial'"
       />
 
       <!-- 説明書更新時のフォーカスオーバーレイ -->
@@ -339,6 +368,14 @@ onUnmounted(() => {
 
     <!-- ─── プラグインローダー ─── -->
     <PluginLoader />
+
+    <!-- ─── エラートースト ─── -->
+    <Transition name="toast">
+      <div v-if="toastMessage" class="error-toast">
+        <span class="toast-icon">⚠</span>
+        {{ toastMessage }}
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -656,6 +693,35 @@ body { font-family: var(--font-mono); }
   background-size: 20px 20px;
   pointer-events: none;
   opacity: 0.4;
+}
+
+/* ── エラートースト ── */
+.error-toast {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 0, 0, 0.92);
+  border: 1px solid #ff3333;
+  color: #ff8888;
+  padding: 8px 18px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  border-radius: 2px;
+  z-index: 80;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  box-shadow: 0 0 16px rgba(255, 51, 51, 0.3);
+  pointer-events: none;
+}
+.toast-icon { color: #ff3333; font-size: 14px; }
+.toast-enter-active { animation: toastIn 0.25s ease both; }
+.toast-leave-active { animation: toastIn 0.3s ease reverse both; }
+@keyframes toastIn {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 /* 点滅カーソル */

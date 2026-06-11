@@ -54,6 +54,14 @@ export const BASE_SCROLL_SPEED = _gb.baseScrollSpeed
 export const TEMPO_SPEED_BONUS = _d.tempoSpeedBonus
 
 // ─────────────────────────────────────────────────────────────
+// DISTANCE_ACCEL — 距離ベース加速設定
+// ─────────────────────────────────────────────────────────────
+export const DISTANCE_ACCEL = {
+  maxBonus:  _gb.distanceAccelMaxBonus,
+  fullDist:  _gb.distanceAccelFullDist,
+} as const
+
+// ─────────────────────────────────────────────────────────────
 // HAZARD_SPAWN — ハザードスポーン曲線
 // ─────────────────────────────────────────────────────────────
 export const HAZARD_SPAWN = {
@@ -83,6 +91,11 @@ export const PLAYER_PHYSICS = {
   playerMinX:         _p.playerMinX,
   playerMaxXRatio:    _p.playerMaxXRatio,
   airFrictionX:       _p.airFrictionX,
+  dashSpeed:          _p.dashSpeed,
+  dashDurationSec:    _p.dashDurationSec,
+  dashCooldownSec:    _p.dashCooldownSec,
+  dashIframesSec:     _p.dashIframesSec,
+  wallJumpPushSpeed:  _p.wallJumpPushSpeed,
 }
 
 // ─────────────────────────────────────────────────────────────

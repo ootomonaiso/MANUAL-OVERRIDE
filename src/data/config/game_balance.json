@@ -9,5 +9,7 @@
   "baseScrollSpeed": 300,
   "hazardSpawnBaseInterval": 2400,
   "hazardSpawnMinInterval": 800,
-  "hazardSpawnDecayRate": 0.00015
+  "hazardSpawnDecayRate": 0.00015,
+  "distanceAccelMaxBonus": 0.5,
+  "distanceAccelFullDist": 20000
 }

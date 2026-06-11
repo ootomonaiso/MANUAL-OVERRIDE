@@ -57,6 +57,16 @@
         "colors": ["red"],
         "safeColors": ["blue"]
       },
+      "learningRules": [
+        {
+          "trigger": { "type": "jumpRate", "threshold": 0.4, "triggerAbove": true },
+          "effect": { "type": "forceFeature", "payload": "double_jump" }
+        },
+        {
+          "trigger": { "type": "jumpRate", "threshold": 0.05, "triggerAbove": false },
+          "effect": { "type": "invertHazard", "durationSec": 5 }
+        }
+      ],
       "choices": [
         {
           "label": "敵の種類を増やしていく",

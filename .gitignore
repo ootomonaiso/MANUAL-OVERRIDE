@@ -28,3 +28,9 @@ Thumbs.db
 screenshots/
 
 .claude/
+CLAUDE_OWNER.md
+CLAUDE_TASKS.md
+
+Dockerfile
+docker-compose.yml
+.dockerignore

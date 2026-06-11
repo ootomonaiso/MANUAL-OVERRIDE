@@ -10,6 +10,7 @@ const props = defineProps<{
   isCentered: boolean
   history: ManualVersion[]
   features?: Set<string>
+  highlight?: boolean
 }>()
 
 const showHistory = ref(false)
@@ -40,7 +41,7 @@ function keyLabel(key: string): string {
 </script>
 
 <template>
-  <div class="manual-panel" :class="[themeClass, { 'panel-centered': isCentered }]">
+  <div class="manual-panel" :class="[themeClass, { 'panel-centered': isCentered, 'manual-highlight': highlight }]">
     <!-- ヘッダー -->
     <div class="manual-header">
       <div class="manual-ver-badge">
@@ -336,6 +337,17 @@ function keyLabel(key: string): string {
 /* ── 履歴トランジション ── */
 .slide-enter-active, .slide-leave-active { transition: all 0.2s ease; max-height: 200px; }
 .slide-enter-from, .slide-leave-to { opacity: 0; max-height: 0; }
+
+/* ──────────────────────────────────────
+   チュートリアル中ハイライト
+────────────────────────────────────── */
+.manual-highlight {
+  animation: manualPulse 1.8s ease-in-out infinite;
+}
+@keyframes manualPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(0,255,65,0.15), 0 2px 8px rgba(0,0,0,0.5); }
+  50%       { box-shadow: 0 0 32px rgba(0,255,65,0.6), 0 2px 12px rgba(0,0,0,0.5), 0 0 0 2px rgba(0,255,65,0.4); }
+}
 
 /* ──────────────────────────────────────
    テーマ: STG

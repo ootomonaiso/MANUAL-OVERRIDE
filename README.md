@@ -24,9 +24,12 @@ npm run build    # 本番ビルド
 ## 次のステップ
 
 - 何もわからない: [docs/README.md](./docs/README.md) を読んでください
+- はじめての開発: [docs/getting-started.md](./docs/getting-started.md)
 - 新ジャンルを作る: [docs/genre-plugin.md](./docs/genre-plugin.md)
 - 新フィーチャーを作る: [docs/feature-system.md](./docs/feature-system.md)
 - 説明書を追加する: [docs/manual-json.md](./docs/manual-json.md)
+- タスク一覧: [docs/TASKS.md](./docs/TASKS.md)
+- 変更履歴: [docs/CHANGELOG.md](./docs/CHANGELOG.md)
 
 ## 実装ステータス
 

@@ -8,16 +8,33 @@ import { SCORE_RATIO, THROW_SCORE_WEIGHTS } from '../data/gameBalance'
 // ──────────────────────────────────────────────────────────────────────
 const SAFE_PATTERN = /^[\d\s+\-*/().a-z_]+$/i
 
+const DEFAULT_FORMULA = 'distance * 0.5 + kills * 100'
+
+// 最後に発生したパースエラーを呼び出し元が取得できるよう保持
+let _lastFormulaError: string | null = null
+
+/** evalScoreFormula() でエラーが発生した場合のメッセージを返し、取り出したらリセットする */
+export function getLastFormulaError(): string | null {
+  const e = _lastFormulaError
+  _lastFormulaError = null
+  return e
+}
+
 export function evalScoreFormula(formula: string, vars: ScoreVars): number {
   if (!SAFE_PATTERN.test(formula)) {
-    console.warn('[scoreCalc] invalid formula:', formula)
-    return 0
+    const msg = `不正なスコア式 "${formula}" — デフォルト式で代替`
+    console.warn('[scoreCalc]', msg)
+    _lastFormulaError = msg
+    try { return parseExpr(DEFAULT_FORMULA, vars) } catch { return 0 }
   }
   // Function ではなく手書きパーサで評価（eval 禁止）
   try {
     return parseExpr(formula.trim(), vars)
-  } catch {
-    return 0
+  } catch (e) {
+    const msg = `スコア式パースエラー "${formula}" — デフォルト式で代替`
+    console.warn('[scoreCalc]', msg, e)
+    _lastFormulaError = msg
+    try { return parseExpr(DEFAULT_FORMULA, vars) } catch { return 0 }
   }
 }
 

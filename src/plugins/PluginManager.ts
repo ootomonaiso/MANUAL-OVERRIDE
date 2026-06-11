@@ -39,7 +39,37 @@ export interface DeckExtensionPlugin {
 const STORAGE_KEY = 'readmanual_plugins_v1'
 
 export class PluginManager {
+  // プライベートブラウジング等でlocalStorageが使えない場合のインメモリフォールバック
+  private _memStore: UserPlugin[] = []
+  private _useMemory: boolean
+
+  constructor() {
+    try {
+      localStorage.setItem('__pm_test__', '1')
+      localStorage.removeItem('__pm_test__')
+      this._useMemory = false
+    } catch {
+      console.warn('[PluginManager] localStorage 利用不可 — インメモリストアにフォールバック')
+      this._useMemory = true
+    }
+  }
+
+  private _save(plugins: UserPlugin[]): void {
+    if (this._useMemory) {
+      this._memStore = [...plugins]
+      return
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(plugins))
+    } catch (e) {
+      console.warn('[PluginManager] localStorage 書き込み失敗 — インメモリにフォールバック:', e)
+      this._useMemory = true
+      this._memStore = [...plugins]
+    }
+  }
+
   loadAll(): UserPlugin[] {
+    if (this._useMemory) return [...this._memStore]
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (!stored) return []
@@ -61,7 +91,7 @@ export class PluginManager {
       }
 
       existing.push(plugin)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(existing))
+      this._save(existing)
       return { success: true }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -74,7 +104,7 @@ export class PluginManager {
       const existing = this.loadAll()
       const filtered = existing.filter(p => p.id !== id)
       if (filtered.length === existing.length) return false
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered))
+      this._save(filtered)
       return true
     } catch (e) {
       console.error('[PluginManager] Failed to uninstall plugin:', e)
@@ -158,7 +188,7 @@ export class PluginManager {
       type: 'deck-extension',
       id: String(obj.id),
       entries: entries as Array<ManualVersion & { key: string }>,
-      inject: (obj.inject as any[]) || [],
+      inject: (obj.inject as DeckExtensionPlugin['inject']) || [],
     }
   }
 }

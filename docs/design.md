@@ -1,7 +1,6 @@
 # 取扱説明書を読むゲーム — 実装設計書
 
 > 本書は `CLAUDE.md`（コンセプト）と `spec.md`（仕様ドラフト）を実装可能なレベルに落とし込んだ設計書。
-> 全ジャンル分岐を見据えた完全実装を目標とし、MVP はその部分集合として段階的に達成する。
 
 ---
 
@@ -13,7 +12,7 @@
 | オフライン制約 | **成果物 `dist/` は完全自己完結・ネットワーク不要** | dev server のみ node を使用。ビルド後は `index.html` を開くだけで動作。外部CDN・フォント・API を一切参照しない |
 | 描画 | ゲーム本体は **Canvas 2D**、UI（説明書・選択・HUD・投擲）は **Vue コンポーネント** | DOM と Canvas を重ねる構成 |
 | 状態管理 | Vue の composables（`reactive` / `ref`）。Pinia は使わない（規模的に過剰） | |
-| データ | ルール・ジャンル・スコアはすべて **JSON または `.ts` の定数オブジェクト** | コードにルールをハードコードしない。`import` で同梱しビルド時に取り込む（fetch でも可だが offline 安定のため同梱を基本） |
+| データ | ルール・ジャンル・スコアはすべて **JSON または `.ts` の定数オブジェクト** | コードにルールをハードコードしない。`import` で同梱しビルド時に取り込む |
 | アセット | 図形描画主体。画像/音は必要時に `src/assets` へ同梱し base64 or 相対パス | フォントも同梱（説明書の世界観のため） |
 
 ### オフライン整合についての注記
@@ -38,20 +37,20 @@ Vite はビルドツールとして開発時のみ node を使い、出力 `dist
 └───────────────▲─────────────────────┬─────────┘
                 │ reactive state       │ user input
 ┌───────────────┴─────────────────────▼─────────┐
-│ composables (useGame / useManual / useScore)   │
+│ composables (useGameState / useManual)         │
 │  ゲームループとVueをつなぐ状態ハブ               │
 └───────────────▲─────────────────────┬─────────┘
                 │ RuntimeRules         │ tick()
 ┌───────────────┴─────────────────────▼─────────┐
 │ domain (純粋ロジック・Vue非依存)                 │
-│  ruleEngine / genreResolver / learning /        │
+│  ruleEngine / genreResolver / LearningSystem / │
 │  scoreCalc / types                              │
 └───────────────▲─────────────────────┬─────────┘
                 │ reads                │ drives
 ┌───────────────┴──────────┐ ┌────────▼─────────┐
 │ data (JSON駆動定義)        │ │ game (Canvas)     │
 │ manualDeck / genres /     │ │ sideScroller /    │
-│ gameBalance / learning    │ │ throwEngine       │
+│ gameBalance / tunables    │ │ throwEngine       │
 └───────────────────────────┘ └───────────────────┘
 ```
 
@@ -74,31 +73,30 @@ src/
     manualDeck.ts             # 説明書バージョン・2択・操作・危険色・派生パラメータ
     genres.ts                 # 各ジャンル定義（閾値・有効機能・スコア式）
     gameBalance.ts            # 距離/スコア比率/投擲重み/難易度カーブ
-    learning.ts               # 学習トリガー（行動頻度→ルール変更）
+    tunables.ts               # VFX・カメラ・スコアの調整値
+    config/                   # JSON設定ファイル群（17個）
 
   domain/
     types.ts                  # 全型定義
     ruleEngine.ts             # 選択履歴 → RuntimeRules 合成
     genreResolver.ts          # genreParams 蓄積 → ジャンル収束判定
-    learning.ts               # 行動統計 → 追加ルール発火
+    LearningSystem.ts         # 行動統計 → 追加ルール発火
     scoreCalc.ts              # プレイスコア + 投擲スコア合算
 
   game/
     sideScroller.ts           # Canvas 横スクロール本体（ゲームループ）
     entities.ts               # Player / Hazard / Bullet / Enemy / Tower 等
     systems/                  # ジャンル機能のシステム（feature単位）
-      shootSystem.ts
-      rhythmSystem.ts
-      autorunSystem.ts
-      growthSystem.ts
-      puzzleSystem.ts
+      ShootFeature.ts
+      RhythmFeature.ts
+      MovementFeature.ts
+      RpgFeature.ts
+      PuzzleFeature.ts
     throwEngine.ts            # 投擲フェーズの物理 + 投擲スコア
 
   composables/
     useGameState.ts           # フェーズ・全体状態の統括
     useManual.ts              # 説明書表示・更新履歴・差分演出
-    useInput.ts               # キー/ポインタ入力の集約
-    useScore.ts               # スコア表示状態
 
   components/
     Hud.vue
@@ -106,9 +104,30 @@ src/
     ChoicePanel.vue           # 2択提示
     ThrowOverlay.vue          # 投擲ドラッグUI + パワーゲージ
     EndingPanel.vue           # ジャンル別エンディング
+    TutorialHints.vue         # 初心者向けヒント
 
-  styles/
-    manual-themes.css         # ジャンル別の説明書見た目（STG/RPG/PUZZLE）
+  genres/                     # ジャンルプラグイン（12+ 種）
+    BasePlugin.ts
+    StgPlugin.ts
+    RpgPlugin.ts
+    RhythmPlugin.ts
+    PuzzlePlugin.ts
+    ...
+
+  engine/
+    GameRegistry.ts           # ジャンル・システムの中央レジストリ
+    GenrePlugin.ts            # GenrePlugin インターフェース
+    FeatureSystem.ts          # FeatureSystem インターフェース
+
+  framework/
+    ManualLoader.ts           # JSON ファイル自動読み込み
+    ManualBuilder.ts          # プログラムで説明書生成
+    ManualValidator.ts        # バリデーション
+    types.ts                  # 型定義
+
+  plugins/
+    JSONGenrePlugin.ts        # JSON からジャンル生成
+    SoundManager.ts           # サウンド管理
 ```
 
 ---
@@ -132,7 +151,7 @@ src/
 | `craft` | 作成・設置・積み上げ | tower_def / idle |
 | `speed` | 純粋速度・ダッシュ量 | racing / sports |
 
-### 3.2 ジャンル一覧（20種 + base）
+### 3.2 ジャンル一覧（21種 + base）
 
 | ID | ラベル | 閾値 |
 |---|---|---|
@@ -180,25 +199,13 @@ export type FeatureId =
   | 'beat_hazard' | 'just_input' | 'beat_dash'
   | 'tower';
 
-export interface Choice {
-  id: string;
-  label: string;          // プレイヤーに見せる文言（ジャンル方向は隠す）
-  next: string;           // 次バージョンキー
-  genreParams: GenreParams;
-  manualText?: string[];  // この選択で書き換わる説明書文面
-}
-
 export interface ManualVersion {
   version: string;                 // "1.0" 等
   manualText: string[];
   choices: Choice[];               // 末端は空（=更新終了）
   controls: Controls;
   hazards: { colors: string[]; safeColors: string[] };
-}
-
-export interface Controls {
-  jump: string; moveLeft: string; moveRight: string;
-  shoot?: string;
+  learningRules?: LearningRule[];  // プレイヤー行動に基づいた自動ルール更新
 }
 
 export interface GenreDef {
@@ -207,9 +214,10 @@ export interface GenreDef {
   thresholds: GenreParams;         // この値を超えたら収束候補
   enableFeatures: FeatureId[];
   disableFeatures: FeatureId[];
-  scoreFormula: string;            // 式は scoreCalc が解釈する DSL（後述）
+  scoreFormula: string;            // 式は scoreCalc が解釈する DSL
   manualReveal: string;            // 確定時に説明書へ出す宣言文
-  theme: 'plain' | 'stg' | 'rpg' | 'puzzle' | 'rhythm';
+  endingFlavor: string;            // エンディング画面の締めくくりメッセージ
+  theme: 'plain' | 'stg' | 'rpg' | 'puzzle' | 'rhythm' | 'horror' | 'aquatic';
 }
 
 // 実行時にゲーム本体が読む合成済みルール
@@ -221,12 +229,6 @@ export interface RuntimeRules {
   genre: GenreId;                  // 未確定時は 'base'
   scrollSpeed: number;
   bpm?: number;                    // rhythm系で使用
-}
-
-// 行動統計（学習ルール用）
-export interface ActionStats {
-  jumps: number; moveRight: number; moveLeft: number;
-  shots: number; ticks: number;
 }
 
 export interface LearningRule {
@@ -249,32 +251,25 @@ export interface FinalScore { play: number; throw: number; total: number; }
 - 末端バージョン（`choices` が空）に到達 → Phase C 収束判定へ。
 
 ### 4.2 ジャンル定義（`data/genres.ts`）
-- `CLAUDE.md` の表に基づき 5ジャンル + base を定義。
-- MVP では `runner` / `stg` を完全実装、残りは定義のみ→段階的に有効化。
-
-```
-runner : { tempo>=5, enemy<=1 }  enable[auto_run]
-stg    : { range>=4, enemy>=4 }  enable[shoot, enemy_hp]
-rpg    : { growth>=4, tempo<=1 } enable[hp, exp, item_pickup, slow_precise]
-puzzle : { combo>=4, tempo<=0 }  enable[grid_stop, puzzle_solve]
-rhythm : { tempo>=4, rhythm>=4 } enable[beat_hazard, just_input, beat_dash]
-```
+- 21ジャンル + base を定義。
+- `runner` / `stg` が完全実装、他は段階的に有効化。
 
 ### 4.3 スコア式 DSL（`scoreFormula`）
-ハードコードを避けるため、ジャンルごとのプレイスコア式を文字列で持ち、安全な評価器で計算する。
-**`eval` は使わない**（XSS/任意実行リスク）。許可するのは変数・数値・`+ - * /` と括弧のみの小さなパーサ。
+ジャンルごとのプレイスコア式を文字列で持ち、安全な評価器（`evalScoreFormula`）で計算する。
+**`eval` は使わない**（XSS/任意実行リスク）。許可するのは変数・数値・`+ - * /` と括弧のみ。
 
 ```
-利用可能変数: distance, kills, combo, exp, beatHits, survivedSec
-例: stg  → "kills * 100 + distance * 0.5"
-    runner → "distance * 1.0 + survivedSec * 5"
+利用可能変数: distance, kills, combo, exp, beatHits, survivedSec,
+              accuracy, maxCombo, deaths, itemsCollected, bossKills,
+              stealthBonus, colorTouches
+例: stg  → "kills * 120 + distance * 0.5 + combo * 80"
+    runner → "distance * 1.2 + survivedSec * 8 + combo * 50"
 ```
 
 ### 4.4 バランス（`data/gameBalance.ts`）
 ```
-updateDistances: [400, 1000, 1800]   // この距離で説明書更新を割り込む
-goalDistance: 3000
-hazardSpawnCurve: 距離に応じた出現間隔の減少関数パラメータ
+UPDATE_DISTANCES: 100段階の動的生成 + 1500px 無限トリガー
+hazardSpawnCurve: 距離に応じた出現間隔の減少関数
 scoreRatio: { play: 0.7, throw: 0.3 }
 throwScoreWeights: { airTime: 0.5, arcHeight: 0.4, speedPenalty: 0.1 }
 ```
@@ -339,18 +334,16 @@ featuresFor(genreId, genres): { enable: Set, disable: Set }
 - エンティティ：Player / Hazard（色判定）/ Bullet / Enemy / Tower / Item。
 - 衝突：AABB。危険色に触れたら被弾、安全色は無害。
 - 行動を `ActionStats` に記録 → 学習トリガー監視。
-- ループ自体はジャンル非依存。ジャンル差は `systems/` のオン/オフで表現（=拡張点）。
+- ゲーム終了時（`_die()`）に `_recalculatePlayScore()` で scoreFormula を評価。
 
 ### 6.4 `game/systems/`（feature 単位の差し込み）
 | system | 担当 feature | 効果 |
 |---|---|---|
-| shootSystem | shoot, three_way, enemy_hp | 弾発射・敵HP・撃破コンボ |
-| autorunSystem | auto_run, slow_precise | 自動前進 / 低速精密 |
-| rhythmSystem | beat_hazard, just_input, beat_dash | BPM同期の危険色反転・ジャスト入力加点 |
-| growthSystem | hp, exp, item_pickup | HP・経験値・アイテム収集 |
-| puzzleSystem | grid_stop, puzzle_solve | スクロール停止・配置パズル |
-
-各 system は `update(dt, world, rules)` インターフェースで統一し、`features` に含まれる時だけ呼ぶ。
+| ShootFeature | shoot, three_way, enemy_hp | 弾発射・敵HP・撃破コンボ |
+| MovementFeature | auto_run, slow_precise | 自動前進 / 低速精密 |
+| RhythmFeature | beat_hazard, just_input, beat_dash | BPM同期の危険色反転・ジャスト入力加点 |
+| RpgFeature | hp, exp, item_pickup | HP・経験値・アイテム収集 |
+| PuzzleFeature | grid_stop, puzzle_solve | スクロール停止・配置パズル |
 
 ### 6.5 `game/throwEngine.ts`
 - 入力：ドラッグ方向（角度）+ パワーゲージ（リリース時の値）。
@@ -367,9 +360,9 @@ featuresFor(genreId, genres): { enable: Set, disable: Set }
 
 ### 7.1 ManualPanel（説明書・主役）
 - 画面右下に常時表示。白背景＋黒文字。
-- 更新時：旧文 → 取り消し線、新文 → 赤＋手書き風フェードイン。
+- 更新時：旧文 → 取り消し線、新文 → 赤＋手書き風フェードイン（blur アニメーション）。
 - 更新履歴：直近3件を折りたたみで閲覧可。
-- ジャンル確定時：`theme` に応じ `manual-themes.css` のクラス切替（STG=ドット/SF、RPG=明朝/羊皮紙、PUZZLE=モノスペース/罫線）。
+- ジャンル確定時：`theme` に応じた CSS クラス切替（STG=ドット/SF、RPG=明朝/羊皮紙、PUZZLE=モノスペース/罫線）。
 
 ### 7.2 ChoicePanel
 - 2択カード。文言のみ提示、ジャンル方向は隠す。
@@ -380,50 +373,37 @@ featuresFor(genreId, genres): { enable: Set, disable: Set }
 - ManualPanel をポインタドラッグ → 方向ベクトル＋パワーゲージ表示 → リリースで投擲。
 
 ### 7.4 EndingPanel
-- 「あなたはこのゲームを◯◯にしました。」＋「別の選択をすれば△△になっていた」。
-- 2周目示唆。
+- 「あなたはこのゲームを◯◯にしました。」＋ジャンル固有の `endingFlavor`。
+- 2周目示唆・スコア表示。
 
 ---
 
-## 8. 実装フェーズ計画（マイルストーン）
+## 8. 実装フェーズ（マイルストーン）
 
-> 各段階で「`dist` を開いて遊べる」状態を保つ。
-
-**M0: 足場**
-- Vite+Vue+TS 雛形、`App.vue` に Canvas マウント、空ループ描画。
-
-**M1: 横スクロール本体（= MVP の核 / Phase A）**
-- Player 移動＋ジャンプ、自動スクロール、危険色 Hazard、衝突、距離スコア。
-- `gameBalance` の出現カーブ反映。
-
-**M2: 説明書＋2択＋ruleEngine（Phase B）**
-- ManualPanel/ChoicePanel、`manualDeck` 3段階、controls/hazards の動的切替＋差分演出。
-
-**M3: ジャンル収束 + RUNNER/STG（Phase C・MVP完成）**
-- genreResolver、shootSystem/autorunSystem、説明書テーマ切替、scoreFormula 評価。
-- ← **ここで CLAUDE.md の MVP チェックリストを全て満たす。**
-
-**M4: 投擲＋エンディング**
-- throwEngine、ThrowOverlay、scoreCalc 合算、EndingPanel。
-
-**M5: 残りジャンル（完全実装）**
-- rhythmSystem / growthSystem / puzzleSystem、RPG/PUZZLE/RHYTHM 定義有効化、各テーマCSS。
-
-**M6: 学習ルール + 仕上げ**
-- `domain/learning.ts`（ジャンプ率→ジャンプ禁止 等）、難易度調整、2周目導線、offline ビルド検証。
+| マイルストーン | 内容 | 状態 |
+|---|---|---|
+| **M0: 足場** | Vite+Vue+TS 雛形、Canvas マウント、空ループ描画 | ✅ 完了 |
+| **M1: 横スクロール本体** | Player 移動+ジャンプ、自動スクロール、危険色 Hazard、衝突、距離スコア | ✅ 完了 |
+| **M2: 説明書＋2択** | ManualPanel/ChoicePanel、3段階更新、controls/hazards 動的切替＋差分演出 | ✅ 完了 |
+| **M3: ジャンル収束 + RUNNER/STG** | genreResolver、shoot/autorun フィーチャー、説明書テーマ切替、scoreFormula 評価 | ✅ 完了 (MVP) |
+| **M4: 投擲＋エンディング** | throwEngine、ThrowOverlay、scoreCalc 合算、EndingPanel | ✅ 完了 |
+| **M5: 残りジャンル** | 12+ ジャンルプラグイン、rhythm/rpg/puzzle/survival 等のフィーチャー | ✅ 完了 |
+| **M6: 学習ルール + 仕上げ** | LearningSystem 統合、難易度調整、無限選択肢、offline ビルド検証 | ⚠️ 一部完了（LearningEffect 未実装） |
 
 ---
 
 ## 9. テスト方針
-- `domain/` は純粋関数中心 → Vitest で単体テスト（ruleEngine 合成、genreResolver 収束、scoreCalc）。
+- `domain/` は純粋関数中心 → Playwright で統合テスト。
 - スコア式パーサは不正入力（関数呼び出し・記号）を弾くテストを必須化（セキュリティ）。
 - ゲームループ/Canvas は手動プレイ確認（golden path + 各ジャンル収束 + 投擲）。
 
 ---
 
 ## 10. 未決事項・要確認
-- [ ] 説明書の差分演出は CSS アニメで足りるか、手書き風フォント同梱が必要か。
-- [ ] PUZZLE のスクロール停止時、横スクロールの「面影」をどう残すか（配置盤面の具体ルール）。
-- [ ] 学習ルールと2択分岐が競合した時の優先順位（現案：学習を後勝ちで上書き）。
-- [ ] BGM/SE を入れるか（offline同梱前提なら容量と権利に注意）。
-```
+
+| 項目 | 状態 |
+|---|---|
+| 説明書の差分演出は CSS アニメで足りるか | ✅ 決定: ManualPanel.vue で差分強調・取り消し線・手書き風フェードインを実装済み |
+| PUZZLE のスクロール停止時、横スクロールの「面影」をどう残すか | ⚠️ 未解決: PuzzleFeature の実装継続中 |
+| 学習ルールと2択分岐が競合した時の優先順位 | ✅ 決定: 学習ルールが後勝ちで上書き |
+| BGM/SE を入れるか | ⚠️ 部分実装: SoundManager.ts は実装済み、実際の音声ファイルは未配置 |

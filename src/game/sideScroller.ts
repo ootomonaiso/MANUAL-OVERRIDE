@@ -1,13 +1,13 @@
-import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule } from '../domain/types'
+import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect } from '../domain/types'
 import type { MutableWorld, InputSnapshot, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup } from './entities'
-import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES } from '../data/gameBalance'
+import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL } from '../data/gameBalance'
 import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS } from '../data/tunables'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
 import { resolveWeight } from '../engine/types'
 import { soundManager } from '../plugins/SoundManager'
-import { evalScoreFormula } from '../domain/scoreCalc'
-import { evaluateLearningRules } from '../domain/LearningSystem'
+import { evalScoreFormula, getLastFormulaError } from '../domain/scoreCalc'
+import { evaluateLearningRules, describeEffect } from '../domain/LearningSystem'
 import { GENRES } from '../data/genres'
 // ジャンルプラグインとフィーチャーシステムを一括登録
 import '../genres/index'
@@ -31,6 +31,10 @@ export interface GameSnapshot {
   statMoveRight: number
   // 最初のジャンプが完了したかを示すフラグ
   firstJumpDone: boolean
+  // LearningSystem がエフェクトを発動した際の通知（1フレーム後にクリアされる）
+  learningNotification: string | null
+  // スコア計算式のパースエラー（発生時のみ非 null）
+  scoreFormulaError: string | null
 }
 
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string; size: number }
@@ -62,11 +66,10 @@ export class SideScroller {
   private scoreVarsBossKills = 0      // ボス撃破数
   private scoreVarsStealthBonus = 0   // ステルス継続フレーム数の累積
   private scoreVarsColorTouches = 0   // 安全色タッチ回数
+  private deaths = 0                  // 死亡回数（hp 有効時は複数回あり得る）
 
   // カメラ
   private cameraX = 0
-  // 縦スクロールモード用: 色踏みのミスカウント
-  private colorTouchMisses = 0
 
   // スポーン
   private nextSpawnDist = 480
@@ -111,6 +114,11 @@ export class SideScroller {
   // ─── LearningSystem ──────────────────────────────────────────────
   private learningRules: LearningRule[] | null = null
   private learningCheckTimer = 0         // 次のチェック予定時刻
+  // disableAction エフェクト: action名 → 解除予定時刻(performance.now() ベース)
+  private _disabledActions = new Map<string, number>()
+  // 次の getSnapshot() で一度だけ返す通知メッセージ
+  private _pendingLearningMsg: string | null = null
+  private _pendingFormulaError: string | null = null
 
   // イベントハンドラ（解除用に保持）
   private _onKeyDown: (e: KeyboardEvent) => void
@@ -210,6 +218,12 @@ export class SideScroller {
       }
     }
 
+    // 1フレームだけ公開して即クリア
+    const learningNotification = this._pendingLearningMsg
+    this._pendingLearningMsg = null
+    const scoreFormulaError = this._pendingFormulaError
+    this._pendingFormulaError = null
+
     return {
       distance: this.distance,
       playScore: this.playScore,
@@ -226,6 +240,8 @@ export class SideScroller {
       statMoveLeft: this.stats.moveLeft,
       statMoveRight: this.stats.moveRight,
       firstJumpDone: this.firstJumpDone,
+      learningNotification,
+      scoreFormulaError,
     }
   }
 
@@ -255,7 +271,7 @@ export class SideScroller {
       survivedSec: this.survivedSec,
       accuracy,
       maxCombo: this._gameStats.maxCombo,
-      deaths: 0, // TODO: 実装検討（現在は常に 0）
+      deaths: this.deaths,
       itemsCollected: this.scoreVarsItemsCollected,
       bossKills: this.scoreVarsBossKills,
       stealthBonus: this.scoreVarsStealthBonus,
@@ -318,10 +334,9 @@ export class SideScroller {
       if (this.learningCheckTimer <= 0) {
         this.learningCheckTimer = 1.0  // 1秒ごとに評価
         const effects = evaluateLearningRules(this.learningRules, this.stats)
-        if (effects.length > 0) {
-          console.log(`[LearningSystem] Triggered ${effects.length} effect(s):`, effects)
-          // TODO: 発動した effects を RuntimeRules に適用する仕組みを実装
-          // 例: disableAction → 特定キーを無視、forceFeature → フィーチャー有効化
+        for (const effect of effects) {
+          this._applyLearningEffect(effect)
+          this._pendingLearningMsg = describeEffect(effect)
         }
       }
     }
@@ -336,12 +351,17 @@ export class SideScroller {
     const leftKey  = r.controls.moveLeft
     const rightKey = r.controls.moveRight
     const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
+    const dashKey  = r.controls.dash ?? 'Shift'
 
     const isVertical = r.scrollAxis === 'y'
 
+    // ─── ダッシュ入力統計 ─────────────────────────────────────────────
+    if (r.features.has('dash') && this.justPressed.has(dashKey)) {
+      this.stats.dashes = (this.stats.dashes ?? 0) + 1
+    }
+
     // ─── 距離ベースの自動加速 ─────────────────────────────────────────
-    // 4000px で 20% 加速、8000px で 40% 加速 など段階的に難しくなる
-    const distanceAccelFactor = 1 + Math.min(this.distance / 20000, 0.5)
+    const distanceAccelFactor = 1 + Math.min(this.distance / DISTANCE_ACCEL.fullDist, DISTANCE_ACCEL.maxBonus)
     const effectiveScrollSpeed = r.scrollSpeed * distanceAccelFactor
 
     // ─── Pre-physics: 移動 Feature が vx をセット ────────────────────
@@ -428,7 +448,9 @@ export class SideScroller {
 
       // ─── ジャンプ ─────────────────────────────────────────
       const isDouble         = r.features.has('double_jump')
-      const jumpJustPressed  = this.justPressed.has(jumpKey)
+      // LearningSystem による 'jump' アクション無効化チェック
+      const jumpDisabled     = this._isActionDisabled('jump')
+      const jumpJustPressed  = !jumpDisabled && this.justPressed.has(jumpKey)
       const jumpJustReleased = this.justReleased.has(jumpKey)
 
       if (p.onGround) {
@@ -636,6 +658,7 @@ export class SideScroller {
   private _die(p: Player): void {
     if (this.dead) return  // 二重死亡防止
     this.dead = true
+    this.deaths++
     this.shakeIntensity = VFX.deathShakeIntensity
     this._spawnDeathExplosion(p.x + p.w / 2, p.y + p.h / 2)
     soundManager.onDeath()
@@ -644,6 +667,7 @@ export class SideScroller {
     for (const sys of getActiveSystems(this.rules.features)) sys.onPlayerDeath?.(dw)
     // ScoreVars に基づいて playScore を再計算
     this._recalculatePlayScore()
+    this._pendingFormulaError = getLastFormulaError()
   }
 
   // ─── 描画 ────────────────────────────────────────────────────────
@@ -753,6 +777,7 @@ export class SideScroller {
       if (plugin.starColor) {
         this._drawStarField(this.distance * CAMERA.parallaxStars, W, H * 0.9, plugin)
       }
+      this._drawEnvironmentOverlay(W, H)
       return
     }
 
@@ -775,6 +800,7 @@ export class SideScroller {
     plugin.drawFarLayer(ctx, cam * parallaxFar, W, gY)
     plugin.drawMidLayer(ctx, cam * parallaxMid, W, gY)
     this._drawGround(W, H, gY, plugin.groundColors[0], plugin.groundColors[1])
+    this._drawEnvironmentOverlay(W, H)
   }
 
   private _drawStarField(offsetX: number, W: number, maxY: number, plugin: import('../engine/GenrePlugin').GenrePlugin): void {
@@ -806,6 +832,24 @@ export class SideScroller {
       }
     }
     ctx.globalAlpha = 1
+  }
+
+  // ─── 環境オーバーレイ（environment 値に応じた色調補正） ─────────────
+  private _drawEnvironmentOverlay(W: number, H: number): void {
+    const env = this.rules.environment
+    let color: string | null = null
+    switch (env) {
+      case 'ocean':   color = 'rgba(0,60,160,0.20)';  break
+      case 'dungeon': color = 'rgba(30,0,60,0.25)';   break
+      case 'forest':  color = 'rgba(0,80,20,0.15)';   break
+      case 'city':    color = 'rgba(60,60,80,0.12)';  break
+      case 'sky':     color = 'rgba(80,160,255,0.08)'; break
+      case 'space':   color = 'rgba(0,0,20,0.15)';    break
+      // 'ground' はデフォルト → オーバーレイなし
+    }
+    if (!color) return
+    this.ctx.fillStyle = color
+    this.ctx.fillRect(0, 0, W, H)
   }
 
   private _drawGround(W: number, H: number, gY: number, gTop: string, gBot: string): void {
@@ -1213,6 +1257,52 @@ export class SideScroller {
       addScoreVarsBossKill()   { self.scoreVarsBossKills++ },
       addScoreVarsStealthBonus(amount: number) { self.scoreVarsStealthBonus += amount },
       addScoreVarsColorTouch() { self.scoreVarsColorTouches++ },
+    }
+  }
+
+  /** LearningSystem のアクション無効化チェック（期限切れエントリを自動削除） */
+  private _isActionDisabled(action: string): boolean {
+    const until = this._disabledActions.get(action)
+    if (until === undefined) return false
+    if (performance.now() < until) return true
+    this._disabledActions.delete(action)
+    return false
+  }
+
+  private _applyLearningEffect(effect: LearningEffect): void {
+    switch (effect.type) {
+      case 'disableAction': {
+        const actionKey = effect.payload
+        const durationMs = (effect.durationSec ?? 10) * 1000
+        this._disabledActions.set(actionKey, performance.now() + durationMs)
+        break
+      }
+
+      case 'invertHazard': {
+        // ハザード色反転を有効化（既存の beat_hazard 機能を利用）
+        this._gameStats.beatHazardInverted = true
+        soundManager.onGenreLock('rhythm')  // リズム確定演出
+        break
+      }
+
+      case 'forceFeature': {
+        // フィーチャーを有効化（rules.features に追加）
+        const featureId = effect.payload as import('../domain/types').FeatureId
+        if (!this.rules.features.has(featureId)) {
+          this.rules.features.add(featureId)
+        }
+        break
+      }
+
+      case 'changeKey': {
+        // キー再マッピング（payload = "jump:w" のような形式を想定）
+        const [action, newKey] = effect.payload.split(':')
+        if (action === 'jump') this.rules.controls.jump = newKey
+        else if (action === 'left') this.rules.controls.moveLeft = newKey
+        else if (action === 'right') this.rules.controls.moveRight = newKey
+        else if (action === 'shoot') this.rules.controls.shoot = newKey
+        break
+      }
     }
   }
 }

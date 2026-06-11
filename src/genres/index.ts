@@ -11,6 +11,7 @@
  */
 
 import { registerGenre } from '../engine/GameRegistry'
+import type { GenrePlugin as EngineGenrePlugin } from '../engine/GenrePlugin'
 import { BasePlugin, RunnerPlugin }   from './BasePlugin'
 import { StgPlugin }                  from './StgPlugin'
 import { RpgPlugin }                  from './RpgPlugin'
@@ -20,6 +21,11 @@ import { AerialStgPlugin }            from './AerialStgPlugin'
 import { SurvivalPlugin }             from './SurvivalPlugin'
 import { BulletRunnerPlugin }         from './BulletRunnerPlugin'
 import { PlatformerPlugin }           from './PlatformerPlugin'
+import { RacingPlugin }               from './RacingPlugin'
+import { ArenaPlugin }                from './ArenaPlugin'
+import { AquaticPlugin }              from './AquaticPlugin'
+import { DungeonPlugin }              from './DungeonPlugin'
+import { HackSlashPlugin }            from './HackSlashPlugin'
 import { pluginManager } from '../plugins/PluginManager'
 import { JSONGenrePlugin } from '../plugins/JSONGenrePlugin'
 
@@ -33,11 +39,16 @@ registerGenre(new AerialStgPlugin())
 registerGenre(new SurvivalPlugin())
 registerGenre(new BulletRunnerPlugin())
 registerGenre(new PlatformerPlugin())
+registerGenre(new RacingPlugin())
+registerGenre(new ArenaPlugin())
+registerGenre(new AquaticPlugin())
+registerGenre(new DungeonPlugin())
+registerGenre(new HackSlashPlugin())
 
 // Load user-installed genre plugins
 const installedPlugins = pluginManager.loadAll()
 for (const plugin of installedPlugins) {
   if (plugin.type === 'genre') {
-    registerGenre(new JSONGenrePlugin(plugin) as any)
+    registerGenre(new JSONGenrePlugin(plugin) as EngineGenrePlugin)
   }
 }

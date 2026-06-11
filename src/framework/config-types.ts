@@ -28,6 +28,11 @@ export interface PhysicsConfig {
   playerMinX: number
   playerMaxXRatio: number
   airFrictionX: number
+  dashSpeed: number
+  dashDurationSec: number
+  dashCooldownSec: number
+  dashIframesSec: number
+  wallJumpPushSpeed: number
 }
 
 /** shoot.json — 射撃システム */
@@ -289,6 +294,8 @@ export interface GameBalanceConfig {
   hazardSpawnBaseInterval: number
   hazardSpawnMinInterval: number
   hazardSpawnDecayRate: number
+  distanceAccelMaxBonus: number
+  distanceAccelFullDist: number
 }
 
 /** genres.json — ジャンル定義テーブル */

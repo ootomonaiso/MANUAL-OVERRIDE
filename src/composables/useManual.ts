@@ -24,17 +24,20 @@ export function useManual(_currentManual: () => ManualVersion) {
     const nextLines = nextManual.manualText
     const diff: typeof diffLines.value = []
 
+    const prevSet = new Set(prevLines)
+    const nextSet = new Set(nextLines)
+
     // 削除行（prev にあって next にない）
     for (const line of prevLines) {
-      if (!nextLines.includes(line)) diff.push({ text: line, type: 'removed' })
+      if (!nextSet.has(line)) diff.push({ text: line, type: 'removed' })
     }
     // 追加行（next にあって prev にない）
     for (const line of nextLines) {
-      if (!prevLines.includes(line)) diff.push({ text: line, type: 'added' })
+      if (!prevSet.has(line)) diff.push({ text: line, type: 'added' })
     }
     // 不変行（next の順序に合わせて末尾に）
     for (const line of nextLines) {
-      if (prevLines.includes(line)) diff.push({ text: line, type: 'unchanged' })
+      if (prevSet.has(line)) diff.push({ text: line, type: 'unchanged' })
     }
 
     diffLines.value = diff

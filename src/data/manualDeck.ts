@@ -20,7 +20,7 @@
 
 import { loadFromGlob, devValidate } from '../framework'
 import { pluginManager } from '../plugins/PluginManager'
-import type { ManualVersion } from '../domain/types'
+import type { ManualVersion, Choice, GenreParams } from '../domain/types'
 
 // src/data/manuals/*.json を自動収集（ビルド時に静的バンドル）
 // TEMPLATE.json は除外（サンプルファイル）
@@ -46,11 +46,13 @@ for (const plugin of installedPlugins) {
       for (const injection of plugin.inject) {
         const targetVer = MANUAL_DECK[injection.targetKey] as ManualVersion
         if (targetVer) {
-          const choiceWithId = {
-            ...injection.choice,
+          const choiceWithId: Choice = {
+            label: injection.choice.label,
+            next: injection.choice.next,
+            genreParams: injection.choice.genreParams as GenreParams,
             id: injection.choice.id || `${injection.targetKey}-injected-${Math.random().toString(36).substr(2, 9)}`,
           }
-          targetVer.choices.push(choiceWithId as any)
+          targetVer.choices.push(choiceWithId)
         }
       }
     }

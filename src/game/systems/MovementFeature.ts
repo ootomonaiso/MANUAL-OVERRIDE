@@ -13,7 +13,7 @@ import { PLAYER_PHYSICS } from '../../data/gameBalance'
 import { PHYSICS, SCORE } from '../../data/tunables'
 
 export class MovementFeature implements FeatureSystem {
-  readonly handles = ['auto_run', 'slow_precise', 'double_jump', 'long_air'] as const
+  readonly handles = ['movement', 'auto_run', 'slow_precise', 'double_jump', 'long_air'] as const
 
   onInit(world: MutableWorld): void {
     if (world.rules.features.has('double_jump')) {
