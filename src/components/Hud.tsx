@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from 'react'
-import { GENRES } from '../../data/genres'
+import { GENRES } from '../data/genres'
 
 interface HudProps {
   distance: number

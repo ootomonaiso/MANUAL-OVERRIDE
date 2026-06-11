@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import type { ManualVersion, ManualTheme } from '../../domain/types'
+import type { ManualVersion, ManualTheme } from '../domain/types'
 import type { DiffLine } from '../hooks/useManual'
 
 interface ManualPanelProps {

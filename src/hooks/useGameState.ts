@@ -1,12 +1,12 @@
 import { useState, useRef } from 'react'
-import type { Phase, GenreId, RuntimeRules, FinalScore } from '../../domain/types'
-import { MANUAL_DECK } from '../../data/manualDeck'
-import { GENRES } from '../../data/genres'
-import { buildRuntimeRules, type ChoiceRecord } from '../../domain/ruleEngine'
-import { resolveGenre, accumulateParams } from '../../domain/genreResolver'
-import { calcThrowScore, calcFinalScore } from '../../domain/scoreCalc'
-import type { ThrowResult } from '../../domain/types'
-import { soundManager } from '../../plugins/SoundManager'
+import type { Phase, GenreId, RuntimeRules, FinalScore } from '../domain/types'
+import { MANUAL_DECK } from '../data/manualDeck'
+import { GENRES } from '../data/genres'
+import { buildRuntimeRules, type ChoiceRecord } from '../domain/ruleEngine'
+import { resolveGenre, accumulateParams } from '../domain/genreResolver'
+import { calcThrowScore, calcFinalScore } from '../domain/scoreCalc'
+import type { ThrowResult } from '../domain/types'
+import { soundManager } from '../plugins/SoundManager'
 
 export function useGameState() {
   const [phase, _setPhase] = useState<Phase>('title')

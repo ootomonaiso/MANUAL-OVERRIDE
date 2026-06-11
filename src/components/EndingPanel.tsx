@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { FinalScore, GenreId } from '../../domain/types'
-import { GENRES } from '../../data/genres'
+import type { FinalScore, GenreId } from '../domain/types'
+import { GENRES } from '../data/genres'
 
 interface EndingPanelProps {
   finalScore: FinalScore

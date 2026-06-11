@@ -1,8 +1,8 @@
 import { useRef, useEffect, useState } from 'react'
 import {
   createThrowState, onDragStart, onDragMove, onRelease, updateThrow,
-} from '../../game/throwEngine'
-import type { ThrowResult } from '../../domain/types'
+} from '../game/throwEngine'
+import type { ThrowResult } from '../domain/types'
 
 interface ThrowOverlayProps {
   manualVersion: string

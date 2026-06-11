@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Choice } from '../../domain/types'
+import type { Choice } from '../domain/types'
 
 interface ChoicePanelProps {
   choices: Choice[]

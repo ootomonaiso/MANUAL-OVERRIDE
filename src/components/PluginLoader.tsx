@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { pluginManager } from '../../plugins/PluginManager'
+import { pluginManager } from '../plugins/PluginManager'
 
 export default function PluginLoader() {
   const [isOpen, setIsOpen] = useState(false)

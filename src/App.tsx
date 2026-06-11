@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useMemo } from 'react'
 import { useGameState } from './hooks/useGameState'
 import { useManual } from './hooks/useManual'
-import { SideScroller, type GameSnapshot } from '../game/sideScroller'
+import { SideScroller, type GameSnapshot } from './game/sideScroller'
 import Hud from './components/Hud'
 import ManualPanel from './components/ManualPanel'
 import ChoicePanel from './components/ChoicePanel'
@@ -10,9 +10,9 @@ import EndingPanel from './components/EndingPanel'
 import TutorialHints from './components/TutorialHints'
 import PluginLoader from './components/PluginLoader'
 import TutorialScreen from './TutorialScreen'
-import { GENRES } from '../data/genres'
-import type { ThrowResult } from '../domain/types'
-import { TUTORIAL_ENABLED } from '../tutorial/const'
+import { GENRES } from './data/genres'
+import type { ThrowResult } from './domain/types'
+import { TUTORIAL_ENABLED } from './tutorial/const'
 
 const INITIAL_SNAPSHOT: GameSnapshot = {
   distance: 0, playScore: 0, combo: 0, kills: 0, exp: 0,

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import type { ManualVersion } from '../../domain/types'
+import type { ManualVersion } from '../domain/types'
 
 export type DiffLine = { text: string; type: 'added' | 'removed' | 'unchanged' }
 
