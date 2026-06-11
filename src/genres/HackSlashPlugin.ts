@@ -9,6 +9,7 @@
 import { GenrePluginBase } from '../engine/GenrePluginBase'
 import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
+import { BOSS } from '../data/tunables'
 
 export class HackSlashPlugin extends GenrePluginBase {
   readonly id: GenreId = 'hack_slash'
@@ -46,6 +47,8 @@ export class HackSlashPlugin extends GenrePluginBase {
     { shape: 'spike',   placement: 'ground', weightStart: 5, weightEnd: 7, wRange: [22, 40], hRange: [35, 58], safeChance: 0.12 },
     { shape: 'diamond', placement: 'float',  weightStart: 3, weightEnd: 5, wRange: [26, 38], hRange: [26, 38], safeChance: 0.45 },
     { shape: 'rect',    placement: 'air',    weightStart: 2, weightEnd: 4, wRange: [28, 48], hRange: [26, 42], safeChance: 0.20 },
+    // ボス: 道中はほぼ出現せず、距離が伸びるごとに稀に出現する大型の敵
+    { shape: 'rect',    placement: 'ground', weightStart: 0, weightEnd: 0.5, wRange: [BOSS.bossWidth, BOSS.bossWidth], hRange: [BOSS.bossHeight, BOSS.bossHeight], safeChance: 0, hpOverride: BOSS.bossHp, isBoss: true },
   ]
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {

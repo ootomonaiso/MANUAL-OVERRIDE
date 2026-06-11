@@ -9,6 +9,7 @@
 import { GenrePluginBase } from '../engine/GenrePluginBase'
 import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
+import { BOSS } from '../data/tunables'
 
 export class ArenaPlugin extends GenrePluginBase {
   readonly id: GenreId = 'arena'
@@ -46,6 +47,8 @@ export class ArenaPlugin extends GenrePluginBase {
     { shape: 'pillar', placement: 'ground', weightStart: 4, weightEnd: 6, wRange: [18, 26], hRange: [80, 140], safeChance: 0.10 },
     { shape: 'spike',  placement: 'ground', weightStart: 3, weightEnd: 5, wRange: [28, 46], hRange: [40, 62], safeChance: 0.10 },
     { shape: 'rect',   placement: 'air',    weightStart: 1, weightEnd: 3, wRange: [30, 50], hRange: [28, 44], safeChance: 0.20 },
+    // ボス: 道中はほぼ出現せず、距離が伸びるごとに稀に出現する大型の敵
+    { shape: 'rect',   placement: 'ground', weightStart: 0, weightEnd: 0.5, wRange: [BOSS.bossWidth, BOSS.bossWidth], hRange: [BOSS.bossHeight, BOSS.bossHeight], safeChance: 0, hpOverride: BOSS.bossHp, isBoss: true },
   ]
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {

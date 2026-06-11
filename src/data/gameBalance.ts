@@ -91,6 +91,11 @@ export const PLAYER_PHYSICS = {
   playerMinX:         _p.playerMinX,
   playerMaxXRatio:    _p.playerMaxXRatio,
   airFrictionX:       _p.airFrictionX,
+  dashSpeed:          _p.dashSpeed,
+  dashDurationSec:    _p.dashDurationSec,
+  dashCooldownSec:    _p.dashCooldownSec,
+  dashIframesSec:     _p.dashIframesSec,
+  wallJumpPushSpeed:  _p.wallJumpPushSpeed,
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -259,7 +259,7 @@
       "id": "hack_slash",
       "label": "ハックアンドスラッシュ",
       "thresholds": {"enemy": 5, "combo": 6},
-      "enableFeatures": ["shoot", "enemy_hp", "exp", "dash"],
+      "enableFeatures": ["shoot", "enemy_hp", "exp", "dash", "boss"],
       "disableFeatures": ["grid_stop", "puzzle_solve", "stealth_mode", "slow_precise"],
       "scoreFormula": "kills * 90 + maxCombo * 200 + exp * 2 + bossKills * 400",
       "manualReveal": "これはハックアンドスラッシュになりました。コンボを繋いでください。",

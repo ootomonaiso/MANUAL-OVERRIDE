@@ -1,73 +1,111 @@
 /**
  * game/systems/PuzzleFeature.ts
- * パズル系フィーチャー: grid_stop
+ * パズル系フィーチャーを担当。
  *
- * grid_stop: shoot キー（Z）を押すと 2 秒間タイムスケールを 0.05 に落として
- *            ほぼ停止した状態にする（5 秒クールダウン）。
- *            パズルジャンルの「考えながら進む」感覚を表現する。
- *
- * puzzle_solve: 仕様が未確定のため handles から除外。genres.json にも含まれない。
+ * ✅ grid_stop:    move/solveフェーズを交互に切り替え、solveフェーズ中は
+ *                  scrollSpeed を 0 にして画面をグリッド配置モードで停止する
+ * ✅ puzzle_solve: solve→moveの切り替わりでプレイヤーがターゲットセルに
+ *                  重なっているかを判定し、正解ならコンボ加算+スコア、
+ *                  不正解ならコンボリセットする
  */
 
 import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
+import { PLAYER_PHYSICS } from '../../data/gameBalance'
 
-const GRID_STOP_DURATION  = 2.0   // 停止持続秒数
-const GRID_STOP_TIMESCALE = 0.05  // 停止中のタイムスケール（ほぼ静止）
-const GRID_STOP_COOLDOWN  = 5.0   // 再使用待機秒数
+const GRID_SIZE = 60
+const MOVE_PHASE_SEC = 2.5
+const SOLVE_PHASE_SEC = 2.0
+const SOLVE_SCORE = 200
+
+type Phase = 'move' | 'solve'
+
+interface PuzzleState {
+  phase: Phase
+  timer: number
+  baseScrollSpeed: number | null
+  targetX: number
+}
+
+function initialState(): PuzzleState {
+  return { phase: 'move', timer: MOVE_PHASE_SEC, baseScrollSpeed: null, targetX: 0 }
+}
 
 export class PuzzleFeature implements FeatureSystem {
-  readonly handles = ['grid_stop'] as const
+  readonly handles = ['grid_stop', 'puzzle_solve'] as const
 
-  private stopActive   = 0
-  private stopCooldown = 0
+  private state: PuzzleState = initialState()
 
-  onInit(): void {
-    this.stopActive   = 0
-    this.stopCooldown = 0
+  onInit(world: MutableWorld): void {
+    this.state = initialState()
+    this.state.baseScrollSpeed = world.rules.scrollSpeed
   }
 
-  update(world: MutableWorld, input: InputSnapshot, dt: number): void {
-    if (!world.rules.features.has('grid_stop')) return
+  update(world: MutableWorld, _input: InputSnapshot, dt: number): void {
+    const r = world.rules
+    if (!r.features.has('grid_stop')) return
 
-    if (this.stopActive   > 0) this.stopActive   -= dt
-    if (this.stopCooldown > 0) this.stopCooldown -= dt
+    if (this.state.baseScrollSpeed === null) {
+      this.state.baseScrollSpeed = r.scrollSpeed
+    }
 
-    const shootKey = (world.rules.controls.shoot ?? 'z').toLowerCase()
-    const canStop  = this.stopActive <= 0 && this.stopCooldown <= 0
+    this.state.timer -= dt
+    if (this.state.timer > 0) return
 
-    if (canStop && input.justPressed.has(shootKey)) {
-      world.setTimescale(GRID_STOP_TIMESCALE, GRID_STOP_DURATION)
-      this.stopActive   = GRID_STOP_DURATION + 0.5
-      this.stopCooldown = GRID_STOP_COOLDOWN
+    if (this.state.phase === 'move') {
+      // move → solve: 画面を停止し、グリッド上にターゲットセルを表示する
+      this.state.phase = 'solve'
+      this.state.timer = SOLVE_PHASE_SEC
+      r.scrollSpeed = 0
 
-      const p = world.player
-      world.addScorePopup(
-        p.x + p.w / 2,
-        p.y - 24,
-        'GRID STOP!',
-        '#88ffff',
-      )
+      const minX = PLAYER_PHYSICS.playerMinX
+      const maxX = world.canvas.width * PLAYER_PHYSICS.playerMaxXRatio
+      const cells = Math.max(1, Math.floor((maxX - minX) / GRID_SIZE))
+      const cell = Math.floor(Math.random() * cells)
+      this.state.targetX = minX + cell * GRID_SIZE
+      return
+    }
+
+    // solve → move: スクロールを再開し、正誤判定を行う
+    this.state.phase = 'move'
+    this.state.timer = MOVE_PHASE_SEC
+    r.scrollSpeed = this.state.baseScrollSpeed ?? r.scrollSpeed
+
+    if (!r.features.has('puzzle_solve')) return
+
+    const p = world.player
+    const center = p.x + p.w / 2
+    const hit = center >= this.state.targetX && center <= this.state.targetX + GRID_SIZE
+
+    if (hit) {
+      world.setCombo(world.gameStats.combo + 1)
+      world.addScore(SOLVE_SCORE)
+      world.addScorePopup(p.x + p.w, p.y - 30, `CORRECT! +${SOLVE_SCORE}`, '#ffd700')
+      world.addParticle(p.x + p.w / 2, p.y, 0, -80, 0.4, '#ffd700', 4)
+    } else {
+      world.resetCombo()
+      world.addScorePopup(p.x + p.w, p.y - 30, 'MISS', '#888888')
     }
   }
 
   render(ctx: CanvasRenderingContext2D, world: MutableWorld): void {
-    if (!world.rules.features.has('grid_stop') || this.stopActive <= 0) return
+    if (!world.rules.features.has('grid_stop')) return
+    if (this.state.phase !== 'solve') return
 
-    // グリッド停止中: 画面縁に薄いシアン枠を表示
-    const W = world.canvas.width
-    const H = world.canvas.height
-    const alpha = Math.min(1, this.stopActive / GRID_STOP_DURATION) * 0.6
+    const gY = world.canvas.height - 80
     ctx.save()
-    ctx.strokeStyle = '#88ffff'
-    ctx.lineWidth   = 4
-    ctx.globalAlpha = alpha
-    ctx.strokeRect(2, 2, W - 4, H - 4)
+    ctx.globalAlpha = 0.35
+    ctx.fillStyle = '#ffd700'
+    ctx.fillRect(this.state.targetX, 0, GRID_SIZE, gY)
+    ctx.globalAlpha = 1
+    ctx.strokeStyle = '#ffaa00'
+    ctx.lineWidth = 2
+    ctx.strokeRect(this.state.targetX, 0, GRID_SIZE, gY)
     ctx.restore()
   }
 
-  onManualUpdated(): void {
-    this.stopActive   = 0
-    this.stopCooldown = 0
+  onManualUpdated(world: MutableWorld): void {
+    this.state = initialState()
+    this.state.baseScrollSpeed = world.rules.scrollSpeed
   }
 }

@@ -16,5 +16,10 @@
   "jumpBufferFrames": 10,
   "playerMinX": 40,
   "playerMaxXRatio": 0.38,
-  "airFrictionX": 0
+  "airFrictionX": 0,
+  "dashSpeed": 560,
+  "dashDurationSec": 0.18,
+  "dashCooldownSec": 0.9,
+  "dashIframesSec": 0.25,
+  "wallJumpPushSpeed": 260
 }

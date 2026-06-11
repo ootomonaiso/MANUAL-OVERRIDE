@@ -351,8 +351,14 @@ export class SideScroller {
     const leftKey  = r.controls.moveLeft
     const rightKey = r.controls.moveRight
     const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
+    const dashKey  = r.controls.dash ?? 'Shift'
 
     const isVertical = r.scrollAxis === 'y'
+
+    // ─── ダッシュ入力統計 ─────────────────────────────────────────────
+    if (r.features.has('dash') && this.justPressed.has(dashKey)) {
+      this.stats.dashes = (this.stats.dashes ?? 0) + 1
+    }
 
     // ─── 距離ベースの自動加速 ─────────────────────────────────────────
     const distanceAccelFactor = 1 + Math.min(this.distance / DISTANCE_ACCEL.fullDist, DISTANCE_ACCEL.maxBonus)

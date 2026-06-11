@@ -28,6 +28,11 @@ export interface PhysicsConfig {
   playerMinX: number
   playerMaxXRatio: number
   airFrictionX: number
+  dashSpeed: number
+  dashDurationSec: number
+  dashCooldownSec: number
+  dashIframesSec: number
+  wallJumpPushSpeed: number
 }
 
 /** shoot.json — 射撃システム */
