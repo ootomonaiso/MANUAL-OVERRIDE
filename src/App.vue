@@ -79,9 +79,9 @@ function beginSnapshotLoop() {
     if (!scroller) return
     snapshot.value = scroller.getSnapshot()
 
-    // 更新トリガー（tutorial と playing 両方で発火する）
+    // 更新トリガー（tutorial, playing, genreLocked で発火する）
     // 最初のジャンプまで待つ
-    const activePlay = ['playing', 'tutorial'].includes(gameState.phase.value)
+    const activePlay = ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
     if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
       scroller.setPaused(true)
       gameState.triggerUpdate()
@@ -161,10 +161,22 @@ watch(gameState.phase, (newPhase) => {
     // 選択肢が表示されるときはゲーム一時停止（スムーズに選択できるように）
     scroller?.setPaused(true)
   } else if (['playing', 'tutorial', 'genreLocked'].includes(newPhase)) {
-    // ゲーム再開
-    scroller?.setPaused(false)
+    // 中央表示アニメーション中は再開しない
+    if (!manualCtl.isCentered.value) {
+      scroller?.setPaused(false)
+    }
   }
   // tutorialIntro は startGame() で既に一時停止済み
+})
+
+// ─── 中央表示アニメーション終了でゲーム再開 ───
+watch(manualCtl.isCentered, (centered) => {
+  if (!centered && ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)) {
+    scroller?.setPaused(false)
+  } else if (centered) {
+    // アニメーション開始時は強制一時停止
+    scroller?.setPaused(true)
+  }
 })
 
 // ─── ジャンル確定時の加速エフェクト ────
@@ -274,10 +286,16 @@ onUnmounted(() => {
         :theme="currentTheme"
         :diff-lines="manualCtl.diffLines.value"
         :is-animating="manualCtl.isAnimating.value"
+        :is-centered="manualCtl.isCentered.value"
         :history="manualCtl.history.value"
         :features="gameState.rules.features"
         :highlight="gameState.phase.value === 'tutorial'"
       />
+
+      <!-- 説明書更新時のフォーカスオーバーレイ -->
+      <Transition name="fade">
+        <div v-if="manualCtl.isCentered.value" class="manual-focus-overlay" />
+      </Transition>
 
       <!-- チュートリアルヒント（序盤のみ表示） -->
       <TutorialHints
@@ -718,5 +736,14 @@ body { font-family: var(--font-mono); }
 @keyframes titleCursorBlink {
   0%, 49% { opacity: 1; }
   50%, 100% { opacity: 0; }
+}
+
+/* 説明書更新時のフォーカスオーバーレイ */
+.manual-focus-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 40;
+  pointer-events: none;
 }
 </style>
