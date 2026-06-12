@@ -46,6 +46,8 @@ export interface ShootConfig {
   baseScorePerKill: number
   threeWaySpeedRatio: number
   threeWayYRatio: number
+  spreadShotCount: number
+  spreadAngleStepRad: number
 }
 
 /** throw.json — 投擲エンジン */

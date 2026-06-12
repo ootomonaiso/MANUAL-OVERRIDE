@@ -57,6 +57,7 @@ export class SideScroller {
   private playScore = 0
   private survivedSec = 0
   private dead = false
+  private scrollSpeedMultiplier = 1
   private paused = false
   private firstJumpDone = false
 
@@ -180,6 +181,16 @@ export class SideScroller {
     for (const sys of getActiveSystems(rules.features)) {
       sys.onManualUpdated?.(world, '')
     }
+  }
+
+  /** E2Eテスト用: プレイヤーを無敵化し、ハザード衝突による死亡を無効化する */
+  setInvincible(seconds: number): void {
+    this.player.invincible = seconds
+  }
+
+  /** スクロール速度の一時的な倍率（ジャンル確定時の加速エフェクトなど） */
+  setScrollSpeedMultiplier(multiplier: number): void {
+    this.scrollSpeedMultiplier = multiplier
   }
 
   /** フレーム内で _buildWorld() を1回だけ呼ぶためのキャッシュアクセサ */
@@ -362,7 +373,7 @@ export class SideScroller {
 
     // ─── 距離ベースの自動加速 ─────────────────────────────────────────
     const distanceAccelFactor = 1 + Math.min(this.distance / DISTANCE_ACCEL.fullDist, DISTANCE_ACCEL.maxBonus)
-    const effectiveScrollSpeed = r.scrollSpeed * distanceAccelFactor
+    const effectiveScrollSpeed = r.scrollSpeed * distanceAccelFactor * this.scrollSpeedMultiplier
 
     // ─── Pre-physics: 移動 Feature が vx をセット ────────────────────
     {

@@ -58,7 +58,14 @@ export function updateShoot(
       // 縦モード: プレイヤー上部中心から上方向へ
       const bx = playerX + SHOOT.bulletWidth / 2
       const by = playerY - SHOOT.bulletHeight
-      if (rules.features.has('three_way')) {
+      if (rules.features.has('spread_shot')) {
+        // 扇状に spreadShotCount 方向へ発射（基準方向: 上 = -Y）
+        const half = (SHOOT.spreadShotCount - 1) / 2
+        for (let i = 0; i < SHOOT.spreadShotCount; i++) {
+          const angle = -Math.PI / 2 + (i - half) * SHOOT.spreadAngleStepRad
+          state.bullets.push(new Bullet(bx, by, Math.cos(angle) * spd, Math.sin(angle) * spd))
+        }
+      } else if (rules.features.has('three_way')) {
         state.bullets.push(
           new Bullet(bx, by, 0, -spd),
           new Bullet(bx, by, -spd * SHOOT.threeWayYRatio, -spd * SHOOT.threeWaySpeedRatio),
@@ -71,7 +78,14 @@ export function updateShoot(
       // 横モード: プレイヤー右端中央から右へ（playerX はワールドX）
       const bx = playerX + SHOOT.bulletWidth
       const by = playerY + playerH / 2 - SHOOT.bulletHeight / 2
-      if (rules.features.has('three_way')) {
+      if (rules.features.has('spread_shot')) {
+        // 扇状に spreadShotCount 方向へ発射（基準方向: 右 = +X）
+        const half = (SHOOT.spreadShotCount - 1) / 2
+        for (let i = 0; i < SHOOT.spreadShotCount; i++) {
+          const angle = (i - half) * SHOOT.spreadAngleStepRad
+          state.bullets.push(new Bullet(bx, by, Math.cos(angle) * spd, Math.sin(angle) * spd))
+        }
+      } else if (rules.features.has('three_way')) {
         state.bullets.push(
           new Bullet(bx, by, spd, 0),
           new Bullet(bx, by, spd * SHOOT.threeWaySpeedRatio, -spd * SHOOT.threeWayYRatio),

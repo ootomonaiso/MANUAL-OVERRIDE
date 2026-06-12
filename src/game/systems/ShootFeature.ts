@@ -1,11 +1,14 @@
 /**
  * game/systems/ShootFeature.ts
- * 'shoot', 'three_way', 'charge_shot', 'spread_shot', 'enemy_hp', 'bomb' Feature を担当。
+ * 'shoot', 'three_way', 'spread_shot', 'enemy_hp' Feature を担当。
  *
  * 変更点（framework強化）:
  * - world.cameraX を使い横モードのワールドX座標を正しく計算（旧実装の座標バグ修正）
  * - kills/combo を world.setKills()/setCombo() 経由で GameStats に書き込む
  * - 弾の描画を render() に移し sideScroller から分離
+ *
+ * ⚠️ charge_shot / bomb は現在どのジャンルからも有効化されないため未実装のまま。
+ *    有効化された場合は console.warn で警告を出す。
  */
 
 import type { FeatureSystem } from '../../engine/FeatureSystem'
@@ -17,7 +20,7 @@ import { getGenre, getActiveSystems } from '../../engine/GameRegistry'
 import { soundManager } from '../../plugins/SoundManager'
 
 export class ShootFeature implements FeatureSystem {
-  readonly handles = ['shoot', 'three_way', 'charge_shot', 'spread_shot', 'enemy_hp', 'bomb'] as const
+  readonly handles = ['shoot', 'three_way', 'spread_shot', 'enemy_hp'] as const
 
   private state: ShootState = createShootState()
 
@@ -30,6 +33,13 @@ export class ShootFeature implements FeatureSystem {
     const isVertical = world.rules.scrollAxis === 'y'
     const shootKey = world.rules.controls.shoot ?? 'z'
     const shootJust = input.justPressed.has(shootKey)
+
+    const unimplementedFeatures = ['charge_shot', 'bomb'] as const
+    for (const feature of unimplementedFeatures) {
+      if (world.rules.features.has(feature)) {
+        console.warn(`⚠️ ShootFeature: '${feature}' is not yet implemented`)
+      }
+    }
 
     // 横モード: プレイヤーはスクリーン座標 → ワールドXへ変換
     const playerX = isVertical ? p.x : p.x + world.cameraX

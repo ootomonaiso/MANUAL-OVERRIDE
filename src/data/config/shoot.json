@@ -9,5 +9,7 @@
   "comboResetTime": 3.0,
   "baseScorePerKill": 200,
   "threeWaySpeedRatio": 0.8,
-  "threeWayYRatio": 0.6
+  "threeWayYRatio": 0.6,
+  "spreadShotCount": 5,
+  "spreadAngleStepRad": 0.22
 }

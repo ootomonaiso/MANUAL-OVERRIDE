@@ -52,6 +52,10 @@ function startGame() {
   const canvas = canvasRef.value!
   resizeCanvas()
   scroller = new SideScroller(canvas, gameState.rules)
+  // E2Eテスト用: ?e2eNoDeath=1 でハザード衝突死を無効化（ジャンル分岐の動作確認用）
+  if (new URLSearchParams(window.location.search).get('e2eNoDeath') === '1') {
+    scroller.setInvincible(Infinity)
+  }
   // 初期説明書を履歴に登録
   manualCtl.recordUpdate(gameState.currentManual())
   scroller.start()
@@ -171,14 +175,11 @@ watch(() => gameState.lockedGenre.value, (newGenre) => {
   if (!newGenre || !scroller) return
 
   // ジャンル確定時、スクロール速度を一時的にアップ（0.8秒間）
-  const originalSpeed = gameState.rules.scrollSpeed
-  gameState.rules.scrollSpeed = originalSpeed * 1.35  // 35%加速
-  scroller.updateRules(gameState.rules, gameState.currentManual())
+  scroller.setScrollSpeedMultiplier(1.35)  // 35%加速
 
   if (genreLockedBoostTimer !== null) clearTimeout(genreLockedBoostTimer)
   genreLockedBoostTimer = window.setTimeout(() => {
-    gameState.rules.scrollSpeed = originalSpeed
-    scroller?.updateRules(gameState.rules, gameState.currentManual())
+    scroller?.setScrollSpeedMultiplier(1)
   }, 800)
 })
 

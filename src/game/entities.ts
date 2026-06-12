@@ -22,6 +22,8 @@ export class Player {
   hp = 3
   maxHp = 3
   exp = 0
+  shield = 0       // shield Feature: 1=ガード可能、0=なし（リチャージ中）
+  shieldRecharge = 0  // shield Feature: 再チャージまでの残り秒数
   airTime = 0
   runFrame = 0     // ランニングアニメーション（0〜3）
   landSquash = 0   // 0〜1：着地スカッシュ量
