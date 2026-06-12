@@ -175,7 +175,7 @@ watch(manualCtl.isCentered, (centered) => {
     // アニメーション開始時は強制一時停止
     scroller?.setPaused(true)
   }
-}, { flush: 'sync' })
+})
 
 // ─── ジャンル確定時の加速エフェクト ────
 let genreLockedBoostTimer: number | null = null

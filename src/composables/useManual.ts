@@ -40,14 +40,15 @@ export function useManual(_currentManual: () => ManualVersion) {
       if (prevSet.has(line)) diff.push({ text: line, type: 'unchanged' })
     }
 
+    const ANIM_DURATION_MS = 1500
+    const CENTER_DURATION_MS = 2800
+
     diffLines.value = diff
     isAnimating.value = true
     isCentered.value = true
 
-    // 差分アニメーション完了後に中央表示を解除
-    setTimeout(() => { isAnimating.value = false }, 1500)
-    // 中央表示はもう少し長く維持して確認時間を確保
-    setTimeout(() => { isCentered.value = false }, 2800)
+    setTimeout(() => { isAnimating.value = false }, ANIM_DURATION_MS)
+    setTimeout(() => { isCentered.value = false }, CENTER_DURATION_MS)
   }
 
   return { history, diffLines, isAnimating, isCentered, recordUpdate }

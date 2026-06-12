@@ -162,7 +162,7 @@ function keyLabel(key: string): string {
     0 0 60px rgba(0,255,65,0.35),
     0 8px 32px rgba(0,0,0,0.7),
     inset 0 1px 0 rgba(0,255,65,0.15) !important;
-  /*animation: panelCenterIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;*/
+  animation: panelCenterIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 @keyframes panelCenterIn {
@@ -170,23 +170,13 @@ function keyLabel(key: string): string {
   100% { opacity: 1; transform: translate(50%, 50%) scale(1); }
 }
 
-@keyframes overlayFadeIn {
-  0%   { opacity: 0; }
-  100% { opacity: 1; }
-}
-
-/* 中央表示解除時のトランジション */
+/* 中央表示解除時のトランジション（position/z-index はアニメーション不可のため除外） */
 .manual-panel:not(.panel-centered) {
   transition:
-    position 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-    bottom 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-    right 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
     width 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-    z-index 0.5s,
-    padding 0.5s,
-    font-size 0.5s,
-    box-shadow 0.5s,
+    padding 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    font-size 0.5s cubic-bezier(0.22, 1, 0.36, 1),
     font-family 0.6s,
     background 0.6s,
     border-color 0.6s;
