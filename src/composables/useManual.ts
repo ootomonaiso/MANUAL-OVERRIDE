@@ -5,6 +5,7 @@ export function useManual(_currentManual: () => ManualVersion) {
   const history = ref<ManualVersion[]>([])
   const diffLines = ref<Array<{ text: string; type: 'added' | 'removed' | 'unchanged' }>>([])
   const isAnimating = ref(false)
+  const isCentered = ref(false)
 
   function recordUpdate(nextManual: ManualVersion) {
     const prev = history.value[history.value.length - 1]
@@ -15,6 +16,7 @@ export function useManual(_currentManual: () => ManualVersion) {
     if (!prev) {
       diffLines.value = []
       isAnimating.value = false
+      isCentered.value = false
       return
     }
 
@@ -38,10 +40,16 @@ export function useManual(_currentManual: () => ManualVersion) {
       if (prevSet.has(line)) diff.push({ text: line, type: 'unchanged' })
     }
 
+    const ANIM_DURATION_MS = 1500
+    const CENTER_DURATION_MS = 2800
+
     diffLines.value = diff
     isAnimating.value = true
-    setTimeout(() => { isAnimating.value = false }, 1500)
+    isCentered.value = true
+
+    setTimeout(() => { isAnimating.value = false }, ANIM_DURATION_MS)
+    setTimeout(() => { isCentered.value = false }, CENTER_DURATION_MS)
   }
 
-  return { history, diffLines, isAnimating, recordUpdate }
+  return { history, diffLines, isAnimating, isCentered, recordUpdate }
 }

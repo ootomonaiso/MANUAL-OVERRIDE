@@ -7,6 +7,7 @@ const props = defineProps<{
   theme: ManualTheme
   diffLines: Array<{ text: string; type: 'added' | 'removed' | 'unchanged' }>
   isAnimating: boolean
+  isCentered: boolean
   history: ManualVersion[]
   features?: Set<string>
   highlight?: boolean
@@ -40,7 +41,7 @@ function keyLabel(key: string): string {
 </script>
 
 <template>
-  <div class="manual-panel" :class="[themeClass, { 'manual-highlight': highlight }]">
+  <div class="manual-panel" :class="[themeClass, { 'panel-centered': isCentered, 'manual-highlight': highlight }]">
     <!-- ヘッダー -->
     <div class="manual-header">
       <div class="manual-ver-badge">
@@ -143,6 +144,42 @@ function keyLabel(key: string): string {
   user-select: none;
   max-height: 380px;
   overflow-y: auto;
+}
+
+/* ── 中央表示（説明書更新時） ── */
+.panel-centered {
+  position: fixed !important;
+  bottom: 50% !important;
+  right: 50% !important;
+  transform-origin: center center;
+  transform: translate(50%, 50%) !important;
+  width: 520px !important;
+  max-height: 60vh !important;
+  z-index: 50 !important;
+  padding: 24px 28px !important;
+  font-size: 14px !important;
+  box-shadow:
+    0 0 60px rgba(0,255,65,0.35),
+    0 8px 32px rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(0,255,65,0.15) !important;
+  animation: panelCenterIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes panelCenterIn {
+  0%   { opacity: 0; transform: translate(50%, 50%) scale(0.85); }
+  100% { opacity: 1; transform: translate(50%, 50%) scale(1); }
+}
+
+/* 中央表示解除時のトランジション（position/z-index はアニメーション不可のため除外） */
+.manual-panel:not(.panel-centered) {
+  transition:
+    box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    padding 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    font-size 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    font-family 0.6s,
+    background 0.6s,
+    border-color 0.6s;
 }
 
 .manual-header {
