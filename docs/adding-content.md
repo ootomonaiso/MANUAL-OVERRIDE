@@ -187,47 +187,22 @@ export type GenreId =
 
 ### ステップ 2: GenreDef（ジャンル定義）を追加する
 
-[src/data/genres.ts](../src/data/genres.ts) に1エントリ追加します。
+[src/data/config/genres.json](../src/data/config/genres.json) の `genres[]` に1エントリ追加します。
 
-```typescript
+```json
 {
-  id: 'my_genre',
-  label: 'マイジャンル',
-
-  // ─── 収束条件 ─────────────────────────────────────────────────
-  // このジャンルに確定するために必要な最低パラメータ値。
-  // 複数指定した場合はすべての条件を満たす必要がある。
-  thresholds: { tempo: 3, aerial: 3 },
-
-  // ─── フィーチャー ──────────────────────────────────────────────
-  // ジャンル確定時に有効になるメカニクス。
-  enableFeatures: ['double_jump', 'dash'],
-  // ジャンル確定時に無効化するメカニクス。
-  disableFeatures: ['grid_stop'],
-
-  // ─── スコア計算式 ──────────────────────────────────────────────
-  // 変数: distance, kills, combo, exp, beatHits, survivedSec,
-  //        accuracy, maxCombo, deaths, itemsCollected, bossKills,
-  //        stealthBonus, colorTouches
-  scoreFormula: 'distance * 1.5 + combo * 60 + kills * 80',
-
-  // ─── エンディングテキスト ──────────────────────────────────────
-  // ジャンル確定時に説明書に書き込まれる宣言文。
-  manualReveal: 'これはマイジャンルになりました。',
-  // 投擲後のエンディング画面に表示される締めくくりの一文。
-  endingFlavor: 'あなたは独自のゲームを作り上げた。',
-
-  // ─── UI テーマ ─────────────────────────────────────────────────
-  // 'plain' | 'stg' | 'rpg' | 'puzzle' | 'rhythm' | 'horror' | 'aquatic'
-  theme: 'plain',
-
-  // ─── Canvas 背景色 ─────────────────────────────────────────────
-  bgColor: '#0a1020',
-
-  // ─── 環境（任意） ──────────────────────────────────────────────
-  // 'ground' | 'sky' | 'space' | 'ocean' | 'dungeon' | 'forest' | 'city'
-  environment: 'sky',
-},
+  "id": "my_genre",
+  "label": "マイジャンル",
+  "thresholds": { "tempo": 3, "aerial": 3 },
+  "enableFeatures": ["double_jump", "dash"],
+  "disableFeatures": ["grid_stop"],
+  "scoreFormula": "distance * 1.5 + combo * 60 + kills * 80",
+  "manualReveal": "これはマイジャンルになりました。",
+  "endingFlavor": "あなたは独自のゲームを作り上げた。",
+  "theme": "plain",
+  "bgColor": "#0a1020",
+  "environment": "sky"
+}
 ```
 
 ### ステップ 3: GenrePlugin（見た目）を実装する
@@ -365,18 +340,18 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
 
 | パラメータ | 向いているジャンル | 典型的な閾値 |
 |---|---|---|
-| `tempo` | runner, rhythm, bullet_runner, racing | 4〜5 |
-| `range` | stg, aerial_stg, bullet_hell | 3〜4 |
-| `enemy` | stg, arena, hack_slash, bullet_hell | 4〜5 |
-| `combo` | puzzle, hack_slash, arena | 4〜5 |
-| `growth` | rpg, dungeon, idle | 4〜5 |
-| `rhythm` | rhythm, sports | 3〜4 |
+| `tempo` | runner, rhythm, bullet_runner, racing | 4〜7 |
+| `range` | stg, aerial_stg, bullet_hell | 4〜5 |
+| `enemy` | stg, arena, hack_slash, bullet_hell | 4〜6 |
+| `combo` | puzzle, hack_slash, arena | 4〜6 |
+| `growth` | rpg, dungeon, idle | 4〜6 |
+| `rhythm` | rhythm, sports | 4 |
 | `stealth` | stealth_action, horror | 4〜5 |
-| `vertical` | aerial_stg, aquatic, bullet_hell | 2〜3 |
-| `aerial` | platformer, aquatic | 2〜3 |
-| `survive` | survival, horror, aquatic | 3〜5 |
-| `craft` | tower_def, idle | 4〜5 |
-| `speed` | racing, sports, bullet_runner | 3〜4 |
+| `vertical` | aerial_stg, aquatic, bullet_hell | 3〜4 |
+| `aerial` | platformer, aquatic | 3〜4 |
+| `survive` | survival, horror, aquatic | 4〜6 |
+| `craft` | tower_def, idle | 3〜6 |
+| `speed` | racing, sports, bullet_runner | 4〜5 |
 
 ### 分岐が「自然に見える」ようにする設計
 
@@ -435,9 +410,9 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
 |---|---|
 | 選択肢を選んでも何も起きない | `next` のキーが存在しない or タイプミス |
 | いつまでもジャンルが確定しない | `thresholds` の値が選択肢の合計を超えている |
-| エンディングテキストが表示されない | `endingFlavor` が `genres.ts` に未記載 |
+| エンディングテキストが表示されない | `endingFlavor` が `genres.json` に未記載 |
 | 見た目が変わらない | `genres/index.ts` への登録漏れ |
-| ゲームが起動しない | `domain/types.ts` の `GenreId` への追加漏れ |
+| ゲームが起動しない | `src/domain/types.ts` の `GenreId` への追加漏れ |
 
 ---
 
@@ -453,7 +428,7 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
 ### 新しいジャンルエンディングを追加する
 
 - [ ] `src/domain/types.ts` の `GenreId` に ID を追加
-- [ ] `src/data/genres.ts` に `GenreDef` を追加（thresholds, enableFeatures, scoreFormula, manualReveal, endingFlavor）
+- [ ] `src/data/config/genres.json` に `GenreDef` を追加（thresholds, enableFeatures, scoreFormula, manualReveal, endingFlavor）
 - [ ] `src/genres/MyGenrePlugin.ts` を作成（視覚テーマ + spawnTable）
 - [ ] `src/genres/index.ts` に import と `registerGenre()` を追加
 - [ ] `src/data/manuals/` の JSON で genreParams を調整し、新ジャンルの thresholds へ収束するルートが存在することを確認
@@ -461,7 +436,7 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
 
 ### テスト時のショートカット
 
-`genreParams` の初期値を `genres.ts` の thresholds ちょうどに設定した URL パラメータや
+`genreParams` の初期値を `genres.json` の thresholds ちょうどに設定した URL パラメータや
 ブラウザコンソールからの直接呼び出しで、エンディング画面を素早く確認できます。
 （実装方法は `composables/useGameState.ts` の `debugForceGenre()` を参照）
 

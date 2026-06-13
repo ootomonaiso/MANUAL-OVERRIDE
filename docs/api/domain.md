@@ -19,7 +19,7 @@
 | `ManualTheme` | 説明書テーマ (`plain`, `stg`, `rpg`, `puzzle`, `rhythm`, `horror`, `aquatic`) |
 | `ScrollDirection` | スクロール方向 (`horizontal`, `vertical`, `none`) |
 | `EnvironmentId` | 環境設定 (`ground`, `sky`, `space`, `ocean`, `dungeon`, `forest`, `city`) |
-| `FeatureId` | Feature フラグ (30種: shoot, three_way, charge_shot, spread_shot, bomb, enemy_hp, boss, auto_run, slow_precise, double_jump, long_air, dash, wall_jump, slide, gravity_flip, vertical_scroll, hp, exp, item_pickup, shield, grid_stop, puzzle_solve, beat_hazard, just_input, beat_dash, stealth_mode, time_bonus, tower, color_touch) |
+| `FeatureId` | Feature フラグ (31種: shoot, three_way, charge_shot, spread_shot, bomb, enemy_hp, boss, movement, auto_run, slow_precise, double_jump, long_air, dash, wall_jump, slide, gravity_flip, vertical_scroll, hp, exp, item_pickup, shield, grid_stop, puzzle_solve, beat_hazard, just_input, beat_dash, stealth_mode, time_bonus, tower, color_touch) |
 | `Controls` | キー設定 (`jump`, `moveLeft`, `moveRight`, `shoot?`, `dash?`, `slide?`) |
 | `Choice` | 説明書選択肢 (`id`, `label`, `hint?`, `next`, `genreParams`, `paramMultiplier?`) |
 | `ManualRuntimeConfig` | バージョン固有のruntime上書き (`scrollSpeed?`, `gravity?`, `bpm?`, `scrollDirection?`, `environment?`, `playerMaxHp?`, `timescale?`, `colorTouchScore?`, `forceGenreId?`) |

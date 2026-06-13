@@ -17,7 +17,7 @@ JSON 設定ファイルのインポートと GameConfigMap の構築。
 ### 内部インポート
 
 各セクションは `src/data/config/*.json` からインポートされる:
-- `physics`, `shoot`, `throw`, `spawn`, `vfx`, `camera`, `background`, `hazard_vfx`, `ui`, `score`, `difficulty`, `boss`, `rhythm_tuning`, `stealth`, `genre_params`, `game_balance`, `genres`
+- `physics`, `shoot`, `throw`, `spawn`, `vfx`, `camera`, `background`, `hazard_vfx`, `ui`, `score`, `difficulty`, `boss`, `rhythm_tuning`, `stealth`, `genre_params`, `game_balance`, `genres`, `challenge`
 
 ---
 
@@ -34,4 +34,4 @@ JSON 設定ファイルのインポートと GameConfigMap の構築。
 ### 内部インポート
 
 各デッキファイルは `src/data/manuals/*.json` からインポートされる:
-- `main_deck.json`, `stg_deck.json`, `rpg_deck.json`, `puzzle_deck.json`, `rhythm_deck.json`, `horror_deck.json`, `aquatic_deck.json`
+- `base.json`, `action-branch.json`, `flow-branch.json`, `advanced-branch.json`, `TEMPLATE.json`

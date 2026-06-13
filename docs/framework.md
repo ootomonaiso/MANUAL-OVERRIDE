@@ -68,11 +68,9 @@
                  └────────┬──────────────┘
                  ┌────────▼──────────────┐
                  │  Data Layer           │
-                 │  data/genres.ts       │
-                 │  data/gameBalance.ts  │
-                 │  data/tunables.ts     │
-                 │  data/manuals/*.json  │
-                 └───────────────────────┘
+                  │  data/config/*.json   │
+                  │  data/manuals/*.json  │
+                  └───────────────────────┘
 ```
 
 ### レイヤー間の依存ルール
@@ -375,10 +373,10 @@ debugPrint(): void
 | ShootFeature | shoot / three_way / charge_shot / spread_shot / bomb / enemy_hp | ─ | ✅ | ✅ | onManualUpdated | ✅ |
 | RhythmFeature | beat_hazard / just_input / beat_dash | ─ | ✅ | ✅ | onManualUpdated | ✅ |
 | MovementFeature | auto_run / slow_precise / double_jump / long_air | ✅ | ✅ | ─ | onInit | ✅ |
-| RpgFeature | hp / exp / item_pickup / shield | ─ | ✅ | ─ | onPlayerHit | ✅（shield のみスタブ） |
-| SpecialFeature | stealth_mode / time_bonus / tower / color_touch / boss | ─ | stub | ─ | onSafeHazardTouch (color_touch のみ) | ⚠️ |
-| ExtraMovementFeature | dash / wall_jump / slide / gravity_flip / vertical_scroll | ─ | stub | ─ | ─ | ❌ |
-| PuzzleFeature | grid_stop / puzzle_solve | ─ | stub | ─ | ─ | ❌ |
+| RpgFeature | hp / exp / item_pickup / shield | ─ | ✅ | ─ | onPlayerHit | ✅ |
+| SpecialFeature | stealth_mode / time_bonus / tower / color_touch / boss | ─ | ✅ | ─ | onSafeHazardTouch | ✅ |
+| ExtraMovementFeature | dash / wall_jump / slide / gravity_flip / vertical_scroll | ─ | ✅ | ─ | ─ | ✅ |
+| PuzzleFeature | grid_stop / puzzle_solve | ─ | ✅ | ─ | ─ | ✅ |
 
 ### GenrePlugin
 
@@ -393,7 +391,12 @@ debugPrint(): void
 | SurvivalPlugin | survival | ✅ | ✅ | ─ | ✅ |
 | BulletRunnerPlugin | bullet_runner | ✅ | ✅ | ─ | ✅ |
 | PlatformerPlugin | platformer | ✅ | ✅ | ─ | ✅ |
-| 未実装 | stealth_action / racing / dungeon / tower_def / sports / idle / arena / aquatic / horror / hack_slash | ─ | ─ | ─ | ❌ |
+| RacingPlugin | racing | ✅ | ✅ | ─ | ✅ |
+| ArenaPlugin | arena | ✅ | ✅ | ─ | ✅ |
+| AquaticPlugin | aquatic | ✅ | ✅ | ─ | ✅ |
+| DungeonPlugin | dungeon | ✅ | ✅ | ─ | ✅ |
+| HackSlashPlugin | hack_slash | ✅ | ✅ | ─ | ✅ |
+| 未実装 | stealth_action / tower_def / sports / idle / horror | ─ | ─ | ─ | ❌ |
 
 ### ドメイン・ユーティリティ
 
@@ -402,8 +405,8 @@ debugPrint(): void
 | domain/ruleEngine.ts | buildRuntimeRules — 選択履歴 → RuntimeRules 合成 | ✅ |
 | domain/genreResolver.ts | resolveGenre — genreParams → ジャンル収束 | ✅ |
 | domain/scoreCalc.ts | 最終スコア計算（play × 0.7 + throw × 0.3） | ✅ |
-| domain/learning.ts | 行動統計→ルール変更 | ❌ 未実装 |
-| framework/ | ManualLoader / ManualValidator | ❌ ディレクトリ自体が存在しない |
+| domain/LearningSystem.ts | 行動統計→ルール変更 | ✅ |
+| framework/ | ManualLoader / ManualValidator | ✅ |
 
 ---
 
@@ -508,25 +511,16 @@ game/
 
 ---
 
-### E. 未実装 Feature の空スタブ（優先度: 中 → ✅ 実装済み）
+### E. Feature の実装状況（優先度: 中 → ✅ 実装済み）
 
-以下の FeatureId は登録済みだが `update()` が空の状態：
-
-```
-ExtraMovementFeature: dash / wall_jump / slide / gravity_flip / vertical_scroll
-PuzzleFeature:        grid_stop / puzzle_solve
-SpecialFeature:       stealth_mode / time_bonus / tower / boss (※color_touch は実装済み)
-RpgFeature:           shield
-```
+すべての FeatureId が実装済みです。
 
 **実装ステータス（2026-05-31 更新）:**
 
-- ✅ **ExtraMovementFeature**: update() 内で未実装 feature 有効化時に console.warn を出力
-- ✅ **PuzzleFeature**: update() 内で未実装 feature 有効化時に console.warn を出力
-- ✅ **SpecialFeature**: update() 内で未実装 feature（stealth_mode/time_bonus/tower/boss）有効化時に console.warn を出力
-- ⚠️ **RpgFeature**: shield は未実装のまま（onPlayerHit のスタブ実装済み）
-
-これにより、有効化されたが実装されていない feature は開発コンソールで即座に発見可能になる。
+- ✅ **ExtraMovementFeature**: dash / wall_jump / slide / gravity_flip / vertical_scroll 完全実装
+- ✅ **PuzzleFeature**: grid_stop / puzzle_solve 完全実装
+- ✅ **SpecialFeature**: stealth_mode / time_bonus / tower / color_touch / boss 完全実装
+- ✅ **RpgFeature**: hp / exp / item_pickup / shield 完全実装
 
 ---
 
@@ -606,7 +600,7 @@ abstract class GenrePluginBase implements GenrePlugin {
 |---|---|---|
 | A | フック呼び出し実装 | すべてのフック（onPlayerDeath, onComboChange, onItemPickup 等）が実装され、適切に呼び出されている |
 | C | 座標系の不統一 | MutableWorld に getHazardScreenX / getPlayerWorldX ヘルパーメソッド実装 |
-| E | 空スタブ警告 | ExtraMovementFeature / PuzzleFeature / SpecialFeature に warning 出力実装 |
+| E | Feature 実装 | ExtraMovementFeature / PuzzleFeature / SpecialFeature / RpgFeature が完全実装 |
 | G | setTimescale 実装 | タイムスケール機構が完全実装。RhythmFeature などで活用可能 |
 | H | framework/ 実装 | ManualLoader, ManualBuilder, ManualValidator が完全実装 |
 | I | GenrePluginBase 実装 | 抽象基底クラスが実装されすべてのプラグインが継承 |

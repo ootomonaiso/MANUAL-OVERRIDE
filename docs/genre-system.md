@@ -63,31 +63,31 @@ function resolveGenre(params: GenreParams, genres: GenreDef[]): GenreId {
 | ID | ラベル | 閾値 | 有効フィーチャー | スコア式 |
 |---|---|---|---|---|
 | `base` | チュートリアル | ─ | ─ | ─ |
-| `runner` | エンドレスランナー | tempo≥5 | auto_run, double_jump, long_air | `distance*1.2 + survivedSec*8 + combo*50` |
-| `stg` | シューティング | range≥4, enemy≥4 | shoot, three_way, enemy_hp | `kills*120 + distance*0.5 + combo*80` |
-| `rpg` | RPG | growth≥4 | hp, exp, item_pickup, slow_precise | `exp*2 + kills*60 + distance*0.3` |
-| `puzzle` | パズル | combo≥4 | grid_stop, puzzle_solve | `combo*200 + survivedSec*3` |
-| `rhythm` | リズム | tempo≥4, rhythm≥4 | beat_hazard, just_input, beat_dash | `beatHits*150 + combo*100 + distance*0.4` |
+| `runner` | エンドレスランナー | tempo≥7 | auto_run, double_jump, long_air | `distance*1.2 + survivedSec*8 + combo*50` |
+| `stg` | シューティング | range≥5, enemy≥5 | shoot, three_way, enemy_hp | `kills*120 + distance*0.5 + combo*80` |
+| `rpg` | RPG | growth≥6 | hp, exp, item_pickup, slow_precise | `exp*2 + kills*60 + distance*0.3` |
+| `puzzle` | パズル | combo≥5 | grid_stop | `combo*200 + survivedSec*3` |
+| `rhythm` | リズム | tempo≥5, rhythm≥5 | beat_hazard, just_input, beat_dash | `beatHits*150 + combo*100 + distance*0.4` |
 
 ### 追加ジャンル（定義済み・プラグイン順次実装）
 
 | ID | ラベル | 閾値 | スコア式の重点 |
 |---|---|---|---|
-| `aerial_stg` | 縦スクロールSTG | vertical≥3, range≥3, enemy≥3 | kills + combo + survivedSec |
-| `bullet_hell` | 弾幕シューティング | vertical≥3, enemy≥5 | kills + combo + accuracy |
-| `survival` | サバイバル | survive≥4, growth≥3 | survivedSec + itemsCollected |
-| `stealth_action` | ステルスアクション | stealth≥4 | stealthBonus + survivedSec |
-| `racing` | レーシング | speed≥4, tempo≥3 | distance + survivedSec |
-| `platformer` | プラットフォームアクション | aerial≥3, combo≥3 | combo + distance |
-| `dungeon` | ダンジョン探索 | growth≥5, craft≥2 | exp + kills + itemsCollected |
-| `tower_def` | タワーディフェンス | craft≥5, enemy≥3 | kills + combo + survivedSec |
-| `sports` | スポーツ | speed≥3, rhythm≥3 | combo + distance + beatHits |
-| `idle` | 放置ゲーム | craft≥4 | itemsCollected + exp + survivedSec |
-| `bullet_runner` | 弾幕ランナー | tempo≥5, enemy≥4 | kills + distance + combo |
-| `arena` | アリーナバトル | enemy≥5, combo≥4 | kills + bossKills + combo |
-| `aquatic` | 水中アドベンチャー | vertical≥2, aerial≥2, survive≥3 | distance + itemsCollected + survivedSec |
-| `horror` | サバイバルホラー | survive≥5, stealth≥3 | survivedSec + stealthBonus − deaths |
-| `hack_slash` | ハックアンドスラッシュ | enemy≥4, combo≥5 | kills + maxCombo + exp + bossKills |
+| `aerial_stg` | 縦スクロールSTG | vertical≥4, range≥4, enemy≥4 | kills*130 + combo*90 + survivedSec*3 |
+| `bullet_hell` | 弾幕シューティング | vertical≥4, enemy≥6 | kills + combo + accuracy |
+| `survival` | サバイバル | survive≥5, growth≥4 | survivedSec + itemsCollected |
+| `stealth_action` | ステルスアクション | stealth≥5 | stealthBonus + survivedSec |
+| `racing` | レーシング | speed≥5, tempo≥4 | distance + survivedSec |
+| `platformer` | プラットフォームアクション | aerial≥4, combo≥4 | combo + distance |
+| `dungeon` | ダンジョン探索 | growth≥6, craft≥3 | exp + kills + itemsCollected |
+| `tower_def` | タワーディフェンス | craft≥6, enemy≥4 | kills + combo + survivedSec |
+| `sports` | スポーツ | speed≥4, rhythm≥4 | combo + distance + beatHits |
+| `idle` | 放置ゲーム | craft≥6 | itemsCollected + exp + survivedSec |
+| `bullet_runner` | 弾幕ランナー | tempo≥6, enemy≥5 | kills + distance + combo |
+| `arena` | アリーナバトル | enemy≥6, combo≥5 | kills + bossKills + combo |
+| `aquatic` | 水中アドベンチャー | vertical≥3, aerial≥3, survive≥4 | distance + itemsCollected + survivedSec |
+| `horror` | サバイバルホラー | survive≥6, stealth≥4 | survivedSec + stealthBonus − deaths |
+| `hack_slash` | ハックアンドスラッシュ | enemy≥5, combo≥6 | kills + maxCombo + exp + bossKills |
 
 ---
 
@@ -111,23 +111,23 @@ function resolveGenre(params: GenreParams, genres: GenreDef[]): GenreId {
 
 ---
 
-## ジャンル定義の書き方（genres.ts）
+## ジャンル定義の書き方（genres.json）
 
-```typescript
-// src/data/genres.ts の GENRES[] に追加
+```json
+// src/data/config/genres.json の genres[] に追加
 {
-  id: 'my_genre',                     // GenreId に登録が必要
-  label: '私のジャンル',
-  thresholds: { tempo: 3, speed: 3 }, // 複数パラメータを AND 条件で指定
-  enableFeatures: ['auto_run', 'dash'],
-  disableFeatures: ['grid_stop'],
-  scoreFormula: 'distance * 2 + combo * 100',
-  manualReveal: 'ゲームが変わりました。',
-  endingFlavor: 'あなたは最後まで走った。',
-  theme: 'plain',
-  bgColor: '#001020',
-  environment: 'sky',           // 省略可（デフォルト: 'ground'）
-  scrollDirection: 'horizontal', // 省略可（デフォルト: 'horizontal'）
+  "id": "my_genre",
+  "label": "私のジャンル",
+  "thresholds": { "tempo": 3, "speed": 3 },
+  "enableFeatures": ["auto_run", "dash"],
+  "disableFeatures": ["grid_stop"],
+  "scoreFormula": "distance * 2 + combo * 100",
+  "manualReveal": "ゲームが変わりました。",
+  "endingFlavor": "あなたは最後まで走った。",
+  "theme": "plain",
+  "bgColor": "#001020",
+  "environment": "sky",
+  "scrollDirection": "horizontal"
 }
 ```
 

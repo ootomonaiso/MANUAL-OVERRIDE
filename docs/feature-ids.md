@@ -15,7 +15,7 @@
 | `spread_shot` | 扇状5方向散弾 | ShootFeature |
 | `bomb` | 爆弾アイテム（画面全体攻撃） | ShootFeature |
 | `enemy_hp` | 敵が HP を持ち複数ヒット必要 | ShootFeature |
-| `boss` | ボスエネミー出現 | SpecialFeature (⚠️スタブ) |
+| `boss` | ボスエネミー出現 | SpecialFeature ✅
 
 ---
 
@@ -27,11 +27,11 @@
 | `slow_precise` | 低速精密移動（速度 × slowPreciseRatio） | MovementFeature ✅ |
 | `double_jump` | 空中でもう一度ジャンプ可能 | MovementFeature ✅ |
 | `long_air` | 空中でスコアボーナス（0.8pt/sec） | MovementFeature ✅ |
-| `dash` | 短距離ダッシュ（Shift など） | ExtraMovementFeature (⚠️スタブ) |
-| `wall_jump` | 壁接触中に逆方向ジャンプ | ExtraMovementFeature (⚠️スタブ) |
-| `slide` | しゃがみスライド（障害物くぐり） | ExtraMovementFeature (⚠️スタブ) |
-| `gravity_flip` | 重力反転（天井を床として走る） | ExtraMovementFeature (⚠️スタブ) |
-| `vertical_scroll` | 縦スクロールモード | ExtraMovementFeature (⚠️スタブ) |
+| `dash` | 短距離ダッシュ（Shift など） | ExtraMovementFeature ✅ |
+| `wall_jump` | 壁接触中に逆方向ジャンプ | ExtraMovementFeature ✅ |
+| `slide` | しゃがみスライド（障害物くぐり） | ExtraMovementFeature ✅ |
+| `gravity_flip` | 重力反転（天井を床として走る） | ExtraMovementFeature ✅ |
+| `vertical_scroll` | 縦スクロールモード | ExtraMovementFeature ✅ |
 
 ---
 
@@ -50,8 +50,8 @@
 
 | FeatureId | 説明 | 対応 FeatureSystem |
 |---|---|---|
-| `grid_stop` | スクロール停止してグリッド配置モード | PuzzleFeature (⚠️スタブ) |
-| `puzzle_solve` | 正解が存在するパズル入力 | PuzzleFeature (⚠️スタブ) |
+| `grid_stop` | スクロール停止してグリッド配置モード | PuzzleFeature ✅ |
+| `puzzle_solve` | 正解が存在するパズル入力 | PuzzleFeature ✅ |
 
 ---
 
@@ -69,9 +69,9 @@
 
 | FeatureId | 説明 | 対応 FeatureSystem |
 |---|---|---|
-| `stealth_mode` | 透明化・一定時間ハザード無視 | SpecialFeature (⚠️スタブ) |
-| `time_bonus` | タイムアタック評価（早いほど高得点） | SpecialFeature (⚠️スタブ) |
-| `color_touch` | 安全色を踏むと得点 | SpecialFeature ✅（onSafeHazardTouch で得点・消滅・エフェクト） |
+| `stealth_mode` | 透明化・一定時間ハザード無視 | SpecialFeature ✅ |
+| `time_bonus` | タイムアタック評価（早いほど高得点） | SpecialFeature ✅ |
+| `color_touch` | 安全色を踏むと得点 | SpecialFeature ✅ |
 
 ---
 
@@ -79,7 +79,7 @@
 
 | FeatureId | 説明 | 対応 FeatureSystem |
 |---|---|---|
-| `tower` | タワー設置（停止して配置） | SpecialFeature (⚠️スタブ) |
+| `tower` | タワー設置（停止して配置） | SpecialFeature ✅ |
 
 ---
 
@@ -96,16 +96,16 @@
 | ShootFeature | shoot / three_way / charge_shot / spread_shot / bomb / enemy_hp | ✅ |
 | RhythmFeature | beat_hazard / just_input / beat_dash | ✅ |
 | MovementFeature | auto_run / slow_precise / double_jump / long_air | ✅ |
-| RpgFeature | hp / exp / item_pickup / shield | ✅（hp: onPlayerHit、item_pickup: update。shield は未実装） |
-| ExtraMovementFeature | dash / wall_jump / slide / gravity_flip / vertical_scroll | ⚠️ スタブ |
-| PuzzleFeature | grid_stop / puzzle_solve | ⚠️ スタブ |
-| SpecialFeature | stealth_mode / time_bonus / tower / color_touch / boss | ✅ color_touch: onSafeHazardTouch。他は未実装スタブ |
+| RpgFeature | hp / exp / item_pickup / shield | ✅ |
+| ExtraMovementFeature | dash / wall_jump / slide / gravity_flip / vertical_scroll | ✅ |
+| PuzzleFeature | grid_stop / puzzle_solve | ✅ |
+| SpecialFeature | stealth_mode / time_bonus / tower / color_touch / boss | ✅ |
 
 ---
 
 ## FeatureId を新規追加するには
 
 1. `src/domain/types.ts` の `FeatureId` union に文字列リテラルを追加
-2. `src/data/genres.ts` の該当ジャンルの `enableFeatures` に追加
+2. `src/data/config/genres.json` の該当ジャンルの `enableFeatures` に追加
 3. `src/game/systems/` に `XxxFeature.ts` を作成（[feature-system.md](feature-system.md) 参照）
 4. `src/game/systems/index.ts` に `registerFeature(new XxxFeature())` を追加

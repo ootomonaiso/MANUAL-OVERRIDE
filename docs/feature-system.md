@@ -95,6 +95,13 @@ world.addBeatHit()                // beatHits をインクリメント
 world.setBeatHazardInverted(v)    // beat_hazard の色反転フラグを更新
 ```
 
+### 座標変換ヘルパー
+
+```typescript
+world.getHazardScreenX(hazard)    // ハザードのスクリーンX（モード非依存）
+world.getPlayerWorldX()           // プレイヤーのワールドX（モード非依存）
+```
+
 ---
 
 ## InputSnapshot

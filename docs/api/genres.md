@@ -172,6 +172,86 @@
 
 ---
 
+## `RacingPlugin.ts`
+
+**id:** `racing` — レーシングゲーム。
+
+| 特性 | 値 |
+|---|---|
+| 背景 | 暗オレンジ (`#0f0a00` → `#1a1500`) |
+| 星 | なし |
+| ハザード | 赤 (`#ff4444`) / 黄 (`#ffcc00`) |
+| 遠景 | 山脈のシルエット |
+| 中景 | 道路のマーキングライン |
+| プレイヤー | レースカー（ボディ・タイヤ・ウィング） |
+| スポーン | rect(ground+air), spike(ground), diamond(float) |
+
+---
+
+## `ArenaPlugin.ts`
+
+**id:** `arena` — アリーナバトル。
+
+| 特性 | 値 |
+|---|---|
+| 背景 | 暗赤 (`#0f0000` → `#1a0505`) |
+| 星 | なし |
+| ハザード | 赤 (`#ff2222`) / 橙 (`#ff8800`) |
+| 遠景 | 闘技場の壁 |
+| 中景 | 観客席のシルエット |
+| プレイヤー | 戦士（鎧・盾・剣） |
+| スポーン | rect(ground+air), pillar(ground), spike(ground) — boss 出現 |
+
+---
+
+## `AquaticPlugin.ts`
+
+**id:** `aquatic` — 水中アドベンチャー。`DarkThemePlugin` を継承。
+
+| 特性 | 値 |
+|---|---|
+| 背景 | 深海 (`#000f2a` → `#001a3a`) |
+| 星 | 青 (`#4488ff`) |
+| ハザード | 紫 (`#6c5ce7`) / 青 (`#00b894`) |
+| 遠景 | 光のシャフト（水面からの光） |
+| 中景 | 海藻・サンゴのシルエット |
+| プレイヤー | ダイバー（タンク・フィン） |
+| スポーン | rect(ground+air), diamond(float), pillar(air) — vertical scroll |
+
+---
+
+## `DungeonPlugin.ts`
+
+**id:** `dungeon` — ダンジョン探索。
+
+| 特性 | 値 |
+|---|---|
+| 背景 | 暗茶 (`#0a0a00` → `#151500`) |
+| 星 | なし |
+| ハザード | 紫 (`#6c5ce7`) / 緑 (`#00b894`) |
+| 遠景 | 石壁のシルエット |
+| 中景 | 松明の明かり（ハッシュ生成） |
+| プレイヤー | 探検家（マント・松明） |
+| スポーン | rect(ground), pillar(ground), spike(ground), rect(air) |
+
+---
+
+## `HackSlashPlugin.ts`
+
+**id:** `hack_slash` — ハックアンドスラッシュ。
+
+| 特性 | 値 |
+|---|---|
+| 背景 | 暗赤 (`#150000` → `#200000`) |
+| 星 | なし |
+| ハザード | 赤 (`#ff2222`) / 橙 (`#ff8800`) |
+| 遠景 | 炎のシルエット |
+| 中景 | 剣の軌跡エフェクト |
+| プレイヤー | 剣士（鎧・剣・コンボエフェクト） |
+| スポーン | rect(ground+air), pillar(ground), spike(ground) — boss 出現 |
+
+---
+
 ## `index.ts` — 登録一覧
 
 | 順 | クラス | ジャンルID |
@@ -186,5 +266,10 @@
 | 8 | `SurvivalPlugin` | `survival` |
 | 9 | `BulletRunnerPlugin` | `bullet_runner` |
 | 10 | `PlatformerPlugin` | `platformer` |
+| 11 | `RacingPlugin` | `racing` |
+| 12 | `ArenaPlugin` | `arena` |
+| 13 | `AquaticPlugin` | `aquatic` |
+| 14 | `DungeonPlugin` | `dungeon` |
+| 15 | `HackSlashPlugin` | `hack_slash` |
 
-※ `bullet_hell`, `stealth_action`, `racing`, `dungeon`, `tower_def`, `sports`, `idle`, `arena`, `aquatic`, `horror`, `hack_slash` はまだプラグイン未実装。
+※ `bullet_hell`, `stealth_action`, `tower_def`, `sports`, `idle`, `horror` はまだプラグイン未実装。
