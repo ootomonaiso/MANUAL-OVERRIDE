@@ -218,6 +218,7 @@ export interface GenreDef {
   manualReveal: string;            // 確定時に説明書へ出す宣言文
   endingFlavor: string;            // エンディング画面の締めくくりメッセージ
   theme: 'plain' | 'stg' | 'rpg' | 'puzzle' | 'rhythm' | 'horror' | 'aquatic';
+  gravity?: number;                // 重力加速度 px/s²。省略時は 1600
 }
 
 // 実行時にゲーム本体が読む合成済みルール

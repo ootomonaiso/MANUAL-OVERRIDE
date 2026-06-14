@@ -164,6 +164,18 @@ export class SideScroller {
 
   // ルール更新（ManualVersion があれば learningRules を同期）
   updateRules(rules: RuntimeRules, manual?: ManualVersion): void {
+    // 重力が変化した場合、空中にいる時のみ慣性（vy）を新しい重力に応じて比例調整する
+    // （無重力ジャンルへの切り替え時に、旧重力下で蓄積した速度がそのまま残り続けるのを防ぐ）
+    const oldGravity = this.rules.gravity
+    const newGravity = rules.gravity
+    if (!this.player.onGround && newGravity !== oldGravity) {
+      if (oldGravity > 0 && newGravity > 0) {
+        this.player.vy *= newGravity / oldGravity
+      } else if (newGravity === 0) {
+        this.player.vy *= 0.3
+      }
+    }
+
     this.rules = rules
     if (rules.features.has('double_jump')) {
       this.player.jumpsLeft = Math.max(this.player.jumpsLeft, 2)
@@ -492,8 +504,13 @@ export class SideScroller {
       if (!this.keys.has(jumpKey)) this.jumpHeld = false
 
       // ─── 重力 ─────────────────────────────────────────────
-      const gravMult = p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0
-      p.vy += r.gravity * gravMult * dt
+      if (r.gravity === 0) {
+        // 無重力: 重力では減速しないため、慣性を毎フレーム緩やかに減衰させて静止に近づける
+        p.vy *= Math.pow(0.05, dt)
+      } else {
+        const gravMult = p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0
+        p.vy += r.gravity * gravMult * dt
+      }
       p.y  += p.vy * dt
 
       if (p.y + p.h >= gY) {

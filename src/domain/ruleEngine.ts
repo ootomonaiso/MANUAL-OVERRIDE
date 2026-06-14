@@ -69,7 +69,7 @@ export function buildRuntimeRules(
     genre:           resolvedGenre,
     scrollSpeed:     rc?.scrollSpeed     ?? baseScrollSpeed,
     bpm:             rc?.bpm             ?? baseBpm,
-    gravity:         rc?.gravity         ?? 1600,
+    gravity:         rc?.gravity         ?? genreDef?.gravity ?? 1600,  //ハードコードやんけ～吹っ飛ばすぞ
     scrollDirection: resolvedScrollDir,
     environment:     rc?.environment     ?? baseEnvironment,
     playerMaxHp:     rc?.playerMaxHp     ?? 3,

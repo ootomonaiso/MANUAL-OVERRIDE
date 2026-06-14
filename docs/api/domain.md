@@ -24,7 +24,7 @@
 | `Choice` | 説明書選択肢 (`id`, `label`, `hint?`, `next`, `genreParams`, `paramMultiplier?`) |
 | `ManualRuntimeConfig` | バージョン固有のruntime上書き (`scrollSpeed?`, `gravity?`, `bpm?`, `scrollDirection?`, `environment?`, `playerMaxHp?`, `timescale?`, `colorTouchScore?`, `forceGenreId?`) |
 | `ManualVersion` | 説明書バージョン (`version`, `manualText[]`, `image?`, `imageAlt?`, `choices[]`, `controls`, `hazards`, `runtimeConfig?`, `tutorialHint?`, `narrative?`, `learningRules?`) |
-| `GenreDef` | ジャンル定義 (`id`, `label`, `thresholds`, `enableFeatures[]`, `disableFeatures[]`, `scoreFormula`, `manualReveal`, `theme`, `bgColor`, `environment?`, `scrollDirection?`, `endingFlavor?`) |
+| `GenreDef` | ジャンル定義 (`id`, `label`, `thresholds`, `enableFeatures[]`, `disableFeatures[]`, `scoreFormula`, `manualReveal`, `theme`, `bgColor`, `environment?`, `scrollDirection?`, `gravity?`, `endingFlavor?`) |
 | `RuntimeRules` | 合成済みルール (`controls`, `hazardColors`, `safeColors`, `features`, `genre`, `scrollSpeed`, `bpm`, `gravity`, `scrollDirection`, `environment`, `playerMaxHp`, `timescale`, `scrollAxis`, `colorTouchScore`) |
 | `ActionStats` | 行動統計 (`jumps`, `moveRight`, `moveLeft`, `shots`, `ticks`, `dashes?`) |
 | `LearningTrigger` | 行動トリガー (`type: 'jumpRate' | 'rightRate' | 'leftRate' | 'shotRate' | 'dashRate'`, `threshold`, `triggerAbove?`) |
