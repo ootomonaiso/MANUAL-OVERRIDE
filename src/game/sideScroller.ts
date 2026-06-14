@@ -258,7 +258,6 @@ export class SideScroller {
 
   markUpdated(index: number): void {
     this.updateTriggeredFor.add(index)
-    this.paused = false
   }
 
   getStats(): ActionStats { return this.stats }

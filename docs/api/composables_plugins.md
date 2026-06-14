@@ -76,6 +76,7 @@
 | `narrative` | `ref<string>` | ナラティブテキスト |
 | `tutorialHint` | `ref<string>` | チュートリアルヒント |
 | `isUpdating` | `ref<boolean>` | 説明書更新中フラグ |
+| `isCentered` | `ref<boolean>` | 説明書パネルが中央表示中（更新アニメーション時） |
 | `updateCount` | `ref<number>` | 更新回数 |
 | `advanceTo(key: string): void` | — | 指定キーのバージョンに移動（deck 参照） |
 | `selectChoice(choice: Choice, multiplier?: number): void` | — | 選択肢選択（履歴記録 + パラメータ累積） |
