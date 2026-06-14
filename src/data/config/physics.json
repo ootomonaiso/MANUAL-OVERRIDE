@@ -6,7 +6,6 @@
   "jumpVelocity": -720,
   "doubleJumpVelocity": -610,
   "jumpCutMultiplier": 0.45,
-  "gravity": 1650,
   "fallGravityMult": 1.65,
   "runSpeed": 240,
   "slowPreciseRatio": 0.45,
