@@ -79,7 +79,7 @@ function beginSnapshotLoop() {
 
     // 更新トリガー（tutorial, playing, genreLocked で発火する）
     // 最初のジャンプまで待つ
-    const activePlay = ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
+    const activePlay = ['playing', 'tutorial'].includes(gameState.phase.value)
     if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
       scroller.setPaused(true)
       gameState.triggerUpdate()
