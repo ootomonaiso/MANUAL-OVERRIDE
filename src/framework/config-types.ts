@@ -312,6 +312,7 @@ export interface GenreDefJSON {
   bgColor: string
   environment?: string
   scrollDirection?: string
+  gravity?: number
 }
 
 export interface GenresConfig {

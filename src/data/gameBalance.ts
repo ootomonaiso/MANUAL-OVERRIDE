@@ -79,7 +79,6 @@ export const PLAYER_PHYSICS = {
   jumpVelocity:       _p.jumpVelocity,
   doubleJumpVelocity: _p.doubleJumpVelocity,
   jumpCutMultiplier:  _p.jumpCutMultiplier,
-  gravity:            _p.gravity,
   fallGravityMult:    _p.fallGravityMult,
   groundY:            0,
   runSpeed:           _p.runSpeed,

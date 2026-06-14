@@ -22,7 +22,7 @@ const REQUIRED_SECTIONS: GameConfigSection[] = [
 ]
 
 const REQUIRED_NUMBER_FIELDS: Partial<Record<GameConfigSection, string[]>> = {
-  physics: ['playerWidth', 'playerHeight', 'jumpVelocity', 'gravity', 'runSpeed',
+  physics: ['playerWidth', 'playerHeight', 'jumpVelocity', 'runSpeed',
             'coyoteFrames', 'jumpBufferFrames'],
   shoot:   ['bulletSpeed', 'bulletWidth', 'bulletHeight', 'shotCooldown', 'comboResetTime'],
   throw:   ['gravity', 'maxPower', 'powerDistanceDivisor', 'speedMultiplier'],
@@ -48,7 +48,6 @@ const RANGE_CHECKS: Array<{
   max?: number
 }> = [
   { section: 'physics',    field: 'jumpVelocity',   max: 0 },
-  { section: 'physics',    field: 'gravity',         min: 0 },
   { section: 'physics',    field: 'jumpCutMultiplier', min: 0, max: 1 },
   { section: 'physics',    field: 'slowPreciseRatio', min: 0, max: 1 },
   { section: 'physics',    field: 'dashSpeed',      min: 0 },

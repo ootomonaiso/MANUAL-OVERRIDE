@@ -207,6 +207,8 @@ export interface GenreDef {
   environment?: EnvironmentId
   /** スクロール方向。省略時は 'horizontal' */
   scrollDirection?: ScrollDirection
+  /** 重力加速度 px/s²。省略時は 1600。0 で無重力 */
+  gravity?: number
   /** エンディングのフレーバーテキスト（EndingPanel に表示） */
   endingFlavor?: string
 }
@@ -222,7 +224,7 @@ export interface RuntimeRules {
   genre: GenreId
   scrollSpeed: number        // px/s
   bpm: number                // リズム系で使用。無関係なら 120
-  gravity: number            // px/s²（デフォルト 1600）
+  gravity: number            // px/s²（ジャンル定義 → runtimeConfig → デフォルト 1600 の優先順位で決定）
   /** スクロール方向（デフォルト: 'horizontal'） */
   scrollDirection: ScrollDirection
   /** 舞台環境（背景・スポーンテーブルに影響） */
