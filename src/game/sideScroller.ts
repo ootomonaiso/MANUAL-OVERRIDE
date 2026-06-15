@@ -138,12 +138,15 @@ export class SideScroller {
       const key = this._normalizeKey(e)
       this.keys.add(key)
       // ゲームで使うキーのみ preventDefault
+      const c = this.rules.controls
       const gameKeys = [
-        rules.controls.jump,
-        rules.controls.moveLeft,
-        rules.controls.moveRight,
-        rules.controls.shoot ?? 'z'
-      ]
+        c.jump,
+        c.moveLeft,
+        c.moveRight,
+        c.shoot ?? 'z',
+        c.moveUp,
+        c.moveDown,
+      ].filter(Boolean) as string[]
       if (gameKeys.includes(key)) {
         e.preventDefault()
       }

@@ -12,7 +12,6 @@
         "ここからは、さらに多くの道が分かれます。",
         "あなたの選択が世界を決定します。"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -40,7 +39,6 @@
         "プラットフォーム系とローグライク系の道が見えます。",
         "どちらの複雑さを選びますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -68,7 +66,6 @@
         "メトロイドヴァニアとソウルライク、2つの時間軸。",
         "どの歴史を辿りますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -96,7 +93,6 @@
         "無限スクロールと終わりなきサイクル。",
         "どちらの永遠を選びますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -124,7 +120,6 @@
         "すべてが計算可能になってきました。",
         "パズルは深く、その先は何でしょう？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -152,7 +147,6 @@
         "リズムが世界のすべてになります。",
         "ビートの先へ進みますか、心に従いますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -180,7 +174,6 @@
         "ピクセルパーフェクトな動きが要求されます。",
         "さらに高みへ向かいますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -208,7 +201,6 @@
         "同じランは二度と来ません。",
         "次のランに希望を託しますか、それとも別の道を？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -236,7 +228,6 @@
         "世界は一つですが、段階的に開かれていきます。",
         "どのアビリティを優先しますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -264,7 +255,6 @@
         "敵は常に強く、あなたの成長だけが答えです。",
         "どの修行を選びますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -292,7 +282,6 @@
         "高みを求め、果てしなく上昇します。",
         "いつまで上り続けますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -320,7 +309,6 @@
         "2択から始まった世界は、今や無限です。",
         "あなたはどこまで選び続けますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -348,7 +336,6 @@
         "この複雑さの先にあるのは？",
         "さらに深く潜りますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -376,7 +363,6 @@
         "シンプルさの中に無限がありますか？",
         "さらに削ぎ落としますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -404,7 +390,6 @@
         "ポリリズムの世界へようこそ。",
         "さらに複雑なビートを求めますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -432,7 +417,6 @@
         "直感だけが頼りです。",
         "感覚をさらに研ぎ澄ましますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -460,7 +444,6 @@
         "ボスラッシュは終わりませんか？",
         "さらに強い敵へ挑みますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -488,7 +471,6 @@
         "いつまで下り続けますか？",
         "さらに深く潜りますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -516,7 +498,6 @@
         "相乗効果の世界へ迷い込みました。",
         "さらに複合効果を求めますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -544,7 +525,6 @@
         "スケジュール管理がゲーム性になります。",
         "さらに厳しい制限を求めますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -572,7 +552,6 @@
         "力で世界を破壊しますか？",
         "さらに強力な攻撃を求めますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -600,7 +579,6 @@
         "空間的制約がなくなってきました。",
         "さらに自由な移動を求めますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -628,7 +606,6 @@
         "一瞬のズレも許されません。",
         "さらに難しいタイミングに挑みますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -656,7 +633,6 @@
         "一撃の力が戦局を決します。",
         "さらに巨大な武器へ？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -684,7 +660,6 @@
         "あの時の敵は幼く見えます。",
         "さらに強敵の地獄へ？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -712,7 +687,6 @@
         "単調さは死です。",
         "さらに多様な試練を求めますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -740,7 +714,6 @@
         "学べば学ぶほど、選択肢が増えます。",
         "無限の知識を求めますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -768,7 +741,6 @@
         "すべての選択肢があなたの前に。",
         "すべての世界を支配したいですか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -796,7 +768,6 @@
         "この複雑さの中に美しさがありますか？",
         "さらに複雑な世界へ？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -824,7 +795,6 @@
         "ここは何ですか？",
         "さらに奥へ進みますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -852,7 +822,6 @@
         "大と小が同じ構造を持っています。",
         "この無限ループを極めますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -880,7 +849,6 @@
         "カオスはパターンを持っていました。",
         "その法則を支配しますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -908,7 +876,6 @@
         "現在の視点がちっぽけに見えます。",
         "さらに高みへ？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -936,7 +903,6 @@
         "帰還しますか、それとも先へ進みますか？",
         "決めてください。"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -964,7 +930,6 @@
         "すべてが無限です。",
         "この無限に終わりはありますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -992,7 +957,6 @@
         "小さいことは美しいことですか？",
         "さらに縮小しますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -1020,7 +984,6 @@
         "完璧な秩序は退屈ではありませんか？",
         "さらに秩序を求めますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -1048,7 +1011,6 @@
         "この調和の先にあるのは？",
         "さらなる進化を求めますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -1076,7 +1038,6 @@
         "ここはもはや次元ではありません。",
         "さらに先へ？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -1104,7 +1065,6 @@
         "世界はあなたの手に委ねられました。",
         "何をしますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -1133,7 +1093,6 @@
         "でもあなたは変わった。",
         "もう一度、進みますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -1161,7 +1120,6 @@
         "あなたは創造主になりました。",
         "何の世界を作りますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": [
         {
@@ -1189,7 +1147,6 @@
         "ここが終わりですか？",
         "それとも、始まりですか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1204,7 +1161,6 @@
         "同じことを繰り返していますか？",
         "それとも、新しいことを繰り返していますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1219,7 +1175,6 @@
         "見えないものが全てを支配しています。",
         "ここが現実ですか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1234,7 +1189,6 @@
         "粒子と波が同時に存在しています。",
         "あなたはどちらですか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1249,7 +1203,6 @@
         "自由はありません。",
         "ただ完璧さだけがあります。"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1264,7 +1217,6 @@
         "混沌が解放をもたらしました。",
         "新しい秩序が生まれます。"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1279,7 +1231,6 @@
         "この状態は永遠に続きます。",
         "あなたはここで何をしますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1294,7 +1245,6 @@
         "すべてが新しい。",
         "この冒険は終わりませんか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1309,7 +1259,6 @@
         "ここであなたは神です。",
         "神は何をしますか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1324,7 +1273,6 @@
         "ここには何もありません。",
         "ただ無があります。"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1339,7 +1287,6 @@
         "今、すべてが一つです。",
         "統一された世界へようこそ。"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1354,7 +1301,6 @@
         "無から有が生まれました。",
         "これが創造です。"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1369,7 +1315,6 @@
         "今度はどこへ向かいますか？",
         "同じ道は二度と現れません。"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1384,7 +1329,6 @@
         "平和があります。",
         "これで十分ですか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1399,7 +1343,6 @@
         "すべてが完璧です。",
         "ここが終焉ですか？"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     },
@@ -1414,7 +1357,6 @@
         "秩序はありません。",
         "ただ自由があります。"
       ],
-      "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
       "hazards": { "colors": ["red"], "safeColors": ["blue"] },
       "choices": []
     }

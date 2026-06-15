@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { ManualVersion, ManualTheme } from '../domain/types'
+import type { ManualVersion, ManualTheme, Controls } from '../domain/types'
 
 const props = defineProps<{
   manual: ManualVersion
@@ -10,6 +10,7 @@ const props = defineProps<{
   isCentered: boolean
   history: ManualVersion[]
   features?: Set<string>
+  controls: Controls
   highlight?: boolean
 }>()
 
@@ -106,15 +107,15 @@ function keyLabel(key: string): string {
       <div class="controls-grid">
         <!-- auto_run が有効な場合は左右キーを非表示 -->
         <template v-if="!features?.has('auto_run')">
-          <span class="key-badge">{{ keyLabel(manual.controls.moveLeft) }}</span>
+          <span class="key-badge">{{ keyLabel(controls.moveLeft) }}</span>
           <span class="key-action">左移動</span>
-          <span class="key-badge">{{ keyLabel(manual.controls.moveRight) }}</span>
+          <span class="key-badge">{{ keyLabel(controls.moveRight) }}</span>
           <span class="key-action">右移動</span>
         </template>
-        <span class="key-badge">{{ keyLabel(manual.controls.jump) }}</span>
+        <span class="key-badge">{{ keyLabel(controls.jump) }}</span>
         <span class="key-action">ジャンプ</span>
-        <template v-if="manual.controls.shoot">
-          <span class="key-badge">{{ keyLabel(manual.controls.shoot) }}</span>
+        <template v-if="controls.shoot">
+          <span class="key-badge">{{ keyLabel(controls.shoot) }}</span>
           <span class="key-action">ショット</span>
         </template>
       </div>

@@ -53,15 +53,6 @@ export function validateManualVersionStructure(key: string, v: unknown): string[
       }
     })
   }
-  // controls
-  if (typeof obj.controls !== 'object' || obj.controls === null) {
-    errs.push(`"${key}".controls: object が必要です`)
-  } else {
-    const ctrl = obj.controls as Record<string, unknown>
-    for (const field of ['jump', 'moveLeft', 'moveRight'] as const) {
-      if (typeof ctrl[field] !== 'string') errs.push(`"${key}".controls.${field}: string が必要です`)
-    }
-  }
   // hazards
   if (typeof obj.hazards !== 'object' || obj.hazards === null) {
     errs.push(`"${key}".hazards: object が必要です`)

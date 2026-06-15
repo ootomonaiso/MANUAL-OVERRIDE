@@ -177,7 +177,6 @@ export interface ManualVersion {
   /** イラストの代替テキスト */
   imageAlt?: string
   choices: Choice[]
-  controls: Controls
   hazards: { colors: string[]; safeColors: string[] }
   /** このバージョン中だけ有効な runtime 上書き */
   runtimeConfig?: ManualRuntimeConfig
@@ -207,6 +206,8 @@ export interface GenreDef {
   bgColor: string
   /** 環境設定（このジャンルの舞台）。省略時は 'ground' */
   environment?: EnvironmentId
+  /** 操作方法定義。省略時は 'default' */
+  controls?: Partial<Controls>
   /** スクロール方向。省略時は 'horizontal' */
   scrollDirection?: ScrollDirection
   /** 重力加速度 px/s²。省略時は 1600。0 で無重力 */

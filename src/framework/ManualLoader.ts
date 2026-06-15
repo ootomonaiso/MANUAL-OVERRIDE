@@ -14,9 +14,8 @@
  * ```
  */
 
-import type { ManualVersion, Controls } from '../domain/types'
+import type { ManualVersion } from '../domain/types'
 import type { ManualDeckFile, ManualEntryJSON } from './types'
-import { DEFAULT_CONTROLS } from '../domain/defaults'
 
 
 const DEFAULT_HAZARDS = { colors: ['red'], safeColors: ['blue'] } as const
@@ -115,11 +114,6 @@ function parseFile(
 }
 
 function parseEntry(entry: ManualEntryJSON): ManualVersion {
-  const controls: Controls = {
-    ...DEFAULT_CONTROLS,
-    ...entry.controls,
-  }
-
   const hazards = {
     colors:     entry.hazards?.colors     ?? [...DEFAULT_HAZARDS.colors],
     safeColors: entry.hazards?.safeColors ?? [...DEFAULT_HAZARDS.safeColors],
@@ -167,7 +161,6 @@ function parseEntry(entry: ManualEntryJSON): ManualVersion {
     image,
     imageAlt:      entry.imageAlt,
     choices,
-    controls,
     hazards,
     runtimeConfig,
     tutorialHint:  entry.tutorialHint,

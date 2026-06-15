@@ -12,6 +12,13 @@
       "manualReveal": "",
       "theme": "plain",
       "bgColor": "#1a1a2e",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
       "gravity": 1600,
       "endingFlavor": ""
     },
@@ -25,6 +32,13 @@
       "manualReveal": "これはエンドレスランナーになりました。走り続けることが目的です。",
       "theme": "plain",
       "bgColor": "#1a1a2e",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたはただ走り続けることを選んだ。説明書を読む必要などなかった。"
     },
@@ -39,6 +53,14 @@
       "theme": "stg",
       "bgColor": "#0d0d1a",
       "environment": "space",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown",
+        "shoot": "z"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたはすべてを撃ち抜いた。説明書は弾除けにでも使えばよかった。"
     },
@@ -53,6 +75,13 @@
       "theme": "rpg",
       "bgColor": "#1a1200",
       "environment": "dungeon",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたは強くなった。説明書もいつしか経典になっていた。"
     },
@@ -66,6 +95,13 @@
       "manualReveal": "これはパズルゲームになりました。正解を考えてください。",
       "theme": "puzzle",
       "bgColor": "#f0f0f0",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたはすべての答えを見つけた。説明書に書いてあったことは間違いではなかった。"
     },
@@ -79,6 +115,13 @@
       "manualReveal": "これはリズムゲームになりました。音に合わせてください。",
       "theme": "rhythm",
       "bgColor": "#1a0030",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたはリズムを刻んだ。説明書のページをめくる音さえも拍子になった。"
     },
@@ -94,6 +137,14 @@
       "bgColor": "#000015",
       "environment": "sky",
       "scrollDirection": "vertical",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown",
+        "shoot": "z"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたは空へと昇った。説明書は地上に落ちていった。"
     },
@@ -109,6 +160,14 @@
       "bgColor": "#000010",
       "environment": "space",
       "scrollDirection": "vertical",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown",
+        "shoot": "z"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたは無数の弾を避け続けた。説明書の活字も弾丸に見えた。"
     },
@@ -123,6 +182,13 @@
       "theme": "rpg",
       "bgColor": "#0a1a0a",
       "environment": "forest",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたは生き延びた。説明書は焚き火の燃料になっていた。"
     },
@@ -137,6 +203,13 @@
       "theme": "plain",
       "bgColor": "#050505",
       "environment": "city",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたは気配を消した。説明書も読まれなかった。"
     },
@@ -150,6 +223,14 @@
       "manualReveal": "これはレーシングゲームになりました。最速を目指してください。",
       "theme": "plain",
       "bgColor": "#0f0a00",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown",
+        "dash": "Shift"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたは誰よりも速かった。説明書を読む暇などなかった。"
     },
@@ -164,6 +245,13 @@
       "theme": "plain",
       "bgColor": "#001f3f",
       "environment": "sky",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたは高みへ跳んだ。説明書の紙は踏み台になった。"
     },
@@ -178,6 +266,13 @@
       "theme": "rpg",
       "bgColor": "#0a0a00",
       "environment": "dungeon",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたは迷宮の奥底へたどり着いた。説明書は地図代わりになっていた。"
     },
@@ -191,6 +286,13 @@
       "manualReveal": "これはタワーディフェンスになりました。陣地を守ってください。",
       "theme": "puzzle",
       "bgColor": "#0a0f0a",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたの要塞は崩れなかった。説明書は防壁の一部になっていた。"
     },
@@ -204,6 +306,14 @@
       "manualReveal": "これはスポーツゲームになりました。記録を更新してください。",
       "theme": "rhythm",
       "bgColor": "#001500",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown",
+        "dash": "Shift"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたは新記録を打ち立てた。説明書はルールブックになっていた。"
     },
@@ -217,6 +327,13 @@
       "manualReveal": "これは放置ゲームになりました。積み上げてください。",
       "theme": "puzzle",
       "bgColor": "#f5f5f0",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたは何もしなかった。それでも積み上がっていった。説明書はほこりをかぶった。"
     },
@@ -230,6 +347,14 @@
       "manualReveal": "これは弾幕ランナーになりました。走りながら戦ってください。",
       "theme": "stg",
       "bgColor": "#100010",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown",
+        "shoot": "z"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたは走りながら撃ち続けた。説明書は読む間もなかった。"
     },
@@ -243,6 +368,15 @@
       "manualReveal": "これはアリーナバトルになりました。全てを倒してください。",
       "theme": "stg",
       "bgColor": "#0f0000",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown",
+        "shoot": "z",
+        "dash": "Shift"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたは闘技場の覇者になった。説明書は戦利品として飾られた。"
     },
@@ -258,6 +392,13 @@
       "bgColor": "#000f2a",
       "environment": "ocean",
       "scrollDirection": "vertical",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたは深淵へ到達した。説明書のインクは水に滲んで消えた。"
     },
@@ -272,6 +413,13 @@
       "theme": "horror",
       "bgColor": "#020202",
       "environment": "dungeon",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたは夜明けを迎えた。説明書には見てはいけないことが書いてあった。"
     },
@@ -285,6 +433,15 @@
       "manualReveal": "これはハックアンドスラッシュになりました。コンボを繋いでください。",
       "theme": "stg",
       "bgColor": "#150000",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown",
+        "shoot": "z",
+        "dash": "Shift"
+      },
       "gravity": 1600,
       "endingFlavor": "あなたはコンボを途切れさせなかった。説明書は斬られて散った。"
     }

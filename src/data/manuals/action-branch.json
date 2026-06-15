@@ -13,11 +13,6 @@
         "ステージに登場するものが増えました。",
         "動きに注意してください。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -48,11 +43,6 @@
         "青いオブジェクトは安全です。",
         "撃退が推奨される状況になってきました。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -93,11 +83,6 @@
         "様々な動きをする敵が登場します。",
         "回避と対抗が両立し始めています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -128,11 +113,6 @@
         "敵も多次元的に配置されます。",
         "立体的な判断が必要になります。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -163,12 +143,6 @@
         "敵との距離を考えて戦ってください。",
         "回避と射撃のバランスが大切です。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -199,11 +173,6 @@
         "多くの敵の群れが現れます。",
         "戦略的に対抗する必要があります。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -234,12 +203,6 @@
         "上空の敵を撃ってください。",
         "立体的な戦闘が始まります。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -270,11 +233,6 @@
         "敵をかわすことが中心になります。",
         "水中のような漂う感覚が出ています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -305,12 +263,6 @@
         "敵を倒すことが主軸になりました。",
         "射撃の精度が問われ始めています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -341,11 +293,6 @@
         "敵を全て倒してください。",
         "ボスキャラとの対決が近づいています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -376,12 +323,6 @@
         "上から降ってくる敵を撃ってください。",
         "空間認識がより重要になります。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -412,12 +353,6 @@
         "無数の敵の弾が降り注ぎます。",
         "回避のテクニックが要求されます。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -448,11 +383,6 @@
         "敵を避けて深く潜ってください。",
         "浮力の感覚が大切になっています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -483,12 +413,6 @@
         "敵をより効率的に倒せるようになります。",
         "3方向同時射撃の爽快感が広がります。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -519,11 +443,6 @@
         "コンボを途切れさせないことが重要です。",
         "敵のタイミングを読むゲームになりました。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -554,11 +473,6 @@
         "敵の数が指数関数的に増えました。",
         "生存すること自体が困難になります。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -589,11 +503,6 @@
         "敵を倒す順序が重要になります。",
         "タイミングとコンボの同期が必要です。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -624,12 +533,6 @@
         "敵が波状に襲い掛かってきます。",
         "敵の流れに乗るゲームになっています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -660,11 +563,6 @@
         "射撃より回避が優先されます。",
         "弾の隙間を見つけることが全てです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -695,12 +593,6 @@
         "撃つことと避けることが同時に必要です。",
         "二つの操作を同期させるゲームです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -731,11 +623,6 @@
         "敵を撃つよりも避けることが最優先です。",
         "フォーカスを絞った集中が必要になります。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -766,11 +653,6 @@
         "深海のアイテムが輝いて見えます。",
         "アイテムを集めることが目的になりました。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -801,11 +683,6 @@
         "敵を避けることが最優先です。",
         "深海からの脱出を目指してください。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -836,12 +713,6 @@
         "敵を倒すことが唯一の目的です。",
         "これは完全なシューティングゲームです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -859,12 +730,6 @@
         "上から降ってくる敵を撃ってください。",
         "これは縦スクロールシューティングです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -882,12 +747,6 @@
         "無数の敵の弾を避けてください。",
         "これは弾幕シューティングです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -905,11 +764,6 @@
         "敵を全て倒してください。",
         "これはアリーナバトルです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -927,11 +781,6 @@
         "コンボを繋ぎ続けることが最優先です。",
         "これはハックアンドスラッシュです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -949,11 +798,6 @@
         "敵を避けて深海を探索してください。",
         "これは水中アドベンチャーです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -971,11 +815,6 @@
         "HPが追加されました。",
         "これはサバイバルゲームです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -996,11 +835,6 @@
         "消えていくものから何かを得られます。",
         "蓄積していくことが大切です。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1031,11 +865,6 @@
         "その数が画面に表示されています。",
         "積み上げることが重要になります。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1066,11 +895,6 @@
         "敵を避けながら経験値を集めてください。",
         "成長することが目的になりました。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1104,11 +928,6 @@
         "敵を遠距離から防ぐ配置が可能です。",
         "戦略的な配置が勝敗を分けます。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1139,11 +958,6 @@
         "たまに見ると増えています。",
         "放置するほど積み上がります。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1174,11 +988,6 @@
         "経験値を得て成長してください。",
         "HPとパラメータが強化されていきます。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1212,11 +1021,6 @@
         "拾ったアイテムはHPを回復します。",
         "生き残ることが最優先です。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1250,11 +1054,6 @@
         "経験値を集めると強くなります。",
         "これはロールプレイングゲームです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1275,11 +1074,6 @@
         "青いアイテムを積極的に集めてください。",
         "これはサバイバルゲームです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1300,11 +1094,6 @@
         "陣地を守ってください。",
         "これはタワーディフェンスです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1322,11 +1111,6 @@
         "装備を整えて奥へ進みます。",
         "これはダンジョン探索です。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1347,11 +1131,6 @@
         "たまにSpaceキーで手動操作もできます。",
         "これは放置ゲームです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1369,11 +1148,6 @@
         "見つからないようにそっと進みます。",
         "これはサバイバルホラーです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]

@@ -13,12 +13,6 @@
       "image": "my_branch_v2.png",
       "$comment_image": "public/manuals/ に画像を置いてファイル名を指定。省略可能。",
       "imageAlt": "バージョン2のイラスト",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "$comment_shoot": "ショット機能が必要な場合: \"shoot\": \"z\""
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -43,11 +37,6 @@
       "manualText": [
         "こちらのルートを選んだ場合のテキスト。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -60,11 +49,6 @@
       "manualText": [
         "こちらのルートを選んだ場合のテキスト。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]

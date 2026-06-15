@@ -2,7 +2,7 @@ import type { ManualVersion, RuntimeRules, GenreParams, GenreParam, FeatureId, G
 import { accumulateParams, resolveGenre, resolveFeaturesForGenre } from './genreResolver'
 import { GENRES } from '../data/genres'
 import { BASE_SCROLL_SPEED, TEMPO_SPEED_BONUS } from '../data/gameBalance'
-
+import { DEFAULT_CONTROLS } from './defaults'
 export interface ChoiceRecord {
   versionKey: string
   choiceId: string
@@ -62,7 +62,7 @@ export function buildRuntimeRules(
   resolvedFeatures.add('movement')
 
   return {
-    controls:        currentVersion.controls,
+    controls:        {...DEFAULT_CONTROLS,...(genreDef?.controls ?? {}),},
     hazardColors:    new Set(currentVersion.hazards.colors),
     safeColors:      new Set(currentVersion.hazards.safeColors),
     features:        resolvedFeatures,
