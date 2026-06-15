@@ -127,6 +127,8 @@ export interface Controls {
   jump: string
   moveLeft: string
   moveRight: string
+  moveUp: string
+  moveDown: string
   shoot?: string
   dash?: string    // ダッシュキー（省略可）
   slide?: string   // スライドキー（省略可）

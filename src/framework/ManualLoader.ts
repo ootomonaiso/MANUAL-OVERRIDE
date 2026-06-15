@@ -16,12 +16,8 @@
 
 import type { ManualVersion, Controls } from '../domain/types'
 import type { ManualDeckFile, ManualEntryJSON } from './types'
+import { DEFAULT_CONTROLS } from '../domain/defaults'
 
-const DEFAULT_CONTROLS: Controls = {
-  jump: 'Space',
-  moveLeft: 'ArrowLeft',
-  moveRight: 'ArrowRight',
-}
 
 const DEFAULT_HAZARDS = { colors: ['red'], safeColors: ['blue'] } as const
 

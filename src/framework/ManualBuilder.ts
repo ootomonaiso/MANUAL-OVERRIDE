@@ -22,11 +22,7 @@
 
 import type { ManualVersion, Choice, Controls, GenreParams, ManualRuntimeConfig } from '../domain/types'
 
-const DEFAULT_CONTROLS: Controls = {
-  jump: 'Space',
-  moveLeft: 'ArrowLeft',
-  moveRight: 'ArrowRight',
-}
+import { DEFAULT_CONTROLS } from '../domain/defaults'
 
 const DEFAULT_HAZARDS = { colors: ['red'], safeColors: ['blue'] }
 

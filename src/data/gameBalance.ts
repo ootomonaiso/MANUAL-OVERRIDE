@@ -96,12 +96,3 @@ export const PLAYER_PHYSICS = {
   dashIframesSec:     _p.dashIframesSec,
   wallJumpPushSpeed:  _p.wallJumpPushSpeed,
 }
-
-// ─────────────────────────────────────────────────────────────
-// DEFAULT_CONTROLS — デフォルトキーバインド
-// ─────────────────────────────────────────────────────────────
-export const DEFAULT_CONTROLS: Controls = {
-  jump: 'Space',
-  moveLeft: 'ArrowLeft',
-  moveRight: 'ArrowRight',
-}

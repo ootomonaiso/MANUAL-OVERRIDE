@@ -167,7 +167,7 @@ export interface ManualEntryJSON {
   imageAlt?: string
 
   /** 操作キー設定。省略した場合は前バージョンから継承 */
-  controls?: Partial<Controls> & { jump: string; moveLeft: string; moveRight: string }
+  controls?: Partial<Controls> & { jump: string; moveLeft: string; moveRight: string ;}
 
   /** 危険/安全色の定義 */
   hazards?: {
