@@ -164,3 +164,5 @@ export class RunnerPlugin extends DarkThemePlugin {
     { shape: 'pillar',  placement: 'ground', weightStart: 0,  weightEnd: 3,  wRange: [14, 18], hRange: [70, 130] },
   ]
 }
+
+export default [new BasePlugin(), new RunnerPlugin()]

@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "runner",
+  "label": "エンドレスランナー",
+  "thresholds": { "tempo": 7 },
+  "enableFeatures": ["auto_run", "double_jump", "long_air"],
+  "disableFeatures": ["grid_stop", "puzzle_solve"],
+  "scoreFormula": "distance * 1.2 + survivedSec * 8 + combo * 50",
+  "manualReveal": "これはエンドレスランナーになりました。走り続けることが目的です。",
+  "theme": "plain",
+  "bgColor": "#1a1a2e",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown"
+  },
+  "gravity": 1600,
+  "endingFlavor": "あなたはただ走り続けることを選んだ。説明書を読む必要などなかった。"
+}

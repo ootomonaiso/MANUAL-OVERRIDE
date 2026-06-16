@@ -298,6 +298,33 @@ export interface GameBalanceConfig {
   distanceAccelFullDist: number
 }
 
+/**
+ * ジャンルのビジュアル設定。
+ * TSプラグイン（XxxPlugin.ts）を書かなくても、この設定だけでCanvas描画が決まる。
+ *
+ * template: ベースとなるビジュアルスタイル（省略時はthemeから自動選択）
+ *   - 'runner'  → 横スクロール・地上風景
+ *   - 'space'   → 宇宙・SF（STG系）
+ *   - 'dungeon' → 暗い洞窟・RPG系
+ *   - 'rhythm'  → ネオン・音楽系
+ *   - 'puzzle'  → 明るい・パズル系
+ *   - 'aquatic' → 水中・海洋系
+ */
+export interface GenreVisualConfig {
+  template?: 'runner' | 'space' | 'dungeon' | 'rhythm' | 'puzzle' | 'aquatic'
+  skyColors?: [string, string]
+  groundColor?: string
+  farLayerColor?: string
+  midLayerColor?: string
+  starColor?: string
+  palette?: {
+    danger?: string
+    dangerGlow?: string
+    safe?: string
+    safeGlow?: string
+  }
+}
+
 /** genres.json — ジャンル定義テーブル */
 export interface GenreDefJSON {
   id: string
@@ -314,6 +341,8 @@ export interface GenreDefJSON {
   scrollDirection?: string
   gravity?: number
   controls?: Partial<Controls>
+  /** TSプラグインなしでビジュアルをカスタマイズする場合に指定。省略時はthemeから自動決定。 */
+  visual?: GenreVisualConfig
 }
 
 export interface GenresConfig {

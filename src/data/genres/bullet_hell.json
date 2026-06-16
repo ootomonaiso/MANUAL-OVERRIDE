@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "bullet_hell",
+  "label": "弾幕シューティング",
+  "thresholds": { "vertical": 4, "enemy": 6 },
+  "enableFeatures": ["shoot", "spread_shot", "enemy_hp", "vertical_scroll"],
+  "disableFeatures": ["grid_stop", "auto_run", "slow_precise"],
+  "scoreFormula": "kills * 80 + combo * 150 + survivedSec * 10 + accuracy * 500",
+  "manualReveal": "これは弾幕シューティングになりました。弾の隙間を縫ってください。",
+  "theme": "stg",
+  "bgColor": "#000010",
+  "environment": "space",
+  "scrollDirection": "vertical",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown",
+    "shoot": "z"
+  },
+  "gravity": 1600,
+  "endingFlavor": "あなたは無数の弾を避け続けた。説明書の活字も弾丸に見えた。"
+}

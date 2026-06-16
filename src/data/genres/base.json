@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "base",
+  "label": "横スクロールアクション",
+  "thresholds": {},
+  "enableFeatures": ["auto_run"],
+  "disableFeatures": [],
+  "scoreFormula": "distance * 0.8",
+  "manualReveal": "",
+  "theme": "plain",
+  "bgColor": "#1a1a2e",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown"
+  },
+  "gravity": 1600,
+  "endingFlavor": ""
+}

@@ -152,3 +152,5 @@ export class SurvivalPlugin extends GenrePluginBase {
     ctx.closePath()
   }
 }
+
+export default new SurvivalPlugin()

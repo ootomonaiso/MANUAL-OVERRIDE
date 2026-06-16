@@ -84,7 +84,11 @@ export function useGameState() {
     const selectedIds = choiceHistory.map(h => h.choiceId)
     const resolved = resolveGenre(accumulated, GENRES, genrePointsAcc, selectedIds)
 
-    if (nextVer.choices.length === 0 || resolved !== 'base') {
+    if (lockedGenre.value !== null) {
+      // ジャンル確定済み — ロック演出は再生せず選択肢だけ更新し続ける
+      _rebuildRules()
+      phase.value = 'genreLocked'
+    } else if (nextVer.choices.length === 0 || resolved !== 'base') {
       lockedGenre.value = resolved !== 'base' ? resolved : _forceResolve(accumulated)
       soundManager.onGenreLock(lockedGenre.value)
       _rebuildRules()

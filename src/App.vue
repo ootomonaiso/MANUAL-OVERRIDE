@@ -81,10 +81,15 @@ function beginSnapshotLoop() {
 
     // 更新トリガー（tutorial, playing, genreLocked で発火する）
     // 最初のジャンプまで待つ
-    const activePlay = ['playing', 'tutorial'].includes(gameState.phase.value)
+    const activePlay = ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
     if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
-      scroller.setPaused(true)
-      gameState.triggerUpdate()
+      if (gameState.currentManual().choices.length > 0) {
+        scroller.setPaused(true)
+        gameState.triggerUpdate()
+      } else {
+        // 選択肢がない場合はスキップして続行
+        scroller.markUpdated(snapshot.value.shouldUpdate)
+      }
     }
 
     // ゲームオーバー → 投擲フェーズへ自動移行

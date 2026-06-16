@@ -92,3 +92,5 @@ export class StgPlugin extends GenrePluginBase {
     ctx.fill()
   }
 }
+
+export default new StgPlugin()

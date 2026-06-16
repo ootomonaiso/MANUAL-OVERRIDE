@@ -1,0 +1,32 @@
+{
+  "注意": "このファイルは例です。実際に使う場合はコピーしてください。_で始まるファイルは無視されます。",
+
+  "id": "example_genre",
+  "label": "サンプルジャンル",
+
+  "thresholds": {
+    "tempo": 5,
+    "enemy": 3
+  },
+
+  "theme": "stg",
+  "bgColor": "#0d0d1a",
+
+  "enableFeatures": ["shoot", "enemy_hp"],
+  "disableFeatures": ["grid_stop"],
+
+  "scoreFormula": "kills * 100 + distance * 0.5 + combo * 80",
+
+  "manualReveal": "これはサンプルジャンルになりました。",
+  "endingFlavor": "あなたはサンプルを完走した。",
+
+  "visual": {
+    "template": "space",
+    "skyColors": ["#000005", "#05050f"],
+    "groundColor": "#05050a",
+    "palette": {
+      "danger": "#e17055",
+      "safe": "#0984e3"
+    }
+  }
+}

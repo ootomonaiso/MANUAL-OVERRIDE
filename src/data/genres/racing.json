@@ -1,0 +1,22 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "racing",
+  "label": "レーシングゲーム",
+  "thresholds": { "speed": 5, "tempo": 4 },
+  "enableFeatures": ["auto_run", "dash", "time_bonus"],
+  "disableFeatures": ["grid_stop", "puzzle_solve", "beat_hazard", "slow_precise"],
+  "scoreFormula": "distance * 2.0 + survivedSec * 3 + combo * 30",
+  "manualReveal": "これはレーシングゲームになりました。最速を目指してください。",
+  "theme": "plain",
+  "bgColor": "#0f0a00",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown",
+    "dash": "Shift"
+  },
+  "gravity": 1600,
+  "endingFlavor": "あなたは誰よりも速かった。説明書を読む暇などなかった。"
+}

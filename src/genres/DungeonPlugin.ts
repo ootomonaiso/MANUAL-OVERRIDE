@@ -203,3 +203,5 @@ export class DungeonPlugin extends GenrePluginBase {
     ctx.closePath()
   }
 }
+
+export default new DungeonPlugin()

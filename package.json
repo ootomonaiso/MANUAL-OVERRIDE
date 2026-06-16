@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc && vite build",
+    "preprocess": "node scripts/preprocess.mjs",
+    "dev": "node scripts/preprocess.mjs && vite",
+    "build": "node scripts/preprocess.mjs && vue-tsc && vite build",
     "preview": "vite preview",
+    "new-genre": "node scripts/new-genre.mjs",
     "test": "playwright test",
     "test:smoke": "playwright test tests/smoke.spec.ts",
     "test:e2e": "node tests/test_game.mjs",

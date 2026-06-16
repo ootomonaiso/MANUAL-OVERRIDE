@@ -159,3 +159,5 @@ export class AerialStgPlugin extends GenrePluginBase {
     ctx.stroke()
   }
 }
+
+export default new AerialStgPlugin()
