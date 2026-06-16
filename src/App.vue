@@ -287,6 +287,7 @@ onUnmounted(() => {
         :is-centered="manualCtl.isCentered.value"
         :history="manualCtl.history.value"
         :features="gameState.rules.features"
+        :controls="gameState.rules.controls"
         :highlight="gameState.phase.value === 'tutorial'"
       />
 

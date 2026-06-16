@@ -12,11 +12,6 @@
         "青いオブジェクトは安全です。",
         "動きがなめらかになりました。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -47,11 +42,6 @@
         "スピードが大幅に上がりました。",
         "直感で動いてください。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -82,11 +72,6 @@
         "音楽とステージが連動し始めました。",
         "リズムを感じてください。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -117,11 +102,6 @@
         "赤いオブジェクトを避けてください。",
         "スピード感が強調されています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -152,11 +132,6 @@
         "スピード感を保ちながら対抗してください。",
         "戦闘と移動が同時進行します。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -187,11 +162,6 @@
         "ビート毎に障害物が配置されます。",
         "正確なタイミングが重要です。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -222,11 +192,6 @@
         "空中での動きが重要になります。",
         "音に合わせて飛び跳ねてください。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -257,11 +222,6 @@
         "青いオブジェクトは安全です。",
         "スピードが自動で加速します。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -292,11 +252,6 @@
         "最速を目指すゲームになっています。",
         "走破時間が重要です。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -327,12 +282,6 @@
         "走りながら戦ってください。",
         "スピードと戦闘の両立が必要です。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -363,11 +312,6 @@
         "ビート感が非常に強いです。",
         "正確さが高スコアをもたらします。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -398,11 +342,6 @@
         "高さを活かしたコース設計になります。",
         "ジャンプの快感が最優先です。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -433,11 +372,6 @@
         "スポーツのようなテンポになりました。",
         "タイミングと高速性が合わさります。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -468,11 +402,6 @@
         "スピード感が強まり続けています。",
         "自動走行が定着しました。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -503,12 +432,6 @@
         "走りながら敵を倒してください。",
         "二つのアクションの融合が始まります。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -539,11 +462,6 @@
         "障害物の色がビートに合わせて変化します。",
         "音との一体感が強まっています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -574,11 +492,6 @@
         "コンボをつなげると高スコアになります。",
         "空中での自由度がさらに増えています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -609,11 +522,6 @@
         "障害物を避けて加速し続けます。",
         "速度競争の本質が見えてきました。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -644,11 +552,6 @@
         "記録を更新してください。",
         "スポーツ的な競争が本格化しています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -679,11 +582,6 @@
         "敵を避けることが唯一の課題です。",
         "走る喜びが極大化しています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -714,11 +612,6 @@
         "走りながら敵との交戦が始まります。",
         "自動走行と手動操作が混在します。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -749,12 +642,6 @@
         "走りながら敵を倒すバランスが重要です。",
         "敵との交戦が激化しています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -785,11 +672,6 @@
         "ビート毎の入力が要求されます。",
         "音への同期が完璧でなければなりません。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -820,11 +702,6 @@
         "空中での着地がリズム判定になります。",
         "飛翔とリズムが一体化しています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -855,11 +732,6 @@
         "浮遊感が強調されています。",
         "飛び跳ねる快感が極大化しています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -890,11 +762,6 @@
         "音に合わせて飛び跳ねるゲームです。",
         "リズムと飛翔の融合が深まります。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -925,11 +792,6 @@
         "スピード感が極限に達します。",
         "レース的な興奮が高まっています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -960,11 +822,6 @@
         "タイミングと速度が競争になります。",
         "スポーツ的な競技性が強まります。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -995,11 +852,6 @@
         "速度とタイミングの両立が必須です。",
         "スポーツの競争性が完成しています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1030,11 +882,6 @@
         "他の要素は全て排除されています。",
         "純粋な速度競争が完成しています。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1065,11 +912,6 @@
         "加速は無限に続きます。",
         "これはエンドレスランナーです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1087,12 +929,6 @@
         "走りながら敵を倒してください。",
         "これは弾幕ランナーです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "shoot": "z"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1110,11 +946,6 @@
         "音のビート毎にアクション必須。",
         "これはリズムゲームです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1132,11 +963,6 @@
         "コンボを繋ぎ続けることが全て。",
         "これはプラットフォームアクションです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1154,11 +980,6 @@
         "障害物を避けて加速し続けます。",
         "これはレーシングゲームです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]
@@ -1176,11 +997,6 @@
         "記録を更新し続けてください。",
         "これはスポーツゲームです。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]

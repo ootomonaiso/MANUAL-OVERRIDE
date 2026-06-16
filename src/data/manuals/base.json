@@ -12,11 +12,6 @@
         "青いオブジェクトは安全です。",
         "できるだけ遠くまで走ってください。"
       ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
       "hazards": {
         "colors": ["red"],
         "safeColors": ["blue"]

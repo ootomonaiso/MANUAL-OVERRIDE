@@ -4,7 +4,7 @@
  * src/data/manuals/*.json はこの型に従って書く。
  */
 
-import type { GenreParams, Controls, GenreId, ScrollDirection, EnvironmentId, ManualRuntimeConfig } from '../domain/types'
+import type { GenreParams, GenreId, ScrollDirection, EnvironmentId, ManualRuntimeConfig } from '../domain/types'
 
 // ManualRuntimeConfig は domain/types.ts から再エクスポートして JSON 定義側でも使いやすくする
 export type { ManualRuntimeConfig }
@@ -165,9 +165,6 @@ export interface ManualEntryJSON {
 
   /** 画像の代替テキスト（アクセシビリティ用） */
   imageAlt?: string
-
-  /** 操作キー設定。省略した場合は前バージョンから継承 */
-  controls?: Partial<Controls> & { jump: string; moveLeft: string; moveRight: string }
 
   /** 危険/安全色の定義 */
   hazards?: {

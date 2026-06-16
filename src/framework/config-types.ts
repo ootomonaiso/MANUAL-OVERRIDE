@@ -8,7 +8,7 @@
  * TEMPO_SPEED_BONUS と DIFFICULTY.tempoSpeedBonus も difficulty セクションに統合。
  */
 
-import type { GenreId, FeatureId, ManualTheme, EnvironmentId, ScrollDirection } from '../domain/types'
+import type { GenreId, FeatureId, ManualTheme, EnvironmentId, ScrollDirection, Controls } from '../domain/types'
 
 /** physics.json — プレイヤー物理（旧 PHYSICS + PLAYER_PHYSICS 統合） */
 export interface PhysicsConfig {
@@ -312,6 +312,8 @@ export interface GenreDefJSON {
   bgColor: string
   environment?: string
   scrollDirection?: string
+  gravity?: number
+  controls?: Partial<Controls>
 }
 
 export interface GenresConfig {

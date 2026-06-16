@@ -22,6 +22,8 @@ export const GENRES: GenreDef[] = GAME_CONFIG.genres.genres.map(g => ({
   bgColor:         g.bgColor,
   environment:     g.environment as EnvironmentId | undefined,
   scrollDirection: g.scrollDirection as ScrollDirection | undefined,
+  gravity:         g.gravity,
+  controls:        g.controls,
 }))
 
 export const BASE_GENRE_ID = 'base' as const

@@ -28,7 +28,7 @@ export class ShootFeature implements FeatureSystem {
   update(world: MutableWorld, input: InputSnapshot, dt: number): void {
     const p = world.player
     const isVertical = world.rules.scrollAxis === 'y'
-    const shootKey = world.rules.controls.shoot ?? 'z'
+    const shootKey = world.rules.controls.shoot?.toLowerCase() ?? 'z'
     const shootJust = input.justPressed.has(shootKey)
 
     // 横モード: プレイヤーはスクリーン座標 → ワールドXへ変換

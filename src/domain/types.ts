@@ -127,6 +127,8 @@ export interface Controls {
   jump: string
   moveLeft: string
   moveRight: string
+  moveUp: string
+  moveDown: string
   shoot?: string
   dash?: string    // ダッシュキー（省略可）
   slide?: string   // スライドキー（省略可）
@@ -175,7 +177,6 @@ export interface ManualVersion {
   /** イラストの代替テキスト */
   imageAlt?: string
   choices: Choice[]
-  controls: Controls
   hazards: { colors: string[]; safeColors: string[] }
   /** このバージョン中だけ有効な runtime 上書き */
   runtimeConfig?: ManualRuntimeConfig
@@ -205,8 +206,12 @@ export interface GenreDef {
   bgColor: string
   /** 環境設定（このジャンルの舞台）。省略時は 'ground' */
   environment?: EnvironmentId
+  /** 操作方法定義。省略時は 'default' */
+  controls?: Partial<Controls>
   /** スクロール方向。省略時は 'horizontal' */
   scrollDirection?: ScrollDirection
+  /** 重力加速度 px/s²。省略時は 1600。0 で無重力 */
+  gravity?: number
   /** エンディングのフレーバーテキスト（EndingPanel に表示） */
   endingFlavor?: string
 }
@@ -222,7 +227,7 @@ export interface RuntimeRules {
   genre: GenreId
   scrollSpeed: number        // px/s
   bpm: number                // リズム系で使用。無関係なら 120
-  gravity: number            // px/s²（デフォルト 1600）
+  gravity: number            // px/s²（ジャンル定義 → runtimeConfig → デフォルト 1600 の優先順位で決定）
   /** スクロール方向（デフォルト: 'horizontal'） */
   scrollDirection: ScrollDirection
   /** 舞台環境（背景・スポーンテーブルに影響） */

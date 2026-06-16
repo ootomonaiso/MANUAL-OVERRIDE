@@ -9,7 +9,6 @@
  * const entry = new ManualBuilder('2.0-special', '2.0')
  *   .text('新しいルールです。')
  *   .image('v2_special.png', '特別版のイラスト')
- *   .controls({ jump: 'Space', moveLeft: 'ArrowLeft', moveRight: 'ArrowRight', shoot: 'z' })
  *   .hazards({ colors: ['red'], safeColors: ['blue'] })
  *   .choice('高速化する', { tempo: 3 }, '3.0-fast')
  *   .choice('別の方向へ', { range: 2 }, '3.0-other')
@@ -20,13 +19,8 @@
  * ```
  */
 
-import type { ManualVersion, Choice, Controls, GenreParams, ManualRuntimeConfig } from '../domain/types'
+import type { ManualVersion, Choice, GenreParams, ManualRuntimeConfig } from '../domain/types'
 
-const DEFAULT_CONTROLS: Controls = {
-  jump: 'Space',
-  moveLeft: 'ArrowLeft',
-  moveRight: 'ArrowRight',
-}
 
 const DEFAULT_HAZARDS = { colors: ['red'], safeColors: ['blue'] }
 
@@ -44,7 +38,6 @@ export class ManualBuilder {
       version: verLabel,
       manualText: [],
       choices: [],
-      controls: { ...DEFAULT_CONTROLS },
       hazards: { ...DEFAULT_HAZARDS },
     }
   }
@@ -74,11 +67,6 @@ export class ManualBuilder {
     return this
   }
 
-  /** 操作キーを設定（省略したキーは前の設定を維持） */
-  controls(c: Partial<Controls> & { jump: string; moveLeft: string; moveRight: string }): this {
-    this._version.controls = { ...this._version.controls, ...c }
-    return this
-  }
 
   /** 危険/安全色を設定 */
   hazards(h: { colors?: string[]; safeColors?: string[] }): this {
