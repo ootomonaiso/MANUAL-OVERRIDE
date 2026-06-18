@@ -264,6 +264,33 @@ export interface FinalScore {
   total: number
 }
 
+/** ベイズ更新の状態（各ジャンルの事後確率分布） */
+export interface BayesianState {
+  /** 各ジャンルの事後確率（合計 1.0） */
+  posteriors: Record<GenreId, number>
+  /** 収束済み（どのジャンルが threshold を超えたか） */
+  converged: boolean
+  /** 収束したジャンルID（converged=true の場合） */
+  convergedGenre: GenreId | null
+  /** 適用された選択回数 */
+  updateCount: number
+}
+
+/** ベイズ収束のハイパーパラメータ */
+export interface BayesConfig {
+  /** 収束閾値（事後確率がこの値を超えるとジャンル確定） */
+  convergenceThreshold: number
+  /** 尤度 decay 率（大きいほど選択の影響が強い） */
+  decayRate: number
+  /** base ジャンルの decay 率（累積パラメータ増大とともに base の尤度が低下） */
+  baseDecay: number
+  /** 「◯◯にもできた」表示の候補閾値（事後確率がこの値以上のジャンルを候補として返す） */
+  candidateThreshold: number
+}
+
+/** ベイズデバッグログで表示する上位ジャンル数 */
+export const BAYES_DEBUG_TOP_N = 5
+
 /** scoreFormula で使える変数 */
 export interface ScoreVars {
   distance: number         // 走行距離 px

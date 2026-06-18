@@ -95,6 +95,7 @@
 | `id` | ─ | string | 内部ID（省略時は自動生成） |
 | `hint` | ─ | string | 開発者メモ（プレイヤーには非表示） |
 | `paramMultiplier` | ─ | number | genreParams への乗数（デフォルト 1.0） |
+| `genrePoints` | ─ | Record<string, number> | ジャンルへの直接ポイント付与（例: `{ "stg": 3, "rpg": 1 }`） |
 | `displayStyle` | ─ | ChoiceDisplayStyle | ボタンの見た目上書き |
 
 ---

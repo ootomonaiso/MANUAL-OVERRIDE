@@ -52,7 +52,8 @@
   → Choice.genreParams を history に記録
   → buildRuntimeRules(currentVersion, history, lockedGenre)
       ├─ genreParams を累積 (paramMultiplier 考慮)
-      ├─ resolveGenre → GenreId を決定
+      ├─ computeBayesianPosteriors → 事後確率分布を計算
+      ├─ updateBayesianState → 収束判定（50%超でジャンル確定）
       ├─ resolveFeaturesForGenre → features Set を構築
       └─ runtimeConfig の上書き適用
   → RuntimeRules（イミュータブル）を生成
@@ -90,7 +91,7 @@ src/
 ├── domain/
 │   ├── types.ts          全型定義（GenreId, FeatureId, RuntimeRules, GameStats…）
 │   ├── ruleEngine.ts     buildRuntimeRules() — 純粋関数
-│   ├── genreResolver.ts  resolveGenre() — 収束アルゴリズム
+│   ├── genreResolver.ts  resolveGenre() — ベイズ事後確率による収束アルゴリズム
 │   └── scoreCalc.ts      最終スコア計算(投擲込み)
 │
 ├── engine/
@@ -150,7 +151,9 @@ src/
 | `RuntimeRules` | domain/types.ts | フレームごとに参照するイミュータブルなルールセット |
 | `MutableWorld` | engine/types.ts | FeatureSystem/GenrePlugin がフレームごとに受け取るコンテキスト |
 | `GameStats` | engine/types.ts | kills / combo / beatHits など FeatureSystem が書き込む統計 |
-| `GenreDef` | domain/types.ts | ジャンルの閾値・Feature・スコア式・テーマを記述するデータ |
+| `GenreDef` | domain/types.ts | ジャンルの期待中心・Feature・スコア式・テーマを記述するデータ |
+| `BayesianState` | domain/types.ts | ベイズ事後確率分布と収束状態 |
+| `BayesConfig` | domain/types.ts | ベイズ収束のハイパーパラメータ |
 | `SpawnEntry` | engine/types.ts | ジャンルプラグインが宣言するハザード出現テーブルの1行 |
 | `ManualVersion` | domain/types.ts | 1バージョン分の説明書データ（controls, hazards, choices…） |
 | `ChoiceRecord` | domain/ruleEngine.ts | 選択履歴の1件。累積ジャンルパラメータの計算に使用 |

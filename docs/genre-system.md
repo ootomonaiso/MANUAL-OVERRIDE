@@ -2,7 +2,7 @@
 
 ## 概要
 
-プレイヤーが説明書の2択を選ぶたびに **GenreParams** が蓄積し、閾値を超えたジャンルへ収束する。ジャンルはゲームの外見・スポーンテーブル・有効フィーチャー・スコア式をすべて切り替える。
+プレイヤーが説明書の2択を選ぶたびに **GenreParams** が蓄積し、ベイズ事後確率でジャンルへ収束する。ジャンルはゲームの外見・スポーンテーブル・有効フィーチャー・スコア式をすべて切り替える。
 
 ---
 
@@ -25,25 +25,70 @@
 
 ---
 
-## 収束アルゴリズム
+## ベイズ収束アルゴリズム
+
+従来の「閾値超過」方式に代わり、ベイズ事後確率による確率的収束を採用しています。
+
+### 尤度の計算
+
+各ジャンル G に対して、累積パラメータ `accumulated` とジャンルの期待中心 `thresholds` の偏差から尤度を計算します:
 
 ```typescript
 // genreResolver.ts
-function resolveGenre(params: GenreParams, genres: GenreDef[]): GenreId {
-  // 1. 全閾値を満たすジャンルを候補に絞る
-  const candidates = genres.filter(g =>
-    Object.entries(g.thresholds).every(([k, v]) => (params[k] ?? 0) >= v)
-  )
-  if (candidates.length === 0) return 'base'
+function computeBayesianPosteriors(
+  accumulated: GenreParams,
+  genres: GenreDef[],
+  config: BayesConfig,
+): Record<GenreId, number> {
+  // 各ジャンルの尤度を計算
+  for (const genre of genres) {
+    const entries = Object.entries(genre.thresholds)
+    if (entries.length === 0) {
+      // base: 累積総和に応じて減衰
+      const total = Object.values(accumulated).reduce((s, v) => s + v, 0)
+      unnormalized[genre.id] = Math.exp(-config.baseDecay * total)
+    } else {
+      // 各軸の偏差の合計
+      let deviation = 0
+      for (const [axis, thresholdVal] of entries) {
+        deviation += Math.abs((accumulated[axis] ?? 0) - thresholdVal)
+      }
+      unnormalized[genre.id] = Math.exp(-config.decayRate * deviation)
+    }
+  }
 
-  // 2. 超過量の合計が最大のジャンルが確定
-  return candidates.reduce((best, g) => {
-    const overflow = Object.entries(g.thresholds)
-      .reduce((s, [k, v]) => s + (params[k] ?? 0) - v, 0)
-    return overflow > best.overflow ? { id: g.id, overflow } : best
-  }, { id: 'base', overflow: -Infinity }).id
+  // 正規化（合計 1.0）
+  const sum = genreIds.reduce((acc, id) => acc + unnormalized[id], 0)
+  for (const id of genreIds) {
+    posteriors[id] = unnormalized[id] / sum
+  }
+  return posteriors
 }
 ```
+
+### 収束判定
+
+事後確率が `convergenceThreshold`（デフォルト 50%）を超えたジャンルが収束します:
+
+```typescript
+for (const [id, prob] of Object.entries(posteriors)) {
+  if (id === 'base') continue
+  if (prob >= config.convergenceThreshold) {
+    // 最高確率のジャンルが収束先
+    converged = true
+    convergedGenre = id
+  }
+}
+```
+
+### ハイパーパラメータ（BayesConfig）
+
+| パラメータ | デフォルト | 説明 |
+|---|---|---|
+| `convergenceThreshold` | 0.50 | 事後確率がこの値を超えるとジャンル確定 |
+| `decayRate` | 0.4 | 偏差に対する尤度減衰率（大きいほど分布が尖る） |
+| `baseDecay` | 0.3 | 累積パラメータ増大に伴う base 減衰率 |
+| `candidateThreshold` | 0.1 | 「◯◯にもできた」表示の候補閾値 |
 
 ### paramMultiplier
 
@@ -60,34 +105,34 @@ function resolveGenre(params: GenreParams, genres: GenreDef[]): GenreId {
 
 ### コアジャンル（プラグイン実装済み）
 
-| ID | ラベル | 閾値 | 有効フィーチャー | スコア式 |
+| ID | ラベル | 期待中心 | 有効フィーチャー | スコア式 |
 |---|---|---|---|---|
 | `base` | チュートリアル | ─ | ─ | ─ |
-| `runner` | エンドレスランナー | tempo≥5 | auto_run, double_jump, long_air | `distance*1.2 + survivedSec*8 + combo*50` |
-| `stg` | シューティング | range≥4, enemy≥4 | shoot, three_way, enemy_hp | `kills*120 + distance*0.5 + combo*80` |
-| `rpg` | RPG | growth≥4 | hp, exp, item_pickup, slow_precise | `exp*2 + kills*60 + distance*0.3` |
-| `puzzle` | パズル | combo≥4 | grid_stop, puzzle_solve | `combo*200 + survivedSec*3` |
-| `rhythm` | リズム | tempo≥4, rhythm≥4 | beat_hazard, just_input, beat_dash | `beatHits*150 + combo*100 + distance*0.4` |
+| `runner` | エンドレスランナー | tempo=7 | auto_run, double_jump, long_air | `distance*1.2 + survivedSec*8 + combo*50` |
+| `stg` | シューティング | range=5, enemy=5 | shoot, three_way, enemy_hp | `kills*120 + distance*0.5 + combo*80` |
+| `rpg` | RPG | growth=6 | hp, exp, item_pickup, slow_precise | `exp*2 + kills*60 + distance*0.3` |
+| `puzzle` | パズル | combo=5 | grid_stop, puzzle_solve | `combo*200 + survivedSec*3` |
+| `rhythm` | リズム | tempo=4, rhythm=4 | beat_hazard, just_input, beat_dash | `beatHits*150 + combo*100 + distance*0.4` |
 
 ### 追加ジャンル（定義済み・プラグイン順次実装）
 
-| ID | ラベル | 閾値 | スコア式の重点 |
+| ID | ラベル | 期待中心 | スコア式の重点 |
 |---|---|---|---|
-| `aerial_stg` | 縦スクロールSTG | vertical≥3, range≥3, enemy≥3 | kills + combo + survivedSec |
-| `bullet_hell` | 弾幕シューティング | vertical≥3, enemy≥5 | kills + combo + accuracy |
-| `survival` | サバイバル | survive≥4, growth≥3 | survivedSec + itemsCollected |
-| `stealth_action` | ステルスアクション | stealth≥4 | stealthBonus + survivedSec |
-| `racing` | レーシング | speed≥4, tempo≥3 | distance + survivedSec |
-| `platformer` | プラットフォームアクション | aerial≥3, combo≥3 | combo + distance |
-| `dungeon` | ダンジョン探索 | growth≥5, craft≥2 | exp + kills + itemsCollected |
-| `tower_def` | タワーディフェンス | craft≥5, enemy≥3 | kills + combo + survivedSec |
-| `sports` | スポーツ | speed≥3, rhythm≥3 | combo + distance + beatHits |
-| `idle` | 放置ゲーム | craft≥4 | itemsCollected + exp + survivedSec |
-| `bullet_runner` | 弾幕ランナー | tempo≥5, enemy≥4 | kills + distance + combo |
-| `arena` | アリーナバトル | enemy≥5, combo≥4 | kills + bossKills + combo |
-| `aquatic` | 水中アドベンチャー | vertical≥2, aerial≥2, survive≥3 | distance + itemsCollected + survivedSec |
-| `horror` | サバイバルホラー | survive≥5, stealth≥3 | survivedSec + stealthBonus − deaths |
-| `hack_slash` | ハックアンドスラッシュ | enemy≥4, combo≥5 | kills + maxCombo + exp + bossKills |
+| `aerial_stg` | 縦スクロールSTG | vertical=4, range=4, enemy=4 | kills + combo + survivedSec |
+| `bullet_hell` | 弾幕シューティング | vertical=3, enemy=5 | kills + combo + accuracy |
+| `survival` | サバイバル | survive=4, growth=3 | survivedSec + itemsCollected |
+| `stealth_action` | ステルスアクション | stealth=4 | stealthBonus + survivedSec |
+| `racing` | レーシング | speed=4, tempo=3 | distance + survivedSec |
+| `platformer` | プラットフォームアクション | aerial=3, combo=3 | combo + distance |
+| `dungeon` | ダンジョン探索 | growth=5, craft=2 | exp + kills + itemsCollected |
+| `tower_def` | タワーディフェンス | craft=5, enemy=3 | kills + combo + survivedSec |
+| `sports` | スポーツ | speed=3, rhythm=3 | combo + distance + beatHits |
+| `idle` | 放置ゲーム | craft=4 | itemsCollected + exp + survivedSec |
+| `bullet_runner` | 弾幕ランナー | tempo=6, enemy=5 | kills + distance + combo |
+| `arena` | アリーナバトル | enemy=5, combo=4 | kills + bossKills + combo |
+| `aquatic` | 水中アドベンチャー | vertical=2, aerial=2, survive=3 | distance + itemsCollected + survivedSec |
+| `horror` | サバイバルホラー | survive=5, stealth=3 | survivedSec + stealthBonus − deaths |
+| `hack_slash` | ハックアンドスラッシュ | enemy=4, combo=5 | kills + maxCombo + exp + bossKills |
 
 ---
 
@@ -118,7 +163,7 @@ function resolveGenre(params: GenreParams, genres: GenreDef[]): GenreId {
 {
   id: 'my_genre',                     // GenreId に登録が必要
   label: '私のジャンル',
-  thresholds: { tempo: 3, speed: 3 }, // 複数パラメータを AND 条件で指定
+  thresholds: { tempo: 3, speed: 3 }, // 期待パラメータの中心（複数軸で AND 条件）
   enableFeatures: ['auto_run', 'dash'],
   disableFeatures: ['grid_stop'],
   scoreFormula: 'distance * 2 + combo * 100',
@@ -130,6 +175,12 @@ function resolveGenre(params: GenreParams, genres: GenreDef[]): GenreId {
   scrollDirection: 'horizontal', // 省略可（デフォルト: 'horizontal'）
 }
 ```
+
+### thresholds の意味の変化
+
+従来の方式では `thresholds` は「超えるべき最低値」でしたが、ベイズ方式では**「期待パラメータの中心」**として解釈されます。累積値がこの中心に近ければ近いほど事後確率が高くなり、50%を超えると収束します。
+
+複数の軸を持つジャンルは、各軸の偏差の合計で評価されます。各軸の偏差を小さくするほど尤度が高くなります。
 
 ### theme 一覧
 

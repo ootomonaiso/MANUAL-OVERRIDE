@@ -57,13 +57,17 @@ export type GenreId =
 
 | フィールド | 説明 |
 |---|---|
-| `thresholds` | ジャンル確定に必要な最低パラメータ値（AND条件） |
+| `thresholds` | 期待パラメータの中心。累積値がこの中心に近いほど事後確率が高くなる |
 | `enableFeatures` | 確定時に有効になるフィーチャー |
 | `disableFeatures` | 確定時に無効になるフィーチャー |
 | `scoreFormula` | 最終スコアの計算式（使える変数は後述） |
 | `manualReveal` | 確定時に説明書に書き込まれる宣言文 |
 | `endingFlavor` | 投擲後のエンディング画面に表示される一文 |
 | `theme` | 説明書UIの見た目。`plain` / `stg` / `rpg` / `puzzle` / `rhythm` / `horror` / `aquatic` |
+
+> **注:** `thresholds` は「超えるべき最低値」ではなく「期待される中心値」です。
+> Bayesian 収束システムでは、累積パラメータがこの中心に近づくほど
+> 当該ジャンルの事後確率が上昇します。中心から外れるほど確率は低下します。
 
 scoreFormula で使える変数: `distance` / `kills` / `combo` / `maxCombo` / `exp` / `beatHits` / `survivedSec` / `accuracy` / `deaths` / `itemsCollected` / `bossKills` / `stealthBonus` / `colorTouches`
 
@@ -177,10 +181,12 @@ registerFeature(new MyFeature())
 
   ver 2.0 の選択肢で { tempo: 2, aerial: 1 } を加算
   ver 3.0 の選択肢で { tempo: 2, aerial: 2 } を加算
-  合計: { tempo: 4, aerial: 3 } → 閾値ちょうど → 確定
+  合計: { tempo: 4, aerial: 3 } → 期待中心に一致 → 事後確率最高 → 確定
 ```
 
-既存ジャンルとのパラメータ競合にも注意してください。全ジャンルの閾値は `src/data/config/genres.json` で確認できます。
+期待中心に累積値が一致するほど事後確率が最大になります。中心から外れた累積値でも事後確率は低下しますが、依然として収束の可能性があります。
+
+既存ジャンルとのパラメータ競合にも注意してください。全ジャンルの期待パラメータは `src/data/config/genres.json` で確認できます。
 
 ---
 

@@ -8,6 +8,8 @@
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
     "test": "playwright test",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
     "test:smoke": "playwright test tests/smoke.spec.ts",
     "test:e2e": "node tests/test_game.mjs",
     "test:choices": "node tests/test_choices.mjs",
@@ -20,8 +22,10 @@
   "devDependencies": {
     "@playwright/test": "^1.60.0",
     "@vitejs/plugin-vue": "^5.2.1",
+    "@vitest/ui": "^4.1.9",
     "typescript": "^5.7.2",
     "vite": "^6.3.5",
+    "vitest": "^4.1.9",
     "vue-tsc": "^2.2.8"
   }
 }

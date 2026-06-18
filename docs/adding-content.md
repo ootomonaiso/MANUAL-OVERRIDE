@@ -24,9 +24,9 @@
   genreParams が蓄積される
   例: { tempo: +2, aerial: +1 }
         ↓
-  蓄積値がどのジャンルの thresholds を超えたか判定（genreResolver）
-        ↓
-  閾値を全て超えたジャンルのうち「超過量の合計が最大」のものが確定
+  ベイズ事後確率でジャンル収束を判定（genreResolver）
+  累積値がジャンルの期待中心に近いほど事後確率が高い
+  事後確率が 50%を超えるとジャンル確定
         ↓
   GenrePlugin の視覚テーマ・スポーンテーブルが適用される
         ↓
@@ -194,9 +194,10 @@ export type GenreId =
   id: 'my_genre',
   label: 'マイジャンル',
 
-  // ─── 収束条件 ─────────────────────────────────────────────────
-  // このジャンルに確定するために必要な最低パラメータ値。
-  // 複数指定した場合はすべての条件を満たす必要がある。
+  // ─── 期待パラメータの中心 ───────────────────────────────────
+  // このジャンルの「狙い目」となるパラメータ値。
+  // 累積値がこの中心に近ければ近いほど事後確率が高くなる。
+  // 複数指定した場合は各軸の偏差の合計で評価される。
   thresholds: { tempo: 3, aerial: 3 },
 
   // ─── フィーチャー ──────────────────────────────────────────────
@@ -241,12 +242,12 @@ export type GenreId =
 ### ステップ 4: 選択肢が収束するようにパラメータを設計する
 
 マニュアルの JSON ファイルの `genreParams` を調整して、
-プレイヤーが特定の選択を続けると `thresholds` に到達するようにします。
+プレイヤーが特定の選択を続けるとジャンルの期待中心に近づくようにします。
 
 **例:** `thresholds: { tempo: 3, aerial: 3 }` の場合
 - ver 2.0 の選択肢で `{ tempo: 2, aerial: 1 }` を加算
 - ver 3.0 の選択肢で `{ tempo: 1, aerial: 2 }` を加算
-- 合計で `{ tempo: 3, aerial: 3 }` → ジャンル確定
+- 合計で `{ tempo: 3, aerial: 3 }` → 期待中心に一致 → 事後確率最高 → ジャンル確定
 
 ---
 
@@ -367,20 +368,20 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
 
 ### 12軸のジャンルパラメータ
 
-| パラメータ | 向いているジャンル | 典型的な閾値 |
+| パラメータ | 向いているジャンル | 典型的な期待中心値 |
 |---|---|---|
-| `tempo` | runner, rhythm, bullet_runner, racing | 4〜5 |
-| `range` | stg, aerial_stg, bullet_hell | 3〜4 |
+| `tempo` | runner, rhythm, bullet_runner, racing | 4〜7 |
+| `range` | stg, aerial_stg, bullet_hell | 3〜5 |
 | `enemy` | stg, arena, hack_slash, bullet_hell | 4〜5 |
 | `combo` | puzzle, hack_slash, arena | 4〜5 |
-| `growth` | rpg, dungeon, idle | 4〜5 |
+| `growth` | rpg, dungeon, idle | 4〜6 |
 | `rhythm` | rhythm, sports | 3〜4 |
-| `stealth` | stealth_action, horror | 4〜5 |
-| `vertical` | aerial_stg, aquatic, bullet_hell | 2〜3 |
+| `stealth` | stealth_action, horror | 4 |
+| `vertical` | aerial_stg, aquatic, bullet_hell | 2〜4 |
 | `aerial` | platformer, aquatic | 2〜3 |
 | `survive` | survival, horror, aquatic | 3〜5 |
-| `craft` | tower_def, idle | 4〜5 |
-| `speed` | racing, sports, bullet_runner | 3〜4 |
+| `craft` | tower_def, idle | 4 |
+| `speed` | racing, sports, bullet_runner | 3 |
 
 ### 分岐が「自然に見える」ようにする設計
 
@@ -433,12 +434,28 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
 [ManualDeck] WARNING: key "3.0-orphan" は "1.0" から到達不可能です
 ```
 
+### ベイズデバッグログ
+
+各選択後に `[BAYES]` プレフィックスで事後確率分布がコンソールに出力されます:
+
+```
+[BAYES] choice #3 | choiceId=2.0-a | accumulated={"tempo":5,"enemy":3}
+[BAYES] Top5 genres:
+  runner        35.2%
+  bullet_runner 22.1%
+  stg           18.7%
+  arena         10.3%
+  hack_slash     8.9%
+[BAYES] converged=false | convergedGenre=— | threshold=50%
+```
+
 ### よくあるミス
 
 | 症状 | 原因 |
 |---|---|
 | 選択肢を選んでも何も起きない | `next` のキーが存在しない or タイプミス |
-| いつまでもジャンルが確定しない | `thresholds` の値が選択肢の合計を超えている |
+| いつまでもジャンルが確定しない | 累積値がどのジャンルの期待中心にも近づいていない |
+| 意図しないジャンルに収束する | 複数のジャンルの期待中心に同時に近づいている |
 | エンディングテキストが表示されない | `endingFlavor` が `genres.ts` に未記載 |
 | 見た目が変わらない | `genres/index.ts` への登録漏れ |
 | ゲームが起動しない | `domain/types.ts` の `GenreId` への追加漏れ |
@@ -460,8 +477,9 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
 - [ ] `src/data/genres.ts` に `GenreDef` を追加（thresholds, enableFeatures, scoreFormula, manualReveal, endingFlavor）
 - [ ] `src/genres/MyGenrePlugin.ts` を作成（視覚テーマ + spawnTable）
 - [ ] `src/genres/index.ts` に import と `registerGenre()` を追加
-- [ ] `src/data/manuals/` の JSON で genreParams を調整し、新ジャンルの thresholds へ収束するルートが存在することを確認
+- [ ] `src/data/manuals/` の JSON で genreParams を調整し、新ジャンルの期待中心へ収束するルートが存在することを確認
 - [ ] ブラウザで実際にそのジャンルへ収束するか動作確認
+- [ ] `[BAYES]` ログで事後確率が 50%を超えて収束することを確認
 
 ### テスト時のショートカット
 

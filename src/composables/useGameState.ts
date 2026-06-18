@@ -1,9 +1,10 @@
 import { reactive, ref, readonly } from 'vue'
-import type { Phase, GenreId, RuntimeRules, FinalScore } from '../domain/types'
+import type { Phase, GenreId, RuntimeRules, FinalScore, BayesianState } from '../domain/types'
+import { BAYES_DEBUG_TOP_N } from '../domain/types'
 import { MANUAL_DECK } from '../data/manualDeck'
 import { GENRES } from '../data/genres'
 import { buildRuntimeRules, type ChoiceRecord } from '../domain/ruleEngine'
-import { resolveGenre, accumulateParams } from '../domain/genreResolver'
+import { resolveGenre, resolveHighestProbGenre, accumulateParams, initBayesianState, updateBayesianState, DEFAULT_BAYES_CONFIG } from '../domain/genreResolver'
 import { calcThrowScore, calcFinalScore } from '../domain/scoreCalc'
 import type { ThrowResult } from '../domain/types'
 import { soundManager } from '../plugins/SoundManager'
@@ -16,6 +17,9 @@ export function useGameState() {
   const lockedGenre = ref<GenreId | null>(null)
   const updateIndex = ref(0)          // 何回目の更新か（0-indexed）
   const finalScore = ref<FinalScore | null>(null)
+
+  // ベイズ状態（事後確率分布を追跡）
+  const bayesState = reactive<BayesianState>(initBayesianState(GENRES))
 
   // 現在有効なルール（ゲームループが参照）
   const rules = reactive<RuntimeRules>(
@@ -34,6 +38,7 @@ export function useGameState() {
   // ─── フェーズ遷移 ─────────────────────────────────────────
   function startGame() {
     phase.value = 'tutorialIntro'
+    Object.assign(bayesState, initBayesianState(GENRES))
     _rebuildRules()
   }
 
@@ -72,20 +77,35 @@ export function useGameState() {
     currentVersionKey.value = choice.next
     updateIndex.value++
 
-    // ジャンル収束チェック
+    // 累積パラメータを計算
     const accumulated = accumulateParams(choiceHistory.map(h => h.genreParams))
-    const genrePointsAcc: Record<string, number> = {}
-    for (const h of choiceHistory) {
-      if (!h.genrePoints) continue
-      for (const [g, pts] of Object.entries(h.genrePoints)) {
-        genrePointsAcc[g] = (genrePointsAcc[g] ?? 0) + pts
-      }
-    }
-    const selectedIds = choiceHistory.map(h => h.choiceId)
-    const resolved = resolveGenre(accumulated, GENRES, genrePointsAcc, selectedIds)
 
-    if (nextVer.choices.length === 0 || resolved !== 'base') {
-      lockedGenre.value = resolved !== 'base' ? resolved : _forceResolve(accumulated)
+    // ベイズ更新
+    const newState = updateBayesianState(bayesState, accumulated, GENRES)
+    Object.assign(bayesState, newState)
+
+    // ── ベイズ状態デバッグログ ──────────────────────────────────
+    const sorted = GENRES
+      .filter(g => g.id !== 'base')
+      .sort((a, b) => (newState.posteriors[b.id] ?? 0) - (newState.posteriors[a.id] ?? 0))
+      .slice(0, BAYES_DEBUG_TOP_N)
+      .map(g => `  ${g.id.padEnd(14)} ${(newState.posteriors[g.id] * 100).toFixed(1)}%`)
+      .join('\n')
+
+    const thresholdStr = `${(DEFAULT_BAYES_CONFIG.convergenceThreshold * 100).toFixed(0)}%`
+    console.log(`[BAYES] choice #${updateIndex.value} | choiceId=${choiceId} | accumulated=${JSON.stringify(accumulated)}`)
+    console.log(`[BAYES] Top${BAYES_DEBUG_TOP_N} genres:\n${sorted}`)
+    console.log(`[BAYES] converged=${newState.converged} | convergedGenre=${newState.convergedGenre ?? '—'} | threshold=${thresholdStr}`)
+    // ─────────────────────────────────────────────────────────────
+
+    // ジャンル収束チェック（ベイズ事後確率が閾値を超えたら確定）
+    if (newState.converged || nextVer.choices.length === 0) {
+      if (newState.converged && newState.convergedGenre) {
+        lockedGenre.value = newState.convergedGenre
+      } else {
+        // 末端だが未収束 → 最高確率のジャンルを強制選択
+        lockedGenre.value = resolveHighestProbGenre(accumulated, GENRES)
+      }
       soundManager.onGenreLock(lockedGenre.value)
       _rebuildRules()
       phase.value = 'genreLocked'
@@ -94,12 +114,6 @@ export function useGameState() {
       phase.value = 'playing'
     }
     return undefined
-  }
-
-  // choices が空の末端 or 3回目更新でジャンルを強制決定
-  function _forceResolve(accumulated: ReturnType<typeof accumulateParams>): GenreId {
-    const resolved = resolveGenre(accumulated, GENRES)
-    return resolved !== 'base' ? resolved : 'runner'  // どこにも収束しなければランナー
   }
 
   // ゲームオーバー or ギブアップ → 投擲フェーズへ
@@ -122,6 +136,7 @@ export function useGameState() {
     lockedGenre.value = null
     updateIndex.value = 0
     finalScore.value = null
+    Object.assign(bayesState, initBayesianState(GENRES))
     _rebuildRules()
   }
 
@@ -138,6 +153,7 @@ export function useGameState() {
     choiceHistory: readonly(choiceHistory),
     lockedGenre: readonly(lockedGenre),
     finalScore: readonly(finalScore),
+    bayesState: readonly(bayesState) as BayesianState,
     currentManual,
     lockedGenreDef,
     startGame,

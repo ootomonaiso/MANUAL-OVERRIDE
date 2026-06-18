@@ -21,7 +21,7 @@
 | `EnvironmentId` | 環境設定 (`ground`, `sky`, `space`, `ocean`, `dungeon`, `forest`, `city`) |
 | `FeatureId` | Feature フラグ (30種: shoot, three_way, charge_shot, spread_shot, bomb, enemy_hp, boss, auto_run, slow_precise, double_jump, long_air, dash, wall_jump, slide, gravity_flip, vertical_scroll, hp, exp, item_pickup, shield, grid_stop, puzzle_solve, beat_hazard, just_input, beat_dash, stealth_mode, time_bonus, tower, color_touch) |
 | `Controls` | キー設定 (`jump`, `moveLeft`, `moveRight`, `moveUp`, `moveDown`, `shoot?`, `dash?`, `slide?`) |
-| `Choice` | 説明書選択肢 (`id`, `label`, `hint?`, `next`, `genreParams`, `paramMultiplier?`) |
+| `Choice` | 説明書選択肢 (`id`, `label`, `hint?`, `next`, `genreParams`, `genrePoints?`, `paramMultiplier?`) |
 | `ManualRuntimeConfig` | バージョン固有のruntime上書き (`scrollSpeed?`, `gravity?`, `bpm?`, `scrollDirection?`, `environment?`, `playerMaxHp?`, `timescale?`, `colorTouchScore?`, `forceGenreId?`) |
 | `ManualVersion` | 説明書バージョン (`version`, `manualText[]`, `image?`, `imageAlt?`, `choices[]`, `controls`, `hazards`, `runtimeConfig?`, `tutorialHint?`, `narrative?`, `learningRules?`) |
 | `GenreDef` | ジャンル定義 (`id`, `label`, `thresholds`, `enableFeatures[]`, `disableFeatures[]`, `scoreFormula`, `manualReveal`, `theme`, `bgColor`, `environment?`, `scrollDirection?`, `gravity?`, `endingFlavor?`) |
@@ -33,6 +33,9 @@
 | `ThrowResult` | 投擲結果 (`airTime`, `arcHeight`, `speed`) |
 | `FinalScore` | 最終スコア (`play`, `throw`, `total`) |
 | `ScoreVars` | スコア計算変数 (`distance`, `kills`, `combo`, `exp`, `beatHits`, `survivedSec`, `accuracy`, `maxCombo`, `deaths`, `itemsCollected`, `bossKills`, `stealthBonus`, `colorTouches`) |
+| `BayesianState` | ベイズ更新の状態 (`posteriors`, `converged`, `convergedGenre`, `updateCount`) |
+| `BayesConfig` | ベイズ収束のハイパーパラメータ (`convergenceThreshold`, `decayRate`, `baseDecay`, `candidateThreshold`) |
+| `BAYES_DEBUG_TOP_N` | デバッグログ用定数 (`= 5`) |
 
 ---
 
@@ -45,10 +48,16 @@
 | 関数 | 概要 |
 |---|---|
 | `accumulateParams(paramsList: GenreParams[]): GenreParams` | 選択履歴から genreParams を単純合算 |
-| `resolveGenre(accumulated: GenreParams, genres: GenreDef[]): GenreId` | 累積パラメータからジャンルを決定（超過量最大のものを選択） |
+| `resolveGenre(accumulated: GenreParams, genres: GenreDef[]): GenreId` | 累積パラメータからジャンルを決定（ベイズ事後確率で収束判定、50%超で確定） |
 | `resolveFeaturesForGenre(genreId, genres): { enable: Set<FeatureId>, disable: Set<FeatureId> }` | ジャンルの enable/disable features を取得 |
-| `resolveGenreProgress(accumulated, genres): { closestGenre: GenreId, progress: number }` | 収束の近さを 0〜1 で返す（UI 演出用） |
-| `resolveAllMetGenres(accumulated, genres): GenreId[]` | 収束済みの全ジャンルを返す（「◯◯にもできた」表示用） |
+| `resolveGenreProgress(accumulated, genres): { closestGenre: GenreId, progress: number }` | 最高事後確率を progress として返す（UI 演出用） |
+| `resolveAllMetGenres(accumulated, genres): GenreId[]` | 事後確率が candidateThreshold(0.1)以上のジャンルを候補として返す（「◯◯にもできた」表示用） |
+| `computeBayesianPosteriors(accumulated, genres, config): Record<GenreId, number>` | 累積パラメータから事後確率を計算 |
+| `initBayesianState(genres): BayesianState` | 一様な事前分布で状態を初期化 |
+| `updateBayesianState(prevState, accumulated, genres, config): BayesianState` | 1回の選択でベイズ状態を更新 |
+| `resolveHighestProbGenre(accumulated, genres, config): GenreId` | 未収束時に最高確率のジャンルを返す |
+| `getGenreDistribution(accumulated, genres, config): Record<GenreId, number>` | 事後確率分布を返す（デバッグ用） |
+| `DEFAULT_BAYES_CONFIG` | デフォルトの BayesConfig (`convergenceThreshold: 0.50`, `decayRate: 0.4`, `baseDecay: 0.3`, `candidateThreshold: 0.1`) |
 
 ---
 
