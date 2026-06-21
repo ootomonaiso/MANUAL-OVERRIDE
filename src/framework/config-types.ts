@@ -296,6 +296,7 @@ export interface GameBalanceConfig {
   hazardSpawnDecayRate: number
   distanceAccelMaxBonus: number
   distanceAccelFullDist: number
+  maxRounds: number
 }
 
 /** genres.json — ジャンル定義テーブル */

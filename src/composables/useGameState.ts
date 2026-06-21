@@ -8,8 +8,7 @@ import { calcThrowScore, calcFinalScore } from '../domain/scoreCalc'
 import type { ThrowResult } from '../domain/types'
 import { soundManager } from '../plugins/SoundManager'
 import { sampleCards } from '../data/cardPool'
-
-const MAX_ROUNDS = 5
+import { MAX_ROUNDS } from '../data/gameBalance'
 
 export function useGameState() {
   const phase = ref<Phase>('title')
