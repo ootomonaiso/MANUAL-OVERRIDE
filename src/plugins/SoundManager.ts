@@ -20,7 +20,8 @@ class SoundManager implements SoundHooks {
 
   // ─── BGM管理 ───────────────────────────────────────────────
   private _bgmAudio: HTMLAudioElement | null = null
-  private _bgmFadeTimer: number | null = null
+  private _cancelFadeIn: (() => void) | null = null
+  private _cancelFadeOut: (() => void) | null = null
 
   /**
    * BGMを再生する。既存BGMはフェードアウトしてから切り替える。
@@ -29,17 +30,19 @@ class SoundManager implements SoundHooks {
   playBgm(config: BgmConfig): void {
     const { src, loop = true, volume = 0.5, fadeInMs = 1200 } = config
 
-    // 既存BGMをフェードアウト
+    // 進行中のフェードインをキャンセル
+    this._cancelFadeIn?.()
+    this._cancelFadeIn = null
+
+    // 既存BGMをフェードアウト（フェードイン/アウトは別タイマーで並走）
     if (this._bgmAudio) {
       const old = this._bgmAudio
-      this._fadeVolume(old, 0, 400, () => {
+      this._cancelFadeOut?.()
+      this._cancelFadeOut = this._fade(old, 0, 400, () => {
         old.pause()
         old.src = ''
+        this._cancelFadeOut = null
       })
-    }
-    if (this._bgmFadeTimer !== null) {
-      clearInterval(this._bgmFadeTimer)
-      this._bgmFadeTimer = null
     }
 
     const audio = new Audio(src)
@@ -48,9 +51,12 @@ class SoundManager implements SoundHooks {
     this._bgmAudio = audio
 
     audio.play().then(() => {
-      this._fadeVolume(audio, volume, fadeInMs, null)
+      this._cancelFadeIn = this._fade(audio, volume, fadeInMs, () => {
+        this._cancelFadeIn = null
+      })
     }).catch(() => {
       // ファイルが存在しない or 再生不可 → 静かにスキップ
+      if (this._bgmAudio === audio) this._bgmAudio = null
     })
   }
 
@@ -59,39 +65,42 @@ class SoundManager implements SoundHooks {
    */
   stopBgm(fadeOutMs = 800): void {
     if (!this._bgmAudio) return
+    this._cancelFadeIn?.()
+    this._cancelFadeIn = null
     const audio = this._bgmAudio
     this._bgmAudio = null
-    this._fadeVolume(audio, 0, fadeOutMs, () => {
+    this._cancelFadeOut?.()
+    this._cancelFadeOut = this._fade(audio, 0, fadeOutMs, () => {
       audio.pause()
       audio.src = ''
+      this._cancelFadeOut = null
     })
   }
 
-  /** volume を to まで durationMs かけてリニアにフェードする */
-  private _fadeVolume(
+  /** volume を to まで durationMs かけてリニアにフェードし、キャンセル関数を返す */
+  private _fade(
     audio: HTMLAudioElement,
     to: number,
     durationMs: number,
     onDone: (() => void) | null,
-  ): void {
-    if (this._bgmFadeTimer !== null) clearInterval(this._bgmFadeTimer)
-
+  ): () => void {
     const STEPS = 20
     const stepMs = durationMs / STEPS
     const from = audio.volume
     const delta = (to - from) / STEPS
     let step = 0
 
-    this._bgmFadeTimer = window.setInterval(() => {
+    const timer = window.setInterval(() => {
       step++
       audio.volume = Math.max(0, Math.min(1, from + delta * step))
       if (step >= STEPS) {
-        clearInterval(this._bgmFadeTimer!)
-        this._bgmFadeTimer = null
+        clearInterval(timer)
         audio.volume = to
         onDone?.()
       }
     }, stepMs)
+
+    return () => clearInterval(timer)
   }
 
   // ─── SEフック ─────────────────────────────────────────────
