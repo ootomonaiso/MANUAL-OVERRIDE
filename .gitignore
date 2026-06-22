@@ -25,6 +25,9 @@ coverage/
 .DS_Store
 Thumbs.db
 
+# Generated files (run `npm run preprocess` to regenerate)
+content/choices/_SLOTS.md
+
 screenshots/
 
 .claude/
