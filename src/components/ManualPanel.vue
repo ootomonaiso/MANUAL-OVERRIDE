@@ -96,7 +96,10 @@ function keyLabel(key: string): string {
       </template>
       <template v-else>
         <div v-for="line in filteredManualText" :key="line" class="manual-line line-unchanged">
-          <span>{{ line }}</span>
+          <del v-if="line.startsWith('~~') && line.endsWith('~~')" class="line-conflicted">
+            {{ line.slice(2, -2) }}
+          </del>
+          <span v-else>{{ line }}</span>
         </div>
       </template>
     </div>
@@ -257,6 +260,15 @@ function keyLabel(key: string): string {
 .manual-line { display: block; padding: 1px 0; }
 
 .line-unchanged { color: #b8ffb8; font-weight: 500; font-family: 'M PLUS 1 Code', cursive; }
+
+/* B5: 矛盾カードによる取り消し線テキスト */
+.line-conflicted {
+  color: rgba(255, 100, 100, 0.55);
+  text-decoration-color: rgba(255, 51, 51, 0.7);
+  text-decoration-thickness: 2px;
+  font-style: italic;
+  opacity: 0.7;
+}
 .line-removed {
   display: block;
   text-decoration: line-through;

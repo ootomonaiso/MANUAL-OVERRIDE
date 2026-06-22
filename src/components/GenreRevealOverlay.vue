@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import type { ManualTheme } from '../domain/types'
 
 const props = defineProps<{
@@ -12,9 +12,9 @@ const emit = defineEmits<{
   (e: 'dismissed'): void
 }>()
 
-onMounted(() => {
-  setTimeout(() => emit('dismissed'), 2800)
-})
+let _dismissTimer: ReturnType<typeof setTimeout>
+onMounted(() => { _dismissTimer = setTimeout(() => emit('dismissed'), 2800) })
+onUnmounted(() => clearTimeout(_dismissTimer))
 </script>
 
 <template>
@@ -53,6 +53,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  pointer-events: none;
   animation: grRootIn 0.25s ease-out both, grRootOut 0.55s 2.25s ease-in both;
 }
 

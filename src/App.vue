@@ -81,7 +81,7 @@ function beginSnapshotLoop() {
     if (!scroller) return
     snapshot.value = scroller.getSnapshot()
 
-    // 更新トリガー（tutorial, playing, genreLocked で発火する）
+    // 更新トリガー（tutorial, playing のみ発火 — genreLocked 後は MAX_ROUNDS 到達済みで止める）
     // 最初のジャンプまで待つ
     const activePlay = ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
     if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
@@ -145,6 +145,10 @@ function onThrown(result: ThrowResult) {
 
 // ─── リスタート ──────────────────────────────────────────────────
 function restart() {
+  if (genreLockedBoostTimer !== null) {
+    clearTimeout(genreLockedBoostTimer)
+    genreLockedBoostTimer = null
+  }
   cancelAnimationFrame(snapRaf)
   scroller?.stop()
   scroller = null
@@ -373,6 +377,7 @@ onUnmounted(() => {
         v-if="gameState.phase.value === 'updating'"
         :choices="gameState.activeCards.value"
         :version="gameState.currentManual().version"
+        :locked-genre="gameState.lockedGenre.value ?? undefined"
         @choose="onChoose"
       />
     </Transition>
