@@ -1,0 +1,36 @@
+version: 2
+updates:
+  # npm dependencies
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    groups:
+      # Group all dev dependencies into one PR
+      dev-dependencies:
+        dependency-type: development
+        update-types: [minor, patch]
+      # Production deps get individual PRs (potentially breaking)
+      vue-ecosystem:
+        patterns: ['vue', '@vue/*', '@vitejs/*', 'vite']
+    labels:
+      - dependencies
+      - automated
+    commit-message:
+      prefix: 'chore(deps)'
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: 'chore(ci)'

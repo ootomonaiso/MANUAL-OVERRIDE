@@ -6,71 +6,223 @@ on:
   push:
     branches: [dev, main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NODE_VERSION: '20'
+  PLAYWRIGHT_BROWSERS_PATH: .pw-browsers
+
+# ══════════════════════════════════════════════════════════
+#  Phase 1 — Static checks (all parallel, no build needed)
+# ══════════════════════════════════════════════════════════
 jobs:
   typecheck:
-    name: Type Check
+    name: TypeScript
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
       - run: npm ci
+      - run: npx vue-tsc --noEmit
 
-      - name: Run vue-tsc
-        run: npx vue-tsc --noEmit
+  lint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
 
+  validate-json:
+    name: JSON Integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: node scripts/validate-json.mjs
+
+# ══════════════════════════════════════════════════════════
+#  Phase 2 — Build (gates on all Phase 1)
+# ══════════════════════════════════════════════════════════
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: typecheck
+    needs: [typecheck, lint, validate-json]
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
       - run: npm ci
 
       - name: Vite build
-        run: npx vite build
+        run: npm run build
 
-      - name: Upload dist
+      - name: Bundle size check
+        run: node scripts/check-bundle-size.mjs
+
+      - name: Upload dist artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dist
+          name: dist-${{ github.sha }}
           path: dist/
-          retention-days: 1
+          retention-days: 3
 
+      - name: Post bundle report to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (!fs.existsSync('bundle-report.md')) return;
+            const report = fs.readFileSync('bundle-report.md', 'utf8');
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const marker = '<!-- bundle-size-report -->';
+            const body = marker + '\n' + report;
+            const existing = comments.find(c =>
+              c.user.type === 'Bot' && c.body.startsWith(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+# ══════════════════════════════════════════════════════════
+#  Phase 3 — E2E matrix (chromium / firefox / mobile)
+# ══════════════════════════════════════════════════════════
   e2e:
-    name: E2E Tests
+    name: E2E (${{ matrix.project }})
     runs-on: ubuntu-latest
-    needs: typecheck
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, mobile-chrome]
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
       - run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install chromium --with-deps
+      - name: Resolve browser for install
+        id: browser
+        run: |
+          B="${{ matrix.project }}"
+          echo "name=$( [ "$B" = "mobile-chrome" ] && echo chromium || echo $B )" >> $GITHUB_OUTPUT
 
-      - name: Run smoke tests
-        run: npx playwright test
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          key: pw-${{ runner.os }}-${{ steps.browser.outputs.name }}-${{ hashFiles('package-lock.json') }}
 
-      - name: Upload test report
+      - name: Install Playwright browser
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install ${{ steps.browser.outputs.name }} --with-deps
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+
+      - name: Install browser system deps (cache hit)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps ${{ steps.browser.outputs.name }}
+
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/
+
+      - name: Run E2E (${{ matrix.project }})
+        run: npx playwright test --project=${{ matrix.project }}
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          CI_SERVE_DIST: 'true'
+
+      - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report
+          name: pw-report-${{ matrix.project }}-${{ github.run_id }}
           path: playwright-report/
           retention-days: 7
+
+# ══════════════════════════════════════════════════════════
+#  Phase 3 — Lighthouse (parallel with E2E)
+# ══════════════════════════════════════════════════════════
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/
+
+      - name: Install LHCI
+        run: npm install -g @lhci/cli
+
+      - name: Run Lighthouse CI
+        run: lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+# ══════════════════════════════════════════════════════════
+#  Summary gate — required status check for branch protection
+# ══════════════════════════════════════════════════════════
+  ci-ok:
+    name: CI OK
+    runs-on: ubuntu-latest
+    needs: [build, e2e, lighthouse]
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.build.result }}" != "success" ]]; then
+            echo "❌ Build failed"; exit 1
+          fi
+          if [[ "${{ needs.e2e.result }}" != "success" ]]; then
+            echo "❌ E2E failed"; exit 1
+          fi
+          echo "✅ All CI jobs passed"

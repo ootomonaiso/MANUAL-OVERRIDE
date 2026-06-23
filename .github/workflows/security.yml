@@ -1,0 +1,88 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Every Monday 06:00 UTC
+    - cron: '0 6 * * 1'
+
+jobs:
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript-typescript
+
+  audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high --json > audit.json || true
+
+      - name: Report audit results
+        run: |
+          CRITICAL=$(node -e "
+            const r = require('./audit.json');
+            const meta = r.metadata || {};
+            const vulns = meta.vulnerabilities || {};
+            console.log((vulns.critical || 0) + ' critical, ' + (vulns.high || 0) + ' high');
+          " 2>/dev/null || echo "parse error")
+          echo "Vulnerabilities: $CRITICAL"
+
+          CRITICAL_COUNT=$(node -e "
+            const r = require('./audit.json');
+            const v = (r.metadata || {}).vulnerabilities || {};
+            console.log((v.critical || 0) + (v.high || 0));
+          " 2>/dev/null || echo "0")
+
+          if [ "$CRITICAL_COUNT" -gt "0" ]; then
+            echo "❌ Found critical/high severity vulnerabilities"
+            cat audit.json | node -e "
+              const r = JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+              const vulns = r.vulnerabilities || {};
+              for (const [name, v] of Object.entries(vulns)) {
+                if (v.severity === 'critical' || v.severity === 'high') {
+                  console.log('[' + v.severity.toUpperCase() + '] ' + name + ': ' + v.via?.map(x => typeof x === 'string' ? x : x.title).join(', '));
+                }
+              }
+            "
+            exit 1
+          fi
+          echo "✅ No critical/high vulnerabilities"
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: npm-audit-${{ github.run_id }}
+          path: audit.json
+          retention-days: 30
