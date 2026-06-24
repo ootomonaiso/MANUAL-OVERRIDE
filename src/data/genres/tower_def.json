@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "tower_def",
+  "label": "タワーディフェンス",
+  "thresholds": { "craft": 6, "enemy": 4 },
+  "enableFeatures": ["tower", "enemy_hp", "item_pickup"],
+  "disableFeatures": ["auto_run", "beat_hazard", "vertical_scroll", "stealth_mode"],
+  "scoreFormula": "kills * 90 + combo * 110 + survivedSec * 8",
+  "manualReveal": "これはタワーディフェンスになりました。陣地を守ってください。",
+  "theme": "puzzle",
+  "bgColor": "#0a0f0a",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown"
+  },
+  "gravity": 1600,
+  "endingFlavor": "あなたの要塞は崩れなかった。説明書は防壁の一部になっていた。"
+}

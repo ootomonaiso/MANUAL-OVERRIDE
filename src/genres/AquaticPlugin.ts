@@ -223,3 +223,5 @@ export class AquaticPlugin extends GenrePluginBase {
     ctx.closePath()
   }
 }
+
+export default new AquaticPlugin()

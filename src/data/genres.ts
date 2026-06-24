@@ -7,6 +7,7 @@
  */
 
 import type { GenreDef, GenreId, FeatureId, ManualTheme, EnvironmentId, ScrollDirection } from '../domain/types'
+import type { ThemeColorDef } from '../framework/config-types'
 import { GAME_CONFIG } from './config'
 
 export const GENRES: GenreDef[] = GAME_CONFIG.genres.genres.map(g => ({
@@ -27,3 +28,6 @@ export const GENRES: GenreDef[] = GAME_CONFIG.genres.genres.map(g => ({
 }))
 
 export const BASE_GENRE_ID = 'base' as const
+
+export const GENRE_THEME_COLORS: Record<string, ThemeColorDef> =
+  GAME_CONFIG.genres.themeColors ?? {}

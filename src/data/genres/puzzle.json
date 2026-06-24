@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "puzzle",
+  "label": "パズルゲーム",
+  "thresholds": { "combo": 5 },
+  "enableFeatures": ["grid_stop"],
+  "disableFeatures": ["auto_run", "shoot", "beat_hazard"],
+  "scoreFormula": "combo * 200 + survivedSec * 3",
+  "manualReveal": "これはパズルゲームになりました。正解を考えてください。",
+  "theme": "puzzle",
+  "bgColor": "#f0f0f0",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown"
+  },
+  "gravity": 1600,
+  "endingFlavor": "あなたはすべての答えを見つけた。説明書に書いてあったことは間違いではなかった。"
+}

@@ -86,3 +86,5 @@ export class RpgPlugin extends GenrePluginBase {
     ctx.closePath()
   }
 }
+
+export default new RpgPlugin()

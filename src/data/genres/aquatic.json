@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "aquatic",
+  "label": "水中アドベンチャー",
+  "thresholds": { "vertical": 3, "aerial": 3, "survive": 4 },
+  "enableFeatures": ["hp", "item_pickup", "slow_precise"],
+  "disableFeatures": ["auto_run", "shoot", "boss", "beat_hazard"],
+  "scoreFormula": "distance * 0.8 + itemsCollected * 100 + survivedSec * 12",
+  "manualReveal": "これは水中アドベンチャーになりました。深海を探索してください。",
+  "theme": "aquatic",
+  "bgColor": "#000f2a",
+  "environment": "ocean",
+  "scrollDirection": "vertical",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown"
+  },
+  "gravity": 1600,
+  "endingFlavor": "あなたは深淵へ到達した。説明書のインクは水に滲んで消えた。"
+}

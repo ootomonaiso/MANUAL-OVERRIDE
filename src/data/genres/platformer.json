@@ -1,0 +1,22 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "platformer",
+  "label": "プラットフォームアクション",
+  "thresholds": { "aerial": 4, "combo": 4 },
+  "enableFeatures": ["double_jump", "long_air", "wall_jump"],
+  "disableFeatures": ["auto_run", "grid_stop", "beat_hazard"],
+  "scoreFormula": "combo * 150 + distance * 0.8 + survivedSec * 5",
+  "manualReveal": "これはプラットフォームアクションになりました。飛び跳ねてください。",
+  "theme": "plain",
+  "bgColor": "#001f3f",
+  "environment": "sky",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown"
+  },
+  "gravity": 1600,
+  "endingFlavor": "あなたは高みへ跳んだ。説明書の紙は踏み台になった。"
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "horror",
+  "label": "サバイバルホラー",
+  "thresholds": { "survive": 6, "stealth": 4 },
+  "enableFeatures": ["hp", "stealth_mode", "slow_precise"],
+  "disableFeatures": ["auto_run", "shoot", "beat_hazard", "boss"],
+  "scoreFormula": "survivedSec * 20 + stealthBonus * 0.8 + deaths * -200",
+  "manualReveal": "これはサバイバルホラーになりました。正気を保ってください。",
+  "theme": "horror",
+  "bgColor": "#020202",
+  "environment": "dungeon",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown"
+  },
+  "gravity": 1600,
+  "endingFlavor": "あなたは夜明けを迎えた。説明書には見てはいけないことが書いてあった。"
+}

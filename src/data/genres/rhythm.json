@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "rhythm",
+  "label": "リズムゲーム",
+  "thresholds": { "tempo": 5, "rhythm": 5 },
+  "enableFeatures": ["beat_hazard", "just_input", "beat_dash"],
+  "disableFeatures": ["grid_stop"],
+  "scoreFormula": "beatHits * 150 + combo * 100 + distance * 0.4",
+  "manualReveal": "これはリズムゲームになりました。音に合わせてください。",
+  "theme": "rhythm",
+  "bgColor": "#1a0030",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown"
+  },
+  "gravity": 1600,
+  "endingFlavor": "あなたはリズムを刻んだ。説明書のページをめくる音さえも拍子になった。"
+}

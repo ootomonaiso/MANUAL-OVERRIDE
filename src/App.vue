@@ -12,7 +12,7 @@ import EndingPanel from './components/EndingPanel.vue'
 import TutorialHints from './components/TutorialHints.vue'
 import PluginLoader from './components/PluginLoader.vue'
 import GenreRevealOverlay from './components/GenreRevealOverlay.vue'
-import { GENRES } from './data/genres'
+import { GENRES, GENRE_THEME_COLORS } from './data/genres'
 import type { ThrowResult } from './domain/types'
 import { TUTORIAL_ENABLED, TutorialScreen } from './tutorial'
 import { soundManager } from './plugins/SoundManager'
@@ -81,12 +81,17 @@ function beginSnapshotLoop() {
     if (!scroller) return
     snapshot.value = scroller.getSnapshot()
 
-    // 更新トリガー（tutorial, playing, genreLocked で発火する）
+    // 更新トリガー（tutorial, playing のみ発火 — genreLocked 後は MAX_ROUNDS 到達済みで止める）
     // 最初のジャンプまで待つ
     const activePlay = ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
     if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
-      scroller.setPaused(true)
-      gameState.triggerUpdate()
+      if (gameState.currentManual().choices.length > 0) {
+        scroller.setPaused(true)
+        gameState.triggerUpdate()
+      } else {
+        // 選択肢がない場合はスキップして続行
+        scroller.markUpdated(snapshot.value.shouldUpdate)
+      }
     }
 
     // ゲームオーバー → 投擲フェーズへ自動移行
@@ -145,6 +150,10 @@ function onThrown(result: ThrowResult) {
 
 // ─── リスタート ──────────────────────────────────────────────────
 function restart() {
+  if (genreLockedBoostTimer !== null) {
+    clearTimeout(genreLockedBoostTimer)
+    genreLockedBoostTimer = null
+  }
   cancelAnimationFrame(snapRaf)
   scroller?.stop()
   scroller = null
@@ -158,6 +167,20 @@ const currentTheme = computed(() => {
   const genre = gameState.lockedGenre.value
   if (!genre) return 'plain'
   return GENRES.find(g => g.id === genre)?.theme ?? 'plain'
+})
+
+// ─── ジャンル別テーマカラー CSS 変数（JSON 駆動 #36） ─────────────
+const giveupThemeStyle = computed(() => {
+  const colors = GENRE_THEME_COLORS[currentTheme.value]
+  if (!colors) return {}
+  return {
+    '--genre-btn-accent': colors.accent,
+    '--genre-btn-border': colors.border,
+    '--genre-hint-color': colors.hint ?? 'var(--text-dim)',
+    '--genre-btn-font':   colors.font  ?? 'var(--font-mono)',
+    '--genre-btn-bg':     colors.bg    ?? 'var(--green-dark)',
+    '--genre-btn-glow':   colors.glow  ?? 'var(--green-glow)',
+  }
 })
 
 // ─── フェーズ遷移で一時停止/再開 ────
@@ -332,6 +355,7 @@ onUnmounted(() => {
         <div
           v-if="['playing','genreLocked'].includes(gameState.phase.value) && !snapshot.dead"
           class="giveup-area"
+          :style="giveupThemeStyle"
         >
           <button class="giveup-btn" tabindex="-1" @click="giveUp">
             説明書を投げてゲームを終わらせる
@@ -358,6 +382,7 @@ onUnmounted(() => {
         v-if="gameState.phase.value === 'updating'"
         :choices="gameState.activeCards.value"
         :version="gameState.currentManual().version"
+        :locked-genre="gameState.lockedGenre.value ?? undefined"
         @choose="onChoose"
       />
     </Transition>
@@ -592,12 +617,12 @@ body { font-family: var(--font-mono); }
 }
 .giveup-btn {
   background: transparent;
-  border: 1px solid var(--green-dim);
-  border-bottom: 2px solid var(--green-dim);
-  color: var(--green);
+  border: 1px solid var(--genre-btn-border, var(--green-dim));
+  border-bottom: 2px solid var(--genre-btn-border, var(--green-dim));
+  color: var(--genre-btn-accent, var(--green));
   padding: 7px 20px;
   font-size: 12px;
-  font-family: var(--font-mono);
+  font-family: var(--genre-btn-font, var(--font-mono));
   cursor: pointer;
   border-radius: 3px;
   letter-spacing: 0.5px;
@@ -605,15 +630,15 @@ body { font-family: var(--font-mono); }
   white-space: nowrap;
 }
 .giveup-btn:hover {
-  background: var(--green-dark);
-  border-color: var(--green);
-  color: var(--green);
-  box-shadow: 0 0 12px var(--green-glow);
+  background: var(--genre-btn-bg, var(--green-dark));
+  border-color: var(--genre-btn-accent, var(--green));
+  color: var(--genre-btn-accent, var(--green));
+  box-shadow: 0 0 12px var(--genre-btn-glow, var(--green-glow));
 }
 .giveup-hint {
   font-size: 10px;
-  color: var(--text-dim);
-  font-family: var(--font-mono);
+  color: var(--genre-hint-color, var(--text-dim));
+  font-family: var(--genre-btn-font, var(--font-mono));
   letter-spacing: 0.5px;
 }
 
@@ -711,17 +736,6 @@ body { font-family: var(--font-mono); }
   pointer-events: none;
   opacity: 0.4;
 }
-
-/* ── ジャンル確定後: グローバルテーマクラス ── */
-.theme-global-stg .giveup-btn     { border-color: #1a66ff; color: #1a66ff; }
-.theme-global-stg .giveup-hint    { color: rgba(168, 216, 255, 0.5); }
-.theme-global-rpg .giveup-btn     { border-color: #8b6100; color: #c4960a; font-family: 'Georgia', serif; }
-.theme-global-rpg .giveup-hint    { color: rgba(196, 150, 10, 0.5); font-family: 'Georgia', serif; }
-.theme-global-puzzle .giveup-btn  { border-color: #444; color: #222; font-family: 'Courier New', monospace; }
-.theme-global-rhythm .giveup-btn  { border-color: #9900ff; color: #ee88ff; }
-.theme-global-rhythm .giveup-hint { color: rgba(204, 136, 255, 0.5); }
-.theme-global-horror .giveup-btn  { border-color: #880000; color: #cc4444; }
-.theme-global-aquatic .giveup-btn { border-color: #0088bb; color: #88ccff; }
 
 /* ── エラートースト ── */
 .error-toast {

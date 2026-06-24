@@ -190,3 +190,5 @@ export class BulletRunnerPlugin extends GenrePluginBase {
     ctx.closePath()
   }
 }
+
+export default new BulletRunnerPlugin()

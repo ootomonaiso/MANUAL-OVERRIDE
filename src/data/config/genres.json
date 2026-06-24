@@ -1,6 +1,14 @@
 {
   "$comment": "ジャンル定義テーブル（21エントリ）",
   "section": "genres",
+  "themeColors": {
+    "stg":    { "accent": "#1a66ff", "border": "#1a66ff", "hint": "rgba(168,216,255,0.5)", "bg": "#000d1a", "glow": "rgba(26,102,255,0.25)" },
+    "rpg":    { "accent": "#c4960a", "border": "#8b6100", "hint": "rgba(196,150,10,0.5)",  "bg": "#1a1100", "glow": "rgba(196,150,10,0.25)", "font": "'Georgia', serif" },
+    "puzzle": { "accent": "#222222", "border": "#444444", "hint": "rgba(80,80,80,0.5)",    "bg": "#0d0d0d", "glow": "rgba(80,80,80,0.15)",   "font": "'Courier New', monospace" },
+    "rhythm": { "accent": "#ee88ff", "border": "#9900ff", "hint": "rgba(204,136,255,0.5)", "bg": "#0d0019", "glow": "rgba(153,0,255,0.25)" },
+    "horror": { "accent": "#cc4444", "border": "#880000", "hint": "rgba(204,68,68,0.4)",   "bg": "#1a0000", "glow": "rgba(204,68,68,0.25)" },
+    "aquatic":{ "accent": "#88ccff", "border": "#0088bb", "hint": "rgba(136,204,255,0.4)", "bg": "#00141a", "glow": "rgba(136,204,255,0.25)" }
+  },
   "genres": [
     {
       "id": "base",

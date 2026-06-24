@@ -168,3 +168,5 @@ export class RacingPlugin extends GenrePluginBase {
     ctx.closePath()
   }
 }
+
+export default new RacingPlugin()

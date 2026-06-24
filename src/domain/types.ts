@@ -122,6 +122,10 @@ export interface ManualCard {
   hazards?: { colors: string[]; safeColors: string[] }
   runtimeConfig?: ManualRuntimeConfig
   hint?: string
+  /** このカードが向かうジャンルID群。選択履歴の傾向と合うとサンプリング重みが上がる */
+  genreAffinity?: string[]
+  /** 矛盾するカードID群。選択時、対象カードの説明書テキストが取り消し線になる */
+  conflictsWith?: string[]
 }
 
 /** 説明書バージョンが runtime に適用できる上書き設定 */

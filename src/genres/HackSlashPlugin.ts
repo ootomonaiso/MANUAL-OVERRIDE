@@ -216,3 +216,5 @@ export class HackSlashPlugin extends GenrePluginBase {
     ctx.closePath()
   }
 }
+
+export default new HackSlashPlugin()

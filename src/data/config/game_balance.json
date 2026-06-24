@@ -11,5 +11,6 @@
   "hazardSpawnMinInterval": 800,
   "hazardSpawnDecayRate": 0.00015,
   "distanceAccelMaxBonus": 0.5,
-  "distanceAccelFullDist": 20000
+  "distanceAccelFullDist": 20000,
+  "maxRounds": 5
 }

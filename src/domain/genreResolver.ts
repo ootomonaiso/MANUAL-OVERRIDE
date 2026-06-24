@@ -164,6 +164,29 @@ function _computeMinFulfillment(accumulated: GenreParams, thresholds: GenreParam
 }
 
 // ─────────────────────────────────────────────────────────────
+// 全ジャンルの収束進捗を 0〜1 のマップで返す（カードプール重みかけ用）
+// ─────────────────────────────────────────────────────────────
+export function resolveAllGenreProgress(
+  accumulated: GenreParams,
+  genres: GenreDef[],
+  genrePoints?: Record<string, number>,
+): Record<string, number> {
+  const result: Record<string, number> = {}
+  for (const genre of genres) {
+    if (genre.id === 'base') continue
+    let progress: number
+    if (genre.threshold !== undefined) {
+      const pts = (genrePoints ?? {})[genre.id] ?? 0
+      progress = Math.min(1, pts / genre.threshold)
+    } else {
+      progress = _computeMinFulfillment(accumulated, genre.thresholds)
+    }
+    if (progress > 0) result[genre.id] = progress
+  }
+  return result
+}
+
+// ─────────────────────────────────────────────────────────────
 // 収束済みの全ジャンルを返す（複数条件が同時に満たされる場合用）
 // ManualPanel の「あなたはこのゲームを◯◯にもできた」表示に使用
 // ─────────────────────────────────────────────────────────────

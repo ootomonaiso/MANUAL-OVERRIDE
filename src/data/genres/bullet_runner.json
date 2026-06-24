@@ -1,0 +1,22 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "bullet_runner",
+  "label": "弾幕ランナー",
+  "thresholds": { "tempo": 6, "enemy": 5 },
+  "enableFeatures": ["auto_run", "shoot", "enemy_hp"],
+  "disableFeatures": ["grid_stop", "puzzle_solve", "slow_precise", "stealth_mode"],
+  "scoreFormula": "kills * 100 + distance * 1.5 + combo * 60",
+  "manualReveal": "これは弾幕ランナーになりました。走りながら戦ってください。",
+  "theme": "stg",
+  "bgColor": "#100010",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown",
+    "shoot": "z"
+  },
+  "gravity": 1600,
+  "endingFlavor": "あなたは走りながら撃ち続けた。説明書は読む間もなかった。"
+}

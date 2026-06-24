@@ -183,3 +183,5 @@ export class ArenaPlugin extends GenrePluginBase {
     ctx.closePath()
   }
 }
+
+export default new ArenaPlugin()

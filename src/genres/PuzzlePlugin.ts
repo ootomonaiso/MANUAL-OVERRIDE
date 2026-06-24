@@ -55,3 +55,5 @@ export class PuzzlePlugin extends DarkThemePlugin {
     ctx.fillRect(w * 0.52, h * 0.17, 4, 4)
   }
 }
+
+export default new PuzzlePlugin()
