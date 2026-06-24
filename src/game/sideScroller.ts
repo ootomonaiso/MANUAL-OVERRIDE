@@ -237,7 +237,6 @@ export class SideScroller {
     let pending = UPDATE_DISTANCES.findIndex(
       (d, i) => this.distance >= d && !this.updateTriggeredFor.has(i)
     )
-
     // UPDATE_DISTANCES の範囲外でも無限に更新を続ける（1500px 間隔）
     if (pending < 0) {
       const lastDist = UPDATE_DISTANCES[UPDATE_DISTANCES.length - 1]
@@ -382,10 +381,7 @@ export class SideScroller {
       if (now >= until) {
         const orig = this._originalKeys[action]
         if (orig !== undefined) {
-          if (action === 'jump')  this.rules.controls.jump     = orig
-          if (action === 'left')  this.rules.controls.moveLeft = orig
-          if (action === 'right') this.rules.controls.moveRight = orig
-          if (action === 'shoot') this.rules.controls.shoot    = orig
+          this._setControl(action, orig)
           delete this._originalKeys[action]
         }
         this._changeKeyUntil.delete(action)
@@ -393,20 +389,10 @@ export class SideScroller {
     }
 
     const r = this.rules
-    const p = this.player
-    const W = this.canvas.width
     const H = this.canvas.height
-    const gY = H - BACKGROUND.groundHeight
-
-    const jumpKey  = r.controls.jump
-    const leftKey  = r.controls.moveLeft
-    const rightKey = r.controls.moveRight
-    const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
     const dashKey  = r.controls.dash ?? 'Shift'
-
     const isVertical = r.scrollAxis === 'y'
 
-    // ─── ダッシュ入力統計 ─────────────────────────────────────────────
     if (r.features.has('dash') && this.justPressed.has(dashKey)) {
       this.stats.dashes = (this.stats.dashes ?? 0) + 1
     }
@@ -428,219 +414,8 @@ export class SideScroller {
       }
     }
 
-    if (isVertical) {
-      // ════════════════════════════════════════════════════════
-      // 縦スクロールモード
-      // 障害物が上から降ってくる。プレイヤーは画面下部を左右に移動。
-      // ════════════════════════════════════════════════════════
-      // vx は MovementFeature.preUpdate() がセット済み
-      if (this.keys.has(leftKey))  this.stats.moveLeft++
-      if (this.keys.has(rightKey)) this.stats.moveRight++
-      p.x += p.vx * dt
-      p.x = Math.max(0, Math.min(W - p.w, p.x))
-
-      // 縦モード: 重力なし。moveUp/moveDown で自由移動（MovementFeature が p.vy をセット済み）
-      p.y = Math.max(0, Math.min(H - p.h, p.y + p.vy * dt))
-      p.onGround = false
-      this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
-
-      // スクロール距離（時間経過でカウント）
-      this.distance += effectiveScrollSpeed * dt
-      this.cameraX = 0  // 横カメラは動かない
-
-      // ─── ハザード降下 ─────────────────────────────────────
-      for (const h of this.hazards) {
-        h.y += effectiveScrollSpeed * dt
-        h.pulse += dt * VFX.hazardPulseRate
-      }
-      this.hazards = this.hazards.filter(h => h.y < H + 200)
-
-      // ─── アイテム降下（縦モード） ─────────────────────────
-      for (const item of this.items) {
-        item.y += effectiveScrollSpeed * dt
-      }
-
-      // ─── スポーン（上端から） ─────────────────────────────
-      if (this.distance >= this.nextSpawnDist) {
-        this._spawnHazard()
-        const interval = HAZARD_SPAWN.baseInterval *
-          Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
-        const ms = Math.max(HAZARD_SPAWN.minInterval, interval)
-        this.nextSpawnDist += (ms / 1000) * effectiveScrollSpeed
-      }
-
-      // ─── 衝突判定（縦モード: 両者スクリーン座標） ───────────
-      if (p.invincible > 0) p.invincible -= dt
-      if (p.invincible <= 0) {
-        for (let i = this.hazards.length - 1; i >= 0; i--) {
-          const h = this.hazards[i]
-          if (!rectsOverlap(p.rect, h.rect)) continue
-
-          if (!h.isSafe) {
-            this._onPlayerHit(p)
-            if (this.dead) return
-          } else {
-            for (const sys of getActiveSystems(r.features)) {
-              sys.onSafeHazardTouch?.(this._getWorld(), h, h.x)
-            }
-          }
-        }
-      }
-
-      // シュート入力統計のみここで取得（shoot 処理は feature system に委譲）
-      if (this.justPressed.has(shootKey)) this.stats.shots++
-
-    } else {
-      // ════════════════════════════════════════════════════════
-      // 横スクロールモード（従来）
-      // ════════════════════════════════════════════════════════
-      // vx は MovementFeature.preUpdate() がセット済み
-      if (!r.features.has('auto_run') && this.keys.has(leftKey))  this.stats.moveLeft++
-      if ( r.features.has('auto_run') || this.keys.has(rightKey)) this.stats.moveRight++
-      if (p.onGround) {
-        this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
-      }
-
-      // ─── ジャンプ ─────────────────────────────────────────
-      const isDouble         = r.features.has('double_jump')
-      // LearningSystem による 'jump' アクション無効化チェック
-      const jumpDisabled     = this._isActionDisabled('jump')
-      const jumpJustPressed  = !jumpDisabled && this.justPressed.has(jumpKey)
-      const jumpJustReleased = this.justReleased.has(jumpKey)
-
-      if (p.onGround) {
-        this.coyoteTimer = PLAYER_PHYSICS.coyoteFrames
-      } else if (this.coyoteTimer > 0) {
-        this.coyoteTimer--
-      }
-      if (jumpJustPressed) {
-        this.jumpBufferTimer = PLAYER_PHYSICS.jumpBufferFrames
-      } else if (this.jumpBufferTimer > 0) {
-        this.jumpBufferTimer--
-      }
-
-      const canJumpCoyote = this.coyoteTimer > 0 && p.jumpsLeft === (isDouble ? 2 : 1)
-      const canJumpDouble = isDouble && p.jumpsLeft > 0
-      if (this.jumpBufferTimer > 0 && (canJumpCoyote || (canJumpDouble && !p.onGround) || p.onGround)) {
-        if (p.jumpsLeft > 0 || this.coyoteTimer > 0) {
-          p.vy = PLAYER_PHYSICS.jumpVelocity
-          p.jumpsLeft = Math.max(0, p.jumpsLeft - 1)
-          p.onGround = false
-          this.jumpHeld = true
-          this.jumpBufferTimer = 0
-          this.coyoteTimer = 0
-          this.stats.jumps++
-          this.firstJumpDone = true
-          this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
-          soundManager.onJump()
-          // Hook: onPlayerJump
-          {
-            const jw = this._getWorld()
-            getGenre(r.genre).onPlayerJump?.(jw)
-            for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
-          }
-        }
-      }
-      if (jumpJustReleased && p.vy < 0 && this.jumpHeld) {
-        p.vy *= PLAYER_PHYSICS.jumpCutMultiplier
-        this.jumpHeld = false
-      }
-      if (!this.keys.has(jumpKey)) this.jumpHeld = false
-
-      // ─── 重力 ─────────────────────────────────────────────
-      if (r.gravity === 0) {
-        // 無重力: 重力では減速しないため、慣性を毎フレーム緩やかに減衰させて静止に近づける
-        p.vy *= Math.pow(0.05, dt)
-      } else {
-        const gravMult = p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0
-        p.vy += r.gravity * gravMult * dt
-      }
-      p.y  += p.vy * dt
-
-      if (p.y + p.h >= gY) {
-        const wasInAir = !p.onGround
-        p.y = gY - p.h
-        p.vy = 0
-        p.onGround = true
-        p.jumpsLeft = isDouble ? 2 : 1
-        if (wasInAir) {
-          p.landSquash = 1.0
-          this._spawnLandParticles(p.x + p.w / 2, gY)
-          soundManager.onLand()
-          // Hook: onPlayerLand
-          getGenre(r.genre).onPlayerLand?.(this._getWorld())
-          if (this.jumpBufferTimer > 0) {
-            p.vy = PLAYER_PHYSICS.jumpVelocity
-            p.onGround = false
-            p.jumpsLeft = isDouble ? 1 : 0
-            this.jumpBufferTimer = 0
-            this.jumpHeld = true
-            this.stats.jumps++
-            // Hook: onPlayerJump (バッファジャンプ)
-            {
-              const jw = this._getWorld()
-              getGenre(r.genre).onPlayerJump?.(jw)
-              for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
-            }
-          }
-        }
-      } else {
-        p.onGround = false
-        p.airTime += dt
-      }
-      if (p.landSquash > 0) p.landSquash *= PHYSICS.landSquashDecay
-
-      // auto_run はスクロールで進む。画面上のX座標は変えない
-      if (!r.features.has('auto_run')) p.x += p.vx * dt
-      p.x = Math.max(PHYSICS.playerMinX, Math.min(W * PHYSICS.playerMaxXRatio, p.x))
-
-      // ─── スクロール ───────────────────────────────────────
-      this.distance += effectiveScrollSpeed * dt
-      this.cameraX = this.distance - CAMERA.leadOffset
-
-      // ─── ハザードスポーン ─────────────────────────────────
-      if (this.distance >= this.nextSpawnDist) {
-        this._spawnHazard()
-        const interval = HAZARD_SPAWN.baseInterval *
-          Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
-        const ms = Math.max(HAZARD_SPAWN.minInterval, interval)
-        this.nextSpawnDist += (ms / 1000) * effectiveScrollSpeed
-      }
-
-      for (const h of this.hazards) {
-        h.pulse += dt * VFX.hazardPulseRate
-      }
-
-      // ─── 衝突判定 ─────────────────────────────────────────
-      if (p.invincible > 0) p.invincible -= dt
-      if (p.invincible <= 0) {
-        for (let i = this.hazards.length - 1; i >= 0; i--) {
-          const h = this.hazards[i]
-          const sx = h.x - this.cameraX
-          const hRect = { ...h.rect, x: sx }
-          if (!rectsOverlap(p.rect, hRect)) continue
-
-          const isHazardous = this._gameStats.beatHazardInverted && r.features.has('beat_hazard')
-            ? h.isSafe
-            : !h.isSafe
-
-          if (isHazardous) {
-            this._onPlayerHit(p)
-            if (this.dead) return
-          } else {
-            for (const sys of getActiveSystems(r.features)) {
-              sys.onSafeHazardTouch?.(this._getWorld(), h, sx)
-            }
-          }
-        }
-      }
-
-      // 画面外ハザード除去
-      this.hazards = this.hazards.filter(h => h.x - this.cameraX > SPAWN.hazardCullLeft)
-
-      // シュート入力統計のみここで取得（shoot 処理は feature system に委譲）
-      if (this.justPressed.has(shootKey)) this.stats.shots++
-    }
+    if (isVertical ? this._updateVertical(dt, effectiveScrollSpeed)
+                   : this._updateHorizontal(dt, effectiveScrollSpeed)) return
 
     // ════════════════════════════════════════════════════════
     // 以降は横・縦モード共通
@@ -702,6 +477,200 @@ export class SideScroller {
     this.shakeIntensity *= VFX.deathShakeDecay
     this.shakeX = (Math.random() - 0.5) * this.shakeIntensity * 2
     this.shakeY = (Math.random() - 0.5) * this.shakeIntensity * 2
+  }
+
+  // ─── 縦スクロール更新 ────────────────────────────────────────────
+  private _updateVertical(dt: number, speed: number): boolean {
+    const r = this.rules
+    const p = this.player
+    const W = this.canvas.width
+    const H = this.canvas.height
+    const leftKey  = r.controls.moveLeft
+    const rightKey = r.controls.moveRight
+    const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
+
+    if (this.keys.has(leftKey))  this.stats.moveLeft++
+    if (this.keys.has(rightKey)) this.stats.moveRight++
+    p.x += p.vx * dt
+    p.x = Math.max(0, Math.min(W - p.w, p.x))
+    p.y = Math.max(0, Math.min(H - p.h, p.y + p.vy * dt))
+    p.onGround = false
+    this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
+    this.distance += speed * dt
+    this.cameraX = 0
+
+    for (const h of this.hazards) {
+      h.y += speed * dt
+      h.pulse += dt * VFX.hazardPulseRate
+    }
+    this.hazards = this.hazards.filter(h => h.y < H + 200)
+
+    for (const item of this.items) {
+      item.y += speed * dt
+    }
+
+    if (this.distance >= this.nextSpawnDist) {
+      this._spawnHazard()
+      const interval = HAZARD_SPAWN.baseInterval * Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
+      this.nextSpawnDist += (Math.max(HAZARD_SPAWN.minInterval, interval) / 1000) * speed
+    }
+
+    if (p.invincible > 0) p.invincible -= dt
+    if (p.invincible <= 0) {
+      for (let i = this.hazards.length - 1; i >= 0; i--) {
+        const h = this.hazards[i]
+        if (!rectsOverlap(p.rect, h.rect)) continue
+        if (!h.isSafe) {
+          this._onPlayerHit(p)
+          if (this.dead) return true
+        } else {
+          for (const sys of getActiveSystems(r.features)) {
+            sys.onSafeHazardTouch?.(this._getWorld(), h, h.x)
+          }
+        }
+      }
+    }
+
+    if (this.justPressed.has(shootKey)) this.stats.shots++
+    return false
+  }
+
+  // ─── 横スクロール更新 ────────────────────────────────────────────
+  private _updateHorizontal(dt: number, speed: number): boolean {
+    const r = this.rules
+    const p = this.player
+    const W = this.canvas.width
+    const H = this.canvas.height
+    const gY = H - BACKGROUND.groundHeight
+    const jumpKey  = r.controls.jump
+    const leftKey  = r.controls.moveLeft
+    const rightKey = r.controls.moveRight
+    const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
+
+    if (!r.features.has('auto_run') && this.keys.has(leftKey))  this.stats.moveLeft++
+    if ( r.features.has('auto_run') || this.keys.has(rightKey)) this.stats.moveRight++
+    if (p.onGround) {
+      this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
+    }
+
+    const isDouble         = r.features.has('double_jump')
+    const jumpDisabled     = this._isActionDisabled('jump')
+    const jumpJustPressed  = !jumpDisabled && this.justPressed.has(jumpKey)
+    const jumpJustReleased = this.justReleased.has(jumpKey)
+
+    if (p.onGround) {
+      this.coyoteTimer = PLAYER_PHYSICS.coyoteFrames
+    } else if (this.coyoteTimer > 0) {
+      this.coyoteTimer--
+    }
+    if (jumpJustPressed) {
+      this.jumpBufferTimer = PLAYER_PHYSICS.jumpBufferFrames
+    } else if (this.jumpBufferTimer > 0) {
+      this.jumpBufferTimer--
+    }
+
+    const canJumpCoyote = this.coyoteTimer > 0 && p.jumpsLeft === (isDouble ? 2 : 1)
+    const canJumpDouble = isDouble && p.jumpsLeft > 0
+    if (this.jumpBufferTimer > 0 && (canJumpCoyote || (canJumpDouble && !p.onGround) || p.onGround)) {
+      if (p.jumpsLeft > 0 || this.coyoteTimer > 0) {
+        p.vy = PLAYER_PHYSICS.jumpVelocity
+        p.jumpsLeft = Math.max(0, p.jumpsLeft - 1)
+        p.onGround = false
+        this.jumpHeld = true
+        this.jumpBufferTimer = 0
+        this.coyoteTimer = 0
+        this.stats.jumps++
+        this.firstJumpDone = true
+        this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
+        soundManager.onJump()
+        const jw = this._getWorld()
+        getGenre(r.genre).onPlayerJump?.(jw)
+        for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
+      }
+    }
+    if (jumpJustReleased && p.vy < 0 && this.jumpHeld) {
+      p.vy *= PLAYER_PHYSICS.jumpCutMultiplier
+      this.jumpHeld = false
+    }
+    if (!this.keys.has(jumpKey)) this.jumpHeld = false
+
+    if (r.gravity === 0) {
+      p.vy *= Math.pow(0.05, dt)
+    } else {
+      p.vy += r.gravity * (p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0) * dt
+    }
+    p.y += p.vy * dt
+
+    if (p.y + p.h >= gY) {
+      const wasInAir = !p.onGround
+      p.y = gY - p.h
+      p.vy = 0
+      p.onGround = true
+      p.jumpsLeft = isDouble ? 2 : 1
+      if (wasInAir) {
+        p.landSquash = 1.0
+        this._spawnLandParticles(p.x + p.w / 2, gY)
+        soundManager.onLand()
+        getGenre(r.genre).onPlayerLand?.(this._getWorld())
+        if (this.jumpBufferTimer > 0) {
+          p.vy = PLAYER_PHYSICS.jumpVelocity
+          p.onGround = false
+          p.jumpsLeft = isDouble ? 1 : 0
+          this.jumpBufferTimer = 0
+          this.jumpHeld = true
+          this.stats.jumps++
+          const jw = this._getWorld()
+          getGenre(r.genre).onPlayerJump?.(jw)
+          for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
+        }
+      }
+    } else {
+      p.onGround = false
+      p.airTime += dt
+    }
+    if (p.landSquash > 0) p.landSquash *= PHYSICS.landSquashDecay
+
+    if (!r.features.has('auto_run')) p.x += p.vx * dt
+    p.x = Math.max(PHYSICS.playerMinX, Math.min(W * PHYSICS.playerMaxXRatio, p.x))
+
+    this.distance += speed * dt
+    this.cameraX = this.distance - CAMERA.leadOffset
+
+    if (this.distance >= this.nextSpawnDist) {
+      this._spawnHazard()
+      const interval = HAZARD_SPAWN.baseInterval * Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
+      this.nextSpawnDist += (Math.max(HAZARD_SPAWN.minInterval, interval) / 1000) * speed
+    }
+
+    for (const h of this.hazards) {
+      h.pulse += dt * VFX.hazardPulseRate
+    }
+
+    if (p.invincible > 0) p.invincible -= dt
+    if (p.invincible <= 0) {
+      for (let i = this.hazards.length - 1; i >= 0; i--) {
+        const h = this.hazards[i]
+        const sx = h.x - this.cameraX
+        const hRect = { ...h.rect, x: sx }
+        if (!rectsOverlap(p.rect, hRect)) continue
+        const isHazardous = this._gameStats.beatHazardInverted && r.features.has('beat_hazard')
+          ? h.isSafe
+          : !h.isSafe
+        if (isHazardous) {
+          this._onPlayerHit(p)
+          if (this.dead) return true
+        } else {
+          for (const sys of getActiveSystems(r.features)) {
+            sys.onSafeHazardTouch?.(this._getWorld(), h, sx)
+          }
+        }
+      }
+    }
+
+    this.hazards = this.hazards.filter(h => h.x - this.cameraX > SPAWN.hazardCullLeft)
+
+    if (this.justPressed.has(shootKey)) this.stats.shots++
+    return false
   }
 
   // ─── 被弾処理 ────────────────────────────────────────────────────
@@ -1333,7 +1302,26 @@ export class SideScroller {
     }
   }
 
-  /** LearningSystem のアクション無効化チェック（期限切れエントリを自動削除） */
+  private _getControl(action: string): string | undefined {
+    const c = this.rules.controls
+    switch (action) {
+      case 'jump':  return c.jump
+      case 'left':  return c.moveLeft
+      case 'right': return c.moveRight
+      case 'shoot': return c.shoot
+    }
+  }
+
+  private _setControl(action: string, key: string): void {
+    const c = this.rules.controls
+    switch (action) {
+      case 'jump':  c.jump = key; break
+      case 'left':  c.moveLeft = key; break
+      case 'right': c.moveRight = key; break
+      case 'shoot': c.shoot = key; break
+    }
+  }
+
   private _isActionDisabled(action: string): boolean {
     const until = this._disabledActions.get(action)
     if (until === undefined) return false
@@ -1372,17 +1360,10 @@ export class SideScroller {
       case 'changeKey': {
         // payload = "jump:w" のような形式（action:newKey）
         const [action, newKey] = effect.payload.split(':')
-        // 元のキーを保存（未保存の場合のみ。重複発動で上書きしない）
         if (!(action in this._originalKeys)) {
-          if (action === 'jump')  this._originalKeys[action] = this.rules.controls.jump
-          if (action === 'left')  this._originalKeys[action] = this.rules.controls.moveLeft
-          if (action === 'right') this._originalKeys[action] = this.rules.controls.moveRight
-          if (action === 'shoot') this._originalKeys[action] = this.rules.controls.shoot
+          this._originalKeys[action] = this._getControl(action)
         }
-        if (action === 'jump')  this.rules.controls.jump     = newKey
-        if (action === 'left')  this.rules.controls.moveLeft = newKey
-        if (action === 'right') this.rules.controls.moveRight = newKey
-        if (action === 'shoot') this.rules.controls.shoot    = newKey
+        this._setControl(action, newKey)
         if (effect.durationSec != null) {
           this._changeKeyUntil.set(action, performance.now() + effect.durationSec * 1000)
         }

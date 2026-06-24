@@ -1,55 +1,114 @@
-/**
- * game/systems/ShootFeature.ts
- * 'shoot', 'three_way', 'charge_shot', 'spread_shot', 'enemy_hp', 'bomb' Feature を担当。
- *
- * 変更点（framework強化）:
- * - world.cameraX を使い横モードのワールドX座標を正しく計算（旧実装の座標バグ修正）
- * - kills/combo を world.setKills()/setCombo() 経由で GameStats に書き込む
- * - 弾の描画を render() に移し sideScroller から分離
- */
-
 import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
-import { createShootState, updateShoot } from './shootSystem'
-import type { ShootState } from './shootSystem'
-import { HAZARD_VFX } from '../../data/tunables'
+import { Bullet, Hazard, rectsOverlap } from '../entities'
+import { SHOOT, HAZARD_VFX } from '../../data/tunables'
 import { getGenre, getActiveSystems } from '../../engine/GameRegistry'
 import { soundManager } from '../../plugins/SoundManager'
+
+interface ShootState {
+  bullets: Bullet[]
+  kills: number
+  combo: number
+  comboTimer: number
+  shotCooldown: number
+}
 
 export class ShootFeature implements FeatureSystem {
   readonly handles = ['shoot', 'three_way', 'charge_shot', 'spread_shot', 'enemy_hp', 'bomb'] as const
 
-  private state: ShootState = createShootState()
+  private state: ShootState = this._fresh()
 
-  onInit(): void {
-    this.state = createShootState()
+  private _fresh(): ShootState {
+    return { bullets: [], kills: 0, combo: 0, comboTimer: 0, shotCooldown: 0 }
   }
+
+  onInit(): void { this.state = this._fresh() }
+  onManualUpdated(): void { this.state = this._fresh() }
 
   update(world: MutableWorld, input: InputSnapshot, dt: number): void {
     const p = world.player
-    const isVertical = world.rules.scrollAxis === 'y'
-    const shootKey = world.rules.controls.shoot?.toLowerCase() ?? 'z'
+    const r = world.rules
+    const isVertical = r.scrollAxis === 'y'
+    const shootKey = r.controls.shoot?.toLowerCase() ?? 'z'
     const shootJust = input.justPressed.has(shootKey)
-
-    // 横モード: プレイヤーはスクリーン座標 → ワールドXへ変換
-    const playerX = isVertical ? p.x : p.x + world.cameraX
     const W = world.canvas.width
+    const s = this.state
+
+    s.shotCooldown -= dt
+    s.comboTimer   -= dt
+    if (s.comboTimer <= 0) s.combo = 0
+
+    // ─── 発射 ────────────────────────────────────────────────────
+    let shotFired = false
+    if (shootJust && s.shotCooldown <= 0 && r.features.has('shoot')) {
+      s.shotCooldown = SHOOT.shotCooldown
+      shotFired = true
+      const spd = SHOOT.bulletSpeed
+
+      if (isVertical) {
+        const bx = p.x + SHOOT.bulletWidth / 2
+        const by = p.y - SHOOT.bulletHeight
+        if (r.features.has('three_way')) {
+          s.bullets.push(
+            new Bullet(bx, by, 0, -spd),
+            new Bullet(bx, by, -spd * SHOOT.threeWayYRatio, -spd * SHOOT.threeWaySpeedRatio),
+            new Bullet(bx, by,  spd * SHOOT.threeWayYRatio, -spd * SHOOT.threeWaySpeedRatio),
+          )
+        } else {
+          s.bullets.push(new Bullet(bx, by, 0, -spd))
+        }
+      } else {
+        const playerWorldX = p.x + world.cameraX
+        const bx = playerWorldX + SHOOT.bulletWidth
+        const by = p.y + p.h / 2 - SHOOT.bulletHeight / 2
+        if (r.features.has('three_way')) {
+          s.bullets.push(
+            new Bullet(bx, by, spd, 0),
+            new Bullet(bx, by, spd * SHOOT.threeWaySpeedRatio, -spd * SHOOT.threeWayYRatio),
+            new Bullet(bx, by, spd * SHOOT.threeWaySpeedRatio,  spd * SHOOT.threeWayYRatio),
+          )
+        } else {
+          s.bullets.push(new Bullet(bx, by, spd, 0))
+        }
+      }
+    }
+
+    // ─── 弾移動・カリング ────────────────────────────────────────
     const viewportLeft  = isVertical ? -100 : world.cameraX - 100
     const viewportRight = isVertical ? W + 100 : world.cameraX + W + 100
-
-    const { scoreGain, destroyedHazards, shotFired } = updateShoot(
-      this.state,
-      world.hazards,
-      shootJust,
-      playerX, p.y, p.h,
-      world.rules,
-      dt,
-      viewportLeft, viewportRight, -100,
-    )
-
-    if (shotFired) {
-      soundManager.onShoot()
+    for (const b of s.bullets) {
+      b.x += b.vx * dt
+      b.y += b.vy * dt
+      if (isVertical ? b.y < -100 : (b.x > viewportRight || b.x < viewportLeft)) b.alive = false
     }
+
+    // ─── 弾 × 障害物 衝突 ────────────────────────────────────────
+    let scoreGain = 0
+    for (const b of s.bullets) {
+      if (!b.alive) continue
+      for (const h of world.hazards) {
+        if (h.isSafe || !rectsOverlap(b.rect, h.rect, 0)) continue
+        b.alive = false
+        if (r.features.has('enemy_hp')) {
+          h.hp--
+          if (h.hp <= 0) { s.kills++; s.combo++; s.comboTimer = SHOOT.comboResetTime; scoreGain += SHOOT.baseScorePerKill * s.combo }
+        } else {
+          h.hp = 0; s.kills++; s.combo++; s.comboTimer = SHOOT.comboResetTime; scoreGain += SHOOT.baseScorePerKill * s.combo
+        }
+        break
+      }
+    }
+
+    // ─── 撃破 hazard と死弾を除去 ────────────────────────────────
+    const destroyedHazards: Hazard[] = []
+    for (let i = world.hazards.length - 1; i >= 0; i--) {
+      if (world.hazards[i].hp <= 0) { destroyedHazards.push(world.hazards[i]); world.hazards.splice(i, 1) }
+    }
+    for (let i = s.bullets.length - 1; i >= 0; i--) {
+      if (!s.bullets[i].alive) s.bullets.splice(i, 1)
+    }
+
+    if (shotFired) soundManager.onShoot()
 
     if (scoreGain > 0) {
       world.addScore(scoreGain)
@@ -59,28 +118,18 @@ export class ShootFeature implements FeatureSystem {
 
     if (destroyedHazards.length > 0) {
       const plugin = getGenre(world.rules.genre)
-      for (const h of destroyedHazards) {
-        plugin.onHazardDestroyed?.(world, h)
-        // ScoreVars: 敵撃破カウント（accuracy 計算用）
-        world.addScoreVarsHit()
-      }
+      for (const h of destroyedHazards) { plugin.onHazardDestroyed?.(world, h); world.addScoreVarsHit() }
     }
 
-    // GameStats に統計を同期
     const oldCombo = world.gameStats.combo
-    world.setKills(this.state.kills)
-    world.setCombo(this.state.combo)
-
-    // コンボが変化した場合、フック発火
-    if (oldCombo !== this.state.combo) {
-      for (const sys of getActiveSystems(world.rules.features)) {
-        sys.onComboChange?.(world, this.state.combo)
-      }
+    world.setKills(s.kills)
+    world.setCombo(s.combo)
+    if (oldCombo !== s.combo) {
+      for (const sys of getActiveSystems(world.rules.features)) sys.onComboChange?.(world, s.combo)
     }
 
-    // world.bullets に同期（sideScroller や他システムが参照できる）
-    ;(world.bullets as typeof this.state.bullets).length = 0
-    ;(world.bullets as typeof this.state.bullets).push(...this.state.bullets)
+    ;(world.bullets as typeof s.bullets).length = 0
+    ;(world.bullets as typeof s.bullets).push(...s.bullets)
   }
 
   render(ctx: CanvasRenderingContext2D, world: MutableWorld): void {
@@ -90,18 +139,11 @@ export class ShootFeature implements FeatureSystem {
     ctx.save()
     ctx.shadowColor = '#ffff88'
     ctx.shadowBlur = HAZARD_VFX.glowBlur * 0.6
-
     for (const b of world.bullets) {
-      // 横モード: ワールドX → スクリーンX変換
       const sx = isVertical ? b.x : b.x - world.cameraX
       ctx.fillStyle = '#ffff00'
       ctx.fillRect(sx - 4, b.y - 2, 8, 4)
     }
-
     ctx.restore()
-  }
-
-  onManualUpdated(): void {
-    this.state = createShootState()
   }
 }

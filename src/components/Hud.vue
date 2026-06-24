@@ -15,17 +15,27 @@ const props = defineProps<{
 }>()
 
 // スコアカウントアップアニメーション
+// 毎フレーム小さく増分する場合は直接更新、死亡時の大ジャンプはアニメーション
 const displayScore = ref(0)
 let scoreRaf = 0
-watch(() => props.playScore, (next, prev) => {
+watch(() => props.playScore, (next) => {
+  const rounded = Math.round(next)
+  const diff = rounded - displayScore.value
+
   cancelAnimationFrame(scoreRaf)
-  const start = prev
-  const end = next
-  const duration = 180
+
+  if (Math.abs(diff) <= 50) {
+    displayScore.value = rounded
+    return
+  }
+
+  // 大幅なスコア変化（死亡時のスコア式適用など）はカウントアップアニメーション
+  const start = displayScore.value
+  const duration = 600
   const t0 = performance.now()
   function tick(t: number) {
     const p = Math.min(1, (t - t0) / duration)
-    displayScore.value = Math.round(start + (end - start) * p)
+    displayScore.value = Math.round(start + diff * p)
     if (p < 1) scoreRaf = requestAnimationFrame(tick)
   }
   scoreRaf = requestAnimationFrame(tick)
