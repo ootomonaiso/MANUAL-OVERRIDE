@@ -6,6 +6,8 @@ import { BAYES } from '../data/tunables'
 // ─────────────────────────────────────────────────────────────
 export const DEFAULT_BAYES_CONFIG: BayesConfig = {
   convergenceThreshold: BAYES.convergenceThreshold,
+  minProb: BAYES.minProb,
+  dominanceRatio: BAYES.dominanceRatio,
   decayRate: BAYES.decayRate,
   baseDecay: BAYES.baseDecay,
   candidateThreshold: BAYES.candidateThreshold,
@@ -70,6 +72,9 @@ export function computeBayesianPosteriors(
     if (entries.length === 0) {
       // 'base' などの閾値なしジャンルは累積パラメータの総和に応じて尤度が減衰
       // 選択を重ねて累積値が大きくなるほど、base の尤度が低下する
+      if (genre.id !== 'base') {
+        console.warn(`[BAYES] Genre '${genre.id}' has empty thresholds — treated as base-like. This may cause unexpected convergence behavior.`)
+      }
       const totalAccumulated = Object.values(accumulated).reduce((s, v) => s + v, 0)
       unnormalized[genre.id] = Math.exp(-config.baseDecay * totalAccumulated)
       continue
@@ -135,19 +140,31 @@ export function updateBayesianState(
 
   const posteriors = computeBayesianPosteriors(accumulated, genres, config)
 
-  // 収束チェック: どのジャンルが threshold を超えたか
-  let converged = false
-  let convergedGenre: GenreId | null = null
+  // 収束チェック: dominance方式
+  // 1. base 除く全ジャンルを確率でソート
+  const sorted = genres
+    .filter(g => g.id !== 'base')
+    .map(g => ({ id: g.id, prob: posteriors[g.id] ?? 0 }))
+    .sort((a, b) => b.prob - a.prob)
 
-  for (const [id, prob] of Object.entries(posteriors)) {
-    if (id === 'base') continue
-    if (prob >= config.convergenceThreshold) {
-      if (!converged || prob > (posteriors[convergedGenre!] ?? 0)) {
-        converged = true
-        convergedGenre = id as GenreId
-      }
+  if (sorted.length < 2) {
+    // ジャンルが1つしかない場合はそのジャンルに収束
+    return {
+      posteriors,
+      converged: sorted[0].prob >= (config.minProb ?? config.convergenceThreshold),
+      convergedGenre: sorted[0].prob >= (config.minProb ?? config.convergenceThreshold) ? sorted[0].id : null,
+      updateCount: prevState.updateCount + 1,
     }
   }
+
+  const top = sorted[0]
+  const second = sorted[1]
+  const dominanceRatio = config.dominanceRatio ?? 1.8
+  const minProb = config.minProb ?? config.convergenceThreshold
+
+  // 最尤ジャンルが minProb 以上 かつ 2位以上に対して dominanceRatio 倍以上で優位
+  const converged = top.prob >= minProb && top.prob >= dominanceRatio * second.prob
+  const convergedGenre: GenreId | null = converged ? top.id : null
 
   return {
     posteriors,
@@ -174,12 +191,23 @@ export function resolveGenre(
   const config = bayesConfig ?? DEFAULT_BAYES_CONFIG
   const posteriors = computeBayesianPosteriors(accumulated, genres, config)
 
-  // 収束チェック
-  for (const genre of genres) {
-    if (genre.id === 'base') continue
-    if ((posteriors[genre.id] ?? 0) >= config.convergenceThreshold) {
-      return genre.id
-    }
+  // dominance方式で収束チェック
+  const sorted = genres
+    .filter(g => g.id !== 'base')
+    .map(g => ({ id: g.id, prob: posteriors[g.id] ?? 0 }))
+    .sort((a, b) => b.prob - a.prob)
+
+  if (sorted.length < 2) {
+    return sorted[0].prob >= (config.minProb ?? config.convergenceThreshold) ? sorted[0].id : 'base'
+  }
+
+  const top = sorted[0]
+  const second = sorted[1]
+  const dominanceRatio = config.dominanceRatio ?? 1.8
+  const minProb = config.minProb ?? config.convergenceThreshold
+
+  if (top.prob >= minProb && top.prob >= dominanceRatio * second.prob) {
+    return top.id
   }
 
   // 未収束 → base

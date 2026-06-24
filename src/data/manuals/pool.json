@@ -1,0 +1,351 @@
+{
+  "id": "pool",
+  "description": "再利用可能な説明書プール。ベイズ事後確率に基づいて動的に選択される。",
+  "$comment_design": "chainKeyによりチェーンのchoicesを借用。クロスジャンル借用は意図的（例: platformer-earlyがrhythm系を借用する）ことで、プレイヤーに「ジャンルが混ざり合う」体験を提供する。",
+  "entries": [
+    {
+      "key": "pool-runner-early",
+      "version": "3.0",
+      "genreAffinity": { "runner": 0.9, "bullet_runner": 0.3 },
+      "minUpdateIndex": 2,
+      "maxUpdateIndex": 4,
+      "chainKey": "3.0-b-speed",
+      "manualText": [
+        "速度がさらに上がってきました。",
+        "直感で動いてください。",
+        "赤いオブジェクトを避けてください。",
+        "青いオブジェクトは安全です。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-runner-mid",
+      "version": "5.0",
+      "genreAffinity": { "runner": 0.95, "bullet_runner": 0.2 },
+      "minUpdateIndex": 4,
+      "maxUpdateIndex": 7,
+      "chainKey": "5.0-b-runner",
+      "manualText": [
+        "移動は自動になりました。",
+        "Spaceキーでジャンプします。",
+        "加速は止まりません。",
+        "避けることが唯一の目的です。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-runner-late",
+      "version": "7.0",
+      "genreAffinity": { "runner": 1.0 },
+      "minUpdateIndex": 6,
+      "chainKey": "7.0-b-runner-extreme",
+      "manualText": [
+        "移動は自動になりました。",
+        "Spaceキーでジャンプします。",
+        "加速は無限に続きます。",
+        "これはエンドレスランナーです。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-stg-early",
+      "version": "3.0",
+      "genreAffinity": { "stg": 0.9, "arena": 0.4, "bullet_hell": 0.3 },
+      "minUpdateIndex": 2,
+      "maxUpdateIndex": 4,
+      "chainKey": "3.0-a-fight",
+      "manualText": [
+        "敵を撃つ仕掛けが追加されました。",
+        "Zキーで攻撃できます。",
+        "敵を倒して進んでください。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "runtimeOverrides": { "forceGenreId": "stg" },
+      "choices": []
+    },
+    {
+      "key": "pool-stg-mid",
+      "version": "5.0",
+      "genreAffinity": { "stg": 0.95, "arena": 0.5, "bullet_hell": 0.3 },
+      "minUpdateIndex": 4,
+      "maxUpdateIndex": 7,
+      "chainKey": "5.0-a-shooting",
+      "manualText": [
+        "Zキーで敵を撃てます。",
+        "敵を倒すことが主軸になりました。",
+        "弾を当てる精度が高スコアにつながります。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "runtimeOverrides": { "forceGenreId": "stg" },
+      "choices": []
+    },
+    {
+      "key": "pool-stg-late",
+      "version": "7.0",
+      "genreAffinity": { "stg": 1.0, "arena": 0.6 },
+      "minUpdateIndex": 6,
+      "chainKey": "7.0-a-stg-multi",
+      "manualText": [
+        "Zキーで敵を撃てます。",
+        "敵を倒すことが唯一の目的です。",
+        "これは完全なシューティングゲームです。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "runtimeOverrides": { "forceGenreId": "stg" },
+      "choices": []
+    },
+    {
+      "key": "pool-rhythm-early",
+      "version": "3.0",
+      "genreAffinity": { "rhythm": 0.9, "sports": 0.3 },
+      "minUpdateIndex": 2,
+      "maxUpdateIndex": 4,
+      "chainKey": "3.0-b-beat",
+      "manualText": [
+        "音楽とステージが連動し始めました。",
+        "リズムを感じてください。",
+        "音に合わせた動きが高スコアになります。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-rhythm-mid",
+      "version": "5.0",
+      "genreAffinity": { "rhythm": 0.95, "sports": 0.4 },
+      "minUpdateIndex": 4,
+      "maxUpdateIndex": 7,
+      "chainKey": "5.0-b-rhythm",
+      "manualText": [
+        "すべてが音に同期します。",
+        "ビート毎に障害物が配置されます。",
+        "正確なタイミングが重要です。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-rhythm-late",
+      "version": "7.0",
+      "genreAffinity": { "rhythm": 1.0 },
+      "minUpdateIndex": 6,
+      "chainKey": "7.0-b-rhythm-strict",
+      "manualText": [
+        "リズムに完璧に同期します。",
+        "音のビート毎にアクション必須。",
+        "これはリズムゲームです。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-platformer-early",
+      "version": "3.0",
+      "genreAffinity": { "platformer": 0.9, "metroidvania": 0.3 },
+      "minUpdateIndex": 2,
+      "maxUpdateIndex": 4,
+      "chainKey": "3.0-b-beat",
+      "manualText": [
+        "空中での自由度が高まりました。",
+        "高さを活かした動きが重要です。",
+        "ジャンプの快感が強調されています。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-platformer-mid",
+      "version": "5.0",
+      "genreAffinity": { "platformer": 0.95, "metroidvania": 0.4 },
+      "minUpdateIndex": 4,
+      "maxUpdateIndex": 7,
+      "chainKey": "5.0-b-platformer",
+      "manualText": [
+        "空中での自由度がさらに増えています。",
+        "コンボをつなげると高スコアになります。",
+        "ジャンプの精度が問われます。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-platformer-late",
+      "version": "7.0",
+      "genreAffinity": { "platformer": 1.0 },
+      "minUpdateIndex": 6,
+      "chainKey": "7.0-b-platformer-rhythm",
+      "manualText": [
+        "コンボを繋ぎ続けることが全て。",
+        "空中での自由度が最大化されています。",
+        "これはプラットフォームアクションです。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-rpg-early",
+      "version": "3.0",
+      "genreAffinity": { "rpg": 0.9, "dungeon": 0.5, "metroidvania": 0.3 },
+      "minUpdateIndex": 2,
+      "maxUpdateIndex": 4,
+      "chainKey": "3.0-a-grow",
+      "manualText": [
+        "経験値を稼ぐ仕掛けが追加されました。",
+        "成長するごとに強くなります。",
+        "敵を倒して力を蓄えてください。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-rpg-mid",
+      "version": "5.0",
+      "genreAffinity": { "rpg": 0.95, "dungeon": 0.6, "metroidvania": 0.4 },
+      "minUpdateIndex": 4,
+      "maxUpdateIndex": 7,
+      "chainKey": "5.0-a-rpg",
+      "manualText": [
+        "レベルが上がると新しい能力が解放されます。",
+        "戦略的に成長を選んでください。",
+        "強くなる喜びが核心です。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-rpg-late",
+      "version": "7.0",
+      "genreAffinity": { "rpg": 1.0, "dungeon": 0.7 },
+      "minUpdateIndex": 6,
+      "chainKey": "7.0-a-hack-slash-pattern",
+      "manualText": [
+        "経験値・成長・能力解放。",
+        "あなたの選択がキャラクターを形作ります。",
+        "これはRPG的なゲームになりました。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-puzzle-early",
+      "version": "3.0",
+      "genreAffinity": { "puzzle": 0.9, "idle": 0.3 },
+      "minUpdateIndex": 2,
+      "maxUpdateIndex": 4,
+      "chainKey": "4.0-a-craft",
+      "manualText": [
+        "思考が深まる仕掛けが追加されました。",
+        "焦らず、パターンを見つけてください。",
+        "計算可能になっています。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-puzzle-mid",
+      "version": "5.0",
+      "genreAffinity": { "puzzle": 0.95, "idle": 0.4 },
+      "minUpdateIndex": 4,
+      "maxUpdateIndex": 7,
+      "chainKey": "5.0-a-tower",
+      "manualText": [
+        "パターン認識が鍵になります。",
+        "時間をかけて考えても大丈夫です。",
+        "解いた時の快感が最優先です。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-puzzle-late",
+      "version": "7.0",
+      "genreAffinity": { "puzzle": 1.0 },
+      "minUpdateIndex": 6,
+      "chainKey": "7.0-a-arena-rush",
+      "manualText": [
+        "すべてが計算可能です。",
+        "思考が唯一の武器です。",
+        "これはパズルゲームになりました。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-survival-early",
+      "version": "3.0",
+      "genreAffinity": { "survival": 0.9, "horror": 0.5, "soulslike": 0.3 },
+      "minUpdateIndex": 2,
+      "maxUpdateIndex": 4,
+      "chainKey": "3.0-a-grow",
+      "manualText": [
+        "HPの管理が重要になりました。",
+        "慎重に動いてください。",
+        "生き延びることが目的です。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-survival-mid",
+      "version": "5.0",
+      "genreAffinity": { "survival": 0.95, "horror": 0.6, "soulslike": 0.4 },
+      "minUpdateIndex": 4,
+      "maxUpdateIndex": 7,
+      "chainKey": "5.0-a-survival",
+      "manualText": [
+        "生存時間がスコアに直結します。",
+        "リソースを大切に使いましょう。",
+        "危険は常に近付いています。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-survival-late",
+      "version": "7.0",
+      "genreAffinity": { "survival": 1.0, "horror": 0.7 },
+      "minUpdateIndex": 6,
+      "chainKey": "7.0-a-hack-slash-pattern",
+      "manualText": [
+        "生き延びることが唯一の目的です。",
+        "リソース管理が生死を分けます。",
+        "これはサバイバルゲームになりました。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-bulletrunner-early",
+      "version": "3.0",
+      "genreAffinity": { "bullet_runner": 0.9, "runner": 0.4, "stg": 0.3 },
+      "minUpdateIndex": 2,
+      "maxUpdateIndex": 4,
+      "chainKey": "3.0-b-speed",
+      "manualText": [
+        "走りながら戦う仕掛けが追加されました。",
+        "Zキーで敵を撃てます。",
+        "スピードと戦闘の両立が必要です。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    },
+    {
+      "key": "pool-bulletrunner-mid",
+      "version": "5.0",
+      "genreAffinity": { "bullet_runner": 0.95, "runner": 0.5, "stg": 0.4 },
+      "minUpdateIndex": 4,
+      "maxUpdateIndex": 7,
+      "chainKey": "5.0-b-bullet-runner",
+      "manualText": [
+        "走りながら敵を倒してください。",
+        "二つのアクションの融合が始まります。",
+        "スピードを落とさずに戦闘をこなしましょう。"
+      ],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "choices": []
+    }
+  ]
+}

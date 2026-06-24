@@ -154,6 +154,8 @@ export interface ManualVersion {
   minUpdateIndex?: number
   /** プール選択用: 表示可能な最大 updateIndex（0-indexed）。省略可 */
   maxUpdateIndex?: number
+  /** プール選択用: 選択肢を借用するチェーンバージョンのキー。指定時はそのバージョンのchoicesを使用 */
+  chainKey?: string
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -287,8 +289,12 @@ export interface BayesianState {
 
 /** ベイズ収束のハイパーパラメータ */
 export interface BayesConfig {
-  /** 収束閾値（事後確率がこの値を超えるとジャンル確定） */
+  /** 収束閾値（事後確率がこの値を超えるとジャンル確定）後方互換用 */
   convergenceThreshold: number
+  /** 最小事後確率（最尤ジャンルがこの値以上であることが収束の必要条件） */
+  minProb: number
+  /** 支配比率（最尤ジャンルが2位以上のジャンルに対してこの比率以上で優位なことが収束の必要条件） */
+  dominanceRatio: number
   /** 尤度 decay 率（大きいほど選択の影響が強い） */
   decayRate: number
   /** base ジャンルの decay 率（累積パラメータ増大とともに base の尤度が低下） */

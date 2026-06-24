@@ -1,0 +1,8 @@
+{
+  "$comment": "パズルフィーチャー",
+  "section": "puzzle",
+  "gridSize": 60,
+  "movePhaseSec": 2.5,
+  "solvePhaseSec": 2.0,
+  "solveScore": 200
+}

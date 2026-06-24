@@ -221,6 +221,10 @@ export interface ManualEntryJSON {
 
   /** プール選択用: 表示可能な最大 updateIndex（0-indexed）。省略可 */
   maxUpdateIndex?: number
+
+  /** プール選択用: 選択肢を借用するチェーンバージョンのキー。指定時はそのバージョンのchoicesを使用 */
+  // domain/types.ts の ManualVersion.chainKey と対応
+  chainKey?: string
 }
 
 // ──────────────────────────────────────────────────────────────────────

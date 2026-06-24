@@ -1,10 +1,10 @@
 import { reactive, ref, readonly } from 'vue'
-import type { Phase, GenreId, RuntimeRules, FinalScore, BayesianState } from '../domain/types'
+import type { Phase, GenreId, RuntimeRules, FinalScore, BayesianState, ManualVersion } from '../domain/types'
 import { BAYES_DEBUG_TOP_N } from '../domain/types'
 import { MANUAL_DECK } from '../data/manualDeck'
 import { GENRES } from '../data/genres'
-import { buildRuntimeRules, type ChoiceRecord } from '../domain/ruleEngine'
-import { resolveGenre, resolveHighestProbGenre, accumulateParams, initBayesianState, updateBayesianState, DEFAULT_BAYES_CONFIG, selectNextManual } from '../domain/genreResolver'
+import { buildRuntimeRules, type ChoiceRecord, accumulateWithMultiplier } from '../domain/ruleEngine'
+import { resolveGenre, resolveHighestProbGenre, initBayesianState, updateBayesianState, DEFAULT_BAYES_CONFIG, selectNextManual } from '../domain/genreResolver'
 import { calcThrowScore, calcFinalScore } from '../domain/scoreCalc'
 import type { ThrowResult } from '../domain/types'
 import { soundManager } from '../plugins/SoundManager'
@@ -22,27 +22,54 @@ export function useGameState() {
   const bayesState = reactive<BayesianState>(initBayesianState(GENRES))
 
   // プール選択で既に表示済みのエントリーキーを追跡
-  const shownPoolKeys = reactive(new Set<string>())
+  const shownPoolKeys = ref(new Set<string>())
+
+  // プールエントリーとチェーンのchoicesをマージしたバージョンをキャッシュ
+  // MANUAL_DECK を直接書き換えずにローカルで管理
+  const mergedPoolVersions = new Map<string, ManualVersion>()
 
   // 現在有効なルール（ゲームループが参照）
   const rules = reactive<RuntimeRules>(
     buildRuntimeRules(MANUAL_DECK['1.0'], [], null)
   )
 
-  function _rebuildRules() {
+  // 解決関数: マージ済みプールバージョンを考慮して ManualVersion を取得
+  const resolveVersion = (key: string) => mergedPoolVersions.get(key) ?? MANUAL_DECK[key]
+
+  function rebuildRules() {
     const next = buildRuntimeRules(
-      MANUAL_DECK[currentVersionKey.value],
+      resolveVersion(currentVersionKey.value),
       choiceHistory,
       lockedGenre.value,
     )
-    Object.assign(rules, next)
+    // Vue 3 のリアクティビティを維持するため個別代入
+    rules.controls = next.controls
+    rules.hazardColors = next.hazardColors
+    rules.safeColors = next.safeColors
+    rules.features = next.features
+    rules.genre = next.genre
+    rules.scrollSpeed = next.scrollSpeed
+    rules.bpm = next.bpm
+    rules.gravity = next.gravity
+    rules.scrollDirection = next.scrollDirection
+    rules.environment = next.environment
+    rules.playerMaxHp = next.playerMaxHp
+    rules.timescale = next.timescale
+    rules.scrollAxis = next.scrollAxis
+    rules.colorTouchScore = next.colorTouchScore
   }
 
   // ─── フェーズ遷移 ─────────────────────────────────────────
   function startGame() {
     phase.value = 'tutorialIntro'
-    Object.assign(bayesState, initBayesianState(GENRES))
-    _rebuildRules()
+    const fresh = initBayesianState(GENRES)
+    bayesState.converged = fresh.converged
+    bayesState.convergedGenre = fresh.convergedGenre
+    // 全ジャンルキーを確実に更新（古いキーの削除 + 新しいキーの追加）
+    for (const genre of GENRES) {
+      bayesState.posteriors[genre.id] = fresh.posteriors[genre.id] ?? 0
+    }
+    rebuildRules()
   }
 
   // チュートリアル画面からゲームプレイへ移行
@@ -57,7 +84,7 @@ export function useGameState() {
 
   // プレイヤーが2択を選んだとき。エラーがあればエラーメッセージ文字列を返す（正常時は undefined）
   function choose(choiceId: string): string | undefined {
-    const ver = MANUAL_DECK[currentVersionKey.value]
+    const ver = resolveVersion(currentVersionKey.value)
     const choice = ver.choices.find(c => c.id === choiceId)
     if (!choice) return undefined
 
@@ -68,15 +95,21 @@ export function useGameState() {
       choiceId,
       genreParams: choice.genreParams,
       genrePoints: choice.genrePoints,
+      paramMultiplier: choice.paramMultiplier,
     })
     updateIndex.value++
 
-    // 累積パラメータを計算
-    const accumulated = accumulateParams(choiceHistory.map(h => h.genreParams))
+    // 累積パラメータを計算（paramMultiplier を考慮）
+    const accumulated = accumulateWithMultiplier(choiceHistory)
 
     // ベイズ更新
     const newState = updateBayesianState(bayesState, accumulated, GENRES)
-    Object.assign(bayesState, newState)
+    // posteriors を全ジャンル分更新（Vue リアクティビティ維持 + キー整合性保証）
+    bayesState.converged = newState.converged
+    bayesState.convergedGenre = newState.convergedGenre
+    for (const genre of GENRES) {
+      bayesState.posteriors[genre.id] = newState.posteriors[genre.id] ?? 0
+    }
 
     // ── ベイズ状態デバッグログ ──────────────────────────────────
     const sorted = GENRES
@@ -86,18 +119,34 @@ export function useGameState() {
       .map(g => `  ${g.id.padEnd(14)} ${(newState.posteriors[g.id] * 100).toFixed(1)}%`)
       .join('\n')
 
-    const thresholdStr = `${(DEFAULT_BAYES_CONFIG.convergenceThreshold * 100).toFixed(0)}%`
+    const convergenceInfo = `minProb=${(DEFAULT_BAYES_CONFIG.minProb * 100).toFixed(0)}% ratio>=${DEFAULT_BAYES_CONFIG.dominanceRatio}x`
     console.log(`[BAYES] choice #${updateIndex.value} | choiceId=${choiceId} | accumulated=${JSON.stringify(accumulated)}`)
     console.log(`[BAYES] Top${BAYES_DEBUG_TOP_N} genres:\n${sorted}`)
-    console.log(`[BAYES] converged=${newState.converged} | convergedGenre=${newState.convergedGenre ?? '—'} | threshold=${thresholdStr}`)
+    console.log(`[BAYES] converged=${newState.converged} | convergedGenre=${newState.convergedGenre ?? '—'} | criteria=${convergenceInfo}`)
     // ─────────────────────────────────────────────────────────────
 
     // 次のバージョンキーを決定: プール選択 → チェーンフォールバック
-    const poolKey = selectNextManual(MANUAL_DECK, newState.posteriors, updateIndex.value, shownPoolKeys)
+    const poolKey = selectNextManual(MANUAL_DECK, newState.posteriors, updateIndex.value, shownPoolKeys.value)
     if (poolKey && MANUAL_DECK[poolKey]) {
-      currentVersionKey.value = poolKey
-      shownPoolKeys.add(poolKey)
+      const poolVer = MANUAL_DECK[poolKey]
+      shownPoolKeys.value.add(poolKey)
       console.log(`[POOL] selected ${poolKey}`)
+
+      // プールエントリーが chainKey を持つ場合、チェーンのchoicesを借用
+      // 設計: プールエントリーはmanualText/hazardsなどのメタデータを提供し、
+      // 選択肢自体はチェーンから借用する。プレイヤーが選択すると、
+      // choice.next で指定されたチェーンの次のバージョンへ遷移する。
+      if (poolVer.chainKey && MANUAL_DECK[poolVer.chainKey]) {
+        const chainVer = MANUAL_DECK[poolVer.chainKey]
+        const merged: ManualVersion = {
+          ...poolVer,
+          choices: chainVer.choices,
+        }
+        mergedPoolVersions.set(poolKey, merged)
+        currentVersionKey.value = poolKey
+      } else {
+        currentVersionKey.value = poolKey
+      }
     } else {
       const chainKey = choice.next
       const chainVer = MANUAL_DECK[chainKey]
@@ -109,7 +158,7 @@ export function useGameState() {
       currentVersionKey.value = chainKey
     }
 
-    const nextVer = MANUAL_DECK[currentVersionKey.value]
+    const nextVer = resolveVersion(currentVersionKey.value)
 
     // ジャンル収束チェック（ベイズ事後確率が閾値を超えたら確定）
     if (newState.converged || nextVer.choices.length === 0) {
@@ -120,10 +169,10 @@ export function useGameState() {
         lockedGenre.value = resolveHighestProbGenre(accumulated, GENRES)
       }
       soundManager.onGenreLock(lockedGenre.value)
-      _rebuildRules()
+      rebuildRules()
       phase.value = 'genreLocked'
     } else {
-      _rebuildRules()
+      rebuildRules()
       phase.value = 'playing'
     }
     return undefined
@@ -149,13 +198,20 @@ export function useGameState() {
     lockedGenre.value = null
     updateIndex.value = 0
     finalScore.value = null
-    Object.assign(bayesState, initBayesianState(GENRES))
-    shownPoolKeys.clear()
-    _rebuildRules()
+    const fresh = initBayesianState(GENRES)
+    bayesState.converged = fresh.converged
+    bayesState.convergedGenre = fresh.convergedGenre
+    // 全ジャンルキーを確実に更新（キー整合性保証）
+    for (const genre of GENRES) {
+      bayesState.posteriors[genre.id] = fresh.posteriors[genre.id] ?? 0
+    }
+    shownPoolKeys.value.clear()
+    mergedPoolVersions.clear()
+    rebuildRules()
   }
 
-  // 現在バージョンの ManualVersion を返す
-  const currentManual = () => MANUAL_DECK[currentVersionKey.value]
+  // 現在バージョンの ManualVersion を返す（マージ済みプールバージョンを考慮）
+  const currentManual = () => resolveVersion(currentVersionKey.value)
 
   // 確定ジャンルの定義
   const lockedGenreDef = () => GENRES.find(g => g.id === lockedGenre.value) ?? null

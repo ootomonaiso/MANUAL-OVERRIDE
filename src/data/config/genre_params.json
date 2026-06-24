@@ -1,11 +1,19 @@
 {
-  "$comment": "ジャンルパラメータ設計支援",
+  "$comment": "ジャンルパラメータ設計支援（2026-06 閾値再調整後）",
   "section": "genre_params",
   "recommendedSingleChoice": 3,
-  "recommendedMaxPerAxis": 6,
+  "$comment_recommendedSingleChoice": "1 選択あたりの推奨パラメータ合計（例: {tempo:2, range:1} = 3）",
+  "recommendedMaxPerAxis": 3,
+  "$comment_recommendedMaxPerAxis": "1 軸あたりの最大推奨値。高すぎると他の軸とのバランスが崩れる",
   "thresholdGuide": {
-    "singleAxis": 5,
-    "dualAxis": 3,
-    "tripleAxis": 2
-  }
+    "singleAxis": 14,
+    "$comment_singleAxis": "単一軸ジャンルの閾値目安（runner:14, rpg:16, puzzle:16, stealth:14, idle:16）",
+    "dualAxis": 10,
+    "$comment_dualAxis": "二軸ジャンルの軸あたり閾値目安（stg:11+11, rhythm:10+10, dungeon:14+10）",
+    "tripleAxis": 7
+  },
+  "$comment_tripleAxis": "三軸ジャンルの軸あたり閾値目安（aerial_stg:7+8+8, aquatic:6+6+7）",
+  "$comment_thresholds": "実際の閾値は genres.json を参照。collision 回避のため同一軸で値が重複しないよう設計",
+  "paramMultiplier": 1.0,
+  "$comment_paramMultiplier": "ruleEngine.ts で使用。1 選択あたりのパラメータに掛ける倍率。デフォルト 1.0"
 }

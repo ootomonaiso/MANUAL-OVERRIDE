@@ -284,6 +284,8 @@ export interface StealthConfig {
 /** bayes.json — ベイズ収束 */
 export interface BayesConfig {
   convergenceThreshold: number
+  minProb: number
+  dominanceRatio: number
   decayRate: number
   baseDecay: number
   candidateThreshold: number

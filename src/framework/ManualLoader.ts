@@ -169,6 +169,7 @@ function parseEntry(entry: ManualEntryJSON): ManualVersion {
     genreAffinity: entry.genreAffinity,
     minUpdateIndex: entry.minUpdateIndex,
     maxUpdateIndex: entry.maxUpdateIndex,
+    chainKey: entry.chainKey,
   }
 }
 
