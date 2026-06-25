@@ -10,6 +10,21 @@ import { soundManager } from '../plugins/SoundManager'
 import { sampleCards, CARD_POOL } from '../data/cardPool'
 import { MAX_ROUNDS } from '../data/gameBalance'
 
+// genreParams のジッター幅（±20%）
+const PARAM_JITTER_RANGE = 0.4
+
+/** 選択履歴から genrePoints を集計して返す */
+function accumulateGenrePointsFromHistory(history: ChoiceRecord[]): Record<string, number> {
+  const acc: Record<string, number> = {}
+  for (const h of history) {
+    if (!h.genrePoints) continue
+    for (const [g, pts] of Object.entries(h.genrePoints)) {
+      acc[g] = (acc[g] ?? 0) + pts
+    }
+  }
+  return acc
+}
+
 export function useGameState() {
   const phase = ref<Phase>('title')
   const lockedGenre = ref<GenreId | null>(null)
@@ -71,14 +86,7 @@ export function useGameState() {
   function _computeGenreWeights(): Record<string, number> {
     if (choiceHistory.length === 0) return {}
     const accumulated = accumulateParams(choiceHistory.map(h => h.genreParams))
-    const genrePointsAcc: Record<string, number> = {}
-    for (const h of choiceHistory) {
-      if (!h.genrePoints) continue
-      for (const [g, pts] of Object.entries(h.genrePoints)) {
-        genrePointsAcc[g] = (genrePointsAcc[g] ?? 0) + pts
-      }
-    }
-    return resolveAllGenreProgress(accumulated, GENRES, genrePointsAcc)
+    return resolveAllGenreProgress(accumulated, GENRES, accumulateGenrePointsFromHistory(choiceHistory))
   }
 
   // 説明書更新トリガー: カードをランダムサンプリングして updating フェーズへ
@@ -95,8 +103,8 @@ export function useGameState() {
 
     soundManager.onChoiceSelect()
 
-    // B6: パラメータにじみ ±20%（genreParams の値にランダムブレを加える）
-    const jitter = 1 + (Math.random() - 0.5) * 0.4
+    // B6: パラメータにじみ（genreParams の値に PARAM_JITTER_RANGE 幅のランダムブレを加える）
+    const jitter = 1 + (Math.random() - 0.5) * PARAM_JITTER_RANGE
     const jitteredParams: Partial<Record<GenreParam, number>> = {}
     for (const [k, v] of Object.entries(card.genreParams ?? {}) as [GenreParam, number][]) {
       jitteredParams[k] = v * jitter
@@ -152,15 +160,8 @@ export function useGameState() {
 
     // 初回ジャンル収束チェック（最終ラウンド以降は強制確定）
     const accumulated = accumulateParams(choiceHistory.map(h => h.genreParams))
-    const genrePointsAcc: Record<string, number> = {}
-    for (const h of choiceHistory) {
-      if (!h.genrePoints) continue
-      for (const [g, pts] of Object.entries(h.genrePoints)) {
-        genrePointsAcc[g] = (genrePointsAcc[g] ?? 0) + pts
-      }
-    }
     const selectedIds = choiceHistory.map(h => h.choiceId)
-    const resolved = resolveGenre(accumulated, GENRES, genrePointsAcc, selectedIds)
+    const resolved = resolveGenre(accumulated, GENRES, accumulateGenrePointsFromHistory(choiceHistory), selectedIds)
 
     if (roundCount.value >= MAX_ROUNDS || resolved !== 'base') {
       lockedGenre.value = resolved !== 'base' ? resolved : _forceResolve(accumulated)

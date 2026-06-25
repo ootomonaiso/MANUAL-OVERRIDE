@@ -35,8 +35,8 @@ export default [
   {
     files: ['src/**/*.{ts,vue}'],
     rules: {
-      // TypeScript
-      '@typescript-eslint/no-explicit-any': 'warn',
+      // TypeScript — 型安全
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
@@ -46,6 +46,18 @@ export default [
       '@typescript-eslint/no-unused-expressions': ['error', { allowTernary: true }],
       // Allow const self = this for closure capture
       '@typescript-eslint/no-this-alias': 'off',
+      // 命名規則: クラスは PascalCase、定数は UPPER_CASE または camelCase
+      '@typescript-eslint/naming-convention': [
+        'warn',
+        { selector: 'class', format: ['PascalCase'] },
+        { selector: 'interface', format: ['PascalCase'] },
+        { selector: 'typeAlias', format: ['PascalCase'] },
+        {
+          selector: 'variable',
+          modifiers: ['const', 'global'],
+          format: ['UPPER_CASE', 'camelCase', 'PascalCase'],
+        },
+      ],
 
       // Vue
       'vue/multi-word-component-names': 'off',

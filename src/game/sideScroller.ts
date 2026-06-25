@@ -39,6 +39,21 @@ export interface GameSnapshot {
   scoreFormulaError: string | null
 }
 
+// UPDATE_DISTANCES を超えた後の無限更新間隔（px）
+const INFINITE_UPDATE_INTERVAL = 1500
+
+// ループ内 dt のクランプ上限（フレーム落ち時に物理が発散するのを防ぐ）
+const MAX_DELTA_SEC = 0.05
+
+// プレイヤー初期 X 座標
+const PLAYER_INITIAL_X = 140
+
+// 初回スポーン距離（コンストラクタ時点のデフォルト）
+const INITIAL_SPAWN_DIST = 480
+
+// LearningSystem の最初のチェックまでの遅延（秒）
+const INITIAL_LEARNING_DELAY_SEC = 0.5
+
 // ──────────────────────────────────────────────────────────────────────
 // SideScroller — Canvas ゲームエンジン本体
 // ──────────────────────────────────────────────────────────────────────
@@ -72,7 +87,7 @@ export class SideScroller {
   private cameraX = 0
 
   // スポーン
-  private nextSpawnDist = 480
+  private nextSpawnDist = INITIAL_SPAWN_DIST
   private updateTriggeredFor = new Set<number>()
 
   // ─── 入力・パーティクル ──────────────────────────────────────────
@@ -87,7 +102,8 @@ export class SideScroller {
   // ─── 演出 ────────────────────────────────────────────────────────
   private scorePopups: ScorePopup[] = []
   private shakeIntensity = 0
-  private shakeX = 0; private shakeY = 0
+  private shakeX = 0
+  private shakeY = 0
 
   // 死亡演出
   private deathTimer = 0
@@ -129,7 +145,7 @@ export class SideScroller {
     this.rules = rules
 
     const gY = canvas.height - 80
-    this.player = new Player(140, gY)
+    this.player = new Player(PLAYER_INITIAL_X, gY)
     this.player.jumpsLeft = rules.features.has('double_jump') ? 2 : 1
 
     this.input.setGameKeys(rules.controls)
@@ -157,7 +173,7 @@ export class SideScroller {
     // ManualVersion から learningRules を取得
     if (manual?.learningRules) {
       this.learningRules = JSON.parse(JSON.stringify(manual.learningRules))
-      this.learningCheckTimer = 0.5  // 0.5秒後に最初のチェック
+      this.learningCheckTimer = INITIAL_LEARNING_DELAY_SEC
     } else {
       this.learningRules = null
     }
@@ -197,12 +213,11 @@ export class SideScroller {
     let pending = UPDATE_DISTANCES.findIndex(
       (d, i) => this.distance >= d && !this.updateTriggeredFor.has(i)
     )
-    // UPDATE_DISTANCES の範囲外でも無限に更新を続ける（1500px 間隔）
+    // UPDATE_DISTANCES の範囲外でも無限に更新を続ける
     if (pending < 0) {
       const lastDist = UPDATE_DISTANCES[UPDATE_DISTANCES.length - 1]
-      const infiniteInterval = 1500
       if (this.distance >= lastDist) {
-        const extraIdx = UPDATE_DISTANCES.length + Math.floor((this.distance - lastDist) / infiniteInterval)
+        const extraIdx = UPDATE_DISTANCES.length + Math.floor((this.distance - lastDist) / INFINITE_UPDATE_INTERVAL)
         if (!this.updateTriggeredFor.has(extraIdx)) {
           pending = extraIdx
         }
@@ -275,7 +290,7 @@ export class SideScroller {
 
   // ─── メインループ ────────────────────────────────────────────────
   private _loop = (ts: number) => {
-    const rawDt = Math.min((ts - this.lastTime) / 1000, 0.05)
+    const rawDt = Math.min((ts - this.lastTime) / 1000, MAX_DELTA_SEC)
     this.lastTime = ts
     this._frameWorld = null  // フレームキャッシュを毎フレーム破棄
 
@@ -426,7 +441,7 @@ export class SideScroller {
       h.y += speed * dt
       h.pulse += dt * VFX.hazardPulseRate
     }
-    this.hazards = this.hazards.filter(h => h.y < H + 200)
+    this.hazards = this.hazards.filter(h => h.y < H + SPAWN.hazardCullBelow)
 
     for (const item of this.items) {
       item.y += speed * dt
