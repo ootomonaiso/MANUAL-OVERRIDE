@@ -444,6 +444,27 @@
       },
       "gravity": 1600,
       "endingFlavor": "あなたはコンボを途切れさせなかった。説明書は斬られて散った。"
+    },
+    {
+      "id": "tetris",
+      "label": "テトリス",
+      "thresholds": {"combo": 4, "craft": 4},
+      "enableFeatures": ["tetris_mode"],
+      "disableFeatures": ["auto_run", "shoot", "beat_hazard", "boss", "stealth_mode", "slow_precise"],
+      "scoreFormula": "combo * 300 + survivedSec * 5 + distance * 0.1",
+      "manualReveal": "これはテトリスになりました。ブロックを積み上げてください。",
+      "theme": "tetris",
+      "bgColor": "#0a0a0a",
+      "scrollDirection": "none",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
+      "gravity": 0,
+      "endingFlavor": "あなたはブロックを積み重ねた。説明書もその塔の一部になった。"
     }
   ]
 }

@@ -26,6 +26,7 @@ import { ArenaPlugin }                from './ArenaPlugin'
 import { AquaticPlugin }              from './AquaticPlugin'
 import { DungeonPlugin }              from './DungeonPlugin'
 import { HackSlashPlugin }            from './HackSlashPlugin'
+import { TetrisPlugin }               from './TetrisPlugin'
 import { pluginManager } from '../plugins/PluginManager'
 import { JSONGenrePlugin } from '../plugins/JSONGenrePlugin'
 
@@ -44,6 +45,7 @@ registerGenre(new ArenaPlugin())
 registerGenre(new AquaticPlugin())
 registerGenre(new DungeonPlugin())
 registerGenre(new HackSlashPlugin())
+registerGenre(new TetrisPlugin())
 
 // Load user-installed genre plugins
 const installedPlugins = pluginManager.loadAll()

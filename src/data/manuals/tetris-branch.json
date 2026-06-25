@@ -1,0 +1,376 @@
+{
+  "id": "tetris-branch",
+  "description": "テトリス分岐: combo + craft が蓄積する選択肢\n→ tetris ジャンルへ収束",
+  "entries": [
+    {
+      "key": "2.0-t",
+      "version": "2.0",
+      "manualText": [
+        "← → キーで左右に移動できます。",
+        "Spaceキーでジャンプします。",
+        "赤いオブジェクトに触れると失敗です。",
+        "青いオブジェクトは安全です。",
+        "ステージに積み重ねられる要素が加わりました。"
+      ],
+      "hazards": {
+        "colors": [],
+        "safeColors": []
+      },
+      "choices": [
+        {
+          "id": "tetris-2.0-block",
+          "label": "ブロックを積み重ねて壁を作る",
+          "next": "3.0-t-block",
+          "genreParams": { "craft": 2, "combo": 1 },
+          "hint": "tetris/tower_def/idle 方向"
+        },
+        {
+          "id": "tetris-2.0-combo",
+          "label": "連続して正解するコンボシステム",
+          "next": "3.0-t-combo",
+          "genreParams": { "combo": 2, "craft": 1 },
+          "hint": "tetris/puzzle 方向"
+        }
+      ]
+    },
+
+    {
+      "key": "3.0-t-block",
+      "version": "3.0",
+      "manualText": [
+        "← → キーで左右に移動できます。",
+        "Spaceキーでジャンプします。",
+        "ブロックが画面に現れ始めました。",
+        "積み重ねることで新しい地形が生まれます。",
+        "ブロックの配置を工夫してください。"
+      ],
+      "hazards": {
+        "colors": [],
+        "safeColors": []
+      },
+      "choices": [
+        {
+          "id": "tetris-3.0-block-rotate",
+          "label": "ブロックを回転できるようにする",
+          "next": "4.0-t-rotate",
+          "genreParams": { "craft": 1, "combo": 1 },
+          "hint": "tetris 方向に進行中"
+        },
+        {
+          "id": "tetris-3.0-block-fall",
+          "label": "ブロックを自動で落下させる",
+          "next": "4.0-t-fall",
+          "genreParams": { "craft": 1, "tempo": 1 },
+          "hint": "tetris/idle 方向"
+        }
+      ]
+    },
+
+    {
+      "key": "3.0-t-combo",
+      "version": "3.0",
+      "manualText": [
+        "← → キーで左右に移動できます。",
+        "Spaceキーでジャンプします。",
+        "コンボシステムが導入されました。",
+        "連続正解でスコアが倍加します。",
+        "積み重ねる要素も加わってきます。"
+      ],
+      "hazards": {
+        "colors": [],
+        "safeColors": []
+      },
+      "choices": [
+        {
+          "id": "tetris-3.0-combo-puzzle",
+          "label": "ブロックを組み合わせるパズルにする",
+          "next": "4.0-t-rotate",
+          "genreParams": { "combo": 1, "craft": 1 },
+          "hint": "tetris 方向に進行中"
+        },
+        {
+          "id": "tetris-3.0-combo-line",
+          "label": "ラインを完成させる仕組み",
+          "next": "4.0-t-line",
+          "genreParams": { "combo": 2 },
+          "hint": "tetris/puzzle 方向"
+        }
+      ]
+    },
+
+    {
+      "key": "4.0-t-rotate",
+      "version": "4.0",
+      "manualText": [
+        "ブロックが画面に現れます。",
+        "← → で移動、↑ で回転できます。",
+        "ブロックを積み重ねてラインを完成させます。",
+        "ラインが完成するとブロックが消えます。",
+        "積み上がりすぎると失敗です。"
+      ],
+      "hazards": {
+        "colors": [],
+        "safeColors": []
+      },
+      "choices": [
+        {
+          "id": "tetris-4.0-rotate-shapes",
+          "label": "ブロックの種類を増やす",
+          "next": "5.0-t-shapes",
+          "genreParams": { "craft": 1, "combo": 1 },
+          "hint": "tetris 方向に進行中"
+        },
+        {
+          "id": "tetris-4.0-rotate-speed",
+          "label": "落下速度を調整する",
+          "next": "5.0-t-speed",
+          "genreParams": { "craft": 1, "tempo": 1 },
+          "hint": "tetris 方向"
+        }
+      ]
+    },
+
+    {
+      "key": "4.0-t-fall",
+      "version": "4.0",
+      "manualText": [
+        "ブロックが自動で落下します。",
+        "← → で着地位置を選びます。",
+        "ラインを完成させてブロックを消してください。",
+        "積み上がりすぎると失敗です。",
+        "落下タイミングが重要です。"
+      ],
+      "hazards": {
+        "colors": [],
+        "safeColors": []
+      },
+      "choices": [
+        {
+          "id": "tetris-4.0-fall-rotate",
+          "label": "ブロックを回転できるようにする",
+          "next": "5.0-t-shapes",
+          "genreParams": { "craft": 1, "combo": 1 },
+          "hint": "tetris 方向に進行中"
+        },
+        {
+          "id": "tetris-4.0-fall-line",
+          "label": "ライン消去の仕組みを強化する",
+          "next": "5.0-t-line",
+          "genreParams": { "combo": 2, "craft": 1 },
+          "hint": "tetris/puzzle 方向"
+        }
+      ]
+    },
+
+    {
+      "key": "4.0-t-line",
+      "version": "4.0",
+      "manualText": [
+        "ライン完成でブロックが消えます。",
+        "← → でブロックを移動します。",
+        "コンボを繋げてスコアを上げてください。",
+        "ブロックの種類が増え始めました。",
+        "ライン消去が爽快感を生みます。"
+      ],
+      "hazards": {
+        "colors": [],
+        "safeColors": []
+      },
+      "choices": [
+        {
+          "id": "tetris-4.0-line-shapes",
+          "label": "7種類のブロックを導入する",
+          "next": "5.0-t-shapes",
+          "genreParams": { "craft": 1, "combo": 1 },
+          "hint": "tetris 方向に進行中"
+        },
+        {
+          "id": "tetris-4.0-line-combo",
+          "label": "コンボシステムを強化する",
+          "next": "5.0-t-combo",
+          "genreParams": { "combo": 2 },
+          "hint": "tetris/puzzle 方向"
+        }
+      ]
+    },
+
+    {
+      "key": "5.0-t-shapes",
+      "version": "5.0",
+      "manualText": [
+        "7種類のブロックが登場します。",
+        "← → で移動、↑ で回転、Space で即座に落下。",
+        "ラインを完成させてブロックを消してください。",
+        "積み上がりすぎるとゲームオーバーです。",
+        "ブロックパズルの本質が見えてきました。"
+      ],
+      "hazards": {
+        "colors": [],
+        "safeColors": []
+      },
+      "choices": [
+        {
+          "id": "tetris-5.0-shapes-tetris",
+          "label": "テトリスとして確定する",
+          "next": "6.0-t-tetris",
+          "genreParams": { "craft": 1, "combo": 1 },
+          "hint": "tetris 確定方向"
+        },
+        {
+          "id": "tetris-5.0-shapes-speed",
+          "label": "速度を上げて難易度を強化する",
+          "next": "6.0-t-speed",
+          "genreParams": { "tempo": 1, "craft": 1 },
+          "hint": "tetris 確定方向"
+        }
+      ]
+    },
+
+    {
+      "key": "5.0-t-speed",
+      "version": "5.0",
+      "manualText": [
+        "ブロックが速く落下します。",
+        "← → で移動、↑ で回転できます。",
+        "ラインを完成させてブロックを消してください。",
+        "速度に慣れることが重要です。",
+        "ブロックパズルとしての形が整ってきました。"
+      ],
+      "hazards": {
+        "colors": [],
+        "safeColors": []
+      },
+      "choices": [
+        {
+          "id": "tetris-5.0-speed-tetris",
+          "label": "テトリスとして完成させる",
+          "next": "6.0-t-tetris",
+          "genreParams": { "craft": 1, "combo": 1 },
+          "hint": "tetris 確定方向"
+        },
+        {
+          "id": "tetris-5.0-speed-shapes",
+          "label": "ブロックの種類を充実させる",
+          "next": "6.0-t-shapes",
+          "genreParams": { "craft": 1, "combo": 1 },
+          "hint": "tetris 確定方向"
+        }
+      ]
+    },
+
+    {
+      "key": "5.0-t-line",
+      "version": "5.0",
+      "manualText": [
+        "ライン消去の仕組みが強化されました。",
+        "← → で移動、↑ で回転できます。",
+        "複数のラインを同時に消すと高スコアです。",
+        "ブロックパズルの醍醐味を味わってください。",
+        "積み上げと消去のバランスが問われます。"
+      ],
+      "hazards": {
+        "colors": [],
+        "safeColors": []
+      },
+      "choices": [
+        {
+          "id": "tetris-5.0-line-tetris",
+          "label": "テトリスとして確定する",
+          "next": "6.0-t-tetris",
+          "genreParams": { "craft": 1, "combo": 1 },
+          "hint": "tetris 確定方向"
+        },
+        {
+          "id": "tetris-5.0-line-shapes",
+          "label": "7種類のブロックを導入する",
+          "next": "6.0-t-shapes",
+          "genreParams": { "craft": 1, "combo": 1 },
+          "hint": "tetris 確定方向"
+        }
+      ]
+    },
+
+    {
+      "key": "5.0-t-combo",
+      "version": "5.0",
+      "manualText": [
+        "コンボシステムが強化されました。",
+        "← → で移動、↑ で回転できます。",
+        "連続してラインを消すとコンボスコアが加算されます。",
+        "積み上がりすぎるとゲームオーバーです。",
+        "ブロックパズルの完成形が見えてきました。"
+      ],
+      "hazards": {
+        "colors": [],
+        "safeColors": []
+      },
+      "choices": [
+        {
+          "id": "tetris-5.0-combo-tetris",
+          "label": "テトリスとして完成させる",
+          "next": "6.0-t-tetris",
+          "genreParams": { "craft": 1, "combo": 1 },
+          "hint": "tetris 確定方向"
+        },
+        {
+          "id": "tetris-5.0-combo-shapes",
+          "label": "ブロックの種類を増やす",
+          "next": "6.0-t-shapes",
+          "genreParams": { "craft": 1, "combo": 1 },
+          "hint": "tetris 確定方向"
+        }
+      ]
+    },
+
+    {
+      "key": "6.0-t-tetris",
+      "version": "6.0",
+      "manualText": [
+        "7種類のブロックが次々と落下します。",
+        "← → で移動、↑ で回転、Space でハードドロップ。",
+        "ラインを完成させてブロックを消してください。",
+        "積み上がりすぎるとゲームオーバーです。",
+        "これはテトリスです。"
+      ],
+      "hazards": {
+        "colors": [],
+        "safeColors": []
+      },
+      "choices": []
+    },
+
+    {
+      "key": "6.0-t-speed",
+      "version": "6.0",
+      "manualText": [
+        "ブロックが速く落下します。",
+        "← → で移動、↑ で回転、Space でハードドロップ。",
+        "ラインを完成させてブロックを消してください。",
+        "速度に慣れることが重要です。",
+        "これはテトリスです。"
+      ],
+      "hazards": {
+        "colors": [],
+        "safeColors": []
+      },
+      "choices": []
+    },
+
+    {
+      "key": "6.0-t-shapes",
+      "version": "6.0",
+      "manualText": [
+        "7種類のブロックが次々と落下します。",
+        "← → で移動、↑ で回転、Space でハードドロップ。",
+        "ラインを完成させてブロックを消してください。",
+        "積み上がりすぎるとゲームオーバーです。",
+        "これはテトリスです。"
+      ],
+      "hazards": {
+        "colors": [],
+        "safeColors": []
+      },
+      "choices": []
+    }
+  ]
+}
