@@ -109,4 +109,11 @@ export interface FeatureSystem {
    * 省略可。
    */
   onPlayerJump?(world: MutableWorld): void
+
+  /**
+   * オプショナル: この Feature が非アクティブになる直前に呼ばれる。
+   * 状態のリセットや副作用のクリーンアップに使う。
+   * 省略可。
+   */
+  onDisable?(world: MutableWorld): void
 }
