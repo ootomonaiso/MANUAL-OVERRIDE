@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history for changelog
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run full CI checks
+        run: |
+          npx vue-tsc --noEmit
+          npm run lint
+          node scripts/validate-json.mjs
+
+      - name: Build
+        run: npm run build
+
+      - name: Bundle size check
+        run: node scripts/check-bundle-size.mjs
+
+      - name: Create dist archive
+        run: |
+          TAG="${{ github.ref_name }}"
+          zip -r "manual-game-${TAG}.zip" dist/
+          tar -czf "manual-game-${TAG}.tar.gz" dist/
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          TAG="${{ github.ref_name }}"
+          PREV=$(git tag --sort=-version:refname | grep -v "^${TAG}$" | head -1)
+          if [ -z "$PREV" ]; then
+            RANGE="HEAD"
+          else
+            RANGE="${PREV}..${TAG}"
+          fi
+
+          CHANGES=$(git log "$RANGE" \
+            --pretty=format:"- %s (%h)" \
+            --no-merges \
+            | head -50)
+
+          # multiline safe output
+          {
+            echo "notes<<NOTES_EOF"
+            echo "## 変更内容"
+            echo ""
+            echo "${CHANGES}"
+            echo ""
+            echo "## インストール"
+            echo ""
+            echo "\`manual-game-${TAG}.zip\` をダウンロードして展開し、\`dist/index.html\` をブラウザで開いてください。"
+            echo "NOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.notes }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            manual-game-${{ github.ref_name }}.zip
+            manual-game-${{ github.ref_name }}.tar.gz

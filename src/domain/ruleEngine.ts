@@ -3,6 +3,14 @@ import { accumulateParams, accumulateGenrePoints, resolveGenre, resolveFeaturesF
 import { GENRES } from '../data/genres'
 import { BASE_SCROLL_SPEED, TEMPO_SPEED_BONUS } from '../data/gameBalance'
 import { DEFAULT_CONTROLS } from './defaults'
+
+// ジャンル未決定時のフォールバック値
+const DEFAULT_BPM = 120
+const BPM_TEMPO_BONUS = 10
+const DEFAULT_GRAVITY = 1600
+const DEFAULT_PLAYER_MAX_HP = 3
+const DEFAULT_COLOR_TOUCH_SCORE = 200
+
 export interface ChoiceRecord {
   versionKey?: string
   choiceId: string
@@ -44,7 +52,7 @@ export function buildRuntimeRules(
   // ── 4. ジャンルデフォルト値 ──────────────────────────────────────────
   const tempo = allParams.tempo ?? 0
   const baseScrollSpeed = BASE_SCROLL_SPEED + tempo * TEMPO_SPEED_BONUS
-  const baseBpm         = 120 + tempo * 10
+  const baseBpm         = DEFAULT_BPM + tempo * BPM_TEMPO_BONUS
   const baseScrollDir   = genreDef?.scrollDirection ?? 'horizontal'
   const baseEnvironment = genreDef?.environment     ?? 'ground'
 
@@ -66,20 +74,20 @@ export function buildRuntimeRules(
   resolvedFeatures.add('movement')
 
   return {
-    controls:        {...DEFAULT_CONTROLS,...(genreDef?.controls ?? {}),},
+    controls:        { ...DEFAULT_CONTROLS, ...(genreDef?.controls ?? {}) },
     hazardColors:    new Set(currentVersion.hazards.colors),
     safeColors:      new Set(currentVersion.hazards.safeColors),
     features:        resolvedFeatures,
     genre:           resolvedGenre,
     scrollSpeed:     rc?.scrollSpeed     ?? baseScrollSpeed,
     bpm:             rc?.bpm             ?? baseBpm,
-    gravity:         rc?.gravity         ?? genreDef?.gravity ?? 1600,  //ハードコードやんけ～吹っ飛ばすぞ
+    gravity:         rc?.gravity         ?? genreDef?.gravity ?? DEFAULT_GRAVITY,
     scrollDirection: resolvedScrollDir,
     environment:     rc?.environment     ?? baseEnvironment,
-    playerMaxHp:     rc?.playerMaxHp     ?? 3,
+    playerMaxHp:     rc?.playerMaxHp     ?? DEFAULT_PLAYER_MAX_HP,
     timescale:       rc?.timescale       ?? 1.0,
     scrollAxis:      resolvedScrollDir === 'vertical' ? 'y' : 'x',
-    colorTouchScore: rc?.colorTouchScore ?? 200,
+    colorTouchScore: rc?.colorTouchScore ?? DEFAULT_COLOR_TOUCH_SCORE,
   }
 }
 

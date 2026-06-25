@@ -70,6 +70,7 @@ export interface SpawnConfig {
   floatMinOffset: number
   floatRandOffset: number
   hazardCullLeft: number
+  hazardCullBelow: number
   itemCullLeft: number
   spawnWeightMaxDist: number
   itemDropChance: number

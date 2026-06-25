@@ -9,6 +9,7 @@
   "floatMinOffset": 80,
   "floatRandOffset": 60,
   "hazardCullLeft": -200,
+  "hazardCullBelow": 200,
   "itemCullLeft": -100,
   "spawnWeightMaxDist": 3000,
   "itemDropChance": 0.50,

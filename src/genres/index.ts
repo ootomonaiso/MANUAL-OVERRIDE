@@ -24,12 +24,12 @@ import { GAME_CONFIG } from '../data/config'
 
 // ── 1. src/genres/*.ts の default export を自動収集して登録 ──────────
 // 単一インスタンスまたは配列（BasePlugin.ts のように複数クラスがある場合）に対応
-const _pluginModules = import.meta.glob<GenrePlugin | GenrePlugin[]>(
+const pluginModules = import.meta.glob<GenrePlugin | GenrePlugin[]>(
   './*.ts',
   { eager: true, import: 'default' },
 )
 
-for (const [path, exported] of Object.entries(_pluginModules)) {
+for (const [path, exported] of Object.entries(pluginModules)) {
   if (path === './index.ts') continue
   if (Array.isArray(exported)) {
     for (const plugin of exported) {

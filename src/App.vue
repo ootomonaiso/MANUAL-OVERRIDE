@@ -85,12 +85,11 @@ function beginSnapshotLoop() {
     // 最初のジャンプまで待つ
     const activePlay = ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
     if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
-      if (gameState.currentManual().choices.length > 0) {
-        scroller.setPaused(true)
-        gameState.triggerUpdate()
-      } else {
-        // 選択肢がない場合はスキップして続行
+      scroller.setPaused(true)
+      if (!gameState.triggerUpdate()) {
+        // カードプールが枯渇した場合はスキップしてゲームを続行
         scroller.markUpdated(snapshot.value.shouldUpdate)
+        scroller.setPaused(false)
       }
     }
 

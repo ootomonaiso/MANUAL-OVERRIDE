@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, toRef } from 'vue'
 import { GENRES } from '../data/genres'
+import { useScoreAnimation } from '../composables/useScoreAnimation'
 
 const props = defineProps<{
   distance: number
@@ -14,32 +15,11 @@ const props = defineProps<{
   features: Set<string>
 }>()
 
-// スコアカウントアップアニメーション
-const displayScore = ref(0)
-let scoreRaf = 0
-watch(() => props.playScore, (next, prev) => {
-  cancelAnimationFrame(scoreRaf)
-  const start = prev
-  const end = next
-  const duration = 180
-  const t0 = performance.now()
-  function tick(t: number) {
-    const p = Math.min(1, (t - t0) / duration)
-    displayScore.value = Math.round(start + (end - start) * p)
-    if (p < 1) scoreRaf = requestAnimationFrame(tick)
-  }
-  scoreRaf = requestAnimationFrame(tick)
-})
+const displayScore = useScoreAnimation(toRef(props, 'playScore'))
 
-const genreLabel = computed(() => GENRES.find(g => g.id === props.genre)?.label ?? '')
-
-const distBar = computed(() => {
-  // 最大距離 4000px を想定
-  return Math.min(100, (props.distance / 4000) * 100)
-})
-
-// コンボカラー
-const comboColor = computed(() => {
+const genreLabel  = computed(() => GENRES.find(g => g.id === props.genre)?.label ?? '')
+const distBar     = computed(() => Math.min(100, (props.distance / 4000) * 100))
+const comboColor  = computed(() => {
   if (props.combo >= 10) return '#00ff41'
   if (props.combo >= 5)  return '#33aa55'
   return '#88ff44'
