@@ -3,7 +3,7 @@ import type { Phase, GenreId, RuntimeRules, FinalScore, ManualVersion, ManualCar
 import { MANUAL_DECK } from '../data/manualDeck'
 import { GENRES } from '../data/genres'
 import { buildRuntimeRules, type ChoiceRecord } from '../domain/ruleEngine'
-import { resolveGenre, accumulateParams, resolveAllGenreProgress } from '../domain/genreResolver'
+import { resolveGenre, accumulateParams, resolveAllGenreProgress, accumulateGenrePoints } from '../domain/genreResolver'
 import { calcThrowScore, calcFinalScore } from '../domain/scoreCalc'
 import type { ThrowResult } from '../domain/types'
 import { soundManager } from '../plugins/SoundManager'
@@ -12,18 +12,6 @@ import { MAX_ROUNDS } from '../data/gameBalance'
 
 // genreParams のジッター幅（±20%）
 const PARAM_JITTER_RANGE = 0.4
-
-/** 選択履歴から genrePoints を集計して返す */
-function accumulateGenrePointsFromHistory(history: ChoiceRecord[]): Record<string, number> {
-  const acc: Record<string, number> = {}
-  for (const h of history) {
-    if (!h.genrePoints) continue
-    for (const [g, pts] of Object.entries(h.genrePoints)) {
-      acc[g] = (acc[g] ?? 0) + pts
-    }
-  }
-  return acc
-}
 
 export function useGameState() {
   const phase = ref<Phase>('title')
@@ -86,14 +74,18 @@ export function useGameState() {
   function _computeGenreWeights(): Record<string, number> {
     if (choiceHistory.length === 0) return {}
     const accumulated = accumulateParams(choiceHistory.map(h => h.genreParams))
-    return resolveAllGenreProgress(accumulated, GENRES, accumulateGenrePointsFromHistory(choiceHistory))
+    return resolveAllGenreProgress(accumulated, GENRES, accumulateGenrePoints(choiceHistory))
   }
 
-  // 説明書更新トリガー: カードをランダムサンプリングして updating フェーズへ
-  function triggerUpdate() {
-    activeCards.value = sampleCards(2, lastShownCardIds.value, _computeGenreWeights())
-    lastShownCardIds.value = new Set(activeCards.value.map(c => c.id))
+  // 説明書更新トリガー: カードをランダムサンプリングして updating フェーズへ。
+  // カードが1枚も取れなかった場合は false を返し、フェーズを変えない。
+  function triggerUpdate(): boolean {
+    const cards = sampleCards(2, lastShownCardIds.value, _computeGenreWeights())
+    if (cards.length === 0) return false
+    activeCards.value = cards
+    lastShownCardIds.value = new Set(cards.map(c => c.id))
     phase.value = 'updating'
+    return true
   }
 
   // プレイヤーがカードを選んだとき
@@ -161,7 +153,7 @@ export function useGameState() {
     // 初回ジャンル収束チェック（最終ラウンド以降は強制確定）
     const accumulated = accumulateParams(choiceHistory.map(h => h.genreParams))
     const selectedIds = choiceHistory.map(h => h.choiceId)
-    const resolved = resolveGenre(accumulated, GENRES, accumulateGenrePointsFromHistory(choiceHistory), selectedIds)
+    const resolved = resolveGenre(accumulated, GENRES, accumulateGenrePoints(choiceHistory), selectedIds)
 
     if (roundCount.value >= MAX_ROUNDS || resolved !== 'base') {
       lockedGenre.value = resolved !== 'base' ? resolved : _forceResolve(accumulated)

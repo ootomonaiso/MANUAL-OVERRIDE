@@ -1,4 +1,4 @@
-import { ref, watch, type Ref } from 'vue'
+import { ref, watch, onUnmounted, type Ref } from 'vue'
 
 const SMALL_DIFF_THRESHOLD = 50   // これ以下の差分はアニメーションせず即更新
 const ANIMATION_DURATION_MS = 600 // カウントアップアニメーションの所要時間
@@ -33,6 +33,8 @@ export function useScoreAnimation(source: Ref<number>) {
     }
     rafId = requestAnimationFrame(tick)
   })
+
+  onUnmounted(() => cancelAnimationFrame(rafId))
 
   return displayScore
 }

@@ -86,7 +86,11 @@ function beginSnapshotLoop() {
     const activePlay = ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
     if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
       scroller.setPaused(true)
-      gameState.triggerUpdate()
+      if (!gameState.triggerUpdate()) {
+        // カードプールが枯渇した場合はスキップしてゲームを続行
+        scroller.markUpdated(snapshot.value.shouldUpdate)
+        scroller.setPaused(false)
+      }
     }
 
     // ゲームオーバー → 投擲フェーズへ自動移行
