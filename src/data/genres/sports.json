@@ -1,0 +1,22 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "sports",
+  "label": "スポーツゲーム",
+  "thresholds": { "speed": 4, "rhythm": 4 },
+  "enableFeatures": ["dash", "time_bonus", "just_input"],
+  "disableFeatures": ["grid_stop", "puzzle_solve", "enemy_hp", "stealth_mode"],
+  "scoreFormula": "combo * 180 + distance * 1.0 + beatHits * 80",
+  "manualReveal": "これはスポーツゲームになりました。記録を更新してください。",
+  "theme": "rhythm",
+  "bgColor": "#001500",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown",
+    "dash": "Shift"
+  },
+  "gravity": 1600,
+  "endingFlavor": "あなたは新記録を打ち立てた。説明書はルールブックになっていた。"
+}

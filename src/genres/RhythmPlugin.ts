@@ -40,3 +40,5 @@ export class RhythmPlugin extends DarkThemePlugin {
     super.drawMidLayer(ctx, offsetX, W, gY)
   }
 }
+
+export default new RhythmPlugin()

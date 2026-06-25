@@ -36,11 +36,11 @@ export function loadFromGlob(
 
   for (const [filePath, mod] of Object.entries(modules)) {
     const raw = (mod as { default?: unknown })?.default ?? mod
-    if (!isManualDeckFile(raw)) {
+    if (!_isManualDeckFile(raw)) {
       console.warn(`[ManualLoader] ${filePath}: 不正なフォーマット。"entries" 配列が必要です。`)
       continue
     }
-    const entries = parseFile(raw, filePath)
+    const entries = _parseFile(raw, filePath)
     for (const [key, ver] of entries) {
       if (deck[key]) {
         console.warn(`[ManualLoader] キー "${key}" が重複しています (${filePath})。上書きします。`)
@@ -63,7 +63,7 @@ export function loadFromGlob(
 export function buildFromFiles(files: ManualDeckFile[]): Record<string, ManualVersion> {
   const deck: Record<string, ManualVersion> = {}
   for (const file of files) {
-    for (const [key, ver] of parseFile(file, file.id)) {
+    for (const [key, ver] of _parseFile(file, file.id)) {
       deck[key] = ver
     }
   }
@@ -92,7 +92,7 @@ export function extendDeck(
 // 内部ヘルパー
 // ──────────────────────────────────────────────────────────────────────
 
-function parseFile(
+function _parseFile(
   file: ManualDeckFile,
   filePath: string,
 ): Array<[string, ManualVersion]> {
@@ -106,14 +106,14 @@ function parseFile(
       continue
     }
 
-    const ver = parseEntry(entry)
+    const ver = _parseEntry(entry)
     result.push([key, ver])
   }
 
   return result
 }
 
-function parseEntry(entry: ManualEntryJSON): ManualVersion {
+function _parseEntry(entry: ManualEntryJSON): ManualVersion {
   const hazards = {
     colors:     entry.hazards?.colors     ?? [...DEFAULT_HAZARDS.colors],
     safeColors: entry.hazards?.safeColors ?? [...DEFAULT_HAZARDS.safeColors],
@@ -169,7 +169,7 @@ function parseEntry(entry: ManualEntryJSON): ManualVersion {
   }
 }
 
-function isManualDeckFile(raw: unknown): raw is ManualDeckFile {
+function _isManualDeckFile(raw: unknown): raw is ManualDeckFile {
   return (
     typeof raw === 'object' &&
     raw !== null &&

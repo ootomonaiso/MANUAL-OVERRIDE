@@ -83,6 +83,11 @@ export function getActiveSystems(active: ReadonlySet<FeatureId>): FeatureSystem[
   return [...seen]
 }
 
+/** 指定IDのジャンルプラグインが登録済みかどうかを返す */
+export function hasGenre(id: GenreId): boolean {
+  return _genres.has(id)
+}
+
 /** 開発用: 登録状況を出力する */
 export function debugPrint(): void {
   console.group('[GameRegistry] 登録状況')

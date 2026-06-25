@@ -1,17 +1,22 @@
-/**
- * game/systems/RhythmFeature.ts
- * 'beat_hazard', 'just_input', 'beat_dash' Feature を担当。
- *
- * 変更点（framework強化）:
- * - beatHits/beatHazardInverted を world 経由で GameStats に書き込む
- * - ビートマーカーの描画を render() に移し sideScroller から分離
- * - onManualUpdated で BPM 変更時に内部状態をリセット
- */
-
 import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
-import { createRhythmState, updateRhythm, evaluateTiming } from './rhythmSystem'
-import type { RhythmState } from './rhythmSystem'
+import type { BeatMarker } from '../entities'
+import { RHYTHM_TUNING } from '../../data/tunables'
+
+// JUST 判定の最低 quality 閾値（これを下回るとボーナスなし）
+const JUST_QUALITY_THRESHOLD = 0.5
+// JUST ボーナスの基準スコア（quality=1.0 時の最大値）
+const JUST_BASE_SCORE = 150
+
+interface RhythmState {
+  beatInterval: number
+  nextBeat: number
+  beatCount: number
+  beatMarkers: BeatMarker[]
+  beatHazardInverted: boolean
+  beatHits: number
+  justWindowMs: number
+}
 
 export class RhythmFeature implements FeatureSystem {
   readonly handles = ['beat_hazard', 'just_input', 'beat_dash'] as const
@@ -19,29 +24,64 @@ export class RhythmFeature implements FeatureSystem {
   private state: RhythmState
 
   constructor(bpm = 120) {
-    this.state = createRhythmState(bpm)
+    this.state = this._fresh(bpm)
   }
 
-  onInit(world: MutableWorld): void {
-    this.state = createRhythmState(world.rules.bpm)
+  private _fresh(bpm: number): RhythmState {
+    const beatInterval = (60 / bpm) * 1000
+    return {
+      beatInterval,
+      nextBeat: beatInterval,
+      beatCount: 0,
+      beatMarkers: [],
+      beatHazardInverted: false,
+      beatHits: 0,
+      justWindowMs: RHYTHM_TUNING.justWindowSec * 1000,
+    }
   }
+
+  onInit(world: MutableWorld): void { this.state = this._fresh(world.rules.bpm) }
+  onManualUpdated(world: MutableWorld): void { this.state = this._fresh(world.rules.bpm) }
 
   update(world: MutableWorld, input: InputSnapshot, dt: number): void {
     const r = world.rules
-    updateRhythm(this.state, dt, r, r.hazardColors, r.safeColors)
+    const s = this.state
+    const dtMs = dt * 1000
 
-    // 反転フラグを GameStats に同期（衝突判定で参照される）
-    world.setBeatHazardInverted(this.state.beatHazardInverted)
+    const hasAnyRhythm = r.features.has('beat_hazard') || r.features.has('just_input') || r.features.has('beat_dash')
+    if (!hasAnyRhythm) return
+
+    // ビートクロックはリズム系フィーチャーが1つでも有効なら常に進める。
+    // beat_hazard が無効でも just_input がビートクロックを参照できるようにするため。
+    s.nextBeat -= dtMs
+    s.beatMarkers.forEach(m => { m.t -= dtMs })
+    s.beatMarkers = s.beatMarkers.filter(m => m.t > 0)
+
+    if (s.nextBeat <= 0) {
+      s.nextBeat += s.beatInterval
+      s.beatCount++
+
+      if (r.features.has('beat_hazard')) {
+        s.beatHazardInverted = s.beatCount % 2 === 0
+        s.beatMarkers.push({ t: 400, x: Math.random() * 600 + 100, strength: 1 })
+      }
+    }
+
+    if (r.features.has('beat_hazard')) {
+      world.setBeatHazardInverted(s.beatHazardInverted)
+    }
 
     if (!r.features.has('just_input')) return
 
     const jumpKey  = r.controls.jump
     const shootKey = r.controls.shoot ?? 'z'
     if (input.justPressed.has(jumpKey) || input.justPressed.has(shootKey)) {
-      const quality = evaluateTiming(this.state, performance.now())
-      if (quality > 0.5) {
-        const bonus = Math.round(150 * quality)
-        this.state.beatHits++
+      const phase = (s.beatInterval - s.nextBeat) % s.beatInterval
+      const dist  = Math.min(phase, s.beatInterval - phase)
+      const quality = dist <= s.justWindowMs ? 1 - dist / s.justWindowMs : 0
+      if (quality > JUST_QUALITY_THRESHOLD) {
+        const bonus = Math.round(JUST_BASE_SCORE * quality)
+        s.beatHits++
         world.addBeatHit()
         world.addScore(bonus)
         const p = world.player
@@ -52,15 +92,12 @@ export class RhythmFeature implements FeatureSystem {
   }
 
   render(ctx: CanvasRenderingContext2D, world: MutableWorld): void {
-    if (!world.rules.features.has('beat_hazard')) return
-    if (this.state.beatMarkers.length === 0) return
+    if (!world.rules.features.has('beat_hazard') || this.state.beatMarkers.length === 0) return
 
     const gY = world.canvas.height - 80
-
     ctx.save()
     for (const m of this.state.beatMarkers) {
-      const alpha = (m.t / 400) * 0.3
-      ctx.globalAlpha = alpha
+      ctx.globalAlpha = (m.t / 400) * 0.3
       ctx.strokeStyle = '#ff00ff'
       ctx.lineWidth = 2
       ctx.setLineDash([6, 4])
@@ -72,9 +109,5 @@ export class RhythmFeature implements FeatureSystem {
     ctx.setLineDash([])
     ctx.globalAlpha = 1
     ctx.restore()
-  }
-
-  onManualUpdated(world: MutableWorld): void {
-    this.state = createRhythmState(world.rules.bpm)
   }
 }

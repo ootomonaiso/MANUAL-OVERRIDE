@@ -62,12 +62,41 @@ export const DISTANCE_ACCEL = {
 } as const
 
 // ─────────────────────────────────────────────────────────────
+// MAX_ROUNDS — ジャンル確定までの最大ラウンド数
+// ─────────────────────────────────────────────────────────────
+export const MAX_ROUNDS = _gb.maxRounds
+
+// ─────────────────────────────────────────────────────────────
+// GENRE_LOCKED_BOOST — ジャンル確定時のスクロール速度ブースト
+// ─────────────────────────────────────────────────────────────
+export const GENRE_LOCKED_BOOST = {
+  mult:       _gb.genreLockedBoostMult,
+  durationMs: _gb.genreLockedBoostDurationMs,
+} as const
+
+// ─────────────────────────────────────────────────────────────
+// DEFAULT_FALLBACK_GENRE — 収束なし時のフォールバックジャンル
+// ─────────────────────────────────────────────────────────────
+export const DEFAULT_FALLBACK_GENRE = _gb.defaultFallbackGenre as string
+
+// ─────────────────────────────────────────────────────────────
 // HAZARD_SPAWN — ハザードスポーン曲線
 // ─────────────────────────────────────────────────────────────
 export const HAZARD_SPAWN = {
   baseInterval: _gb.hazardSpawnBaseInterval,
   minInterval: _gb.hazardSpawnMinInterval,
   decayRate: _gb.hazardSpawnDecayRate,
+} as const
+
+// ─────────────────────────────────────────────────────────────
+// RULE_DEFAULTS — ruleEngine フォールバック値
+// ─────────────────────────────────────────────────────────────
+export const RULE_DEFAULTS = {
+  gravity:         _p.defaultGravity,
+  playerMaxHp:     _p.defaultPlayerMaxHp,
+  bpm:             GAME_CONFIG.rhythm_tuning.defaultBpm,
+  bpmTempoBonus:   GAME_CONFIG.rhythm_tuning.bpmTempoBonus,
+  colorTouchScore: GAME_CONFIG.score.defaultColorTouchScore,
 } as const
 
 // ─────────────────────────────────────────────────────────────

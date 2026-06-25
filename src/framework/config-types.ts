@@ -12,6 +12,8 @@ import type { GenreId, FeatureId, ManualTheme, EnvironmentId, ScrollDirection, C
 
 /** physics.json — プレイヤー物理（旧 PHYSICS + PLAYER_PHYSICS 統合） */
 export interface PhysicsConfig {
+  defaultGravity: number
+  defaultPlayerMaxHp: number
   playerWidth: number
   playerHeight: number
   jumpVelocity: number
@@ -70,6 +72,7 @@ export interface SpawnConfig {
   floatMinOffset: number
   floatRandOffset: number
   hazardCullLeft: number
+  hazardCullBelow: number
   itemCullLeft: number
   spawnWeightMaxDist: number
   itemDropChance: number
@@ -220,6 +223,7 @@ export interface UiConfig {
 
 /** score.json — スコア */
 export interface ScoreConfig {
+  defaultColorTouchScore: number
   distanceScoreRate: number
   longAirScoreRate: number
 }
@@ -251,6 +255,8 @@ export interface BossConfig {
 
 /** rhythm_tuning.json — リズムゲーム */
 export interface RhythmTuningConfig {
+  defaultBpm: number
+  bpmTempoBonus: number
   minBpm: number
   maxBpm: number
   justWindowSec: number
@@ -296,6 +302,37 @@ export interface GameBalanceConfig {
   hazardSpawnDecayRate: number
   distanceAccelMaxBonus: number
   distanceAccelFullDist: number
+  maxRounds: number
+  genreLockedBoostMult: number
+  genreLockedBoostDurationMs: number
+  defaultFallbackGenre: string
+}
+
+/**
+ * ジャンルのビジュアル設定。
+ * TSプラグイン（XxxPlugin.ts）を書かなくても、この設定だけでCanvas描画が決まる。
+ *
+ * template: ベースとなるビジュアルスタイル（省略時はthemeから自動選択）
+ *   - 'runner'  → 横スクロール・地上風景
+ *   - 'space'   → 宇宙・SF（STG系）
+ *   - 'dungeon' → 暗い洞窟・RPG系
+ *   - 'rhythm'  → ネオン・音楽系
+ *   - 'puzzle'  → 明るい・パズル系
+ *   - 'aquatic' → 水中・海洋系
+ */
+export interface GenreVisualConfig {
+  template?: 'runner' | 'space' | 'dungeon' | 'rhythm' | 'puzzle' | 'aquatic'
+  skyColors?: [string, string]
+  groundColor?: string
+  farLayerColor?: string
+  midLayerColor?: string
+  starColor?: string
+  palette?: {
+    danger?: string
+    dangerGlow?: string
+    safe?: string
+    safeGlow?: string
+  }
 }
 
 /** genres.json — ジャンル定義テーブル */
@@ -314,10 +351,22 @@ export interface GenreDefJSON {
   scrollDirection?: string
   gravity?: number
   controls?: Partial<Controls>
+  /** TSプラグインなしでビジュアルをカスタマイズする場合に指定。省略時はthemeから自動決定。 */
+  visual?: GenreVisualConfig
+}
+
+export interface ThemeColorDef {
+  accent: string
+  border: string
+  hint?: string
+  font?: string
+  bg?: string
+  glow?: string
 }
 
 export interface GenresConfig {
   genres: GenreDefJSON[]
+  themeColors?: Record<string, ThemeColorDef>
 }
 
 /** GameConfigMap: セクション名 → 設定オブジェクトのマッピング */

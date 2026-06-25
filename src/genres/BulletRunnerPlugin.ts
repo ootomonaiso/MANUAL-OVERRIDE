@@ -1,4 +1,4 @@
-/**
+﻿/**
  * genres/BulletRunnerPlugin.ts
  * 'bullet_runner' ジャンル（弾幕ランナー）のプラグイン。
  *
@@ -177,16 +177,6 @@ export class BulletRunnerPlugin extends GenrePluginBase {
     ctx.beginPath(); ctx.moveTo(w * 0.72 + legSwing * 0.4 - 10, h * 0.98 - 2); ctx.lineTo(w * 0.72 + legSwing * 0.4, h * 0.98 - 2); ctx.stroke()
     ctx.shadowBlur = 0
   }
-
-  private _roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
-    ctx.beginPath()
-    ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y)
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r)
-    ctx.lineTo(x + w, y + h - r)
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
-    ctx.lineTo(x + r, y + h)
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r)
-    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y)
-    ctx.closePath()
-  }
 }
+
+export default new BulletRunnerPlugin()

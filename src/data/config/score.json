@@ -1,6 +1,7 @@
 {
   "$comment": "スコア",
   "section": "score",
+  "defaultColorTouchScore": 200,
   "distanceScoreRate": 0.28,
   "longAirScoreRate": 1.6
 }

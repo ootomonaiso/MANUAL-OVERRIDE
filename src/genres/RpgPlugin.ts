@@ -1,4 +1,4 @@
-/**
+﻿/**
  * genres/RpgPlugin.ts
  * 'rpg' ジャンル（森/中世ファンタジー）のプラグイン。
  */
@@ -73,16 +73,6 @@ export class RpgPlugin extends GenrePluginBase {
     ctx.lineTo(w * 0.85, h * 0.85)
     ctx.stroke()
   }
-
-  private _roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
-    ctx.beginPath()
-    ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y)
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r)
-    ctx.lineTo(x + w, y + h - r)
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
-    ctx.lineTo(x + r, y + h)
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r)
-    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y)
-    ctx.closePath()
-  }
 }
+
+export default new RpgPlugin()

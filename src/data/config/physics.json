@@ -1,6 +1,8 @@
 {
   "$comment": "プレイヤー物理パラメータ (旧 PHYSICS + PLAYER_PHYSICS 統合)",
   "section": "physics",
+  "defaultGravity": 1600,
+  "defaultPlayerMaxHp": 3,
   "playerWidth": 36,
   "playerHeight": 52,
   "jumpVelocity": -720,

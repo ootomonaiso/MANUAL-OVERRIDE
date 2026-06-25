@@ -22,7 +22,7 @@ export function loadConfigFromGlob(
 
   for (const [filePath, mod] of Object.entries(modules)) {
     const raw = (mod as { default?: unknown })?.default ?? mod
-    if (!isConfigFile(raw)) {
+    if (!_isConfigFile(raw)) {
       console.warn(`[ConfigLoader] ${filePath}: "section" フィールドが見つかりません。スキップします。`)
       continue
     }
@@ -36,7 +36,7 @@ export function loadConfigFromGlob(
   return partial as GameConfigMap
 }
 
-function isConfigFile(raw: unknown): raw is { section: string } {
+function _isConfigFile(raw: unknown): raw is { section: string } {
   return (
     typeof raw === 'object' &&
     raw !== null &&

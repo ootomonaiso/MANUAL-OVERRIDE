@@ -106,6 +106,28 @@ export interface Choice {
   genrePoints?: Record<string, number>
 }
 
+/**
+ * 説明書カード（案2: フラットランダムプール方式）
+ * ツリー構造の `next` ポインタを持たず、単体で追加可能な独立したカード。
+ * 各ラウンドでプールからランダムに2枚抽出し、プレイヤーが選択する。
+ */
+export interface ManualCard {
+  id: string
+  label: string
+  manualText: string[]
+  genreParams?: GenreParams
+  paramMultiplier?: number
+  genrePoints?: Record<string, number>
+  weight?: number
+  hazards?: { colors: string[]; safeColors: string[] }
+  runtimeConfig?: ManualRuntimeConfig
+  hint?: string
+  /** このカードが向かうジャンルID群。選択履歴の傾向と合うとサンプリング重みが上がる */
+  genreAffinity?: string[]
+  /** 矛盾するカードID群。選択時、対象カードの説明書テキストが取り消し線になる */
+  conflictsWith?: string[]
+}
+
 /** 説明書バージョンが runtime に適用できる上書き設定 */
 export interface ManualRuntimeConfig {
   /** スクロール速度 px/s（RuntimeRules.scrollSpeed を上書き） */
@@ -189,6 +211,20 @@ export interface GenreDef {
   gravity?: number
   /** エンディングのフレーバーテキスト（EndingPanel に表示） */
   endingFlavor?: string
+  /** BGM設定（音声ファイルが存在しない場合はスキップされる） */
+  bgm?: BgmConfig
+}
+
+/** BGM再生設定 */
+export interface BgmConfig {
+  /** 音源ファイルのパス（public/ からの相対パス。例: "bgm/stg.ogg"） */
+  src: string
+  /** ループ再生するか（省略時: true） */
+  loop?: boolean
+  /** 音量 0〜1（省略時: 0.5） */
+  volume?: number
+  /** フェードイン時間 ms（省略時: 1200） */
+  fadeInMs?: number
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -1,10 +1,11 @@
 import type { ManualVersion, RuntimeRules, GenreParams, GenreParam, FeatureId, GenreId } from './types'
 import { accumulateParams, accumulateGenrePoints, resolveGenre, resolveFeaturesForGenre } from './genreResolver'
 import { GENRES } from '../data/genres'
-import { BASE_SCROLL_SPEED, TEMPO_SPEED_BONUS } from '../data/gameBalance'
+import { BASE_SCROLL_SPEED, TEMPO_SPEED_BONUS, RULE_DEFAULTS } from '../data/gameBalance'
 import { DEFAULT_CONTROLS } from './defaults'
+
 export interface ChoiceRecord {
-  versionKey: string
+  versionKey?: string
   choiceId: string
   genreParams: GenreParams
   /** genreParams への乗数（デフォルト 1.0） */
@@ -44,7 +45,7 @@ export function buildRuntimeRules(
   // ── 4. ジャンルデフォルト値 ──────────────────────────────────────────
   const tempo = allParams.tempo ?? 0
   const baseScrollSpeed = BASE_SCROLL_SPEED + tempo * TEMPO_SPEED_BONUS
-  const baseBpm         = 120 + tempo * 10
+  const baseBpm         = RULE_DEFAULTS.bpm + tempo * RULE_DEFAULTS.bpmTempoBonus
   const baseScrollDir   = genreDef?.scrollDirection ?? 'horizontal'
   const baseEnvironment = genreDef?.environment     ?? 'ground'
 
@@ -66,20 +67,20 @@ export function buildRuntimeRules(
   resolvedFeatures.add('movement')
 
   return {
-    controls:        {...DEFAULT_CONTROLS,...(genreDef?.controls ?? {}),},
+    controls:        { ...DEFAULT_CONTROLS, ...(genreDef?.controls ?? {}) },
     hazardColors:    new Set(currentVersion.hazards.colors),
     safeColors:      new Set(currentVersion.hazards.safeColors),
     features:        resolvedFeatures,
     genre:           resolvedGenre,
     scrollSpeed:     rc?.scrollSpeed     ?? baseScrollSpeed,
     bpm:             rc?.bpm             ?? baseBpm,
-    gravity:         rc?.gravity         ?? genreDef?.gravity ?? 1600,  //ハードコードやんけ～吹っ飛ばすぞ
+    gravity:         rc?.gravity         ?? genreDef?.gravity ?? RULE_DEFAULTS.gravity,
     scrollDirection: resolvedScrollDir,
     environment:     rc?.environment     ?? baseEnvironment,
-    playerMaxHp:     rc?.playerMaxHp     ?? 3,
+    playerMaxHp:     rc?.playerMaxHp     ?? RULE_DEFAULTS.playerMaxHp,
     timescale:       rc?.timescale       ?? 1.0,
     scrollAxis:      resolvedScrollDir === 'vertical' ? 'y' : 'x',
-    colorTouchScore: rc?.colorTouchScore ?? 200,
+    colorTouchScore: rc?.colorTouchScore ?? RULE_DEFAULTS.colorTouchScore,
   }
 }
 

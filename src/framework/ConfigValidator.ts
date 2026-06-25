@@ -96,6 +96,7 @@ const RANGE_CHECKS: Array<{
   { section: 'game_balance', field: 'scoreRatioPlay', min: 0, max: 1 },
   { section: 'game_balance', field: 'scoreRatioThrow', min: 0, max: 1 },
   { section: 'game_balance', field: 'baseScrollSpeed', min: 0 },
+  { section: 'game_balance', field: 'maxRounds', min: 1 },
 ]
 
 export function validateGameConfig(config: GameConfigMap): ConfigValidationResult {

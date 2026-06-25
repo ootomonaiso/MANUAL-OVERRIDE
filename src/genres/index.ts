@@ -1,54 +1,63 @@
 /**
  * genres/index.ts
- * 全ジャンルプラグインを GameRegistry に一括登録する。
+ * src/genres/*.ts を自動検出し、さらにTSプラグインが存在しないJSON定義ジャンルに
+ * 自動フォールバックプラグインを生成して GameRegistry に登録する。
  *
- * ── 新しいジャンルを追加するには ──────────────────────────────────
+ * ── TSプラグインを追加するには ────────────────────────────────────
  * 1. src/genres/ に MyGenrePlugin.ts を作成（GenrePlugin を実装）
- * 2. このファイルに以下の2行を追加するだけ:
- *    import { MyGenrePlugin } from './MyGenrePlugin'
- *    registerGenre(new MyGenrePlugin())
- * ──────────────────────────────────────────────────────────────────
+ * 2. ファイルの末尾に以下の1行を追加するだけ:
+ *    export default new MyGenrePlugin()
+ * このファイルを編集する必要はない。
+ *
+ * ── JSONのみでジャンルを追加するには（TSコード不要）────────────────
+ * src/data/genres/my_genre.json を追加するだけ。
+ * visual.template または theme からビジュアルが自動決定される。
+ * ────────────────────────────────────────────────────────────────
  */
 
-import { registerGenre } from '../engine/GameRegistry'
-import type { GenrePlugin as EngineGenrePlugin } from '../engine/GenrePlugin'
-import { BasePlugin, RunnerPlugin }   from './BasePlugin'
-import { StgPlugin }                  from './StgPlugin'
-import { RpgPlugin }                  from './RpgPlugin'
-import { RhythmPlugin }               from './RhythmPlugin'
-import { PuzzlePlugin }               from './PuzzlePlugin'
-import { AerialStgPlugin }            from './AerialStgPlugin'
-import { SurvivalPlugin }             from './SurvivalPlugin'
-import { BulletRunnerPlugin }         from './BulletRunnerPlugin'
-import { PlatformerPlugin }           from './PlatformerPlugin'
-import { RacingPlugin }               from './RacingPlugin'
-import { ArenaPlugin }                from './ArenaPlugin'
-import { AquaticPlugin }              from './AquaticPlugin'
-import { DungeonPlugin }              from './DungeonPlugin'
-import { HackSlashPlugin }            from './HackSlashPlugin'
+import { registerGenre, hasGenre } from '../engine/GameRegistry'
+import type { GenrePlugin } from '../engine/GenrePlugin'
+import type { GenreId } from '../domain/types'
 import { pluginManager } from '../plugins/PluginManager'
 import { JSONGenrePlugin } from '../plugins/JSONGenrePlugin'
+import { GAME_CONFIG } from '../data/config'
 
-registerGenre(new BasePlugin())
-registerGenre(new RunnerPlugin())
-registerGenre(new StgPlugin())
-registerGenre(new RpgPlugin())
-registerGenre(new RhythmPlugin())
-registerGenre(new PuzzlePlugin())
-registerGenre(new AerialStgPlugin())
-registerGenre(new SurvivalPlugin())
-registerGenre(new BulletRunnerPlugin())
-registerGenre(new PlatformerPlugin())
-registerGenre(new RacingPlugin())
-registerGenre(new ArenaPlugin())
-registerGenre(new AquaticPlugin())
-registerGenre(new DungeonPlugin())
-registerGenre(new HackSlashPlugin())
+// ── 1. src/genres/*.ts の default export を自動収集して登録 ──────────
+// 単一インスタンスまたは配列（BasePlugin.ts のように複数クラスがある場合）に対応
+const pluginModules = import.meta.glob<GenrePlugin | GenrePlugin[]>(
+  './*.ts',
+  { eager: true, import: 'default' },
+)
 
-// Load user-installed genre plugins
+for (const [path, exported] of Object.entries(pluginModules)) {
+  if (path === './index.ts') continue
+  if (Array.isArray(exported)) {
+    for (const plugin of exported) {
+      if (plugin?.id) registerGenre(plugin)
+    }
+  } else if (exported?.id) {
+    registerGenre(exported)
+  }
+}
+
+// ── 2. TSプラグインが存在しないJSON定義ジャンルに自動フォールバックを登録 ──
+// これにより bullet_hell / horror / idle など TS なしのジャンルも正しく描画される
+for (const def of GAME_CONFIG.genres.genres) {
+  if (hasGenre(def.id as GenreId)) continue   // TSプラグインが登録済みならスキップ
+  registerGenre(new JSONGenrePlugin({
+    id:     def.id,
+    theme:  def.theme,
+    visual: def.visual,
+  }))
+}
+
+// ── 3. ユーザーがインストールしたプラグイン（localStorage 経由）────────
 const installedPlugins = pluginManager.loadAll()
 for (const plugin of installedPlugins) {
   if (plugin.type === 'genre') {
-    registerGenre(new JSONGenrePlugin(plugin) as EngineGenrePlugin)
+    registerGenre(new JSONGenrePlugin({
+      id:    plugin.id,
+      visual: plugin.visual,
+    }))
   }
 }

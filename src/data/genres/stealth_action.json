@@ -1,0 +1,22 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "stealth_action",
+  "label": "ステルスアクション",
+  "thresholds": { "stealth": 5 },
+  "enableFeatures": ["stealth_mode", "slow_precise"],
+  "disableFeatures": ["shoot", "auto_run", "beat_hazard", "boss"],
+  "scoreFormula": "stealthBonus * 0.5 + survivedSec * 10 + distance * 0.4",
+  "manualReveal": "これはステルスアクションになりました。見つからないでください。",
+  "theme": "plain",
+  "bgColor": "#050505",
+  "environment": "city",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown"
+  },
+  "gravity": 1600,
+  "endingFlavor": "あなたは気配を消した。説明書も読まれなかった。"
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "aerial_stg",
+  "label": "縦スクロールシューティング",
+  "thresholds": { "vertical": 4, "range": 4, "enemy": 4 },
+  "enableFeatures": ["shoot", "vertical_scroll", "enemy_hp", "spread_shot"],
+  "disableFeatures": ["grid_stop", "puzzle_solve", "auto_run"],
+  "scoreFormula": "kills * 130 + combo * 90 + survivedSec * 3",
+  "manualReveal": "これは縦スクロールシューティングになりました。上を目指してください。",
+  "theme": "stg",
+  "bgColor": "#000015",
+  "environment": "sky",
+  "scrollDirection": "vertical",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown",
+    "shoot": "z"
+  },
+  "gravity": 1600,
+  "endingFlavor": "あなたは空へと昇った。説明書は地上に落ちていった。"
+}

@@ -1,6 +1,8 @@
 {
   "$comment": "リズムゲーム",
   "section": "rhythm_tuning",
+  "defaultBpm": 120,
+  "bpmTempoBonus": 10,
   "minBpm": 80,
   "maxBpm": 200,
   "justWindowSec": 0.075,

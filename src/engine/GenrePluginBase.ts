@@ -33,6 +33,19 @@ export abstract class GenrePluginBase implements GenrePlugin {
   abstract drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void
   abstract drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, onGround: boolean, runCycle: number): void
 
+  // ─── 共通描画ユーティリティ ──────────────────────────────────────
+  protected _roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+    ctx.beginPath()
+    ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y)
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r)
+    ctx.lineTo(x + w, y + h - r)
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
+    ctx.lineTo(x + r, y + h)
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r)
+    ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y)
+    ctx.closePath()
+  }
+
   // ─── オプショナルフック（no-op デフォルト）───────────────────────
   onGenreLocked(_world: MutableWorld): void { }
   onUpdate(_world: MutableWorld, _dt: number): void { }

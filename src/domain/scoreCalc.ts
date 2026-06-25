@@ -25,23 +25,23 @@ export function evalScoreFormula(formula: string, vars: ScoreVars): number {
     const msg = `不正なスコア式 "${formula}" — デフォルト式で代替`
     console.warn('[scoreCalc]', msg)
     _lastFormulaError = msg
-    try { return parseExpr(DEFAULT_FORMULA, vars) } catch { return 0 }
+    try { return _parseExpr(DEFAULT_FORMULA, vars) } catch { return 0 }
   }
   // Function ではなく手書きパーサで評価（eval 禁止）
   try {
-    return parseExpr(formula.trim(), vars)
+    return _parseExpr(formula.trim(), vars)
   } catch (e) {
     const msg = `スコア式パースエラー "${formula}" — デフォルト式で代替`
     console.warn('[scoreCalc]', msg, e)
     _lastFormulaError = msg
-    try { return parseExpr(DEFAULT_FORMULA, vars) } catch { return 0 }
+    try { return _parseExpr(DEFAULT_FORMULA, vars) } catch { return 0 }
   }
 }
 
 // ──────────────────────────────────────────────────────────────────────
 // 式パーサ（四則演算 + 括弧 + 変数）
 // ──────────────────────────────────────────────────────────────────────
-function parseExpr(src: string, vars: ScoreVars): number {
+function _parseExpr(src: string, vars: ScoreVars): number {
   let pos = 0
 
   const peek = () => src[pos]

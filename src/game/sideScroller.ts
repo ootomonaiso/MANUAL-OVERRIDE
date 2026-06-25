@@ -1,5 +1,5 @@
 import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect } from '../domain/types'
-import type { MutableWorld, InputSnapshot, GameStats } from '../engine/types'
+import type { MutableWorld, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup } from './entities'
 import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL } from '../data/gameBalance'
 import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS } from '../data/tunables'
@@ -9,6 +9,8 @@ import { soundManager } from '../plugins/SoundManager'
 import { evalScoreFormula, getLastFormulaError } from '../domain/scoreCalc'
 import { evaluateLearningRules, describeEffect } from '../domain/LearningSystem'
 import { GENRES } from '../data/genres'
+import { InputManager } from './InputManager'
+import { ParticleSystem } from './ParticleSystem'
 // ジャンルプラグインとフィーチャーシステムを一括登録
 import '../genres/index'
 import '../game/systems/index'
@@ -37,7 +39,20 @@ export interface GameSnapshot {
   scoreFormulaError: string | null
 }
 
-type Particle = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string; size: number }
+// UPDATE_DISTANCES を超えた後の無限更新間隔（px）
+const INFINITE_UPDATE_INTERVAL = 1500
+
+// ループ内 dt のクランプ上限（フレーム落ち時に物理が発散するのを防ぐ）
+const MAX_DELTA_SEC = 0.05
+
+// プレイヤー初期 X 座標
+const PLAYER_INITIAL_X = 140
+
+// 初回スポーン距離（コンストラクタ時点のデフォルト）
+const INITIAL_SPAWN_DIST = 480
+
+// LearningSystem の最初のチェックまでの遅延（秒）
+const INITIAL_LEARNING_DELAY_SEC = 0.5
 
 // ──────────────────────────────────────────────────────────────────────
 // SideScroller — Canvas ゲームエンジン本体
@@ -72,15 +87,13 @@ export class SideScroller {
   private cameraX = 0
 
   // スポーン
-  private nextSpawnDist = 480
+  private nextSpawnDist = INITIAL_SPAWN_DIST
   private updateTriggeredFor = new Set<number>()
   private readonly MAX_TRIGGER_CACHE = 256  // updateTriggeredFor の最大キャッシュ数
 
-  // ─── 入力 ───────────────────────────────────────────────────────
-  private keys = new Set<string>()
-  private prevKeys = new Set<string>()
-  private justPressed = new Set<string>()
-  private justReleased = new Set<string>()
+  // ─── 入力・パーティクル ──────────────────────────────────────────
+  private input = new InputManager()
+  private particles = new ParticleSystem()
 
   // ジャンプ改善
   private coyoteTimer = 0       // 地面を離れてからのフレーム数
@@ -88,10 +101,10 @@ export class SideScroller {
   private jumpHeld = false      // ジャンプキー押しっぱなし判定
 
   // ─── 演出 ────────────────────────────────────────────────────────
-  private particles: Particle[] = []
   private scorePopups: ScorePopup[] = []
   private shakeIntensity = 0
-  private shakeX = 0; private shakeY = 0
+  private shakeX = 0
+  private shakeY = 0
 
   // 死亡演出
   private deathTimer = 0
@@ -127,52 +140,16 @@ export class SideScroller {
   private _pendingLearningMsg: string | null = null
   private _pendingFormulaError: string | null = null
 
-  // イベントハンドラ（解除用に保持）
-  private _onKeyDown: (e: KeyboardEvent) => void
-  private _onKeyUp: (e: KeyboardEvent) => void
-
   constructor(canvas: HTMLCanvasElement, rules: RuntimeRules) {
     this.canvas = canvas
     this.ctx = canvas.getContext('2d')!
     this.rules = rules
 
     const gY = canvas.height - 80
-    this.player = new Player(140, gY)
+    this.player = new Player(PLAYER_INITIAL_X, gY)
     this.player.jumpsLeft = rules.features.has('double_jump') ? 2 : 1
 
-    // イベントハンドラ登録（解除できるよう名前付き関数で保持）
-    this._onKeyDown = (e: KeyboardEvent) => {
-      const key = this._normalizeKey(e)
-      if (key === null) return
-      this.keys.add(key)
-      // ゲームで使うキーのみ preventDefault（小文字正規化後と比較）
-      const c = this.rules.controls
-      const gameKeys = [
-        c.jump.toLowerCase(),
-        c.moveLeft.toLowerCase(),
-        c.moveRight.toLowerCase(),
-        (c.shoot ?? 'z').toLowerCase(),
-        c.moveUp?.toLowerCase(),
-        c.moveDown?.toLowerCase(),
-      ].filter(Boolean) as string[]
-      if (gameKeys.includes(key)) {
-        e.preventDefault()
-      }
-    }
-    this._onKeyUp = (e: KeyboardEvent) => {
-      const key = this._normalizeKey(e)
-      if (key !== null) this.keys.delete(key)
-    }
-    window.addEventListener('keydown', this._onKeyDown)
-    window.addEventListener('keyup', this._onKeyUp)
-  }
-
-  // ─── キー正規化 ──────────────────────────────────────────────────
-  private _normalizeKey(e: KeyboardEvent): string | null {
-    // IME変換中キーは無視（日本語環境での誤動作防止）
-    if (e.isComposing || e.key === 'Process') return null
-    if (e.key === ' ') return 'space'
-    return e.key.toLowerCase()
+    this.input.setGameKeys(rules.controls)
   }
 
   // ルール更新（ManualVersion があれば learningRules を同期）
@@ -190,6 +167,7 @@ export class SideScroller {
     }
 
     this.rules = rules
+    this.input.setGameKeys(rules.controls)
     if (rules.features.has('double_jump')) {
       this.player.jumpsLeft = Math.max(this.player.jumpsLeft, 2)
     }
@@ -203,7 +181,7 @@ export class SideScroller {
     // ManualVersion から learningRules を取得
     if (manual?.learningRules) {
       this.learningRules = JSON.parse(JSON.stringify(manual.learningRules))
-      this.learningCheckTimer = 0.5  // 0.5秒後に最初のチェック
+      this.learningCheckTimer = INITIAL_LEARNING_DELAY_SEC
     } else {
       this.learningRules = null
     }
@@ -227,8 +205,7 @@ export class SideScroller {
 
   stop(): void {
     cancelAnimationFrame(this.rafId)
-    window.removeEventListener('keydown', this._onKeyDown)
-    window.removeEventListener('keyup', this._onKeyUp)
+    this.input.dispose()
   }
 
   setPaused(v: boolean): void { this.paused = v }
@@ -244,13 +221,11 @@ export class SideScroller {
     let pending = UPDATE_DISTANCES.findIndex(
       (d, i) => this.distance >= d && !this.updateTriggeredFor.has(i)
     )
-
-    // UPDATE_DISTANCES の範囲外でも無限に更新を続ける（1500px 間隔）
+    // UPDATE_DISTANCES の範囲外でも無限に更新を続ける
     if (pending < 0) {
       const lastDist = UPDATE_DISTANCES[UPDATE_DISTANCES.length - 1]
-      const infiniteInterval = 1500
       if (this.distance >= lastDist) {
-        const extraIdx = UPDATE_DISTANCES.length + Math.floor((this.distance - lastDist) / infiniteInterval)
+        const extraIdx = UPDATE_DISTANCES.length + Math.floor((this.distance - lastDist) / INFINITE_UPDATE_INTERVAL)
         if (!this.updateTriggeredFor.has(extraIdx)) {
           pending = extraIdx
         }
@@ -331,7 +306,7 @@ export class SideScroller {
 
   // ─── メインループ ────────────────────────────────────────────────
   private _loop = (ts: number) => {
-    const rawDt = Math.min((ts - this.lastTime) / 1000, 0.05)
+    const rawDt = Math.min((ts - this.lastTime) / 1000, MAX_DELTA_SEC)
     this.lastTime = ts
     this._frameWorld = null  // フレームキャッシュを毎フレーム破棄
 
@@ -342,7 +317,7 @@ export class SideScroller {
     }
     const dt = rawDt * this._timescaleScale
 
-    this._computeInputEdges()
+    this.input.tick()
 
     if (!this.paused) {
       if (!this.dead) {
@@ -354,19 +329,7 @@ export class SideScroller {
 
     this._render()
 
-    this.prevKeys = new Set(this.keys)
     this.rafId = requestAnimationFrame(this._loop)
-  }
-
-  private _computeInputEdges(): void {
-    this.justPressed.clear()
-    this.justReleased.clear()
-    for (const k of this.keys) {
-      if (!this.prevKeys.has(k)) this.justPressed.add(k)
-    }
-    for (const k of this.prevKeys) {
-      if (!this.keys.has(k)) this.justReleased.add(k)
-    }
   }
 
   // ─── 更新 ────────────────────────────────────────────────────────
@@ -397,10 +360,7 @@ export class SideScroller {
       if (now >= until) {
         const orig = this._originalKeys[action]
         if (orig !== undefined) {
-          if (action === 'jump')  this.rules.controls.jump     = orig
-          if (action === 'left')  this.rules.controls.moveLeft = orig
-          if (action === 'right') this.rules.controls.moveRight = orig
-          if (action === 'shoot') this.rules.controls.shoot    = orig
+          this._setControl(action, orig)
           delete this._originalKeys[action]
         }
         this._changeKeyUntil.delete(action)
@@ -408,22 +368,11 @@ export class SideScroller {
     }
 
     const r = this.rules
-    const p = this.player
-    const W = this.canvas.width
     const H = this.canvas.height
-    const gY = H - BACKGROUND.groundHeight
-
-    // 全キーを小文字に正規化（_normalizeKey と一致させる）
-    const jumpKey  = r.controls.jump.toLowerCase()
-    const leftKey  = r.controls.moveLeft.toLowerCase()
-    const rightKey = r.controls.moveRight.toLowerCase()
-    const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
-    const dashKey  = (r.controls.dash ?? 'shift').toLowerCase()
-
+    const dashKey  = r.controls.dash ?? 'Shift'
     const isVertical = r.scrollAxis === 'y'
 
-    // ─── ダッシュ入力統計 ─────────────────────────────────────────────
-    if (r.features.has('dash') && this.justPressed.has(dashKey)) {
+    if (r.features.has('dash') && this.input.justPressed.has(dashKey)) {
       this.stats.dashes = (this.stats.dashes ?? 0) + 1
     }
 
@@ -432,246 +381,21 @@ export class SideScroller {
     const effectiveScrollSpeed = r.scrollSpeed * distanceAccelFactor
 
     // ─── Pre-physics: 移動 Feature が vx をセット ────────────────────
-    {
-      const preWorld = this._getWorld()
-      const preInput: InputSnapshot = {
-        keys: this.keys,
-        justPressed: this.justPressed,
-        justReleased: this.justReleased,
-      }
-      for (const sys of getActiveSystems(r.features)) {
-        sys.preUpdate?.(preWorld, preInput, dt)
-      }
+    const inputSnap = this.input.snapshot()
+    for (const sys of getActiveSystems(r.features)) {
+      sys.preUpdate?.(this._getWorld(), inputSnap, dt)
     }
 
-    if (isVertical) {
-      // ════════════════════════════════════════════════════════
-      // 縦スクロールモード
-      // 障害物が上から降ってくる。プレイヤーは画面下部を左右に移動。
-      // ════════════════════════════════════════════════════════
-      // vx は MovementFeature.preUpdate() がセット済み
-      if (this.keys.has(leftKey))  this.stats.moveLeft++
-      if (this.keys.has(rightKey)) this.stats.moveRight++
-      p.x += p.vx * dt
-      p.x = Math.max(0, Math.min(W - p.w, p.x))
-
-      // 縦モード: 重力なし。moveUp/moveDown で自由移動（MovementFeature が p.vy をセット済み）
-      p.y = Math.max(0, Math.min(H - p.h, p.y + p.vy * dt))
-      p.onGround = false
-      this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
-
-      // スクロール距離（時間経過でカウント）
-      this.distance += effectiveScrollSpeed * dt
-      this.cameraX = 0  // 横カメラは動かない
-
-      // ─── ハザード降下 ─────────────────────────────────────
-      for (const h of this.hazards) {
-        h.y += effectiveScrollSpeed * dt
-        h.pulse += dt * VFX.hazardPulseRate
-      }
-      this.hazards = this.hazards.filter(h => h.y < H + 200)
-
-      // ─── アイテム降下（縦モード） ─────────────────────────
-      for (const item of this.items) {
-        item.y += effectiveScrollSpeed * dt
-      }
-
-      // ─── スポーン（上端から） ─────────────────────────────
-      if (this.distance >= this.nextSpawnDist) {
-        this._spawnHazard()
-        const interval = HAZARD_SPAWN.baseInterval *
-          Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
-        const ms = Math.max(HAZARD_SPAWN.minInterval, interval)
-        this.nextSpawnDist += (ms / 1000) * effectiveScrollSpeed
-      }
-
-      // ─── 衝突判定（縦モード: 両者スクリーン座標） ───────────
-      if (p.invincible > 0) p.invincible -= dt
-      if (p.invincible <= 0) {
-        for (let i = this.hazards.length - 1; i >= 0; i--) {
-          const h = this.hazards[i]
-          if (!rectsOverlap(p.rect, h.rect)) continue
-
-          if (!h.isSafe) {
-            this._onPlayerHit(p)
-            if (this.dead) return
-          } else {
-            for (const sys of getActiveSystems(r.features)) {
-              sys.onSafeHazardTouch?.(this._getWorld(), h, h.x)
-            }
-          }
-        }
-      }
-
-      // シュート入力統計のみここで取得（shoot 処理は feature system に委譲）
-      if (this.justPressed.has(shootKey)) this.stats.shots++
-
-    } else {
-      // ════════════════════════════════════════════════════════
-      // 横スクロールモード（従来）
-      // ════════════════════════════════════════════════════════
-      // vx は MovementFeature.preUpdate() がセット済み
-      if (!r.features.has('auto_run') && this.keys.has(leftKey))  this.stats.moveLeft++
-      if ( r.features.has('auto_run') || this.keys.has(rightKey)) this.stats.moveRight++
-      if (p.onGround) {
-        this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
-      }
-
-      // ─── ジャンプ ─────────────────────────────────────────
-      const isDouble         = r.features.has('double_jump')
-      // LearningSystem による 'jump' アクション無効化チェック
-      const jumpDisabled     = this._isActionDisabled('jump')
-      const jumpJustPressed  = !jumpDisabled && this.justPressed.has(jumpKey)
-      const jumpJustReleased = this.justReleased.has(jumpKey)
-
-      if (p.onGround) {
-        this.coyoteTimer = PLAYER_PHYSICS.coyoteFrames
-      } else if (this.coyoteTimer > 0) {
-        this.coyoteTimer--
-      }
-      if (jumpJustPressed) {
-        this.jumpBufferTimer = PLAYER_PHYSICS.jumpBufferFrames
-      } else if (this.jumpBufferTimer > 0) {
-        this.jumpBufferTimer--
-      }
-
-      const canJumpCoyote = this.coyoteTimer > 0 && p.jumpsLeft === (isDouble ? 2 : 1)
-      const canJumpDouble = isDouble && p.jumpsLeft > 0
-      if (this.jumpBufferTimer > 0 && (canJumpCoyote || (canJumpDouble && !p.onGround) || p.onGround)) {
-        if (p.jumpsLeft > 0 || this.coyoteTimer > 0) {
-          p.vy = PLAYER_PHYSICS.jumpVelocity
-          p.jumpsLeft = Math.max(0, p.jumpsLeft - 1)
-          p.onGround = false
-          this.jumpHeld = true
-          this.jumpBufferTimer = 0
-          this.coyoteTimer = 0
-          this.stats.jumps++
-          this.firstJumpDone = true
-          this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
-          soundManager.onJump()
-          // Hook: onPlayerJump
-          {
-            const jw = this._getWorld()
-            getGenre(r.genre).onPlayerJump?.(jw)
-            for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
-          }
-        }
-      }
-      if (jumpJustReleased && p.vy < 0 && this.jumpHeld) {
-        p.vy *= PLAYER_PHYSICS.jumpCutMultiplier
-        this.jumpHeld = false
-      }
-      if (!this.keys.has(jumpKey)) this.jumpHeld = false
-
-      // ─── 重力 ─────────────────────────────────────────────
-      if (r.gravity === 0) {
-        // 無重力: 重力では減速しないため、慣性を毎フレーム緩やかに減衰させて静止に近づける
-        // 0.98^dt ≈ 0.9997/frame (60fps) → 自然な浮遊感
-        p.vy *= Math.pow(0.98, dt)
-      } else {
-        const gravMult = p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0
-        p.vy += r.gravity * gravMult * dt
-      }
-      p.y  += p.vy * dt
-
-      if (p.y + p.h >= gY) {
-        const wasInAir = !p.onGround
-        p.y = gY - p.h
-        p.vy = 0
-        p.onGround = true
-        p.jumpsLeft = isDouble ? 2 : 1
-        if (wasInAir) {
-          p.landSquash = 1.0
-          this._spawnLandParticles(p.x + p.w / 2, gY)
-          soundManager.onLand()
-          // Hook: onPlayerLand
-          getGenre(r.genre).onPlayerLand?.(this._getWorld())
-          if (this.jumpBufferTimer > 0) {
-            p.vy = PLAYER_PHYSICS.jumpVelocity
-            p.onGround = false
-            p.jumpsLeft = isDouble ? 1 : 0
-            this.jumpBufferTimer = 0
-            this.jumpHeld = true
-            this.stats.jumps++
-            // Hook: onPlayerJump (バッファジャンプ)
-            {
-              const jw = this._getWorld()
-              getGenre(r.genre).onPlayerJump?.(jw)
-              for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
-            }
-          }
-        }
-      } else {
-        p.onGround = false
-        p.airTime += dt
-      }
-      if (p.landSquash > 0) p.landSquash *= PHYSICS.landSquashDecay
-
-      // auto_run はスクロールで進む。画面上のX座標は変えない
-      if (!r.features.has('auto_run')) p.x += p.vx * dt
-      p.x = Math.max(PHYSICS.playerMinX, Math.min(W * PHYSICS.playerMaxXRatio, p.x))
-
-      // ─── スクロール ───────────────────────────────────────
-      this.distance += effectiveScrollSpeed * dt
-      this.cameraX = this.distance - CAMERA.leadOffset
-
-      // ─── ハザードスポーン ─────────────────────────────────
-      if (this.distance >= this.nextSpawnDist) {
-        this._spawnHazard()
-        const interval = HAZARD_SPAWN.baseInterval *
-          Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
-        const ms = Math.max(HAZARD_SPAWN.minInterval, interval)
-        this.nextSpawnDist += (ms / 1000) * effectiveScrollSpeed
-      }
-
-      for (const h of this.hazards) {
-        h.pulse += dt * VFX.hazardPulseRate
-      }
-
-      // ─── 衝突判定 ─────────────────────────────────────────
-      if (p.invincible > 0) p.invincible -= dt
-      if (p.invincible <= 0) {
-        for (let i = this.hazards.length - 1; i >= 0; i--) {
-          const h = this.hazards[i]
-          const sx = h.x - this.cameraX
-          const hRect = { ...h.rect, x: sx }
-          if (!rectsOverlap(p.rect, hRect)) continue
-
-          const isHazardous = this._gameStats.beatHazardInverted && r.features.has('beat_hazard')
-            ? h.isSafe
-            : !h.isSafe
-
-          if (isHazardous) {
-            this._onPlayerHit(p)
-            if (this.dead) return
-          } else {
-            for (const sys of getActiveSystems(r.features)) {
-              sys.onSafeHazardTouch?.(this._getWorld(), h, sx)
-            }
-          }
-        }
-      }
-
-      // 画面外ハザード除去
-      this.hazards = this.hazards.filter(h => h.x - this.cameraX > SPAWN.hazardCullLeft)
-
-      // シュート入力統計のみここで取得（shoot 処理は feature system に委譲）
-      if (this.justPressed.has(shootKey)) this.stats.shots++
-    }
+    if (isVertical ? this._updateVertical(dt, effectiveScrollSpeed)
+                   : this._updateHorizontal(dt, effectiveScrollSpeed)) return
 
     // ════════════════════════════════════════════════════════
     // 以降は横・縦モード共通
     // ════════════════════════════════════════════════════════
 
     // ─── Feature システム（GameRegistry 経由で全システムをディスパッチ） ──
-    const world = this._getWorld()
-    const inputSnapshot: InputSnapshot = {
-      keys: this.keys,
-      justPressed: this.justPressed,
-      justReleased: this.justReleased,
-    }
     for (const sys of getActiveSystems(r.features)) {
-      sys.update(world, inputSnapshot, dt)
+      sys.update(this._getWorld(), inputSnap, dt)
     }
 
     // ─── アイテムクリーンアップ ───────────────────────────────────
@@ -681,13 +405,7 @@ export class SideScroller {
     )
 
     // ─── パーティクル更新 ─────────────────────────────────────────
-    for (const pt of this.particles) {
-      pt.x  += pt.vx * dt
-      pt.y  += pt.vy * dt
-      pt.vy += VFX.particleGravity * dt
-      pt.life -= dt
-    }
-    this.particles = this.particles.filter(p => p.life > 0)
+    this.particles.update(dt, VFX.particleGravity)
 
     // ─── スコアポップアップ更新 ───────────────────────────────────
     for (const sp of this.scorePopups) {
@@ -709,16 +427,204 @@ export class SideScroller {
   // ─── 死亡演出更新 ────────────────────────────────────────────────
   private _updateDeathEffect(dt: number): void {
     this.deathTimer += dt
-    for (const pt of this.particles) {
-      pt.x  += pt.vx * dt * VFX.deathSlowMoFactor
-      pt.y  += pt.vy * dt * VFX.deathSlowMoFactor
-      pt.vy += VFX.deathParticleGravity * dt * VFX.deathSlowMoFactor
-      pt.life -= dt
-    }
-    this.particles = this.particles.filter(p => p.life > 0)
+    this.particles.updateSlow(dt, VFX.deathSlowMoFactor, VFX.deathParticleGravity)
     this.shakeIntensity *= VFX.deathShakeDecay
     this.shakeX = (Math.random() - 0.5) * this.shakeIntensity * 2
     this.shakeY = (Math.random() - 0.5) * this.shakeIntensity * 2
+  }
+
+  // ─── 縦スクロール更新 ────────────────────────────────────────────
+  private _updateVertical(dt: number, speed: number): boolean {
+    const r = this.rules
+    const p = this.player
+    const W = this.canvas.width
+    const H = this.canvas.height
+    const leftKey  = r.controls.moveLeft
+    const rightKey = r.controls.moveRight
+    const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
+
+    if (this.input.keys.has(leftKey))  this.stats.moveLeft++
+    if (this.input.keys.has(rightKey)) this.stats.moveRight++
+    p.x += p.vx * dt
+    p.x = Math.max(0, Math.min(W - p.w, p.x))
+    p.y = Math.max(0, Math.min(H - p.h, p.y + p.vy * dt))
+    p.onGround = false
+    this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
+    this.distance += speed * dt
+    this.cameraX = 0
+
+    for (const h of this.hazards) {
+      h.y += speed * dt
+      h.pulse += dt * VFX.hazardPulseRate
+    }
+    this.hazards = this.hazards.filter(h => h.y < H + SPAWN.hazardCullBelow)
+
+    for (const item of this.items) {
+      item.y += speed * dt
+    }
+
+    if (this.distance >= this.nextSpawnDist) {
+      this._spawnHazard()
+      const interval = HAZARD_SPAWN.baseInterval * Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
+      this.nextSpawnDist += (Math.max(HAZARD_SPAWN.minInterval, interval) / 1000) * speed
+    }
+
+    if (p.invincible > 0) p.invincible -= dt
+    if (p.invincible <= 0) {
+      for (let i = this.hazards.length - 1; i >= 0; i--) {
+        const h = this.hazards[i]
+        if (!rectsOverlap(p.rect, h.rect)) continue
+        if (!h.isSafe) {
+          this._onPlayerHit(p)
+          if (this.dead) return true
+        } else {
+          for (const sys of getActiveSystems(r.features)) {
+            sys.onSafeHazardTouch?.(this._getWorld(), h, h.x)
+          }
+        }
+      }
+    }
+
+    if (this.input.justPressed.has(shootKey)) this.stats.shots++
+    return false
+  }
+
+  // ─── 横スクロール更新 ────────────────────────────────────────────
+  private _updateHorizontal(dt: number, speed: number): boolean {
+    const r = this.rules
+    const p = this.player
+    const W = this.canvas.width
+    const H = this.canvas.height
+    const gY = H - BACKGROUND.groundHeight
+    const jumpKey  = r.controls.jump
+    const leftKey  = r.controls.moveLeft
+    const rightKey = r.controls.moveRight
+    const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
+
+    if (!r.features.has('auto_run') && this.input.keys.has(leftKey))  this.stats.moveLeft++
+    if ( r.features.has('auto_run') || this.input.keys.has(rightKey)) this.stats.moveRight++
+    if (p.onGround) {
+      this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
+    }
+
+    const isDouble         = r.features.has('double_jump')
+    const jumpDisabled     = this._isActionDisabled('jump')
+    const jumpJustPressed  = !jumpDisabled && this.input.justPressed.has(jumpKey)
+    const jumpJustReleased = this.input.justReleased.has(jumpKey)
+
+    if (p.onGround) {
+      this.coyoteTimer = PLAYER_PHYSICS.coyoteFrames
+    } else if (this.coyoteTimer > 0) {
+      this.coyoteTimer--
+    }
+    if (jumpJustPressed) {
+      this.jumpBufferTimer = PLAYER_PHYSICS.jumpBufferFrames
+    } else if (this.jumpBufferTimer > 0) {
+      this.jumpBufferTimer--
+    }
+
+    const canJumpCoyote = this.coyoteTimer > 0 && p.jumpsLeft === (isDouble ? 2 : 1)
+    const canJumpDouble = isDouble && p.jumpsLeft > 0
+    if (this.jumpBufferTimer > 0 && (canJumpCoyote || (canJumpDouble && !p.onGround) || p.onGround)) {
+      if (p.jumpsLeft > 0 || this.coyoteTimer > 0) {
+        p.vy = PLAYER_PHYSICS.jumpVelocity
+        p.jumpsLeft = Math.max(0, p.jumpsLeft - 1)
+        p.onGround = false
+        this.jumpHeld = true
+        this.jumpBufferTimer = 0
+        this.coyoteTimer = 0
+        this.stats.jumps++
+        this.firstJumpDone = true
+        this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
+        soundManager.onJump()
+        const jw = this._getWorld()
+        getGenre(r.genre).onPlayerJump?.(jw)
+        for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
+      }
+    }
+    if (jumpJustReleased && p.vy < 0 && this.jumpHeld) {
+      p.vy *= PLAYER_PHYSICS.jumpCutMultiplier
+      this.jumpHeld = false
+    }
+    if (!this.input.keys.has(jumpKey)) this.jumpHeld = false
+
+    if (r.gravity === 0) {
+      p.vy *= Math.pow(0.05, dt)
+    } else {
+      p.vy += r.gravity * (p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0) * dt
+    }
+    p.y += p.vy * dt
+
+    if (p.y + p.h >= gY) {
+      const wasInAir = !p.onGround
+      p.y = gY - p.h
+      p.vy = 0
+      p.onGround = true
+      p.jumpsLeft = isDouble ? 2 : 1
+      if (wasInAir) {
+        p.landSquash = 1.0
+        this._spawnLandParticles(p.x + p.w / 2, gY)
+        soundManager.onLand()
+        getGenre(r.genre).onPlayerLand?.(this._getWorld())
+        if (this.jumpBufferTimer > 0) {
+          p.vy = PLAYER_PHYSICS.jumpVelocity
+          p.onGround = false
+          p.jumpsLeft = isDouble ? 1 : 0
+          this.jumpBufferTimer = 0
+          this.jumpHeld = true
+          this.stats.jumps++
+          const jw = this._getWorld()
+          getGenre(r.genre).onPlayerJump?.(jw)
+          for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
+        }
+      }
+    } else {
+      p.onGround = false
+      p.airTime += dt
+    }
+    if (p.landSquash > 0) p.landSquash *= PHYSICS.landSquashDecay
+
+    if (!r.features.has('auto_run')) p.x += p.vx * dt
+    p.x = Math.max(PHYSICS.playerMinX, Math.min(W * PHYSICS.playerMaxXRatio, p.x))
+
+    this.distance += speed * dt
+    this.cameraX = this.distance - CAMERA.leadOffset
+
+    if (this.distance >= this.nextSpawnDist) {
+      this._spawnHazard()
+      const interval = HAZARD_SPAWN.baseInterval * Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
+      this.nextSpawnDist += (Math.max(HAZARD_SPAWN.minInterval, interval) / 1000) * speed
+    }
+
+    for (const h of this.hazards) {
+      h.pulse += dt * VFX.hazardPulseRate
+    }
+
+    if (p.invincible > 0) p.invincible -= dt
+    if (p.invincible <= 0) {
+      for (let i = this.hazards.length - 1; i >= 0; i--) {
+        const h = this.hazards[i]
+        const sx = h.x - this.cameraX
+        const hRect = { ...h.rect, x: sx }
+        if (!rectsOverlap(p.rect, hRect)) continue
+        const isHazardous = this._gameStats.beatHazardInverted && r.features.has('beat_hazard')
+          ? h.isSafe
+          : !h.isSafe
+        if (isHazardous) {
+          this._onPlayerHit(p)
+          if (this.dead) return true
+        } else {
+          for (const sys of getActiveSystems(r.features)) {
+            sys.onSafeHazardTouch?.(this._getWorld(), h, sx)
+          }
+        }
+      }
+    }
+
+    this.hazards = this.hazards.filter(h => h.x - this.cameraX > SPAWN.hazardCullLeft)
+
+    if (this.input.justPressed.has(shootKey)) this.stats.shots++
+    return false
   }
 
   // ─── 被弾処理 ────────────────────────────────────────────────────
@@ -798,16 +704,7 @@ export class SideScroller {
     }
 
     // ─── パーティクル ─────────────────────────────────────────────
-    for (const pt of this.particles) {
-      const alpha = pt.life / pt.maxLife
-      ctx.globalAlpha = alpha
-      ctx.fillStyle = pt.color
-      const sz = pt.size * (0.5 + alpha * 0.5)
-      ctx.beginPath()
-      ctx.arc(pt.x, pt.y, sz, 0, Math.PI * 2)
-      ctx.fill()
-    }
-    ctx.globalAlpha = 1
+    this.particles.render(ctx)
 
     // ─── スコアポップアップ ───────────────────────────────────────
     for (const sp of this.scorePopups) {
@@ -825,19 +722,19 @@ export class SideScroller {
 
     // ─── 死亡オーバーレイ ─────────────────────────────────────────
     if (this.dead) {
-      const fadeIn = Math.min(1, this.deathTimer * 2.5)
-      ctx.fillStyle = `rgba(0,0,0,${fadeIn * 0.7})`
+      const fadeIn = Math.min(1, this.deathTimer * UI.deathFadeSpeed)
+      ctx.fillStyle = `rgba(0,0,0,${fadeIn * UI.deathOverlayAlpha})`
       ctx.fillRect(0, 0, W, H)
 
-      if (this.deathTimer > 0.4) {
-        const alpha = Math.min(1, (this.deathTimer - 0.4) * 3)
+      if (this.deathTimer > UI.deathTextDelayS) {
+        const alpha = Math.min(1, (this.deathTimer - UI.deathTextDelayS) * UI.deathTextFadeSpeed)
         ctx.globalAlpha = alpha
         ctx.fillStyle = '#ffffff'
-        ctx.font = 'bold 36px "Courier New", monospace'
+        ctx.font = UI.deathTitleFont
         ctx.textAlign = 'center'
         ctx.fillText('GAME OVER', W / 2, H / 2 - 10)
-        ctx.font = '16px "Courier New", monospace'
-        ctx.fillStyle = 'rgba(255,255,255,0.65)'
+        ctx.font = UI.deathSubFont
+        ctx.fillStyle = `rgba(255,255,255,${UI.deathSubTextAlpha})`
         ctx.fillText('説明書を投げてください', W / 2, H / 2 + 28)
         ctx.textAlign = 'left'
         ctx.globalAlpha = 1
@@ -1235,17 +1132,12 @@ export class SideScroller {
   }
 
   // ─── パーティクル生成 ─────────────────────────────────────────────
-  private _addParticle(x: number, y: number, vx: number, vy: number, life: number, color: string, size = 4): void {
-    this.particles.push({ x, y, vx, vy, life, maxLife: life, color, size })
-  }
-
   private _spawnJumpParticles(x: number, y: number): void {
-    const plugin = getGenre(this.rules.genre)
-    const color = plugin.particleColors?.jump ?? VFX.jumpParticleColor
+    const color = getGenre(this.rules.genre).particleColors?.jump ?? VFX.jumpParticleColor
     for (let i = 0; i < VFX.jumpParticleCount; i++) {
       const angle = Math.PI + (Math.random() - 0.5) * VFX.jumpParticleSpread
       const speed = VFX.jumpParticleSpeedMin + Math.random() * (VFX.jumpParticleSpeedMax - VFX.jumpParticleSpeedMin)
-      this._addParticle(
+      this.particles.add(
         x + (Math.random() - 0.5) * VFX.jumpParticleOffsetX, y,
         Math.cos(angle) * speed, Math.sin(angle) * speed,
         VFX.jumpParticleLife, color, VFX.jumpParticleSize,
@@ -1254,12 +1146,11 @@ export class SideScroller {
   }
 
   private _spawnLandParticles(x: number, y: number): void {
-    const plugin = getGenre(this.rules.genre)
-    const color = plugin.particleColors?.land ?? VFX.landParticleColor
+    const color = getGenre(this.rules.genre).particleColors?.land ?? VFX.landParticleColor
     for (let i = 0; i < VFX.landParticleCount; i++) {
       const angle = Math.PI + (Math.random() - 0.5) * Math.PI * 0.9
       const speed = VFX.landParticleSpeedMin + Math.random() * (VFX.landParticleSpeedMax - VFX.landParticleSpeedMin)
-      this._addParticle(
+      this.particles.add(
         x + (Math.random() - 0.5) * VFX.landParticleOffsetX, y,
         Math.cos(angle) * speed, Math.sin(angle) * speed * VFX.landParticleYRatio,
         VFX.landParticleLife, color, VFX.landParticleSize,
@@ -1268,15 +1159,14 @@ export class SideScroller {
   }
 
   private _spawnDeathExplosion(x: number, y: number): void {
-    const plugin = getGenre(this.rules.genre)
-    const colors = plugin.particleColors?.death ?? VFX.deathParticleColors
+    const colors = getGenre(this.rules.genre).particleColors?.death ?? VFX.deathParticleColors
     for (let i = 0; i < VFX.deathParticleCount; i++) {
       const angle = Math.random() * Math.PI * 2
       const speed = VFX.deathParticleSpeedMin + Math.random() * (VFX.deathParticleSpeedMax - VFX.deathParticleSpeedMin)
       const life  = VFX.deathParticleLifeMin + Math.random() * VFX.deathParticleLifeRange
       const size  = VFX.deathParticleSizeMin + Math.random() * VFX.deathParticleSizeRange
       const color = colors[Math.floor(Math.random() * colors.length)]
-      this._addParticle(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed + VFX.deathParticleYBoost, life, color, size)
+      this.particles.add(x, y, Math.cos(angle) * speed, Math.sin(angle) * speed + VFX.deathParticleYBoost, life, color, size)
     }
   }
 
@@ -1306,7 +1196,7 @@ export class SideScroller {
       addScorePopup(x, y, text, c) { self._addScorePopup(x, y, text, c) },
       triggerShake(intensity)       { self.shakeIntensity = Math.max(self.shakeIntensity, intensity) },
       addParticle(x, y, vx, vy, life, color, size = 3) {
-        self.particles.push({ x, y, vx, vy, life, maxLife: life, color, size })
+        self.particles.add(x, y, vx, vy, life, color, size)
       },
 
       spawnHazard(h)       { self.hazards.push(h) },
@@ -1354,7 +1244,26 @@ export class SideScroller {
     }
   }
 
-  /** LearningSystem のアクション無効化チェック（期限切れエントリを自動削除） */
+  private _getControl(action: string): string | undefined {
+    const c = this.rules.controls
+    switch (action) {
+      case 'jump':  return c.jump
+      case 'left':  return c.moveLeft
+      case 'right': return c.moveRight
+      case 'shoot': return c.shoot
+    }
+  }
+
+  private _setControl(action: string, key: string): void {
+    const c = this.rules.controls
+    switch (action) {
+      case 'jump':  c.jump = key; break
+      case 'left':  c.moveLeft = key; break
+      case 'right': c.moveRight = key; break
+      case 'shoot': c.shoot = key; break
+    }
+  }
+
   private _isActionDisabled(action: string): boolean {
     const until = this._disabledActions.get(action)
     if (until === undefined) return false
@@ -1393,17 +1302,10 @@ export class SideScroller {
       case 'changeKey': {
         // payload = "jump:w" のような形式（action:newKey）
         const [action, newKey] = effect.payload.split(':')
-        // 元のキーを保存（未保存の場合のみ。重複発動で上書きしない）
         if (!(action in this._originalKeys)) {
-          if (action === 'jump')  this._originalKeys[action] = this.rules.controls.jump
-          if (action === 'left')  this._originalKeys[action] = this.rules.controls.moveLeft
-          if (action === 'right') this._originalKeys[action] = this.rules.controls.moveRight
-          if (action === 'shoot') this._originalKeys[action] = this.rules.controls.shoot
+          this._originalKeys[action] = this._getControl(action)
         }
-        if (action === 'jump')  this.rules.controls.jump     = newKey
-        if (action === 'left')  this.rules.controls.moveLeft = newKey
-        if (action === 'right') this.rules.controls.moveRight = newKey
-        if (action === 'shoot') this.rules.controls.shoot    = newKey
+        this._setControl(action, newKey)
         if (effect.durationSec != null) {
           this._changeKeyUntil.set(action, performance.now() + effect.durationSec * 1000)
         }

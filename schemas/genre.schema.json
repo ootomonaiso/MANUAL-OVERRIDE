@@ -1,0 +1,219 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "genre.schema.json",
+  "title": "ジャンル定義",
+  "description": "src/data/genres/ 内のジャンル定義ファイルのスキーマ。このファイルをひとつ追加するだけで新ジャンルとして自動登録される。",
+  "type": "object",
+  "required": ["id", "label", "thresholds", "enableFeatures", "disableFeatures", "scoreFormula", "manualReveal", "theme", "bgColor"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSONスキーマへの参照（自動補完のため）"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "ジャンルの一意識別子（英小文字・数字・アンダースコアのみ）。ファイル名と一致させること。例: stg, rpg, bullet_hell"
+    },
+    "label": {
+      "type": "string",
+      "description": "プレイヤーに表示されるジャンル名。例: シューティングゲーム"
+    },
+    "thresholds": {
+      "type": "object",
+      "description": "このジャンルに収束するために必要なパラメータ閾値。複数指定した場合はすべて満たす必要がある。",
+      "additionalProperties": false,
+      "properties": {
+        "tempo":   { "type": "number", "description": "速度・テンポ系（runner / rhythm 方向）" },
+        "range":   { "type": "number", "description": "射程・遠距離攻撃系（stg 方向）" },
+        "enemy":   { "type": "number", "description": "敵・戦闘密度系（stg / arena 方向）" },
+        "combo":   { "type": "number", "description": "コンボ・連続入力系（puzzle / hack_slash 方向）" },
+        "growth":  { "type": "number", "description": "成長・経験値系（rpg / dungeon 方向）" },
+        "rhythm":  { "type": "number", "description": "音楽・リズム系（rhythm 方向）" },
+        "stealth": { "type": "number", "description": "隠密・ステルス系（stealth_action / horror 方向）" },
+        "vertical":{ "type": "number", "description": "縦スクロール系（aerial_stg / aquatic 方向）" },
+        "aerial":  { "type": "number", "description": "空中・ジャンプ系（platformer 方向）" },
+        "survive": { "type": "number", "description": "生存・HP管理系（survival / horror 方向）" },
+        "craft":   { "type": "number", "description": "構築・設置系（tower_def / idle 方向）" },
+        "speed":   { "type": "number", "description": "速度特化系（racing / sports 方向）" }
+      }
+    },
+    "enableFeatures": {
+      "type": "array",
+      "description": "このジャンルで有効になるゲーム機能のリスト",
+      "items": {
+        "type": "string",
+        "enum": [
+          "auto_run",
+          "double_jump",
+          "long_air",
+          "wall_jump",
+          "shoot",
+          "three_way",
+          "spread_shot",
+          "enemy_hp",
+          "hp",
+          "exp",
+          "item_pickup",
+          "slow_precise",
+          "grid_stop",
+          "puzzle_solve",
+          "beat_hazard",
+          "just_input",
+          "beat_dash",
+          "vertical_scroll",
+          "shield",
+          "stealth_mode",
+          "dash",
+          "time_bonus",
+          "tower",
+          "boss"
+        ]
+      }
+    },
+    "disableFeatures": {
+      "type": "array",
+      "description": "このジャンルで無効になるゲーム機能のリスト（enableFeaturesと同じ値が使える）",
+      "items": {
+        "type": "string",
+        "enum": [
+          "auto_run",
+          "double_jump",
+          "long_air",
+          "wall_jump",
+          "shoot",
+          "three_way",
+          "spread_shot",
+          "enemy_hp",
+          "hp",
+          "exp",
+          "item_pickup",
+          "slow_precise",
+          "grid_stop",
+          "puzzle_solve",
+          "beat_hazard",
+          "just_input",
+          "beat_dash",
+          "vertical_scroll",
+          "shield",
+          "stealth_mode",
+          "dash",
+          "time_bonus",
+          "tower",
+          "boss"
+        ]
+      }
+    },
+    "scoreFormula": {
+      "type": "string",
+      "description": "スコア計算式（JavaScript式）。利用可能な変数: distance, survivedSec, kills, combo, maxCombo, exp, itemsCollected, beatHits, bossKills, stealthBonus, accuracy, deaths"
+    },
+    "manualReveal": {
+      "type": "string",
+      "description": "ジャンル確定時に説明書に表示されるテキスト"
+    },
+    "theme": {
+      "type": "string",
+      "description": "説明書UIのビジュアルテーマ",
+      "enum": ["plain", "stg", "rpg", "puzzle", "rhythm", "horror", "aquatic"]
+    },
+    "bgColor": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "description": "Canvasの背景色（16進数カラーコード）。例: #0d0d1a"
+    },
+    "environment": {
+      "type": "string",
+      "description": "ゲームの舞台環境（背景描画に影響）",
+      "enum": ["ground", "sky", "space", "ocean", "dungeon", "forest", "city"]
+    },
+    "scrollDirection": {
+      "type": "string",
+      "description": "スクロール方向。省略時は horizontal（横スクロール）",
+      "enum": ["horizontal", "vertical", "none"]
+    },
+    "gravity": {
+      "type": "number",
+      "description": "重力加速度（px/s²）。省略時は 1600。水中など特殊環境では小さくする",
+      "default": 1600,
+      "minimum": 0
+    },
+    "controls": {
+      "type": "object",
+      "description": "キー割り当て（省略可。省略したキーはデフォルト値が使われる）",
+      "additionalProperties": false,
+      "properties": {
+        "jump":      { "type": "string", "description": "ジャンプキー。例: Space" },
+        "moveLeft":  { "type": "string", "description": "左移動キー。例: ArrowLeft" },
+        "moveRight": { "type": "string", "description": "右移動キー。例: ArrowRight" },
+        "moveUp":    { "type": "string", "description": "上移動キー。例: ArrowUp" },
+        "moveDown":  { "type": "string", "description": "下移動キー。例: ArrowDown" },
+        "shoot":     { "type": "string", "description": "射撃キー。例: z" },
+        "dash":      { "type": "string", "description": "ダッシュキー。例: Shift" }
+      }
+    },
+    "endingFlavor": {
+      "type": "string",
+      "description": "エンディングで表示されるフレーバーテキスト"
+    },
+    "visual": {
+      "type": "object",
+      "description": "ビジュアル設定。TSプラグイン（XxxPlugin.ts）を書かなくても、ここだけでCanvas描画が決まる。省略時はthemeから自動決定。",
+      "additionalProperties": false,
+      "properties": {
+        "template": {
+          "type": "string",
+          "description": "描画スタイルのベース。省略時はthemeフィールドから自動選択される。",
+          "enum": ["runner", "space", "dungeon", "rhythm", "puzzle", "aquatic"],
+          "x-enumDescriptions": {
+            "runner":  "地上横スクロール・街並みシルエット（plain/runner系）",
+            "space":   "宇宙・星・SF（STG/弾幕系）",
+            "dungeon": "暗い洞窟・RPG系（RPG/ダンジョン系）",
+            "rhythm":  "ネオン・音楽的エフェクト（リズム系）",
+            "puzzle":  "明るい背景・グリッド系（パズル/放置系）",
+            "aquatic": "水中・海洋（水中アドベンチャー系）"
+          }
+        },
+        "skyColors": {
+          "type": "array",
+          "description": "空のグラデーション色 [上の色, 下の色]。省略時はtemplateの色。例: [\"#000005\", \"#05050f\"]",
+          "items": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+          "minItems": 1,
+          "maxItems": 2
+        },
+        "groundColor": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "地面の色。省略時はtemplateの色。"
+        },
+        "farLayerColor": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "遠景レイヤー（山・星雲など）の色"
+        },
+        "midLayerColor": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "中景レイヤー（建物・岩など）の色"
+        },
+        "starColor": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "星・光点の色"
+        },
+        "palette": {
+          "type": "object",
+          "description": "障害物・アイテムの色設定",
+          "additionalProperties": false,
+          "properties": {
+            "danger":     { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "description": "危険オブジェクトの色" },
+            "dangerGlow": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "description": "危険オブジェクトのグロー色" },
+            "safe":       { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "description": "安全オブジェクトの色" },
+            "safeGlow":   { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "description": "安全オブジェクトのグロー色" }
+          }
+        }
+      }
+    }
+  }
+}

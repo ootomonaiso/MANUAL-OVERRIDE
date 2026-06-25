@@ -1,27 +1,7 @@
-/**
- * domain/LearningSystem.ts
- *
- * プレイヤーの行動統計を監視し、LearningRule のトリガーを評価する。
- * 効果が発動したら LearningEffect の配列を返す。
- *
- * 設計方針:
- *  - 純粋関数 evaluateLearningRules() を中心に置き、副作用は呼び出し元に委ねる
- *  - triggered フラグで同一ルールの二重発動を防ぐ
- *
- * 統合方法:
- *  1. sideScroller.ts の getStats() で ActionStats を取得
- *  2. 説明書バージョンに learningRules: LearningRule[] を定義（ManualVersion 拡張時）
- *  3. updateRules() 内または定期ポーリングで evaluateLearningRules() を呼ぶ
- *  4. 返り値の LearningEffect[] を RuntimeRules のミューテーションに適用する
- */
-
 import type { LearningRule, LearningTrigger, LearningEffect, ActionStats } from './types'
 
-/**
- * トリガー条件を ActionStats に対して評価する。
- * ticks が 0 の場合は常に false（ゲーム開始直後を除く）。
- */
-function evaluateTrigger(trigger: LearningTrigger, stats: ActionStats): boolean {
+// ticks=0 ガード: ゲーム開始直後（統計未蓄積）で誤発動しないよう先頭でチェック
+function _evaluateTrigger(trigger: LearningTrigger, stats: ActionStats): boolean {
   if (stats.ticks === 0) return false
 
   let rate = 0
@@ -38,14 +18,7 @@ function evaluateTrigger(trigger: LearningTrigger, stats: ActionStats): boolean 
     : rate < trigger.threshold
 }
 
-/**
- * すべての未発動ルールを評価し、新たに発動したエフェクトを返す。
- * triggered フラグを true に書き換えるため、rules 配列は変更される（in-place）。
- *
- * @param rules    ManualVersion に付随する LearningRule[] （変更される）
- * @param stats    SideScroller.getStats() から取得した ActionStats
- * @returns        今フレームで新たに発動した LearningEffect の配列
- */
+// rules 配列を in-place で変更する（triggered フラグを立てる）副作用あり
 export function evaluateLearningRules(
   rules: LearningRule[],
   stats: ActionStats,
@@ -53,7 +26,7 @@ export function evaluateLearningRules(
   const fired: LearningEffect[] = []
   for (const rule of rules) {
     if (rule.triggered) continue
-    if (evaluateTrigger(rule.trigger, stats)) {
+    if (_evaluateTrigger(rule.trigger, stats)) {
       rule.triggered = true
       fired.push(rule.effect)
     }
@@ -61,9 +34,6 @@ export function evaluateLearningRules(
   return fired
 }
 
-/**
- * LearningEffect の type から人間可読ラベルを返す（デバッグ/ログ用）。
- */
 export function describeEffect(effect: LearningEffect): string {
   switch (effect.type) {
     case 'disableAction': return `アクション "${effect.payload}" を無効化`

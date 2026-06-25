@@ -1,0 +1,297 @@
+{
+  "cards": [
+    {
+      "id": "c-enemy-active",
+      "label": "ステージのオブジェクトをより積極的に動かす",
+      "manualText": ["ステージのキャラクターが積極的に動くようになりました。"],
+      "genreParams": { "enemy": 1, "range": 1 },
+      "weight": 4,
+      "hint": "STG/aerial_stg 方向",
+      "genreAffinity": ["stg", "aerial_stg"]
+    },
+    {
+      "id": "c-enemy-combat",
+      "label": "障害物を撃って対処できるようにする",
+      "manualText": ["Zキーで弾を撃てます。", "弾でオブジェクトを排除できます。"],
+      "genreParams": { "range": 2, "enemy": 1 },
+      "weight": 3,
+      "hint": "STG 方向",
+      "genreAffinity": ["stg", "aerial_stg"]
+    },
+    {
+      "id": "c-enemy-density",
+      "label": "ステージに登場する数をもっと増やす",
+      "manualText": ["出現数が増加しました。", "回避か撃退かを判断してください。"],
+      "genreParams": { "enemy": 3 },
+      "weight": 2,
+      "hint": "arena/bullet_hell 方向",
+      "genreAffinity": ["arena", "bullet_hell"]
+    },
+    {
+      "id": "c-enemy-aerial",
+      "label": "上空からの脅威も対処できるようにする",
+      "manualText": ["上方向の危険にも備えてください。", "縦横の動きが重要になりました。"],
+      "genreParams": { "enemy": 2, "vertical": 1 },
+      "weight": 2,
+      "hint": "aerial_stg 方向",
+      "genreAffinity": ["aerial_stg"]
+    },
+    {
+      "id": "c-growth-collect",
+      "label": "アイテムを集めることで変化が起きるようにする",
+      "manualText": ["アイテムを取得することで変化があります。"],
+      "genreParams": { "growth": 2, "survive": 1 },
+      "weight": 3,
+      "hint": "RPG 方向",
+      "genreAffinity": ["rpg", "dungeon"]
+    },
+    {
+      "id": "c-growth-level",
+      "label": "キャラクターの経験や成長を反映させる",
+      "manualText": ["行動に応じてキャラクターが成長します。"],
+      "genreParams": { "growth": 3 },
+      "weight": 2,
+      "hint": "RPG/dungeon 方向",
+      "genreAffinity": ["rpg", "dungeon"]
+    },
+    {
+      "id": "c-growth-hp",
+      "label": "耐久力を管理する仕組みを加える",
+      "manualText": ["耐久力が加わりました。", "一度のミスでは終わりません。"],
+      "genreParams": { "survive": 2, "growth": 1 },
+      "weight": 3,
+      "hint": "survival/RPG 方向",
+      "genreAffinity": ["survival", "rpg"]
+    },
+    {
+      "id": "c-growth-resource",
+      "label": "ステージで見つけたものを活用できるようにする",
+      "manualText": ["素材を集めて活用できます。"],
+      "genreParams": { "growth": 2, "craft": 1 },
+      "weight": 2,
+      "hint": "dungeon/craft 方向",
+      "genreAffinity": ["dungeon", "tower_def"]
+    },
+    {
+      "id": "c-tempo-smooth",
+      "label": "キャラクターの動きをなめらかに改善する",
+      "manualText": ["移動がより滑らかになりました。"],
+      "genreParams": { "tempo": 2, "aerial": 1 },
+      "weight": 4,
+      "hint": "runner/platformer 方向",
+      "genreAffinity": ["runner", "platformer"]
+    },
+    {
+      "id": "c-tempo-speed",
+      "label": "ゲームのテンポをどんどん上げていく",
+      "manualText": ["進むにつれてスピードが上がります。"],
+      "genreParams": { "tempo": 3 },
+      "weight": 2,
+      "hint": "runner/bullet_runner 方向",
+      "genreAffinity": ["runner", "bullet_runner"],
+      "conflictsWith": ["c-idle-wait"]
+    },
+    {
+      "id": "c-tempo-race",
+      "label": "速さを競う要素を強化する",
+      "manualText": ["速度とタイムが重要になりました。"],
+      "genreParams": { "tempo": 2, "speed": 2 },
+      "weight": 2,
+      "hint": "racing 方向",
+      "genreAffinity": ["racing"]
+    },
+    {
+      "id": "c-tempo-dash",
+      "label": "瞬間的な加速を使えるようにする",
+      "manualText": ["素早く移動できる操作が増えました。"],
+      "genreParams": { "tempo": 1, "speed": 2 },
+      "weight": 2,
+      "hint": "racing/runner 方向",
+      "genreAffinity": ["racing", "runner"]
+    },
+    {
+      "id": "c-rhythm-beat",
+      "label": "音楽のテンポに合わせた動きを取り入れる",
+      "manualText": ["音楽のリズムに合わせると効果的です。"],
+      "genreParams": { "rhythm": 2, "tempo": 1 },
+      "weight": 3,
+      "hint": "rhythm 方向",
+      "genreAffinity": ["rhythm"]
+    },
+    {
+      "id": "c-rhythm-timing",
+      "label": "タイミングよく行動することが重要になる",
+      "manualText": ["一定のタイミングで行動すると有利になります。"],
+      "genreParams": { "rhythm": 3 },
+      "weight": 2,
+      "hint": "rhythm 方向",
+      "genreAffinity": ["rhythm"]
+    },
+    {
+      "id": "c-combo-pattern",
+      "label": "パターンを読んで対応する要素を加える",
+      "manualText": ["パターンを把握することで対処しやすくなります。"],
+      "genreParams": { "combo": 2 },
+      "weight": 3,
+      "hint": "puzzle/hack_slash 方向",
+      "genreAffinity": ["puzzle", "hack_slash"]
+    },
+    {
+      "id": "c-combo-sequence",
+      "label": "順番や組み合わせに意味を持たせる",
+      "manualText": ["順序よく進めることで効率が上がります。"],
+      "genreParams": { "combo": 3 },
+      "weight": 2,
+      "hint": "puzzle 方向",
+      "genreAffinity": ["puzzle"],
+      "conflictsWith": ["c-enemy-density"]
+    },
+    {
+      "id": "c-combo-chain",
+      "label": "連続した行動に報酬を与える仕組みにする",
+      "manualText": ["連続して成功するとボーナスがあります。"],
+      "genreParams": { "combo": 2, "growth": 1 },
+      "weight": 2,
+      "hint": "hack_slash/puzzle 方向",
+      "genreAffinity": ["hack_slash", "puzzle"]
+    },
+    {
+      "id": "c-vertical-stage",
+      "label": "ステージを縦方向にも広げる",
+      "manualText": ["ステージが縦に広がりました。", "上下の動きも重要です。"],
+      "genreParams": { "vertical": 2, "aerial": 1 },
+      "weight": 3,
+      "hint": "aerial_stg/aquatic 方向",
+      "genreAffinity": ["aerial_stg", "aquatic"]
+    },
+    {
+      "id": "c-aerial-flight",
+      "label": "空中での自由な動きを豊かにする",
+      "manualText": ["空中での操作性が向上しました。"],
+      "genreParams": { "aerial": 3 },
+      "weight": 2,
+      "hint": "platformer/aerial_stg 方向",
+      "genreAffinity": ["platformer", "aerial_stg"]
+    },
+    {
+      "id": "c-aerial-gravity",
+      "label": "重力や浮遊感に変化を加える",
+      "manualText": ["重力の影響が変化しました。"],
+      "genreParams": { "aerial": 2, "vertical": 1 },
+      "weight": 2,
+      "hint": "platformer 方向",
+      "genreAffinity": ["platformer"]
+    },
+    {
+      "id": "c-aquatic-stage",
+      "label": "ステージの舞台を水中に変える",
+      "manualText": ["ステージが水中になりました。", "動きが水の影響を受けます。"],
+      "genreParams": { "vertical": 2, "aerial": 1 },
+      "weight": 2,
+      "hint": "aquatic 方向",
+      "genreAffinity": ["aquatic"],
+      "hazards": { "colors": ["red"], "safeColors": ["blue", "cyan"] }
+    },
+    {
+      "id": "c-survive-danger",
+      "label": "危険な状況でどう生き残るかを重要にする",
+      "manualText": ["生存することが重要になりました。"],
+      "genreParams": { "survive": 2 },
+      "weight": 3,
+      "hint": "survival/horror 方向",
+      "genreAffinity": ["survival", "horror"]
+    },
+    {
+      "id": "c-stealth-hide",
+      "label": "見えないようにすることが重要な状況を作る",
+      "manualText": ["見つからないことが重要です。"],
+      "genreParams": { "stealth": 3 },
+      "weight": 2,
+      "hint": "stealth_action 方向",
+      "genreAffinity": ["stealth_action"],
+      "conflictsWith": ["c-enemy-combat", "c-enemy-density"]
+    },
+    {
+      "id": "c-stealth-horror",
+      "label": "予測できない危険が潜む雰囲気にする",
+      "manualText": ["隠れた危険に備えてください。"],
+      "genreParams": { "stealth": 2, "survive": 1 },
+      "weight": 2,
+      "hint": "horror 方向",
+      "genreAffinity": ["horror"]
+    },
+    {
+      "id": "c-craft-build",
+      "label": "何かを設置したり構築したりできるようにする",
+      "manualText": ["オブジェクトを設置できます。"],
+      "genreParams": { "craft": 2 },
+      "weight": 3,
+      "hint": "tower_def/idle 方向",
+      "genreAffinity": ["tower_def", "idle"]
+    },
+    {
+      "id": "c-craft-resource",
+      "label": "資源を管理して積み上げていく要素を加える",
+      "manualText": ["資源を集めて活用してください。"],
+      "genreParams": { "craft": 3 },
+      "weight": 2,
+      "hint": "tower_def 方向",
+      "genreAffinity": ["tower_def"]
+    },
+    {
+      "id": "c-idle-wait",
+      "label": "放置していても少しずつ進む仕組みにする",
+      "manualText": ["ゲームは待っている間も少しずつ進行します。"],
+      "genreParams": { "craft": 2, "tempo": -1 },
+      "weight": 1,
+      "hint": "idle 方向",
+      "genreAffinity": ["idle"],
+      "conflictsWith": ["c-tempo-speed", "c-tempo-race"]
+    },
+    {
+      "id": "c-general-atmosphere",
+      "label": "ステージの雰囲気や背景を大きく変える",
+      "manualText": ["ステージの環境が変わりました。"],
+      "genreParams": { "vertical": 1, "aerial": 1 },
+      "weight": 4,
+      "hint": "汎用（縦・空中方向ヒント）",
+      "genreAffinity": ["aerial_stg", "platformer", "aquatic"]
+    },
+    {
+      "id": "c-general-visual",
+      "label": "見た目の演出を派手にする",
+      "manualText": ["視覚的な演出が強化されました。"],
+      "genreParams": { "rhythm": 1, "tempo": 1 },
+      "weight": 3,
+      "hint": "汎用（リズム・テンポ方向ヒント）",
+      "genreAffinity": ["rhythm", "runner"]
+    },
+    {
+      "id": "c-general-story",
+      "label": "背景や物語の設定を追加する",
+      "manualText": ["ゲームに背景設定が加わりました。"],
+      "genreParams": { "growth": 1, "combo": 1 },
+      "weight": 2,
+      "hint": "汎用（成長・コンボ方向ヒント）",
+      "genreAffinity": ["rpg", "hack_slash"]
+    },
+    {
+      "id": "c-rare-multidir",
+      "label": "全方向に動けるステージにする",
+      "manualText": ["全方向への移動が可能になりました。"],
+      "genreParams": { "vertical": 2, "aerial": 2, "tempo": 1 },
+      "weight": 1,
+      "hint": "レア（縦STG/platformer 方向）",
+      "genreAffinity": ["aerial_stg", "platformer"]
+    },
+    {
+      "id": "c-rare-boss",
+      "label": "大きな挑戦相手を登場させる",
+      "manualText": ["強力な相手が登場することがあります。"],
+      "genreParams": { "enemy": 3, "range": 1 },
+      "weight": 1,
+      "hint": "レア（arena/hack_slash 方向）",
+      "genreAffinity": ["arena", "hack_slash"]
+    }
+  ]
+}
