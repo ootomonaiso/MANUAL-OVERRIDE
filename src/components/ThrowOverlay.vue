@@ -22,8 +22,8 @@ const state = ref<ThrowState>(createThrowState())
 const manualRef = ref<HTMLDivElement | null>(null)
 const isDragging = computed(() => state.value.phase === 'dragging')
 const isFlying = computed(() => state.value.phase === 'flying')
-// Canvas サイズ（ThrowEngine 用）
-const CANVAS_H = window.innerHeight
+// Canvas サイズ（ThrowEngine 用）— リサイズ時に更新
+const canvasH = ref(window.innerHeight)
 
 // アニメーションループ
 let rafId = 0
@@ -34,7 +34,7 @@ function startAnim() {
   function loop(ts: number) {
     const dt = Math.min((ts - lastTime) / 1000, 0.05)
     lastTime = ts
-    updateThrow(state.value, dt, CANVAS_H)
+    updateThrow(state.value, dt, canvasH.value)
     if (state.value.phase === 'done') {
       emit('thrown', state.value.result!)
       return
@@ -46,6 +46,10 @@ function startAnim() {
 
 // ドラッグ操作
 function onMouseDown(e: MouseEvent | TouchEvent) {
+  // タッチイベントのスクロール/ズームを防止
+  if ('touches' in e) {
+    e.preventDefault()
+  }
   const { clientX, clientY } = 'touches' in e ? e.touches[0] : e
   state.value = createThrowState()
   const el = manualRef.value
@@ -80,6 +84,7 @@ onMounted(() => {
   window.addEventListener('mouseup', onMouseUp)
   window.addEventListener('touchmove', onMouseMove)
   window.addEventListener('touchend', onMouseUp)
+  window.addEventListener('resize', onResize)
 })
 onUnmounted(() => {
   cancelAnimationFrame(rafId)
@@ -87,7 +92,13 @@ onUnmounted(() => {
   window.removeEventListener('mouseup', onMouseUp)
   window.removeEventListener('touchmove', onMouseMove)
   window.removeEventListener('touchend', onMouseUp)
+  window.removeEventListener('resize', onResize)
 })
+
+// ウィンドウリサイズ対応
+function onResize() {
+  canvasH.value = window.innerHeight
+}
 
 // 弧の軌跡描画（SVG）
 const trailPoints = computed(() => {

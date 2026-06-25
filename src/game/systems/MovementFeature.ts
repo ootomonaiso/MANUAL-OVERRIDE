@@ -25,8 +25,11 @@ export class MovementFeature implements FeatureSystem {
   preUpdate(world: MutableWorld, input: InputSnapshot, _dt: number): void {
     const p = world.player
     const r = world.rules
-    const leftKey  = r.controls.moveLeft
-    const rightKey = r.controls.moveRight
+    // 全キーを小文字に正規化（_normalizeKey と一致させる）
+    const leftKey  = r.controls.moveLeft.toLowerCase()
+    const rightKey = r.controls.moveRight.toLowerCase()
+    const upKey    = r.controls.moveUp   ? r.controls.moveUp.toLowerCase()   : null
+    const downKey  = r.controls.moveDown ? r.controls.moveDown.toLowerCase() : null
 
     const runSpeed = r.features.has('slow_precise')
       ? PLAYER_PHYSICS.runSpeed * PHYSICS.slowPreciseRatio
@@ -36,8 +39,8 @@ export class MovementFeature implements FeatureSystem {
       // 縦スクロール: 左右 + 上下移動
       const movingLeft  = input.keys.has(leftKey)
       const movingRight = input.keys.has(rightKey)
-      const movingUp    = r.controls.moveUp   ? input.keys.has(r.controls.moveUp)   : false
-      const movingDown  = r.controls.moveDown ? input.keys.has(r.controls.moveDown) : false
+      const movingUp    = upKey   ? input.keys.has(upKey)   : false
+      const movingDown  = downKey ? input.keys.has(downKey) : false
       p.vx = movingRight ? runSpeed : movingLeft ? -runSpeed : 0
       p.vy = movingUp ? -runSpeed : movingDown ? runSpeed : 0
     } else {

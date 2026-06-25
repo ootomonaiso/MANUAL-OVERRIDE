@@ -74,6 +74,7 @@ export class SideScroller {
   // スポーン
   private nextSpawnDist = 480
   private updateTriggeredFor = new Set<number>()
+  private readonly MAX_TRIGGER_CACHE = 256  // updateTriggeredFor の最大キャッシュ数
 
   // ─── 入力 ───────────────────────────────────────────────────────
   private keys = new Set<string>()
@@ -144,15 +145,15 @@ export class SideScroller {
       const key = this._normalizeKey(e)
       if (key === null) return
       this.keys.add(key)
-      // ゲームで使うキーのみ preventDefault
+      // ゲームで使うキーのみ preventDefault（小文字正規化後と比較）
       const c = this.rules.controls
       const gameKeys = [
-        c.jump,
-        c.moveLeft,
-        c.moveRight,
-        c.shoot ?? 'z',
-        c.moveUp,
-        c.moveDown,
+        c.jump.toLowerCase(),
+        c.moveLeft.toLowerCase(),
+        c.moveRight.toLowerCase(),
+        (c.shoot ?? 'z').toLowerCase(),
+        c.moveUp?.toLowerCase(),
+        c.moveDown?.toLowerCase(),
       ].filter(Boolean) as string[]
       if (gameKeys.includes(key)) {
         e.preventDefault()
@@ -170,9 +171,8 @@ export class SideScroller {
   private _normalizeKey(e: KeyboardEvent): string | null {
     // IME変換中キーは無視（日本語環境での誤動作防止）
     if (e.isComposing || e.key === 'Process') return null
-    if (e.key === ' ') return 'Space'
-    if (e.key === 'z' || e.key === 'Z') return 'z'
-    return e.key
+    if (e.key === ' ') return 'space'
+    return e.key.toLowerCase()
   }
 
   // ルール更新（ManualVersion があれば learningRules を同期）
@@ -193,6 +193,13 @@ export class SideScroller {
     if (rules.features.has('double_jump')) {
       this.player.jumpsLeft = Math.max(this.player.jumpsLeft, 2)
     }
+    // LearningSystem の副作用状態をリセット（ルール差し替えで古いエフェクトが残らないよう）
+    this._disabledActions.clear()
+    this._invertHazardUntil = -Infinity
+    this._changeKeyUntil.clear()
+    this._originalKeys = {}
+    this._pendingLearningMsg = null
+    this._gameStats.beatHazardInverted = false
     // ManualVersion から learningRules を取得
     if (manual?.learningRules) {
       this.learningRules = JSON.parse(JSON.stringify(manual.learningRules))
@@ -279,6 +286,14 @@ export class SideScroller {
 
   markUpdated(index: number): void {
     this.updateTriggeredFor.add(index)
+    // メモリリーク防止: キャッシュが肥大化したら古いエントリを削除
+    if (this.updateTriggeredFor.size > this.MAX_TRIGGER_CACHE) {
+      const sorted = [...this.updateTriggeredFor].sort((a, b) => a - b)
+      const toRemove = sorted.slice(0, sorted.length - this.MAX_TRIGGER_CACHE / 2)
+      for (const idx of toRemove) {
+        this.updateTriggeredFor.delete(idx)
+      }
+    }
   }
 
   getStats(): ActionStats { return this.stats }
@@ -398,11 +413,12 @@ export class SideScroller {
     const H = this.canvas.height
     const gY = H - BACKGROUND.groundHeight
 
-    const jumpKey  = r.controls.jump
-    const leftKey  = r.controls.moveLeft
-    const rightKey = r.controls.moveRight
+    // 全キーを小文字に正規化（_normalizeKey と一致させる）
+    const jumpKey  = r.controls.jump.toLowerCase()
+    const leftKey  = r.controls.moveLeft.toLowerCase()
+    const rightKey = r.controls.moveRight.toLowerCase()
     const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
-    const dashKey  = r.controls.dash ?? 'Shift'
+    const dashKey  = (r.controls.dash ?? 'shift').toLowerCase()
 
     const isVertical = r.scrollAxis === 'y'
 
@@ -550,7 +566,8 @@ export class SideScroller {
       // ─── 重力 ─────────────────────────────────────────────
       if (r.gravity === 0) {
         // 無重力: 重力では減速しないため、慣性を毎フレーム緩やかに減衰させて静止に近づける
-        p.vy *= Math.pow(0.05, dt)
+        // 0.98^dt ≈ 0.9997/frame (60fps) → 自然な浮遊感
+        p.vy *= Math.pow(0.98, dt)
       } else {
         const gravMult = p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0
         p.vy += r.gravity * gravMult * dt
@@ -1081,12 +1098,16 @@ export class SideScroller {
   }
 
   private _lighten(hex: string, amount: number): string {
+    // 非16進数カラー（"red", "rgb(...)" 等）はそのまま返す
+    if (!hex.startsWith('#') || hex.length < 7) return hex
     const r = parseInt(hex.slice(1, 3), 16)
     const g = parseInt(hex.slice(3, 5), 16)
     const b = parseInt(hex.slice(5, 7), 16)
-    const rr = Math.min(255, r + amount)
-    const gg = Math.min(255, g + amount)
-    const bb = Math.min(255, b + amount)
+    // NaN チェック（parseInt が失敗した場合）
+    if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return hex
+    const rr = Math.max(0, Math.min(255, r + amount))
+    const gg = Math.max(0, Math.min(255, g + amount))
+    const bb = Math.max(0, Math.min(255, b + amount))
     return `rgb(${rr},${gg},${bb})`
   }
 

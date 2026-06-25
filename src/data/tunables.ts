@@ -7,6 +7,7 @@
  */
 
 import { GAME_CONFIG } from './config'
+import { UPDATE_DISTANCES } from './gameBalance'
 
 const _c = GAME_CONFIG
 
@@ -68,17 +69,8 @@ export const SCORE = _c.score
 // DIFFICULTY — 難易度カーブ
 // ─────────────────────────────────────────────────────────────
 const _d = _c.difficulty
-const _generateUpdateDistances = (): readonly number[] => {
-  const intervals: number[] = [..._d.updateDistancesInitial]
-  const startIdx = _d.updateDistancesInitial.length
-  const baseInterval = _d.updateDistancesBaseInterval
-  for (let i = startIdx; i < _d.updateDistancesCount; i++) {
-    intervals.push(1100 + baseInterval * i)
-  }
-  return intervals
-}
 export const DIFFICULTY = {
-  updateDistances: _generateUpdateDistances(),
+  updateDistances: UPDATE_DISTANCES,  // gameBalance.ts から共有
   genreLockedPlayDist: _d.genreLockedPlayDist,
   tempoSpeedBonus: _d.tempoSpeedBonus,
   enemyDensityRate: _d.enemyDensityRate,

@@ -103,7 +103,8 @@ export function useGameState() {
   }
 
   // ゲームオーバー or ギブアップ → 投擲フェーズへ
-  function startThrowing(_playScoreRaw: number) {
+  function startThrowing() {
+    // playScore は scroller.getSnapshot().playScore から取得されるため引数不要
     soundManager.onThrowStart()
     phase.value = 'throwing'
   }
@@ -133,7 +134,7 @@ export function useGameState() {
 
   return {
     phase: readonly(phase),
-    rules: readonly(rules) as RuntimeRules,
+    rules: readonly(rules),
     currentVersionKey: readonly(currentVersionKey),
     choiceHistory: readonly(choiceHistory),
     lockedGenre: readonly(lockedGenre),

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import type { Choice } from '../domain/types'
 
 const props = defineProps<{
@@ -14,14 +14,20 @@ const emit = defineEmits<{
 const selected = ref<string | null>(null)
 const revealed = ref(false)
 
+let choiceTimer: ReturnType<typeof setTimeout> | null = null
+
 onMounted(() => {
   revealed.value = true
+})
+
+onUnmounted(() => {
+  if (choiceTimer !== null) clearTimeout(choiceTimer)
 })
 
 function pick(choiceId: string) {
   if (selected.value) return
   selected.value = choiceId
-  setTimeout(() => emit('choose', choiceId), 150)
+  choiceTimer = setTimeout(() => emit('choose', choiceId), 150)
 }
 </script>
 

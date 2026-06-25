@@ -9,7 +9,7 @@ const props = defineProps<{
   isAnimating: boolean
   isCentered: boolean
   history: ManualVersion[]
-  features?: Set<string>
+  features?: Set<string> | ReadonlySet<string>
   controls: Controls
   highlight?: boolean
 }>()

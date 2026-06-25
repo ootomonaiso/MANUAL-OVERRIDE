@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import type { FinalScore, GenreId } from '../domain/types'
 import { GENRES } from '../data/genres'
 
@@ -34,38 +34,57 @@ function grade(total: number): string {
 
 const gradeStr = computed(() => grade(props.finalScore.total))
 
-// ジャンルごとのアクセントカラー
-const accentColors: Record<string, string> = {
-  runner: '#4488ff',
-  stg:    '#44aaff',
-  rpg:    '#aa8844',
-  puzzle: '#444444',
-  rhythm: '#cc44ff',
+// ジャンルごとのアクセントカラー（GENRES の bgColor から派生）
+function genreToAccent(genre: GenreId): string {
+  const def = GENRES.find(g => g.id === genre)
+  if (def?.bgColor) return def.bgColor
+  // fallback: ジャンルIDから色を導出
+  const fallbacks: Record<string, string> = {
+    runner: '#4488ff', stg: '#44aaff', rpg: '#aa8844',
+    puzzle: '#444444', rhythm: '#cc44ff',
+  }
+  return fallbacks[genre] ?? '#cc2222'
 }
-const accentColor = accentColors[props.genre] ?? '#cc2222'
+const accentColor = genreToAccent(props.genre)
 
 function easeOut(t: number): number {
   return 1 - Math.pow(1 - t, 3)
 }
 
+// RAF ID トラッキング（unmount 時にキャンセル）
+const animRafs: number[] = []
+// setTimeout ID トラッキング（unmount 時にキャンセル）
+const animTimers: ReturnType<typeof setTimeout>[] = []
+
 function animateCount(target: number, setter: (v: number) => void, delay: number, duration = 900): void {
-  setTimeout(() => {
+  animTimers.push(setTimeout(() => {
     const start = performance.now()
     function step(now: number) {
       const t = Math.min((now - start) / duration, 1)
       setter(Math.round(easeOut(t) * target))
-      if (t < 1) requestAnimationFrame(step)
+      if (t < 1) {
+        const id = requestAnimationFrame(step)
+        animRafs.push(id)
+      }
     }
-    requestAnimationFrame(step)
-  }, delay)
+    const id = requestAnimationFrame(step)
+    animRafs.push(id)
+  }, delay))
 }
 
 onMounted(() => {
   animateCount(props.finalScore.play,  v => displayPlay.value  = v, 400)
   animateCount(props.finalScore.throw, v => displayThrow.value = v, 900)
   animateCount(props.finalScore.total, v => displayTotal.value = v, 1400, 600)
-  setTimeout(() => { gradeVisible.value = true }, 2200)
-  setTimeout(() => { altVisible.value   = true }, 2700)
+  animTimers.push(setTimeout(() => { gradeVisible.value = true }, 2200))
+  animTimers.push(setTimeout(() => { altVisible.value   = true }, 2700))
+})
+
+onUnmounted(() => {
+  for (const id of animRafs) cancelAnimationFrame(id)
+  for (const id of animTimers) clearTimeout(id)
+  animRafs.length = 0
+  animTimers.length = 0
 })
 </script>
 

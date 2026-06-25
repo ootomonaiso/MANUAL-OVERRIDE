@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { GENRES } from '../data/genres'
 
 const props = defineProps<{
@@ -11,7 +11,7 @@ const props = defineProps<{
   maxHp: number
   beatHits: number
   genre: string
-  features: Set<string>
+  features: Set<string> | ReadonlySet<string>
 }>()
 
 // スコアカウントアップアニメーション
@@ -29,6 +29,10 @@ watch(() => props.playScore, (next, prev) => {
     if (p < 1) scoreRaf = requestAnimationFrame(tick)
   }
   scoreRaf = requestAnimationFrame(tick)
+})
+
+onUnmounted(() => {
+  cancelAnimationFrame(scoreRaf)
 })
 
 const genreLabel = computed(() => GENRES.find(g => g.id === props.genre)?.label ?? '')
