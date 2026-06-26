@@ -75,6 +75,7 @@ export const DIFFICULTY = {
   tempoSpeedBonus: _d.tempoSpeedBonus,
   enemyDensityRate: _d.enemyDensityRate,
   globalDifficultyMult: _d.globalDifficultyMult,
+  infiniteUpdateInterval: _d.infiniteUpdateInterval,
 } as const
 
 // ─────────────────────────────────────────────────────────────
@@ -96,3 +97,23 @@ export const STEALTH = _c.stealth
 // GENRE_PARAMS — ジャンル分岐パラメータ
 // ─────────────────────────────────────────────────────────────
 export const GENRE_PARAMS = _c.genre_params
+
+// ─────────────────────────────────────────────────────────────
+// BAYES — ベイズ収束
+// ─────────────────────────────────────────────────────────────
+export const BAYES = _c.bayes
+
+// ─────────────────────────────────────────────────────────────
+// SPECIAL — 特殊フィーチャー
+// ─────────────────────────────────────────────────────────────
+export const SPECIAL = _c.special
+
+// ─────────────────────────────────────────────────────────────
+// PUZZLE — パズルフィーチャー
+// ─────────────────────────────────────────────────────────────
+export const PUZZLE = _c.puzzle
+
+// ─────────────────────────────────────────────────────────────
+// EXTRA_MOVEMENT — 拡張移動フィーチャー
+// ─────────────────────────────────────────────────────────────
+export const EXTRA_MOVEMENT = _c.extra_movement

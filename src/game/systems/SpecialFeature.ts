@@ -12,16 +12,7 @@
 import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import type { Hazard } from '../entities'
-import { VFX, STEALTH, BOSS } from '../../data/tunables'
-
-const TOWER_FIRE_INTERVAL_SEC = 1.2
-const TOWER_RANGE_PX = 260
-const TOWER_KILL_SCORE = 80
-
-const BOSS_KILL_SCORE = 500
-
-const TIME_BONUS_INTERVAL_SEC = 5
-const TIME_BONUS_SCORE = 50
+import { VFX, STEALTH, BOSS, SPECIAL } from '../../data/tunables'
 
 interface StealthState {
   idleTimer: number
@@ -45,13 +36,13 @@ export class SpecialFeature implements FeatureSystem {
   readonly handles = ['stealth_mode', 'time_bonus', 'color_touch', 'tower', 'boss'] as const
 
   private stealth: StealthState = { idleTimer: 0, hidden: false }
-  private tower: TowerState = { cooldown: TOWER_FIRE_INTERVAL_SEC }
+  private tower: TowerState = { cooldown: SPECIAL.towerFireIntervalSec }
   private boss: BossState = { active: null, lastBossDistance: -Infinity }
   private timeBonus: TimeBonusState = { timer: 0 }
 
   onInit(): void {
     this.stealth = { idleTimer: 0, hidden: false }
-    this.tower = { cooldown: TOWER_FIRE_INTERVAL_SEC }
+    this.tower = { cooldown: SPECIAL.towerFireIntervalSec }
     this.boss = { active: null, lastBossDistance: -Infinity }
     this.timeBonus = { timer: 0 }
   }
@@ -96,12 +87,12 @@ export class SpecialFeature implements FeatureSystem {
 
   private _updateTimeBonus(world: MutableWorld, dt: number): void {
     this.timeBonus.timer += dt
-    if (this.timeBonus.timer < TIME_BONUS_INTERVAL_SEC) return
-    this.timeBonus.timer -= TIME_BONUS_INTERVAL_SEC
+    if (this.timeBonus.timer < SPECIAL.timeBonusIntervalSec) return
+    this.timeBonus.timer -= SPECIAL.timeBonusIntervalSec
 
-    world.addScore(TIME_BONUS_SCORE)
+    world.addScore(SPECIAL.timeBonusScore)
     const p = world.player
-    world.addScorePopup(p.x + p.w / 2, p.y - 30, `TIME +${TIME_BONUS_SCORE}`, '#66ddff')
+    world.addScorePopup(p.x + p.w / 2, p.y - 30, `TIME +${SPECIAL.timeBonusScore}`, '#66ddff')
   }
 
   onBossSpawn(world: MutableWorld): void {
@@ -127,9 +118,9 @@ export class SpecialFeature implements FeatureSystem {
     const cx = sx + boss.w / 2
     const cy = boss.y + boss.h / 2
 
-    world.addScore(BOSS_KILL_SCORE)
+    world.addScore(SPECIAL.bossKillScore)
     world.addScoreVarsBossKill()
-    world.addScorePopup(cx, cy, `BOSS DEFEATED! +${BOSS_KILL_SCORE}`, '#ff4444')
+    world.addScorePopup(cx, cy, `BOSS DEFEATED! +${SPECIAL.bossKillScore}`, '#ff4444')
     world.triggerShake(BOSS.bossDeathShake)
 
     for (let i = 0; i < BOSS.bossDeathParticles; i++) {
@@ -161,7 +152,7 @@ export class SpecialFeature implements FeatureSystem {
       ctx.fillRect(towerX, towerY, 14, 36)
       ctx.fillStyle = '#cfe8ff'
       ctx.fillRect(towerX - 3, towerY - 6, 20, 8)
-      const reload = 1 - Math.max(0, this.tower.cooldown) / TOWER_FIRE_INTERVAL_SEC
+      const reload = 1 - Math.max(0, this.tower.cooldown) / SPECIAL.towerFireIntervalSec
       ctx.fillStyle = 'rgba(255,255,255,0.6)'
       ctx.fillRect(towerX - 3, towerY - 12, 20 * reload, 3)
       ctx.restore()
@@ -205,7 +196,7 @@ export class SpecialFeature implements FeatureSystem {
   private _updateTower(world: MutableWorld, dt: number): void {
     this.tower.cooldown -= dt
     if (this.tower.cooldown > 0) return
-    this.tower.cooldown = TOWER_FIRE_INTERVAL_SEC
+    this.tower.cooldown = SPECIAL.towerFireIntervalSec
 
     let target: Hazard | null = null
     let targetDist = Infinity
@@ -214,7 +205,7 @@ export class SpecialFeature implements FeatureSystem {
       if (h.isSafe) continue
       const screenX = world.getHazardScreenX(h)
       const dist = Math.abs(screenX - world.player.x)
-      if (dist <= TOWER_RANGE_PX && dist < targetDist) {
+      if (dist <= SPECIAL.towerRangePx && dist < targetDist) {
         target = h
         targetDist = dist
         targetScreenX = screenX
@@ -225,8 +216,8 @@ export class SpecialFeature implements FeatureSystem {
     const cx = targetScreenX + target.w / 2
     const cy = target.y + target.h / 2
     world.removeHazardById(target)
-    world.addScore(TOWER_KILL_SCORE)
-    world.addScorePopup(cx, target.y, `+${TOWER_KILL_SCORE}`, '#ffd166')
+    world.addScore(SPECIAL.towerKillScore)
+    world.addScorePopup(cx, target.y, `+${SPECIAL.towerKillScore}`, '#ffd166')
     world.setKills(world.gameStats.kills + 1)
     world.setCombo(world.gameStats.combo + 1)
 
@@ -240,7 +231,7 @@ export class SpecialFeature implements FeatureSystem {
 
   onManualUpdated(): void {
     this.stealth = { idleTimer: 0, hidden: false }
-    this.tower = { cooldown: TOWER_FIRE_INTERVAL_SEC }
+    this.tower = { cooldown: SPECIAL.towerFireIntervalSec }
     this.boss = { active: null, lastBossDistance: -Infinity }
     this.timeBonus = { timer: 0 }
   }

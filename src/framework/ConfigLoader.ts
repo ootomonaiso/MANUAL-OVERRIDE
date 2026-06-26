@@ -27,10 +27,17 @@ export function loadConfigFromGlob(
       continue
     }
     const { section, ...fields } = raw as { section: string } & Record<string, unknown>
+    // $comment_* フィールドをフィルタリング
+    const filtered: Record<string, unknown> = {}
+    for (const [key, val] of Object.entries(fields)) {
+      if (!key.startsWith('$comment')) {
+        filtered[key] = val
+      }
+    }
     if (partial[section as GameConfigSection]) {
       console.warn(`[ConfigLoader] セクション "${section}" が重複しています (${filePath})。上書きします。`)
     }
-    partial[section as GameConfigSection] = fields as never
+    partial[section as GameConfigSection] = filtered as never
   }
 
   return partial as GameConfigMap

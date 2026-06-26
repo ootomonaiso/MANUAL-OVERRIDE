@@ -208,6 +208,15 @@ export interface ManualEntryJSON {
    * id と triggered は省略可（ローダが JSON から直接マッピングする）。
    */
   learningRules?: LearningRule[]
+
+  /** プール選択用: ジャンルごとの親和性（0〜1） */
+  genreAffinity?: Record<string, number>
+  /** プール選択用: 表示可能な最小 updateIndex */
+  minUpdateIndex?: number
+  /** プール選択用: 表示可能な最大 updateIndex */
+  maxUpdateIndex?: number
+  /** プール選択用: 選択肢を借用するチェーンバージョンのキー */
+  chainKey?: string
 }
 
 // ──────────────────────────────────────────────────────────────────────

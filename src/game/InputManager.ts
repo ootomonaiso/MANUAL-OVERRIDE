@@ -70,11 +70,11 @@ export class InputManager {
     window.removeEventListener('keyup', this._onKeyUp)
   }
 
-  /** IME 変換中キーを除外し、スペース・z を統一表記に正規化する */
+  /** IME 変換中キーを除外し、スペース・アルファベットを統一表記に正規化する */
   private static _normalize(e: KeyboardEvent): string | null {
     if (e.isComposing || e.key === 'Process') return null
     if (e.key === ' ') return 'Space'
-    if (e.key === 'z' || e.key === 'Z') return 'z'
+    if (e.key.length === 1 && e.key >= 'A' && e.key <= 'Z') return e.key.toLowerCase()
     return e.key
   }
 }

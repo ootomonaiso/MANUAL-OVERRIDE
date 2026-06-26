@@ -125,18 +125,6 @@ export function validateDeck(deck: Record<string, ManualVersion>): ValidationRes
   }
 
   // ── 深い循環参照の検出 ─────────────────────────────────────────
-  function hasCycle(start: string): boolean {
-    const visited = new Set<string>()
-    const stack: string[] = [start]
-    while (stack.length > 0) {
-      const cur = stack.pop()!
-      if (visited.has(cur)) return true
-      visited.add(cur)
-      const ver = deck[cur]
-      if (ver) stack.push(...ver.choices.map(c => c.next))
-    }
-    return false
-  }
   for (const key of Object.keys(deck)) {
     // hasCycle は start を通る循環の存在確認のため、
     // choices の next から再び start に戻れるかをチェック
@@ -188,6 +176,6 @@ export function devValidate(deck: Record<string, ManualVersion>): void {
   if (!result.ok) {
     console.error('[ManualValidator] デッキに問題があります。上記のエラーを確認してください。')
   } else if (result.warnings.length === 0) {
-    console.info('[ManualValidator] ✅ デッキの整合性チェック: 問題なし')
+    console.warn('[ManualValidator] ✅ デッキの整合性チェック: 問題なし')
   }
 }

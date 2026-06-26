@@ -17,10 +17,6 @@ const revealed = ref(false)
 let choiceTimer: ReturnType<typeof setTimeout> | null = null
 
 
-onUnmounted(() => {
-  if (choiceTimer !== null) clearTimeout(choiceTimer)
-})
-
 function pick(choiceId: string) {
   if (selected.value) return
   selected.value = choiceId
@@ -216,6 +212,223 @@ onUnmounted(() => {
 .choice-card.genre-aquatic .choice-btn:hover { background: #001020; border-color: #44aadd; }
 .choice-card.genre-aquatic .choice-index  { color: #88ccff; border-color: #0088bb; }
 .choice-card.genre-aquatic .choice-label  { color: #aaddff; }
+
+/* ─── runner ─── */
+.choice-card.genre-runner {
+  border-color: #ff3333;
+  border-left-width: 6px;
+  box-shadow: -4px 0 0 #ff3333, 0 2px 8px rgba(0,0,0,0.15);
+  background: #ffffff;
+  font-family: Impact, 'Arial Black', sans-serif;
+  color: #111;
+}
+.choice-card.genre-runner .choice-stamp  { color: #ff3333; border-color: #ff3333; }
+.choice-card.genre-runner .choice-ver    { color: #cc2222; }
+.choice-card.genre-runner .choice-prompt { color: #222222; }
+.choice-card.genre-runner .choice-btn    { border-color: #ff3333; background: #f8f8f8; color: #222; }
+.choice-card.genre-runner .choice-btn:hover { background: #fff0f0; border-color: #cc0000; }
+.choice-card.genre-runner .choice-index  { color: #ff3333; border-color: #cc2222; }
+.choice-card.genre-runner .choice-label  { color: #222222; }
+.choice-card.genre-runner .choice-footnote { color: rgba(50,50,50,0.4); border-color: rgba(0,0,0,0.12); }
+
+/* ─── stealth_action ─── */
+.choice-card.genre-stealth_action {
+  border-color: rgba(60,60,60,0.4);
+  border-style: dashed;
+  box-shadow: none;
+  background: #050505;
+  font-family: 'Courier New', monospace;
+}
+.choice-card.genre-stealth_action .choice-stamp  { color: rgba(100,100,100,0.55); border-color: rgba(60,60,60,0.4); }
+.choice-card.genre-stealth_action .choice-ver    { color: rgba(80,80,80,0.5); }
+.choice-card.genre-stealth_action .choice-prompt { color: rgba(155,155,155,0.5); }
+.choice-card.genre-stealth_action .choice-btn    { border-color: rgba(60,60,60,0.35); background: #080808; }
+.choice-card.genre-stealth_action .choice-btn:hover { background: #0d0d0d; border-color: rgba(100,100,100,0.5); }
+.choice-card.genre-stealth_action .choice-index  { color: rgba(100,100,100,0.55); border-color: rgba(60,60,60,0.4); }
+.choice-card.genre-stealth_action .choice-label  { color: rgba(155,155,155,0.5); }
+.choice-card.genre-stealth_action .choice-footnote { color: rgba(80,80,80,0.3); border-color: rgba(60,60,60,0.2); }
+
+/* ─── racing ─── */
+.choice-card.genre-racing {
+  border-color: #ff6600;
+  border-top-width: 5px;
+  box-shadow: 0 -3px 0 #ff6600, 0 0 20px rgba(255,100,0,0.18), 0 0 50px rgba(0,0,0,0.5);
+  background: #0f0a00;
+  font-family: Impact, 'Arial Black', sans-serif;
+}
+.choice-card.genre-racing .choice-stamp  { color: #ff6600; border-color: #ff6600; }
+.choice-card.genre-racing .choice-ver    { color: #cc4400; }
+.choice-card.genre-racing .choice-prompt { color: #ffcc88; }
+.choice-card.genre-racing .choice-btn    { border-color: #ff6600; background: #1a0a00; }
+.choice-card.genre-racing .choice-btn:hover { background: #250e00; border-color: #ff8800; }
+.choice-card.genre-racing .choice-index  { color: #ff6600; border-color: #cc4400; }
+.choice-card.genre-racing .choice-label  { color: #ffcc88; }
+
+/* ─── platformer ─── */
+.choice-card.genre-platformer {
+  border-color: #ffcc00;
+  border-width: 3px;
+  border-radius: 8px;
+  box-shadow: 4px 4px 0 #ffcc00, 0 0 20px rgba(0,80,180,0.2), 0 0 50px rgba(0,0,0,0.5);
+  background: #001a4a;
+}
+.choice-card.genre-platformer .choice-stamp  { color: #ffcc00; border-color: #ffcc00; }
+.choice-card.genre-platformer .choice-ver    { color: #ddaa00; }
+.choice-card.genre-platformer .choice-prompt { color: #88ddff; }
+.choice-card.genre-platformer .choice-btn    { border-color: #ffcc00; background: #001030; }
+.choice-card.genre-platformer .choice-btn:hover { background: #001840; border-color: #ffee44; }
+.choice-card.genre-platformer .choice-index  { color: #ffcc00; border-color: #ddaa00; }
+.choice-card.genre-platformer .choice-label  { color: #88ddff; }
+
+/* ─── dungeon ─── */
+.choice-card.genre-dungeon {
+  border-color: #6a3800;
+  box-shadow: 3px 3px 0 #3a2000, 0 0 20px rgba(180,80,0,0.15), 0 0 50px rgba(0,0,0,0.5);
+  background: #0c0800;
+  font-family: 'Georgia', serif;
+}
+.choice-card.genre-dungeon .choice-stamp  { color: #c87020; border-color: #6a3800; }
+.choice-card.genre-dungeon .choice-ver    { color: #8a5010; }
+.choice-card.genre-dungeon .choice-prompt { color: #c8a060; }
+.choice-card.genre-dungeon .choice-btn    { border-color: #6a3800; background: #080500; }
+.choice-card.genre-dungeon .choice-btn:hover { background: #110800; border-color: #c87020; }
+.choice-card.genre-dungeon .choice-index  { color: #c87020; border-color: #6a3800; }
+.choice-card.genre-dungeon .choice-label  { color: #c8a060; }
+
+/* ─── survival ─── */
+.choice-card.genre-survival {
+  border-color: #2a4a2a;
+  box-shadow: 3px 3px 0 #1a3a1a, 0 0 16px rgba(60,100,40,0.1), 0 0 50px rgba(0,0,0,0.5);
+  background: #050a05;
+}
+.choice-card.genre-survival .choice-stamp  { color: #5a9a5a; border-color: #2a4a2a; }
+.choice-card.genre-survival .choice-ver    { color: #3a6a3a; }
+.choice-card.genre-survival .choice-prompt { color: #88cc88; }
+.choice-card.genre-survival .choice-btn    { border-color: #2a4a2a; background: #030803; }
+.choice-card.genre-survival .choice-btn:hover { background: #060e06; border-color: #5a9a5a; }
+.choice-card.genre-survival .choice-index  { color: #5a9a5a; border-color: #2a4a2a; }
+.choice-card.genre-survival .choice-label  { color: #88cc88; }
+
+/* ─── hack_slash ─── */
+.choice-card.genre-hack_slash {
+  border-color: #880000;
+  box-shadow: 5px 5px 0 #440000, 0 0 20px rgba(200,0,0,0.25), 0 0 50px rgba(0,0,0,0.5);
+  background: #0a0000;
+}
+.choice-card.genre-hack_slash .choice-stamp  { color: #ff4444; border-color: #880000; }
+.choice-card.genre-hack_slash .choice-ver    { color: #aa2222; }
+.choice-card.genre-hack_slash .choice-prompt { color: #ff9999; }
+.choice-card.genre-hack_slash .choice-btn    { border-color: #880000; background: #060000; }
+.choice-card.genre-hack_slash .choice-btn:hover { background: #100000; border-color: #cc3333; }
+.choice-card.genre-hack_slash .choice-index  { color: #ff4444; border-color: #880000; }
+.choice-card.genre-hack_slash .choice-label  { color: #ff9999; }
+
+/* ─── arena ─── */
+.choice-card.genre-arena {
+  border-color: #880000;
+  border-width: 3px;
+  box-shadow: 5px 5px 0 #440000, 0 0 28px rgba(200,0,0,0.35), 0 0 50px rgba(0,0,0,0.7);
+  background: #0f0000;
+}
+.choice-card.genre-arena .choice-stamp  { color: #ff5555; border-color: #880000; }
+.choice-card.genre-arena .choice-ver    { color: #bb2222; }
+.choice-card.genre-arena .choice-prompt { color: #ffaaaa; }
+.choice-card.genre-arena .choice-btn    { border-color: #880000; background: #080000; }
+.choice-card.genre-arena .choice-btn:hover { background: #120000; border-color: #dd3333; }
+.choice-card.genre-arena .choice-index  { color: #ff5555; border-color: #880000; }
+.choice-card.genre-arena .choice-label  { color: #ffaaaa; }
+
+/* ─── aerial_stg ─── */
+.choice-card.genre-aerial_stg {
+  border-color: #1a66ff;
+  box-shadow: 0 0 20px rgba(26,102,255,0.2), 0 0 50px rgba(0,0,0,0.5);
+  font-family: 'Courier New', monospace;
+  background: #000820;
+}
+.choice-card.genre-aerial_stg .choice-stamp  { color: #4488ff; border-color: #4488ff; }
+.choice-card.genre-aerial_stg .choice-ver    { color: #4488ff; }
+.choice-card.genre-aerial_stg .choice-prompt { color: #aaccff; }
+.choice-card.genre-aerial_stg .choice-btn    { border-color: #1a66ff; background: #000820; }
+.choice-card.genre-aerial_stg .choice-btn:hover { background: #001040; border-color: #4488ff; }
+.choice-card.genre-aerial_stg .choice-index  { color: #4488ff; border-color: #4488ff; }
+.choice-card.genre-aerial_stg .choice-label  { color: #aaccff; }
+
+/* ─── bullet_hell ─── */
+.choice-card.genre-bullet_hell {
+  border-color: #2244cc;
+  box-shadow: 0 0 20px rgba(34,68,204,0.25), 0 0 50px rgba(0,0,0,0.6);
+  font-family: 'Courier New', monospace;
+  background: #000010;
+}
+.choice-card.genre-bullet_hell .choice-stamp  { color: #3355dd; border-color: #2244cc; }
+.choice-card.genre-bullet_hell .choice-ver    { color: #3355dd; }
+.choice-card.genre-bullet_hell .choice-prompt { color: #99aaff; }
+.choice-card.genre-bullet_hell .choice-btn    { border-color: #2244cc; background: #00000e; }
+.choice-card.genre-bullet_hell .choice-btn:hover { background: #00001a; border-color: #4466ff; }
+.choice-card.genre-bullet_hell .choice-index  { color: #3355dd; border-color: #2244cc; }
+.choice-card.genre-bullet_hell .choice-label  { color: #99aaff; }
+
+/* ─── bullet_runner ─── */
+.choice-card.genre-bullet_runner {
+  border-color: #5533ff;
+  box-shadow: 0 0 20px rgba(85,51,255,0.2), 0 0 50px rgba(0,0,0,0.5);
+  font-family: 'Courier New', monospace;
+  background: #0a0018;
+}
+.choice-card.genre-bullet_runner .choice-stamp  { color: #7755ff; border-color: #5533ff; }
+.choice-card.genre-bullet_runner .choice-ver    { color: #5533ff; }
+.choice-card.genre-bullet_runner .choice-prompt { color: #bbaaff; }
+.choice-card.genre-bullet_runner .choice-btn    { border-color: #5533ff; background: #060012; }
+.choice-card.genre-bullet_runner .choice-btn:hover { background: #0d0020; border-color: #8866ff; }
+.choice-card.genre-bullet_runner .choice-index  { color: #7755ff; border-color: #5533ff; }
+.choice-card.genre-bullet_runner .choice-label  { color: #bbaaff; }
+
+/* ─── idle ─── */
+.choice-card.genre-idle {
+  border-color: #888;
+  box-shadow: 2px 2px 0 #aaa;
+  font-family: 'Courier New', monospace;
+  background: #fafaf8;
+  color: #444;
+}
+.choice-card.genre-idle .choice-stamp  { color: #666; border-color: #888; }
+.choice-card.genre-idle .choice-ver    { color: #777; }
+.choice-card.genre-idle .choice-prompt { color: #555; }
+.choice-card.genre-idle .choice-btn    { border-color: #bbb; background: #f0f0ee; color: #444; }
+.choice-card.genre-idle .choice-btn:hover { background: #e8e8e6; border-color: #888; }
+.choice-card.genre-idle .choice-index  { color: #666; border-color: #999; }
+.choice-card.genre-idle .choice-label  { color: #444; }
+.choice-card.genre-idle .choice-footnote { color: rgba(60,60,60,0.4); border-color: #ddd; }
+
+/* ─── tower_def ─── */
+.choice-card.genre-tower_def {
+  border-color: #558855;
+  box-shadow: 2px 2px 0 #558855;
+  font-family: 'Courier New', monospace;
+  background: #0a0f0a;
+  color: #88aa88;
+}
+.choice-card.genre-tower_def .choice-stamp  { color: #558855; border-color: #558855; }
+.choice-card.genre-tower_def .choice-ver    { color: #446644; }
+.choice-card.genre-tower_def .choice-prompt { color: #88aa88; }
+.choice-card.genre-tower_def .choice-btn    { border-color: #446644; background: #060e06; color: #88aa88; }
+.choice-card.genre-tower_def .choice-btn:hover { background: #0a140a; border-color: #558855; }
+.choice-card.genre-tower_def .choice-index  { color: #558855; border-color: #446644; }
+.choice-card.genre-tower_def .choice-label  { color: #88aa88; }
+
+/* ─── sports ─── */
+.choice-card.genre-sports {
+  border-color: #cc44ff;
+  box-shadow: 0 0 20px rgba(200,68,255,0.2), 0 0 50px rgba(0,0,0,0.5);
+  background: #0a001a;
+}
+.choice-card.genre-sports .choice-stamp  { color: #cc44ff; border-color: #cc44ff; }
+.choice-card.genre-sports .choice-ver    { color: #aa33dd; }
+.choice-card.genre-sports .choice-prompt { color: #ddaaff; }
+.choice-card.genre-sports .choice-btn    { border-color: #9922cc; background: #060012; }
+.choice-card.genre-sports .choice-btn:hover { background: #0d001c; border-color: #cc44ff; }
+.choice-card.genre-sports .choice-index  { color: #cc44ff; border-color: #aa33dd; }
+.choice-card.genre-sports .choice-label  { color: #ddaaff; }
 
 /* ヘッダー */
 .choice-header {

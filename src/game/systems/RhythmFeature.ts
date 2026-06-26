@@ -3,11 +3,6 @@ import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import type { BeatMarker } from '../entities'
 import { RHYTHM_TUNING } from '../../data/tunables'
 
-// JUST 判定の最低 quality 閾値（これを下回るとボーナスなし）
-const JUST_QUALITY_THRESHOLD = 0.5
-// JUST ボーナスの基準スコア（quality=1.0 時の最大値）
-const JUST_BASE_SCORE = 150
-
 interface RhythmState {
   beatInterval: number
   nextBeat: number
@@ -78,15 +73,15 @@ export class RhythmFeature implements FeatureSystem {
     if (input.justPressed.has(jumpKey) || input.justPressed.has(shootKey)) {
       const phase = (s.beatInterval - s.nextBeat) % s.beatInterval
       const dist  = Math.min(phase, s.beatInterval - phase)
-      const quality = dist <= s.justWindowMs ? 1 - dist / s.justWindowMs : 0
-      if (quality > JUST_QUALITY_THRESHOLD) {
-        const bonus = Math.round(JUST_BASE_SCORE * quality)
+      const quality = dist <= s.justWindowMs ? Math.max(0, 1 - dist / s.justWindowMs) : 0
+      if (quality > RHYTHM_TUNING.justInputMinQuality) {
+        const bonus = Math.round(RHYTHM_TUNING.justInputScoreBase * quality)
         s.beatHits++
         world.addBeatHit()
         world.addScore(bonus)
         const p = world.player
-        world.addScorePopup(p.x + p.w, p.y - 30, `JUST! +${bonus}`, '#ff00ff')
-        world.addParticle(p.x + p.w / 2, p.y, 0, -80, 0.4, '#ff00ff', 4)
+        world.addScorePopup(p.x + p.w, p.y + RHYTHM_TUNING.justInputPopupOffsetY, `JUST! +${bonus}`, '#ff00ff')
+        world.addParticle(p.x + p.w / 2, p.y, 0, RHYTHM_TUNING.justInputParticleVy, RHYTHM_TUNING.justInputParticleLife, '#ff00ff', RHYTHM_TUNING.justInputParticleSize)
       }
     }
   }

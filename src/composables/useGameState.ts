@@ -1,9 +1,15 @@
 import { reactive, ref, readonly } from 'vue'
-import type { Phase, GenreId, RuntimeRules, FinalScore, ManualVersion, ManualCard, GenreParam } from '../domain/types'
+import type { Phase, GenreId, RuntimeRules, FinalScore, ManualVersion, ManualCard, GenreParam, BayesianState } from '../domain/types'
+import { BAYES_DEBUG_TOP_N } from '../domain/types'
 import { MANUAL_DECK } from '../data/manualDeck'
 import { GENRES } from '../data/genres'
-import { buildRuntimeRules, type ChoiceRecord } from '../domain/ruleEngine'
-import { resolveGenre, accumulateParams, resolveAllGenreProgress, accumulateGenrePoints } from '../domain/genreResolver'
+import { buildRuntimeRules, type ChoiceRecord, accumulateWithMultiplier } from '../domain/ruleEngine'
+import {
+  resolveHighestProbGenre,
+  initBayesianState,
+  updateBayesianState,
+  DEFAULT_BAYES_CONFIG,
+} from '../domain/genreResolver'
 import { calcThrowScore, calcFinalScore } from '../domain/scoreCalc'
 import type { ThrowResult } from '../domain/types'
 import { soundManager } from '../plugins/SoundManager'
@@ -35,6 +41,9 @@ export function useGameState() {
   // 最後に選んだカードの runtimeConfig（buildRuntimeRules に渡す）
   const lastRuntimeConfig = ref<ManualVersion['runtimeConfig']>(undefined)
 
+  // ベイズ状態（事後確率分布を追跡）
+  const bayesState = reactive<BayesianState>(initBayesianState(GENRES))
+
   // 現在有効なルール（ゲームループが参照）
   const rules = reactive<RuntimeRules>(
     buildRuntimeRules(MANUAL_DECK['1.0'], [], null)
@@ -60,9 +69,19 @@ export function useGameState() {
     Object.assign(rules, next)
   }
 
+  function _syncBayesState(newState: BayesianState) {
+    bayesState.converged = newState.converged
+    bayesState.convergedGenre = newState.convergedGenre
+    bayesState.updateCount = newState.updateCount
+    for (const genre of GENRES) {
+      bayesState.posteriors[genre.id] = newState.posteriors[genre.id] ?? 0
+    }
+  }
+
   // ─── フェーズ遷移 ─────────────────────────────────────────
   function startGame() {
     phase.value = 'tutorialIntro'
+    _syncBayesState(initBayesianState(GENRES))
     _rebuildRules()
   }
 
@@ -70,17 +89,10 @@ export function useGameState() {
     phase.value = 'tutorial'
   }
 
-  // 選択履歴から各ジャンルの収束進捗(0〜1)を計算してカード重みかけに使う
-  function _computeGenreWeights(): Record<string, number> {
-    if (choiceHistory.length === 0) return {}
-    const accumulated = accumulateParams(choiceHistory.map(h => h.genreParams))
-    return resolveAllGenreProgress(accumulated, GENRES, accumulateGenrePoints(choiceHistory))
-  }
-
-  // 説明書更新トリガー: カードをランダムサンプリングして updating フェーズへ。
-  // カードが1枚も取れなかった場合は false を返し、フェーズを変えない。
+  // 説明書更新トリガー: カードをサンプリングして updating フェーズへ。
+  // カードが1枚も取れなかった場合は false を返す。
   function triggerUpdate(): boolean {
-    const cards = sampleCards(2, lastShownCardIds.value, _computeGenreWeights())
+    const cards = sampleCards(2, lastShownCardIds.value, bayesState.posteriors)
     if (cards.length === 0) return false
     activeCards.value = cards
     lastShownCardIds.value = new Set(cards.map(c => c.id))
@@ -95,14 +107,13 @@ export function useGameState() {
 
     soundManager.onChoiceSelect()
 
-    // B6: パラメータにじみ（genreParams の値に PARAM_JITTER_RANGE 幅のランダムブレを加える）
+    // genreParams のジッター（±PARAM_JITTER_RANGE の幅でランダムブレ）
     const jitter = 1 + (Math.random() - 0.5) * PARAM_JITTER_RANGE
     const jitteredParams: Partial<Record<GenreParam, number>> = {}
     for (const [k, v] of Object.entries(card.genreParams ?? {}) as [GenreParam, number][]) {
       jitteredParams[k] = v * jitter
     }
 
-    // 選択履歴に積む
     choiceHistory.push({
       choiceId: cardId,
       genreParams: jitteredParams,
@@ -110,7 +121,7 @@ export function useGameState() {
       genrePoints: card.genrePoints,
     })
 
-    // B5: 矛盾カード処理 — 過去に選んだカードと矛盾する場合、その行を取り消し線にする
+    // 矛盾カード処理
     if (card.conflictsWith?.length) {
       for (const conflictId of card.conflictsWith) {
         const wasSelected = choiceHistory.some(h => h.choiceId === conflictId)
@@ -131,7 +142,7 @@ export function useGameState() {
       }
     }
 
-    // 障害物設定を上書き（カードが持つ場合のみ）
+    // 障害物設定を上書き
     if (card.hazards) {
       currentHazards.value = { ...card.hazards }
     }
@@ -143,20 +154,35 @@ export function useGameState() {
 
     roundCount.value++
 
-    // すでにジャンル確定済みなら説明書更新のみ（ジャンルは変えない）
+    // ベイズ更新
+    const accumulated = accumulateWithMultiplier(choiceHistory)
+    const newState = updateBayesianState(bayesState, accumulated, GENRES)
+    _syncBayesState(newState)
+
+    // デバッグログ
+    const sorted = GENRES
+      .filter(g => g.id !== 'base')
+      .sort((a, b) => (newState.posteriors[b.id] ?? 0) - (newState.posteriors[a.id] ?? 0))
+      .slice(0, BAYES_DEBUG_TOP_N)
+      .map(g => `  ${g.id.padEnd(14)} ${((newState.posteriors[g.id] ?? 0) * 100).toFixed(1)}%`)
+      .join('\n')
+    console.warn(`[BAYES] round #${roundCount.value} | cardId=${cardId}`)
+    console.warn(`[BAYES] Top${BAYES_DEBUG_TOP_N}:\n${sorted}`)
+    console.warn(`[BAYES] converged=${newState.converged} | genre=${newState.convergedGenre ?? '—'} | criteria=minProb${(DEFAULT_BAYES_CONFIG.minProb * 100).toFixed(0)}% ratio>=${DEFAULT_BAYES_CONFIG.dominanceRatio}x`)
+
+    // ジャンル確定済みなら説明書更新のみ
     if (lockedGenre.value !== null) {
       _rebuildRules()
       phase.value = 'genreLocked'
       return undefined
     }
 
-    // 初回ジャンル収束チェック（最終ラウンド以降は強制確定）
-    const accumulated = accumulateParams(choiceHistory.map(h => h.genreParams))
-    const selectedIds = choiceHistory.map(h => h.choiceId)
-    const resolved = resolveGenre(accumulated, GENRES, accumulateGenrePoints(choiceHistory), selectedIds)
-
-    if (roundCount.value >= MAX_ROUNDS || resolved !== 'base') {
-      lockedGenre.value = resolved !== 'base' ? resolved : _forceResolve(accumulated)
+    // ジャンル収束チェック
+    if (roundCount.value >= MAX_ROUNDS || newState.converged) {
+      lockedGenre.value = newState.convergedGenre ?? resolveHighestProbGenre(accumulated, GENRES)
+      if (lockedGenre.value === 'base') {
+        lockedGenre.value = DEFAULT_FALLBACK_GENRE as GenreId
+      }
       // ジャンル確定文を説明書本文に追記
       const genreDef = GENRES.find(g => g.id === lockedGenre.value)
       if (genreDef?.manualReveal) {
@@ -170,11 +196,6 @@ export function useGameState() {
       phase.value = 'playing'
     }
     return undefined
-  }
-
-  function _forceResolve(accumulated: ReturnType<typeof accumulateParams>): GenreId {
-    const resolved = resolveGenre(accumulated, GENRES)
-    return resolved !== 'base' ? resolved : DEFAULT_FALLBACK_GENRE as typeof resolved
   }
 
   function startThrowing() {
@@ -200,6 +221,7 @@ export function useGameState() {
     accumulatedManualText.value = [...MANUAL_DECK['1.0'].manualText]
     currentHazards.value = { ...MANUAL_DECK['1.0'].hazards }
     lastRuntimeConfig.value = undefined
+    _syncBayesState(initBayesianState(GENRES))
     _rebuildRules()
   }
 
@@ -217,6 +239,7 @@ export function useGameState() {
     activeCards: readonly(activeCards),
     roundCount: readonly(roundCount),
     maxRounds: MAX_ROUNDS,
+    bayesState: readonly(bayesState) as BayesianState,
     currentManual,
     lockedGenreDef,
     startGame,

@@ -86,7 +86,7 @@ export class PlatformerPlugin extends DarkThemePlugin {
     for (let s = sector - 1; s <= sector + 3; s++) {
       const h2 = (s * 2239) & 0xffff
       const bx = s * 350 - offsetX + (h2 % 200)
-      const bh = 30 + (h2 >> 4) % 55
+      const _bh = 30 + (h2 >> 4) % 55
       const bw = 40 + (h2 >> 8) % 60
       // 丸い丘
       ctx.beginPath()

@@ -6,11 +6,10 @@ import {
 } from '../game/throwEngine'
 import type { ThrowResult } from '../domain/types'
 
-const props = defineProps<{
+defineProps<{
   manualVersion: string
   manualText: string[]
 }>()
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 
 const emit = defineEmits<{
   (e: 'thrown', result: ThrowResult): void
@@ -36,7 +35,7 @@ function startAnim() {
     lastTime = ts
     updateThrow(state.value, dt, canvasH.value)
     if (state.value.phase === 'done') {
-      emit('thrown', state.value.result!)
+      if (state.value.result) emit('thrown', state.value.result)
       return
     }
     rafId = requestAnimationFrame(loop)

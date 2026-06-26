@@ -1,4 +1,4 @@
-import type { GenreId, ManualVersion, GenreDef } from '../domain/types'
+import type { ManualVersion } from '../domain/types'
 
 export type UserPlugin = GenrePlugin | DeckExtensionPlugin
 
@@ -159,8 +159,8 @@ export class PluginManager {
       id: String(obj.id),
       label: String(obj.label),
       thresholds: obj.thresholds as Record<string, number>,
-      enableFeatures: (obj.enableFeatures as string[]) || [],
-      disableFeatures: (obj.disableFeatures as string[]) || [],
+      enableFeatures: Array.isArray(obj.enableFeatures) ? (obj.enableFeatures as string[]) : [],
+      disableFeatures: Array.isArray(obj.disableFeatures) ? (obj.disableFeatures as string[]) : [],
       visual: visual as GenrePlugin['visual'],
       scoreFormula: String(obj.scoreFormula),
       manualReveal: String(obj.manualReveal),

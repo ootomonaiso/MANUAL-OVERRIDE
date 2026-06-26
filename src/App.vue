@@ -184,8 +184,6 @@ function restart() {
     genreLockedBoostTimer = null
   }
   cancelAnimationFrame(snapRaf)
-  if (genreLockedBoostTimer !== null) clearTimeout(genreLockedBoostTimer)
-  genreLockedBoostTimer = null
   scroller?.stop()
   scroller = null
   revealActive.value = false

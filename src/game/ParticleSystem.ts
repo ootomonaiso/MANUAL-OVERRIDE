@@ -51,10 +51,5 @@ export class ParticleSystem {
     ctx.globalAlpha = 1
   }
 
-  decayShake(current: number, decayFactor: number, epsilon: number): number {
-    const next = current * decayFactor
-    return next < epsilon ? 0 : next
-  }
-
   clear(): void { this.particles = [] }
 }

@@ -10,7 +10,6 @@
  *    → src/genres/index.ts に1行追加するだけ
  */
 
-import type { Player } from '../game/entities'
 import type { GenreId } from '../domain/types'
 import type { MutableWorld, SpawnEntry } from './types'
 

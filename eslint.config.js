@@ -56,6 +56,7 @@ export default [
           selector: 'variable',
           modifiers: ['const', 'global'],
           format: ['UPPER_CASE', 'camelCase', 'PascalCase'],
+          leadingUnderscore: 'allow',
         },
       ],
 

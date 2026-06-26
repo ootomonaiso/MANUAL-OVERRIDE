@@ -2,7 +2,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import type { ManualTheme } from '../domain/types'
 
-const props = defineProps<{
+defineProps<{
   genreLabel: string
   manualReveal: string
   theme: ManualTheme
@@ -26,10 +26,16 @@ onUnmounted(() => clearTimeout(_dismissTimer))
     <div v-if="theme === 'stg'" class="gr-scanlines" />
 
     <!-- パズル系: グリッドライン -->
-    <div v-if="theme === 'puzzle'" class="gr-grid" />
+    <div v-if="theme === 'puzzle' || theme === 'dungeon'" class="gr-grid" />
 
-    <!-- ホラー系: ノイズレイヤー -->
-    <div v-if="theme === 'horror'" class="gr-noise" />
+    <!-- ホラー/ハクスラ系: ノイズレイヤー -->
+    <div v-if="theme === 'horror' || theme === 'hack_slash'" class="gr-noise" />
+
+    <!-- ランナー/レーシング系: スピードライン -->
+    <div v-if="theme === 'runner' || theme === 'racing'" class="gr-speedlines" />
+
+    <!-- ステルス系: ダークビネット -->
+    <div v-if="theme === 'stealth'" class="gr-vignette" />
 
     <!-- コンテンツ -->
     <div class="gr-content">
@@ -78,13 +84,20 @@ onUnmounted(() => clearTimeout(_dismissTimer))
 }
 
 /* ── テーマ別背景色 ──────────────────────────────────── */
-.gr-plain  .gr-bg { background: #0a0a0a; }
-.gr-stg    .gr-bg { background: radial-gradient(ellipse at center, #0a0a2a 0%, #000010 60%); }
-.gr-rpg    .gr-bg { background: radial-gradient(ellipse at center, #2a1600 0%, #0a0800 60%); }
-.gr-puzzle .gr-bg { background: #f8f8f8; }
-.gr-rhythm .gr-bg { background: radial-gradient(ellipse at center, #1a0035 0%, #050010 60%); }
-.gr-horror .gr-bg { background: radial-gradient(ellipse at center, #1a0000 0%, #020000 60%); }
-.gr-aquatic .gr-bg { background: radial-gradient(ellipse at center, #001a3a 0%, #000a1f 60%); }
+.gr-plain     .gr-bg { background: #0a0a0a; }
+.gr-stg       .gr-bg { background: radial-gradient(ellipse at center, #0a0a2a 0%, #000010 60%); }
+.gr-rpg       .gr-bg { background: radial-gradient(ellipse at center, #2a1600 0%, #0a0800 60%); }
+.gr-puzzle    .gr-bg { background: #f8f8f8; }
+.gr-rhythm    .gr-bg { background: radial-gradient(ellipse at center, #1a0035 0%, #050010 60%); }
+.gr-horror    .gr-bg { background: radial-gradient(ellipse at center, #1a0000 0%, #020000 60%); }
+.gr-aquatic   .gr-bg { background: radial-gradient(ellipse at center, #001a3a 0%, #000a1f 60%); }
+.gr-runner    .gr-bg { background: #ffffff; }
+.gr-stealth   .gr-bg { background: #030303; }
+.gr-racing    .gr-bg { background: radial-gradient(ellipse at center, #1a0a00 0%, #080400 60%); }
+.gr-platformer .gr-bg { background: radial-gradient(ellipse at center, #002255 0%, #001030 60%); }
+.gr-dungeon   .gr-bg { background: radial-gradient(ellipse at center, #1a0a00 0%, #0a0500 60%); }
+.gr-hack_slash .gr-bg { background: radial-gradient(ellipse at center, #200000 0%, #080000 60%); }
+.gr-survival  .gr-bg { background: radial-gradient(ellipse at center, #0a1a0a 0%, #030803 60%); }
 
 /* ── STG: スキャンライン ─────────────────────────────── */
 .gr-scanlines {
@@ -140,17 +153,56 @@ onUnmounted(() => clearTimeout(_dismissTimer))
   pointer-events: none;
   animation: grFlash 0.5s ease-out both;
 }
-.gr-plain  .gr-flash { background: #ffffff; }
-.gr-stg    .gr-flash { background: #1a66ff; }
-.gr-rpg    .gr-flash { background: #c4960a; }
-.gr-puzzle .gr-flash { background: #333333; }
-.gr-rhythm .gr-flash { background: #cc00ff; }
-.gr-horror .gr-flash { background: #aa0000; }
-.gr-aquatic .gr-flash { background: #0055aa; }
+.gr-plain      .gr-flash { background: #ffffff; }
+.gr-stg        .gr-flash { background: #1a66ff; }
+.gr-rpg        .gr-flash { background: #c4960a; }
+.gr-puzzle     .gr-flash { background: #333333; }
+.gr-rhythm     .gr-flash { background: #cc00ff; }
+.gr-horror     .gr-flash { background: #aa0000; }
+.gr-aquatic    .gr-flash { background: #0055aa; }
+.gr-runner     .gr-flash { background: #ff3333; }
+.gr-stealth    .gr-flash { background: #222222; }
+.gr-racing     .gr-flash { background: #ff6600; }
+.gr-platformer .gr-flash { background: #ffcc00; }
+.gr-dungeon    .gr-flash { background: #c87020; }
+.gr-hack_slash .gr-flash { background: #cc0000; }
+.gr-survival   .gr-flash { background: #446633; }
 
 @keyframes grFlash {
   0%   { opacity: 0.9; }
   100% { opacity: 0; }
+}
+
+/* ── スピードライン（runner / racing） ───────────────── */
+.gr-speedlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0px, transparent 60px,
+    rgba(255,255,255,0.03) 60px, rgba(255,255,255,0.03) 62px
+  );
+  pointer-events: none;
+  animation: grSpeedSweep 0.35s linear infinite;
+}
+.gr-runner .gr-speedlines {
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0px, transparent 50px,
+    rgba(255,40,40,0.08) 50px, rgba(255,40,40,0.08) 52px
+  );
+}
+@keyframes grSpeedSweep {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(62px); }
+}
+
+/* ── ダークビネット（stealth） ───────────────────────── */
+.gr-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,0.9) 100%);
+  pointer-events: none;
 }
 
 /* ── コンテンツ ───────────────────────────────────────── */
@@ -208,13 +260,20 @@ onUnmounted(() => clearTimeout(_dismissTimer))
 }
 
 /* ── テーマ別テキスト色 ───────────────────────────────── */
-.gr-plain   { --gr-accent: #00ff41; --gr-text: #e8e8e8; --gr-font: 'M PLUS 1 Code', monospace; }
-.gr-stg     { --gr-accent: #1a66ff; --gr-text: #a8d8ff; --gr-font: 'Courier New', monospace; }
-.gr-rpg     { --gr-accent: #c4960a; --gr-text: #f5ddb0; --gr-font: 'Georgia', 'Times New Roman', serif; }
-.gr-puzzle  { --gr-accent: #222222; --gr-text: #333333; --gr-font: 'Courier New', monospace; }
-.gr-rhythm  { --gr-accent: #cc00ff; --gr-text: #ee88ff; --gr-font: 'Courier New', monospace; }
-.gr-horror  { --gr-accent: #cc0000; --gr-text: #cc8888; --gr-font: 'Courier New', monospace; }
-.gr-aquatic { --gr-accent: #00aadd; --gr-text: #88ccff; --gr-font: 'M PLUS 1 Code', monospace; }
+.gr-plain      { --gr-accent: #00ff41; --gr-text: #e8e8e8; --gr-font: 'M PLUS 1 Code', monospace; }
+.gr-stg        { --gr-accent: #1a66ff; --gr-text: #a8d8ff; --gr-font: 'Courier New', monospace; }
+.gr-rpg        { --gr-accent: #c4960a; --gr-text: #f5ddb0; --gr-font: 'Georgia', 'Times New Roman', serif; }
+.gr-puzzle     { --gr-accent: #222222; --gr-text: #333333; --gr-font: 'Courier New', monospace; }
+.gr-rhythm     { --gr-accent: #cc00ff; --gr-text: #ee88ff; --gr-font: 'Courier New', monospace; }
+.gr-horror     { --gr-accent: #cc0000; --gr-text: #cc8888; --gr-font: 'Courier New', monospace; }
+.gr-aquatic    { --gr-accent: #00aadd; --gr-text: #88ccff; --gr-font: 'M PLUS 1 Code', monospace; }
+.gr-runner     { --gr-accent: #ff3333; --gr-text: #111111; --gr-font: Impact, 'Arial Black', sans-serif; }
+.gr-stealth    { --gr-accent: rgba(100,100,100,0.6); --gr-text: rgba(140,140,140,0.5); --gr-font: 'Courier New', monospace; }
+.gr-racing     { --gr-accent: #ff6600; --gr-text: #ffcc88; --gr-font: Impact, 'Arial Black', sans-serif; }
+.gr-platformer { --gr-accent: #ffcc00; --gr-text: #88ddff; --gr-font: 'M PLUS 1 Code', monospace; }
+.gr-dungeon    { --gr-accent: #c87020; --gr-text: #c8a060; --gr-font: 'Georgia', 'Times New Roman', serif; }
+.gr-hack_slash { --gr-accent: #ff4444; --gr-text: #ff9999; --gr-font: 'Courier New', monospace; }
+.gr-survival   { --gr-accent: #5a9a5a; --gr-text: #88cc88; --gr-font: 'Courier New', monospace; }
 
 .gr-stamp  { color: var(--gr-accent); font-family: var(--gr-font); }
 .gr-label  { color: var(--gr-accent); font-family: var(--gr-font); text-shadow: 0 0 30px var(--gr-accent); }
@@ -291,5 +350,98 @@ onUnmounted(() => clearTimeout(_dismissTimer))
 @keyframes grAquaticRipple {
   0%, 100% { letter-spacing: 1px; }
   50%       { letter-spacing: 3px; }
+}
+
+/* ── ランナー: スピードスラッシュ ─────────────────────── */
+.gr-runner .gr-content {
+  border-left: 6px solid #ff3333;
+  box-shadow: -4px 0 0 #ff3333, 0 2px 8px rgba(0,0,0,0.12);
+  background: rgba(255,255,255,0.95);
+}
+.gr-runner .gr-label {
+  animation: grLabelIn 0.7s 0.6s cubic-bezier(0.22, 1, 0.36, 1) both, grRunnerSlide 0.5s 0.6s ease-out both;
+}
+@keyframes grRunnerSlide {
+  0%   { transform: translateX(-30px); }
+  100% { transform: translateX(0); }
+}
+
+/* ── ステルス: フェードイン・ロー ─────────────────────── */
+.gr-stealth .gr-content {
+  border: 1px dashed rgba(60,60,60,0.4);
+  box-shadow: none;
+  background: rgba(5,5,5,0.9);
+}
+.gr-stealth .gr-label {
+  animation: grLabelIn 1.2s 0.8s ease-out both;
+  font-size: clamp(20px, 4vw, 38px) !important;
+}
+.gr-stealth .gr-stamp { letter-spacing: 6px; opacity: 0.4; }
+
+/* ── レーシング: ダッシュイン ─────────────────────────── */
+.gr-racing .gr-content {
+  border-top: 5px solid #ff6600;
+  box-shadow: 0 -3px 0 #ff6600, 0 0 30px rgba(255,100,0,0.2);
+  background: rgba(15,8,0,0.85);
+}
+.gr-racing .gr-label {
+  animation: grLabelIn 0.5s 0.6s cubic-bezier(0.22, 1, 0.36, 1) both, grRacingPulse 0.6s 1.2s ease-in-out 3;
+}
+@keyframes grRacingPulse {
+  0%, 100% { text-shadow: 0 0 20px #ff6600; }
+  50%       { text-shadow: 0 0 40px #ff6600, 0 0 60px rgba(255,80,0,0.5); }
+}
+
+/* ── プラットフォーマー: バウンスイン ─────────────────── */
+.gr-platformer .gr-content {
+  border: 3px solid #ffcc00;
+  border-radius: 10px;
+  box-shadow: 5px 5px 0 #ffcc00, 0 0 24px rgba(0,100,200,0.2);
+  background: rgba(0,15,50,0.85);
+}
+.gr-platformer .gr-label {
+  animation: grLabelIn 0.7s 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.gr-platformer .gr-stamp { color: #ffcc00; }
+
+/* ── ダンジョン: 松明ゆらめき ─────────────────────────── */
+.gr-dungeon .gr-content {
+  border: 2px solid rgba(106,56,0,0.6);
+  box-shadow: 3px 3px 0 rgba(58,32,0,0.8), 0 0 40px rgba(180,80,0,0.2);
+  background: rgba(12,8,0,0.85);
+}
+.gr-dungeon .gr-label {
+  animation: grLabelIn 0.7s 0.6s both, grTorchFlicker 2s 1.0s ease-in-out infinite;
+}
+@keyframes grTorchFlicker {
+  0%, 100% { text-shadow: 0 0 20px #c87020; }
+  30%       { text-shadow: 0 0 35px #ff9040, 0 0 50px rgba(200,112,32,0.4); }
+  70%       { text-shadow: 0 0 15px #a05010; }
+}
+
+/* ── ハックスラッシュ: グリッチスラッシュ ────────────── */
+.gr-hack_slash .gr-content {
+  border: 2px solid rgba(136,0,0,0.6);
+  box-shadow: 5px 5px 0 rgba(68,0,0,0.8), 0 0 30px rgba(200,0,0,0.25);
+  background: rgba(10,0,0,0.88);
+}
+.gr-hack_slash .gr-label {
+  animation: grLabelIn 0.5s 0.6s both, grSlashGlitch 0.1s 1.1s steps(2) 8;
+}
+@keyframes grSlashGlitch {
+  0%   { transform: translateX(0) skewX(0deg); filter: none; }
+  33%  { transform: translateX(-6px) skewX(-3deg); filter: hue-rotate(120deg) brightness(1.5); }
+  66%  { transform: translateX(6px) skewX(3deg); filter: hue-rotate(-120deg); }
+  100% { transform: translateX(0) skewX(0deg); filter: none; }
+}
+
+/* ── サバイバル: ゆっくり立ち上がり ──────────────────── */
+.gr-survival .gr-content {
+  border: 2px solid rgba(42,74,42,0.6);
+  box-shadow: 3px 3px 0 rgba(26,58,26,0.8), 0 0 20px rgba(60,100,40,0.15);
+  background: rgba(5,10,5,0.88);
+}
+.gr-survival .gr-label {
+  animation: grLabelIn 1.0s 0.8s ease-out both;
 }
 </style>

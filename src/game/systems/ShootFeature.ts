@@ -61,7 +61,7 @@ export class ShootFeature implements FeatureSystem {
 
   // ─── 内部: 弾の発射 ──────────────────────────────────────────────
   private _fireBullets(world: MutableWorld, input: InputSnapshot): void {
-    const { rules, player: p } = world
+    const { rules } = world
     const shootKey = rules.controls.shoot?.toLowerCase() ?? 'z'
 
     if (!input.justPressed.has(shootKey)) return

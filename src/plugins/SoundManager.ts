@@ -54,8 +54,8 @@ class SoundManager implements SoundHooks {
       this._cancelFadeIn = this._fade(audio, volume, fadeInMs, () => {
         this._cancelFadeIn = null
       })
-    }).catch(() => {
-      // ファイルが存在しない or 再生不可 → 静かにスキップ
+    }).catch((e: unknown) => {
+      console.warn('[SoundManager] BGM の再生に失敗しました:', src, e)
       if (this._bgmAudio === audio) this._bgmAudio = null
     })
   }

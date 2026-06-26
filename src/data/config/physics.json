@@ -15,6 +15,7 @@
   "landSquashAmount": 0.22,
   "coyoteFrames": 9,
   "jumpBufferFrames": 10,
+  "playerStartX": 140,
   "playerMinX": 40,
   "playerMaxXRatio": 0.38,
   "airFrictionX": 0,

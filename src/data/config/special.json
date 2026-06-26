@@ -1,0 +1,10 @@
+{
+  "$comment": "特殊フィーチャー (タワー / ボス撃破 / タイムボーナス)",
+  "section": "special",
+  "towerFireIntervalSec": 1.2,
+  "towerRangePx": 260,
+  "towerKillScore": 80,
+  "bossKillScore": 500,
+  "timeBonusIntervalSec": 5,
+  "timeBonusScore": 50
+}

@@ -65,6 +65,9 @@ export function registerFeature(system: FeatureSystem): void {
  * 'base' も登録されていない場合は null を返す（通常は起きない）。
  */
 export function getGenre(id: GenreId): GenrePlugin {
+  if (!_genres.has(id) && id !== 'base') {
+    console.warn(`[GameRegistry] ジャンル "${id}" が見つかりません。'base' にフォールバックします。`)
+  }
   const plugin = _genres.get(id) ?? _genres.get('base')
   if (!plugin) throw new Error(`[GameRegistry] "base" ジャンルが未登録です。src/genres/index.ts を確認してください。`)
   return plugin
@@ -90,10 +93,8 @@ export function hasGenre(id: GenreId): boolean {
 
 /** 開発用: 登録状況を出力する */
 export function debugPrint(): void {
-  console.group('[GameRegistry] 登録状況')
-  console.log('Genres:', [..._genres.keys()].join(', '))
-  console.log('Features:', [..._features.keys()].join(', '))
-  console.groupEnd()
+  console.warn('[GameRegistry] 登録状況 — Genres:', [..._genres.keys()].join(', '))
+  console.warn('[GameRegistry] 登録状況 — Features:', [..._features.keys()].join(', '))
 }
 
 // ──────────────────────────────────────────────────────────────────────

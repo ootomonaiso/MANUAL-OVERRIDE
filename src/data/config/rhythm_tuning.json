@@ -12,5 +12,11 @@
   "beatHazardFlipChance": 0.5,
   "beatSpawnBurstRate": 0.3,
   "beatDashMult": 1.8,
-  "beatDashFrames": 12
+  "beatDashFrames": 12,
+  "justInputMinQuality": 0.5,
+  "justInputScoreBase": 150,
+  "justInputPopupOffsetY": -30,
+  "justInputParticleVy": -80,
+  "justInputParticleLife": 0.4,
+  "justInputParticleSize": 4
 }

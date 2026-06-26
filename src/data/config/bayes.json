@@ -1,0 +1,10 @@
+{
+  "$comment": "ベイズ収束ハイパーパラメータ",
+  "section": "bayes",
+  "convergenceThreshold": 0.40,
+  "minProb": 0.40,
+  "dominanceRatio": 1.8,
+  "decayRate": 0.25,
+  "baseDecay": 0.10,
+  "candidateThreshold": 0.10
+}

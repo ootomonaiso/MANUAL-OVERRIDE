@@ -2,7 +2,7 @@ import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule,
 import type { MutableWorld, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup } from './entities'
 import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL } from '../data/gameBalance'
-import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS } from '../data/tunables'
+import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY } from '../data/tunables'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
 import { resolveWeight } from '../engine/types'
 import { soundManager } from '../plugins/SoundManager'
@@ -39,17 +39,8 @@ export interface GameSnapshot {
   scoreFormulaError: string | null
 }
 
-// UPDATE_DISTANCES を超えた後の無限更新間隔（px）
-const INFINITE_UPDATE_INTERVAL = 1500
-
 // ループ内 dt のクランプ上限（フレーム落ち時に物理が発散するのを防ぐ）
 const MAX_DELTA_SEC = 0.05
-
-// プレイヤー初期 X 座標
-const PLAYER_INITIAL_X = 140
-
-// 初回スポーン距離（コンストラクタ時点のデフォルト）
-const INITIAL_SPAWN_DIST = 480
 
 // LearningSystem の最初のチェックまでの遅延（秒）
 const INITIAL_LEARNING_DELAY_SEC = 0.5
@@ -87,7 +78,7 @@ export class SideScroller {
   private cameraX = 0
 
   // スポーン
-  private nextSpawnDist = INITIAL_SPAWN_DIST
+  private nextSpawnDist = SPAWN.firstSpawnDist
   private updateTriggeredFor = new Set<number>()
   private readonly MAX_TRIGGER_CACHE = 256  // updateTriggeredFor の最大キャッシュ数
 
@@ -142,11 +133,13 @@ export class SideScroller {
 
   constructor(canvas: HTMLCanvasElement, rules: RuntimeRules) {
     this.canvas = canvas
-    this.ctx = canvas.getContext('2d')!
+    const ctx2d = canvas.getContext('2d')
+    if (!ctx2d) throw new Error('Canvas 2D context unavailable')
+    this.ctx = ctx2d
     this.rules = rules
 
     const gY = canvas.height - 80
-    this.player = new Player(PLAYER_INITIAL_X, gY)
+    this.player = new Player(PLAYER_PHYSICS.startX, gY)
     this.player.jumpsLeft = rules.features.has('double_jump') ? 2 : 1
 
     this.input.setGameKeys(rules.controls)
@@ -225,7 +218,7 @@ export class SideScroller {
     if (pending < 0) {
       const lastDist = UPDATE_DISTANCES[UPDATE_DISTANCES.length - 1]
       if (this.distance >= lastDist) {
-        const extraIdx = UPDATE_DISTANCES.length + Math.floor((this.distance - lastDist) / INFINITE_UPDATE_INTERVAL)
+        const extraIdx = UPDATE_DISTANCES.length + Math.floor((this.distance - lastDist) / DIFFICULTY.infiniteUpdateInterval)
         if (!this.updateTriggeredFor.has(extraIdx)) {
           pending = extraIdx
         }
@@ -261,11 +254,10 @@ export class SideScroller {
 
   markUpdated(index: number): void {
     this.updateTriggeredFor.add(index)
-    // メモリリーク防止: キャッシュが肥大化したら古いエントリを削除
+    // メモリリーク防止: 50%まで一括削除（毎フレーム1件ずつ削除を防ぐ）
     if (this.updateTriggeredFor.size > this.MAX_TRIGGER_CACHE) {
       const sorted = [...this.updateTriggeredFor].sort((a, b) => a - b)
-      const toRemove = sorted.slice(0, sorted.length - this.MAX_TRIGGER_CACHE / 2)
-      for (const idx of toRemove) {
+      for (const idx of sorted.slice(0, sorted.length - this.MAX_TRIGGER_CACHE / 2)) {
         this.updateTriggeredFor.delete(idx)
       }
     }
@@ -798,7 +790,7 @@ export class SideScroller {
       : BACKGROUND.starAlphaStep
 
     const sector = Math.floor(offsetX / sectorW)
-    ctx.fillStyle = plugin.starColor!
+    ctx.fillStyle = plugin.starColor ?? '#ffffff'
     for (let s = sector - 1; s <= sector + 2; s++) {
       const baseX = s * sectorW - offsetX
       for (let i = 0; i < density; i++) {

@@ -5,7 +5,6 @@
  * src/data/config.ts の GAME_CONFIG から値を再エクスポートする薄いラッパー。
  */
 
-import type { Controls } from '../domain/types'
 import { GAME_CONFIG } from './config'
 
 const _gb = GAME_CONFIG.game_balance
@@ -105,6 +104,7 @@ export const RULE_DEFAULTS = {
 export const PLAYER_PHYSICS = {
   width:              _p.playerWidth,
   height:             _p.playerHeight,
+  startX:             _p.playerStartX,
   jumpVelocity:       _p.jumpVelocity,
   doubleJumpVelocity: _p.doubleJumpVelocity,
   jumpCutMultiplier:  _p.jumpCutMultiplier,

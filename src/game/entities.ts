@@ -24,7 +24,6 @@ export class Player {
   maxHp = 3
   exp = 0
   airTime = 0
-  runFrame = 0     // ランニングアニメーション（0〜3）
   landSquash = 0   // 0〜1：着地スカッシュ量
 
   constructor(x: number, groundY: number) {

@@ -1,7 +1,20 @@
-import type { GenreDef, GenreId, GenreParams, GenreParam, FeatureId } from './types'
+import type { GenreDef, GenreId, GenreParams, GenreParam, FeatureId, BayesianState, BayesConfig } from './types'
+import { BAYES } from '../data/tunables'
 
 // ─────────────────────────────────────────────────────────────
-// 選択履歴から genreParams を累積（乗数なしの単純合算）
+// ベイズ収束のデフォルト設定 (config/bayes.json からロード)
+// ─────────────────────────────────────────────────────────────
+export const DEFAULT_BAYES_CONFIG: BayesConfig = {
+  convergenceThreshold: BAYES.convergenceThreshold,
+  minProb:              BAYES.minProb,
+  dominanceRatio:       BAYES.dominanceRatio,
+  decayRate:            BAYES.decayRate,
+  baseDecay:            BAYES.baseDecay,
+  candidateThreshold:   BAYES.candidateThreshold,
+}
+
+// ─────────────────────────────────────────────────────────────
+// 選択履歴から genreParams を累積（乗数なしの単純合算・後方互換用）
 // ─────────────────────────────────────────────────────────────
 export function accumulateParams(paramsList: GenreParams[]): GenreParams {
   const total: GenreParams = {}
@@ -14,7 +27,7 @@ export function accumulateParams(paramsList: GenreParams[]): GenreParams {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 選択履歴から genrePoints を累積（新システム用）
+// 選択履歴から genrePoints を累積（後方互換用）
 // ─────────────────────────────────────────────────────────────
 export function accumulateGenrePoints(
   entries: { genrePoints?: Record<string, number> }[]
@@ -30,75 +43,165 @@ export function accumulateGenrePoints(
 }
 
 // ─────────────────────────────────────────────────────────────
-// 累積パラメータからジャンルを決定する
+// ベイズ更新: 累積パラメータから事後確率を計算
 //
-// ジャンルの評価方式:
-//   - `threshold` が定義されている → genrePoints ベース（新システム）
-//   - `threshold` が未定義 → thresholds 軸ベース（旧システム・後方互換）
-//
-// どちらも「スコアが最大かつ正」のジャンルが収束先になる。
+// 各ジャンル G に対して:
+//   L(G) = exp( -decayRate × Σ max(0, threshold[a] - accumulated[a]) )
+//   閾値を超過した軸は deviation=0（ペナルティなし）、不足のみペナルティ。
+//   base ジャンルは総累積量に応じて尤度が減衰
+// ─────────────────────────────────────────────────────────────
+export function computeBayesianPosteriors(
+  accumulated: GenreParams,
+  genres: GenreDef[],
+  config: BayesConfig = DEFAULT_BAYES_CONFIG,
+): Record<GenreId, number> {
+  const { decayRate } = config
+  const unnormalized: Record<GenreId, number> = {}
+
+  for (const genre of genres) {
+    const entries = Object.entries(genre.thresholds) as [GenreParam, number][]
+
+    if (entries.length === 0) {
+      const totalAccumulated = Object.values(accumulated).reduce((s, v) => s + v, 0)
+      unnormalized[genre.id] = Math.exp(-config.baseDecay * totalAccumulated)
+      continue
+    }
+
+    let deviation = 0
+    for (const [axis, thresholdVal] of entries) {
+      const have = accumulated[axis] ?? 0
+      deviation += Math.max(0, thresholdVal - have)
+    }
+    unnormalized[genre.id] = Math.exp(-decayRate * deviation)
+  }
+
+  const sum = genres.reduce((acc, g) => acc + (unnormalized[g.id] ?? 0), 0)
+  if (sum <= 0) {
+    const uniform = 1 / genres.length
+    const result: Record<GenreId, number> = {}
+    for (const g of genres) result[g.id] = uniform
+    return result
+  }
+
+  const posteriors: Record<GenreId, number> = {}
+  for (const g of genres) {
+    posteriors[g.id] = (unnormalized[g.id] ?? 0) / sum
+  }
+  return posteriors
+}
+
+// ─────────────────────────────────────────────────────────────
+// ベイズ状態を初期化（一様事前分布）
+// ─────────────────────────────────────────────────────────────
+export function initBayesianState(genres: GenreDef[]): BayesianState {
+  const posteriors: Record<GenreId, number> = {}
+  const uniform = 1 / genres.length
+  for (const genre of genres) {
+    posteriors[genre.id] = uniform
+  }
+  return {
+    posteriors,
+    converged: false,
+    convergedGenre: null,
+    updateCount: 0,
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// ベイズ更新: 1 回の選択で状態を更新
+// ─────────────────────────────────────────────────────────────
+export function updateBayesianState(
+  prevState: BayesianState,
+  accumulated: GenreParams,
+  genres: GenreDef[],
+  config: BayesConfig = DEFAULT_BAYES_CONFIG,
+): BayesianState {
+  if (prevState.converged) {
+    return { ...prevState }
+  }
+
+  const posteriors = computeBayesianPosteriors(accumulated, genres, config)
+
+  const sorted = genres
+    .filter(g => g.id !== 'base')
+    .map(g => ({ id: g.id, prob: posteriors[g.id] ?? 0 }))
+    .sort((a, b) => b.prob - a.prob)
+
+  if (sorted.length < 2) {
+    const converged = sorted[0].prob >= config.minProb
+    return {
+      posteriors,
+      converged,
+      convergedGenre: converged ? sorted[0].id : null,
+      updateCount: prevState.updateCount + 1,
+    }
+  }
+
+  const top    = sorted[0]
+  const second = sorted[1]
+  const converged = top.prob >= config.minProb && top.prob >= config.dominanceRatio * second.prob
+
+  return {
+    posteriors,
+    converged,
+    convergedGenre: converged ? top.id : null,
+    updateCount: prevState.updateCount + 1,
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// 累積パラメータからジャンルを決定する（ベイズ事後確率で収束判定）
 // ─────────────────────────────────────────────────────────────
 export function resolveGenre(
   accumulated: GenreParams,
   genres: GenreDef[],
-  genrePoints?: Record<string, number>,
-  selectedChoiceIds?: string[],
+  _genrePoints?: Record<string, number>,
+  _selectedChoiceIds?: string[],
+  bayesConfig?: BayesConfig,
 ): GenreId {
-  let bestGenre: GenreId = 'base'
-  let bestScore = -1
+  const config = bayesConfig ?? DEFAULT_BAYES_CONFIG
+  const posteriors = computeBayesianPosteriors(accumulated, genres, config)
+
+  const sorted = genres
+    .filter(g => g.id !== 'base')
+    .map(g => ({ id: g.id, prob: posteriors[g.id] ?? 0 }))
+    .sort((a, b) => b.prob - a.prob)
+
+  if (sorted.length < 2) {
+    return sorted[0].prob >= config.minProb ? sorted[0].id : 'base'
+  }
+
+  const top    = sorted[0]
+  const second = sorted[1]
+  if (top.prob >= config.minProb && top.prob >= config.dominanceRatio * second.prob) {
+    return top.id
+  }
+  return 'base'
+}
+
+// ─────────────────────────────────────────────────────────────
+// 未収束時に「最も確率の高いジャンル」を返す（強制解決用）
+// ─────────────────────────────────────────────────────────────
+export function resolveHighestProbGenre(
+  accumulated: GenreParams,
+  genres: GenreDef[],
+  bayesConfig?: BayesConfig,
+): GenreId {
+  const config = bayesConfig ?? DEFAULT_BAYES_CONFIG
+  const posteriors = computeBayesianPosteriors(accumulated, genres, config)
+
+  let bestId: GenreId = genres.find(g => g.id !== 'base')?.id ?? 'base' as GenreId
+  let bestProb = 0
 
   for (const genre of genres) {
     if (genre.id === 'base') continue
-    const score = genre.threshold !== undefined
-      ? _computePointsScore(genre, genrePoints ?? {}, selectedChoiceIds ?? [])
-      : _computeOverflowScore(accumulated, genre.thresholds)
-    if (score > bestScore) {
-      bestScore = score
-      bestGenre = genre.id
+    const prob = posteriors[genre.id] ?? 0
+    if (prob > bestProb) {
+      bestProb = prob
+      bestId = genre.id
     }
   }
-
-  // score が 0 以下なら閾値未達 → base のまま
-  return bestScore > 0 ? bestGenre : 'base'
-}
-
-/**
- * genrePoints ベースのスコアを計算する（新システム）。
- * 蓄積ポイントが threshold 以上 かつ requiredChoices を全て選択済みなら正スコアを返す。
- */
-function _computePointsScore(
-  genre: GenreDef,
-  points: Record<string, number>,
-  selectedIds: string[],
-): number {
-  const pts = points[genre.id] ?? 0
-  if (pts < (genre.threshold ?? 0)) return -1
-
-  if (genre.requiredChoices && genre.requiredChoices.length > 0) {
-    for (const req of genre.requiredChoices) {
-      if (!selectedIds.includes(req)) return -1
-    }
-  }
-
-  // threshold を超えた分を正規化スコアとして返す（多く選んだほど優先）
-  return pts - (genre.threshold ?? 0) + 1
-}
-
-/**
- * ジャンルの閾値に対する超過量の合計を計算する。
- * 全閾値を満たしていれば正の値、1つでも満たさなければ -1 を返す。
- */
-function _computeOverflowScore(accumulated: GenreParams, thresholds: GenreParams): number {
-  let score = 0
-
-  for (const [key, required] of Object.entries(thresholds) as [GenreParam, number][]) {
-    const have = accumulated[key] ?? 0
-    if (have < required) return -1  // 閾値未達
-    score += have - required        // 超過量を加算
-  }
-
-  // +1 で「全閾値クリア」自体を正スコアとして保証（超過量 0 でも選択される）
-  return score + 1
+  return bestId
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -118,91 +221,78 @@ export function resolveFeaturesForGenre(
 
 // ─────────────────────────────────────────────────────────────
 // ジャンル収束の「近さ」を 0〜1 で返す（UI 演出に使用）
+// ベイズ事後確率の最高値を progress として返す
 // ─────────────────────────────────────────────────────────────
 export function resolveGenreProgress(
   accumulated: GenreParams,
   genres: GenreDef[],
-  genrePoints?: Record<string, number>,
+  _genrePoints?: Record<string, number>,
+  bayesConfig?: BayesConfig,
 ): { closestGenre: GenreId; progress: number } {
+  const config = bayesConfig ?? DEFAULT_BAYES_CONFIG
+  const posteriors = computeBayesianPosteriors(accumulated, genres, config)
+
   let bestGenre: GenreId = 'base'
-  let bestProgress = 0
+  let bestProb = 0
 
   for (const genre of genres) {
     if (genre.id === 'base') continue
-    let progress: number
-    if (genre.threshold !== undefined) {
-      const pts = (genrePoints ?? {})[genre.id] ?? 0
-      progress = Math.min(1, pts / genre.threshold)
-    } else {
-      progress = _computeMinFulfillment(accumulated, genre.thresholds)
-    }
-    if (progress > bestProgress) {
-      bestProgress = progress
+    const prob = posteriors[genre.id] ?? 0
+    if (prob > bestProb) {
+      bestProb = prob
       bestGenre = genre.id
     }
   }
-
-  return { closestGenre: bestGenre, progress: bestProgress }
-}
-
-/**
- * 閾値の充足率（0〜1）の最小値を返す。
- * 例: thresholds = { tempo: 5, enemy: 4 }, accumulated = { tempo: 3, enemy: 6 }
- *   → min(3/5, 6/4) = min(0.6, 1.0) = 0.6
- */
-function _computeMinFulfillment(accumulated: GenreParams, thresholds: GenreParams): number {
-  const entries = Object.entries(thresholds) as [GenreParam, number][]
-  if (entries.length === 0) return 0
-
-  let minRate = Infinity
-  for (const [key, required] of entries) {
-    const have = accumulated[key] ?? 0
-    minRate = Math.min(minRate, required > 0 ? have / required : 1)
-  }
-
-  return Math.min(1, minRate === Infinity ? 0 : minRate)
+  return { closestGenre: bestGenre, progress: bestProb }
 }
 
 // ─────────────────────────────────────────────────────────────
 // 全ジャンルの収束進捗を 0〜1 のマップで返す（カードプール重みかけ用）
+// ベイズ事後確率をそのまま返す
 // ─────────────────────────────────────────────────────────────
 export function resolveAllGenreProgress(
   accumulated: GenreParams,
   genres: GenreDef[],
-  genrePoints?: Record<string, number>,
+  _genrePoints?: Record<string, number>,
+  bayesConfig?: BayesConfig,
 ): Record<string, number> {
+  const posteriors = computeBayesianPosteriors(accumulated, genres, bayesConfig)
   const result: Record<string, number> = {}
   for (const genre of genres) {
     if (genre.id === 'base') continue
-    let progress: number
-    if (genre.threshold !== undefined) {
-      const pts = (genrePoints ?? {})[genre.id] ?? 0
-      progress = Math.min(1, pts / genre.threshold)
-    } else {
-      progress = _computeMinFulfillment(accumulated, genre.thresholds)
-    }
-    if (progress > 0) result[genre.id] = progress
+    result[genre.id] = posteriors[genre.id] ?? 0
   }
   return result
 }
 
 // ─────────────────────────────────────────────────────────────
-// 収束済みの全ジャンルを返す（複数条件が同時に満たされる場合用）
+// 収束済みの全ジャンルを返す
 // ManualPanel の「あなたはこのゲームを◯◯にもできた」表示に使用
+// ベイズ版: 事後確率が candidateThreshold 以上のジャンルを返す
 // ─────────────────────────────────────────────────────────────
 export function resolveAllMetGenres(
   accumulated: GenreParams,
   genres: GenreDef[],
-  genrePoints?: Record<string, number>,
-  selectedChoiceIds?: string[],
+  _genrePoints?: Record<string, number>,
+  _selectedChoiceIds?: string[],
+  bayesConfig?: BayesConfig,
 ): GenreId[] {
-  const result: GenreId[] = []
-  for (const genre of genres) {
-    if (genre.id === 'base') continue
-    const score = genre.threshold !== undefined
-      ? _computePointsScore(genre, genrePoints ?? {}, selectedChoiceIds ?? [])
-      : _computeOverflowScore(accumulated, genre.thresholds)
-    if (score > 0) result.push(genre.id)
-  }
-  return result
+  const config = bayesConfig ?? DEFAULT_BAYES_CONFIG
+  const posteriors = computeBayesianPosteriors(accumulated, genres, config)
+
+  return genres
+    .filter(g => g.id !== 'base' && (posteriors[g.id] ?? 0) >= config.candidateThreshold)
+    .sort((a, b) => (posteriors[b.id] ?? 0) - (posteriors[a.id] ?? 0))
+    .map(g => g.id)
+}
+
+// ─────────────────────────────────────────────────────────────
+// 現在の事後確率分布を返す（デバッグ・UI 表示用）
+// ─────────────────────────────────────────────────────────────
+export function getGenreDistribution(
+  accumulated: GenreParams,
+  genres: GenreDef[],
+  bayesConfig?: BayesConfig,
+): Record<GenreId, number> {
+  return computeBayesianPosteriors(accumulated, genres, bayesConfig)
 }

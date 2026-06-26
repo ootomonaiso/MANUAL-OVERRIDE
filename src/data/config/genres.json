@@ -1,13 +1,20 @@
 {
-  "$comment": "ジャンル定義テーブル（21エントリ）",
+  "$comment": "ジャンル定義テーブル（21エントリ）。thresholdsは8ステップ後に収束するよう調整済み。",
   "section": "genres",
   "themeColors": {
-    "stg":    { "accent": "#1a66ff", "border": "#1a66ff", "hint": "rgba(168,216,255,0.5)", "bg": "#000d1a", "glow": "rgba(26,102,255,0.25)" },
-    "rpg":    { "accent": "#c4960a", "border": "#8b6100", "hint": "rgba(196,150,10,0.5)",  "bg": "#1a1100", "glow": "rgba(196,150,10,0.25)", "font": "'Georgia', serif" },
-    "puzzle": { "accent": "#222222", "border": "#444444", "hint": "rgba(80,80,80,0.5)",    "bg": "#0d0d0d", "glow": "rgba(80,80,80,0.15)",   "font": "'Courier New', monospace" },
-    "rhythm": { "accent": "#ee88ff", "border": "#9900ff", "hint": "rgba(204,136,255,0.5)", "bg": "#0d0019", "glow": "rgba(153,0,255,0.25)" },
-    "horror": { "accent": "#cc4444", "border": "#880000", "hint": "rgba(204,68,68,0.4)",   "bg": "#1a0000", "glow": "rgba(204,68,68,0.25)" },
-    "aquatic":{ "accent": "#88ccff", "border": "#0088bb", "hint": "rgba(136,204,255,0.4)", "bg": "#00141a", "glow": "rgba(136,204,255,0.25)" }
+    "stg":        { "accent": "#1a66ff", "border": "#1a66ff", "hint": "rgba(168,216,255,0.5)",  "bg": "#000d1a", "glow": "rgba(26,102,255,0.25)" },
+    "rpg":        { "accent": "#c4960a", "border": "#8b6100", "hint": "rgba(196,150,10,0.5)",   "bg": "#1a1100", "glow": "rgba(196,150,10,0.25)",  "font": "'Georgia', serif" },
+    "puzzle":     { "accent": "#222222", "border": "#444444", "hint": "rgba(80,80,80,0.5)",     "bg": "#0d0d0d", "glow": "rgba(80,80,80,0.15)",    "font": "'Courier New', monospace" },
+    "rhythm":     { "accent": "#ee88ff", "border": "#9900ff", "hint": "rgba(204,136,255,0.5)",  "bg": "#0d0019", "glow": "rgba(153,0,255,0.25)" },
+    "horror":     { "accent": "#cc4444", "border": "#880000", "hint": "rgba(204,68,68,0.4)",    "bg": "#1a0000", "glow": "rgba(204,68,68,0.25)" },
+    "aquatic":    { "accent": "#88ccff", "border": "#0088bb", "hint": "rgba(136,204,255,0.4)",  "bg": "#00141a", "glow": "rgba(136,204,255,0.25)" },
+    "runner":     { "accent": "#ff3333", "border": "#cc1111", "hint": "rgba(255,50,50,0.45)",   "bg": "#ffffff", "glow": "rgba(255,40,40,0.2)",    "font": "Impact, 'Arial Black', sans-serif" },
+    "stealth":    { "accent": "#666666", "border": "#333333", "hint": "rgba(80,80,80,0.25)",    "bg": "#050505", "glow": "rgba(50,50,50,0.1)",     "font": "'Courier New', monospace" },
+    "racing":     { "accent": "#ff6600", "border": "#cc4400", "hint": "rgba(255,100,0,0.5)",    "bg": "#100800", "glow": "rgba(255,80,0,0.25)",    "font": "Impact, 'Arial Black', sans-serif" },
+    "platformer": { "accent": "#ffcc00", "border": "#0055dd", "hint": "rgba(0,100,220,0.45)",   "bg": "#001a3a", "glow": "rgba(0,80,200,0.2)" },
+    "dungeon":    { "accent": "#c87020", "border": "#6a3800", "hint": "rgba(200,100,30,0.4)",   "bg": "#0a0600", "glow": "rgba(180,80,0,0.2)",     "font": "'Georgia', serif" },
+    "hack_slash": { "accent": "#ff4444", "border": "#880000", "hint": "rgba(220,50,50,0.4)",    "bg": "#100000", "glow": "rgba(200,0,0,0.25)" },
+    "survival":   { "accent": "#88bb55", "border": "#445522", "hint": "rgba(100,160,60,0.4)",   "bg": "#050a05", "glow": "rgba(80,130,40,0.2)" }
   },
   "genres": [
     {
@@ -34,12 +41,12 @@
     {
       "id": "runner",
       "label": "エンドレスランナー",
-      "thresholds": {"tempo": 7},
+      "thresholds": {"tempo": 14},
       "enableFeatures": ["auto_run", "double_jump", "long_air"],
       "disableFeatures": ["grid_stop", "puzzle_solve"],
       "scoreFormula": "distance * 1.2 + survivedSec * 8 + combo * 50",
       "manualReveal": "これはエンドレスランナーになりました。走り続けることが目的です。",
-      "theme": "plain",
+      "theme": "runner",
       "bgColor": "#1a1a2e",
       "controls": {
         "jump": "Space",
@@ -55,7 +62,7 @@
     {
       "id": "stg",
       "label": "シューティングゲーム",
-      "thresholds": {"range": 5, "enemy": 5},
+      "thresholds": {"range": 11, "enemy": 11},
       "enableFeatures": ["shoot", "three_way", "enemy_hp"],
       "disableFeatures": ["grid_stop", "puzzle_solve"],
       "scoreFormula": "kills * 120 + distance * 0.5 + combo * 80",
@@ -78,7 +85,7 @@
     {
       "id": "rpg",
       "label": "ロールプレイングゲーム",
-      "thresholds": {"growth": 6},
+      "thresholds": {"growth": 16},
       "enableFeatures": ["hp", "exp", "item_pickup", "slow_precise"],
       "disableFeatures": ["auto_run", "beat_hazard"],
       "scoreFormula": "exp * 2 + kills * 60 + distance * 0.3",
@@ -100,7 +107,7 @@
     {
       "id": "puzzle",
       "label": "パズルゲーム",
-      "thresholds": {"combo": 5},
+      "thresholds": {"combo": 16},
       "enableFeatures": ["grid_stop"],
       "disableFeatures": ["auto_run", "shoot", "beat_hazard"],
       "scoreFormula": "combo * 200 + survivedSec * 3",
@@ -121,7 +128,7 @@
     {
       "id": "rhythm",
       "label": "リズムゲーム",
-      "thresholds": {"tempo": 5, "rhythm": 5},
+      "thresholds": {"tempo": 10, "rhythm": 10},
       "enableFeatures": ["beat_hazard", "just_input", "beat_dash"],
       "disableFeatures": ["grid_stop"],
       "scoreFormula": "beatHits * 150 + combo * 100 + distance * 0.4",
@@ -142,7 +149,7 @@
     {
       "id": "aerial_stg",
       "label": "縦スクロールシューティング",
-      "thresholds": {"vertical": 4, "range": 4, "enemy": 4},
+      "thresholds": {"vertical": 7, "range": 8, "enemy": 8},
       "enableFeatures": ["shoot", "vertical_scroll", "enemy_hp", "spread_shot"],
       "disableFeatures": ["grid_stop", "puzzle_solve", "auto_run"],
       "scoreFormula": "kills * 130 + combo * 90 + survivedSec * 3",
@@ -166,7 +173,7 @@
     {
       "id": "bullet_hell",
       "label": "弾幕シューティング",
-      "thresholds": {"vertical": 4, "enemy": 6},
+      "thresholds": {"vertical": 8, "enemy": 14},
       "enableFeatures": ["shoot", "spread_shot", "enemy_hp", "vertical_scroll"],
       "disableFeatures": ["grid_stop", "auto_run", "slow_precise"],
       "scoreFormula": "kills * 80 + combo * 150 + survivedSec * 10 + accuracy * 500",
@@ -190,12 +197,12 @@
     {
       "id": "survival",
       "label": "サバイバルゲーム",
-      "thresholds": {"survive": 5, "growth": 4},
+      "thresholds": {"survive": 10, "growth": 9},
       "enableFeatures": ["hp", "item_pickup", "shield"],
       "disableFeatures": ["auto_run", "beat_hazard", "grid_stop"],
       "scoreFormula": "survivedSec * 15 + itemsCollected * 80 + distance * 0.2",
       "manualReveal": "これはサバイバルゲームになりました。生き延びてください。",
-      "theme": "rpg",
+      "theme": "survival",
       "bgColor": "#0a1a0a",
       "environment": "forest",
       "controls": {
@@ -212,12 +219,12 @@
     {
       "id": "stealth_action",
       "label": "ステルスアクション",
-      "thresholds": {"stealth": 5},
+      "thresholds": {"stealth": 14},
       "enableFeatures": ["stealth_mode", "slow_precise"],
       "disableFeatures": ["shoot", "auto_run", "beat_hazard", "boss"],
       "scoreFormula": "stealthBonus * 0.5 + survivedSec * 10 + distance * 0.4",
       "manualReveal": "これはステルスアクションになりました。見つからないでください。",
-      "theme": "plain",
+      "theme": "stealth",
       "bgColor": "#050505",
       "environment": "city",
       "controls": {
@@ -234,12 +241,12 @@
     {
       "id": "racing",
       "label": "レーシングゲーム",
-      "thresholds": {"speed": 5, "tempo": 4},
+      "thresholds": {"speed": 10, "tempo": 9},
       "enableFeatures": ["auto_run", "dash", "time_bonus"],
       "disableFeatures": ["grid_stop", "puzzle_solve", "beat_hazard", "slow_precise"],
       "scoreFormula": "distance * 2.0 + survivedSec * 3 + combo * 30",
       "manualReveal": "これはレーシングゲームになりました。最速を目指してください。",
-      "theme": "plain",
+      "theme": "racing",
       "bgColor": "#0f0a00",
       "controls": {
         "jump": "Space",
@@ -256,12 +263,12 @@
     {
       "id": "platformer",
       "label": "プラットフォームアクション",
-      "thresholds": {"aerial": 4, "combo": 4},
+      "thresholds": {"aerial": 9, "combo": 9},
       "enableFeatures": ["double_jump", "long_air", "wall_jump"],
       "disableFeatures": ["auto_run", "grid_stop", "beat_hazard"],
       "scoreFormula": "combo * 150 + distance * 0.8 + survivedSec * 5",
       "manualReveal": "これはプラットフォームアクションになりました。飛び跳ねてください。",
-      "theme": "plain",
+      "theme": "platformer",
       "bgColor": "#001f3f",
       "environment": "sky",
       "controls": {
@@ -278,12 +285,12 @@
     {
       "id": "dungeon",
       "label": "ダンジョン探索",
-      "thresholds": {"growth": 6, "craft": 3},
+      "thresholds": {"growth": 14, "craft": 10},
       "enableFeatures": ["hp", "exp", "item_pickup", "slow_precise"],
       "disableFeatures": ["auto_run", "beat_hazard", "vertical_scroll"],
       "scoreFormula": "exp * 3 + kills * 70 + itemsCollected * 60 + distance * 0.2",
       "manualReveal": "これはダンジョン探索になりました。奥へ進んでください。",
-      "theme": "rpg",
+      "theme": "dungeon",
       "bgColor": "#0a0a00",
       "environment": "dungeon",
       "controls": {
@@ -300,7 +307,7 @@
     {
       "id": "tower_def",
       "label": "タワーディフェンス",
-      "thresholds": {"craft": 6, "enemy": 4},
+      "thresholds": {"craft": 14, "enemy": 10},
       "enableFeatures": ["tower", "enemy_hp", "item_pickup"],
       "disableFeatures": ["auto_run", "beat_hazard", "vertical_scroll", "stealth_mode"],
       "scoreFormula": "kills * 90 + combo * 110 + survivedSec * 8",
@@ -321,7 +328,7 @@
     {
       "id": "sports",
       "label": "スポーツゲーム",
-      "thresholds": {"speed": 4, "rhythm": 4},
+      "thresholds": {"speed": 9, "rhythm": 9},
       "enableFeatures": ["dash", "time_bonus", "just_input"],
       "disableFeatures": ["grid_stop", "puzzle_solve", "enemy_hp", "stealth_mode"],
       "scoreFormula": "combo * 180 + distance * 1.0 + beatHits * 80",
@@ -343,7 +350,7 @@
     {
       "id": "idle",
       "label": "放置ゲーム",
-      "thresholds": {"craft": 6},
+      "thresholds": {"craft": 16},
       "enableFeatures": ["item_pickup", "exp", "tower"],
       "disableFeatures": ["auto_run", "shoot", "beat_hazard", "boss", "stealth_mode"],
       "scoreFormula": "itemsCollected * 200 + exp * 4 + survivedSec * 5",
@@ -364,7 +371,7 @@
     {
       "id": "bullet_runner",
       "label": "弾幕ランナー",
-      "thresholds": {"tempo": 6, "enemy": 5},
+      "thresholds": {"tempo": 12, "enemy": 9},
       "enableFeatures": ["auto_run", "shoot", "enemy_hp"],
       "disableFeatures": ["grid_stop", "puzzle_solve", "slow_precise", "stealth_mode"],
       "scoreFormula": "kills * 100 + distance * 1.5 + combo * 60",
@@ -386,12 +393,12 @@
     {
       "id": "arena",
       "label": "アリーナバトル",
-      "thresholds": {"enemy": 6, "combo": 5},
+      "thresholds": {"enemy": 18, "combo": 10},
       "enableFeatures": ["shoot", "enemy_hp", "boss", "dash"],
       "disableFeatures": ["auto_run", "grid_stop", "puzzle_solve", "stealth_mode"],
       "scoreFormula": "kills * 110 + bossKills * 500 + combo * 130",
       "manualReveal": "これはアリーナバトルになりました。全てを倒してください。",
-      "theme": "stg",
+      "theme": "hack_slash",
       "bgColor": "#0f0000",
       "controls": {
         "jump": "Space",
@@ -409,7 +416,7 @@
     {
       "id": "aquatic",
       "label": "水中アドベンチャー",
-      "thresholds": {"vertical": 3, "aerial": 3, "survive": 4},
+      "thresholds": {"vertical": 6, "aerial": 6, "survive": 7},
       "enableFeatures": ["hp", "item_pickup", "slow_precise"],
       "disableFeatures": ["auto_run", "shoot", "boss", "beat_hazard"],
       "scoreFormula": "distance * 0.8 + itemsCollected * 100 + survivedSec * 12",
@@ -432,7 +439,7 @@
     {
       "id": "horror",
       "label": "サバイバルホラー",
-      "thresholds": {"survive": 6, "stealth": 4},
+      "thresholds": {"survive": 12, "stealth": 7},
       "enableFeatures": ["hp", "stealth_mode", "slow_precise"],
       "disableFeatures": ["auto_run", "shoot", "beat_hazard", "boss"],
       "scoreFormula": "survivedSec * 20 + stealthBonus * 0.8 + deaths * -200",
@@ -454,12 +461,12 @@
     {
       "id": "hack_slash",
       "label": "ハックアンドスラッシュ",
-      "thresholds": {"enemy": 5, "combo": 6},
+      "thresholds": {"enemy": 8, "combo": 18},
       "enableFeatures": ["shoot", "enemy_hp", "exp", "dash", "boss"],
       "disableFeatures": ["grid_stop", "puzzle_solve", "stealth_mode", "slow_precise"],
       "scoreFormula": "kills * 90 + maxCombo * 200 + exp * 2 + bossKills * 400",
       "manualReveal": "これはハックアンドスラッシュになりました。コンボを繋いでください。",
-      "theme": "stg",
+      "theme": "hack_slash",
       "bgColor": "#150000",
       "controls": {
         "jump": "Space",

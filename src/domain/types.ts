@@ -38,13 +38,20 @@ export type Phase = 'title' | 'tutorialIntro' | 'tutorial' | 'updating' | 'playi
 // 説明書テーマ（UIの見た目クラスに対応）
 // ─────────────────────────────────────────────────────────────
 export type ManualTheme =
-  | 'plain'    // 白背景・黒文字（デフォルト）
-  | 'stg'      // ドット文字・SFフォント・暗黒背景
-  | 'rpg'      // 明朝体・羊皮紙風・枠線
-  | 'puzzle'   // モノスペース・グリッド罫線・ライト背景
-  | 'rhythm'   // ネオン風・カラフル・アニメ
-  | 'horror'   // 崩れた文字・血痕・暗黒
-  | 'aquatic'  // 波紋・青緑・滲み
+  | 'plain'      // 緑ターミナル（デフォルト）
+  | 'stg'        // ドット文字・SFフォント・暗黒背景
+  | 'rpg'        // 明朝体・羊皮紙風・枠線
+  | 'puzzle'     // モノスペース・グリッド罫線・ライト背景
+  | 'rhythm'     // ネオン風・カラフル・アニメ
+  | 'horror'     // 崩れた文字・血痕・暗黒
+  | 'aquatic'    // 波紋・青緑・滲み
+  | 'runner'     // スピード・白黒赤・Impact体
+  | 'stealth'    // 極暗・低コントラスト・ほぼ見えない
+  | 'racing'     // チェッカー・オレンジ・アグレッシブ
+  | 'platformer' // 空色・黄色アクセント・丸み
+  | 'dungeon'    // 松明橙・ダークファンタジー・セリフ体
+  | 'hack_slash' // 深紅・高コントラスト・コンバット
+  | 'survival'   // 苔緑・アース・荒廃感
 
 // ─────────────────────────────────────────────────────────────
 // スクロール方向・環境
@@ -167,6 +174,14 @@ export interface ManualVersion {
   narrative?: string
   /** プレイヤー行動に基づいた自動ルール更新ルール（省略可） */
   learningRules?: LearningRule[]
+  /** プール選択用: ジャンルごとの親和性（0〜1）。ベイズ事後確率と内積でスコアリング */
+  genreAffinity?: Record<string, number>
+  /** プール選択用: 表示可能な最小 updateIndex（0-indexed） */
+  minUpdateIndex?: number
+  /** プール選択用: 表示可能な最大 updateIndex（0-indexed） */
+  maxUpdateIndex?: number
+  /** プール選択用: 選択肢を借用するチェーンバージョンのキー */
+  chainKey?: string
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -299,6 +314,37 @@ export interface FinalScore {
   throw: number
   total: number
 }
+
+/** ベイズ更新の状態（各ジャンルの事後確率分布） */
+export interface BayesianState {
+  /** 各ジャンルの事後確率（合計 1.0） */
+  posteriors: Record<GenreId, number>
+  /** 収束済みフラグ */
+  converged: boolean
+  /** 収束したジャンルID（converged=true の場合） */
+  convergedGenre: GenreId | null
+  /** 適用された選択回数 */
+  updateCount: number
+}
+
+/** ベイズ収束のハイパーパラメータ */
+export interface BayesConfig {
+  /** 収束閾値（後方互換用） */
+  convergenceThreshold: number
+  /** 最小事後確率（最尤ジャンルがこの値以上であることが収束の必要条件） */
+  minProb: number
+  /** 支配比率（最尤ジャンルが2位以上に対してこの比率以上で優位なことが収束の必要条件） */
+  dominanceRatio: number
+  /** 尤度 decay 率（大きいほど選択の影響が強い） */
+  decayRate: number
+  /** base ジャンルの decay 率（累積パラメータ増大とともに base の尤度が低下） */
+  baseDecay: number
+  /** 「◯◯にもできた」候補の閾値 */
+  candidateThreshold: number
+}
+
+/** ベイズデバッグログで表示する上位ジャンル数 */
+export const BAYES_DEBUG_TOP_N = 5
 
 /** scoreFormula で使える変数 */
 export interface ScoreVars {

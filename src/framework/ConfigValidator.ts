@@ -114,7 +114,8 @@ export function validateGameConfig(config: GameConfigMap): ConfigValidationResul
   for (const [section, fields] of Object.entries(REQUIRED_NUMBER_FIELDS)) {
     const sec = config[section as GameConfigSection] as unknown as Record<string, unknown>
     if (!sec) continue
-    for (const field of fields!) {
+    if (!fields) continue
+    for (const field of fields) {
       if (typeof sec[field] !== 'number') {
         errors.push(`config.${section}.${field}: number が必要です (${typeof sec[field]} が渡されました)`)
       }
@@ -161,6 +162,6 @@ export function devValidateConfig(config: GameConfigMap): void {
     console.error('[ConfigValidator]', e)
   }
   if (result.ok && result.warnings.length === 0) {
-    console.info('[ConfigValidator] ✅ 設定の整合性チェック: 問題なし')
+    console.warn('[ConfigValidator] ✅ 設定の整合性チェック: 問題なし')
   }
 }

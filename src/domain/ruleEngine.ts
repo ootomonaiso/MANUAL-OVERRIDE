@@ -29,7 +29,7 @@ export function buildRuntimeRules(
   lockedGenre: GenreId | null,
 ): RuntimeRules {
   // ── 1. ジャンルパラメータ累積（paramMultiplier を考慮） ──────────────
-  const allParams = _accumulateWithMultiplier(history)
+  const allParams = accumulateWithMultiplier(history)
   const allGenrePoints = accumulateGenrePoints(history)
   const selectedChoiceIds = history.map(r => r.choiceId)
 
@@ -85,7 +85,7 @@ export function buildRuntimeRules(
 }
 
 /** paramMultiplier を考慮した genreParams 累積 */
-function _accumulateWithMultiplier(history: ChoiceRecord[]): GenreParams {
+export function accumulateWithMultiplier(history: ChoiceRecord[]): GenreParams {
   const total: GenreParams = {}
   for (const record of history) {
     const mult = record.paramMultiplier ?? 1.0

@@ -165,7 +165,11 @@ function _parseEntry(entry: ManualEntryJSON): ManualVersion {
     runtimeConfig,
     tutorialHint:  entry.tutorialHint,
     narrative:     entry.narrative,
-    learningRules: entry.learningRules,
+    learningRules:  entry.learningRules,
+    genreAffinity:  entry.genreAffinity,
+    minUpdateIndex: entry.minUpdateIndex,
+    maxUpdateIndex: entry.maxUpdateIndex,
+    chainKey:       entry.chainKey,
   }
 }
 

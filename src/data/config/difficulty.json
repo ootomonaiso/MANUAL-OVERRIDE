@@ -7,5 +7,6 @@
   "genreLockedPlayDist": 400,
   "tempoSpeedBonus": 28,
   "enemyDensityRate": 0.08,
-  "globalDifficultyMult": 1.0
+  "globalDifficultyMult": 1.0,
+  "infiniteUpdateInterval": 1500
 }
