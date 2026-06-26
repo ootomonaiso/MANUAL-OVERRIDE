@@ -81,9 +81,10 @@
 各選択がジャンルパラメータを加算する。蓄積値が閾値を超えたジャンルに収束。
 直接的な表現を避け、横スクロールから縦、ステージを空にしたり海にしたりなど何の気なしに選べるものが望ましい
 
-収束システムは2方式を併用:
-- **genreParams 軸方式**: `tempo` / `range` / `enemy` / `combo` / `growth` / `rhythm` の累積値でジャンルを決定（旧方式・後方互換）
-- **genrePoints 直接方式**: カード選択で特定ジャンルに直接ポイントを加算（新方式）
+収束システムは3方式を併用:
+- **genreParams 軸方式**: `tempo` / `range` / `enemy` / `combo` / `growth` / `rhythm` の累積値でジャンルを決定（後方互換）
+- **genrePoints 直接方式**: カード選択で特定ジャンルに直接ポイントを加算（後方互換）
+- **ベイズ収束方式**: 各軸の閾値との乖離量から尤度 `L=exp(-decayRate×deviation)` を計算し事後確率で収束判定（主方式、`bayes.json` でハイパーパラメータを調整）
 
 ```
 RUNNER  → tempo高 + enemy低
@@ -116,7 +117,7 @@ src/
 ├── components/      # Vue UI コンポーネント
 ├── tutorial/        # チュートリアル画面
 └── data/
-    ├── config/      # 設定JSON（16ファイル: score.json, genres.json, physics.json 等）
+    ├── config/      # 設定JSON（21ファイル: score.json, genres.json, physics.json 等）
     ├── genres/      # ジャンル定義JSON（21ファイル）
     └── cards/       # カードデッキJSON（starter-cards.json 等）
 ```
@@ -132,7 +133,7 @@ src/
 | `FeatureSystem` | Feature フラグ制御インターフェース（ShootFeature 等が実装） |
 | `LearningSystem` | プレイ行動統計を監視し動的にルールを変更（jumpRate / shotRate 等） |
 | `ruleEngine` | 選択履歴から RuntimeRules を合成する純粋関数 |
-| `genreResolver` | genreParams + genrePoints からジャンルIDを決定 |
+| `genreResolver` | ベイズ事後確率でジャンルIDを決定（genreParams + genrePoints も後方互換で保持） |
 | `SoundManager` | BGM フェードイン/アウト・効果音フック（SoundHooks インターフェース） |
 | `useScoreAnimation` | スコア差分の大小でアニメーション/即時更新を切り替える ViewModel |
 
@@ -187,6 +188,11 @@ src/
 | `stealth.json` | ステルスゲージ設定 |
 | `boss.json` | ボス出現・HP設定 |
 | `genre_params.json` | ジャンルパラメータ閾値テーブル |
+| `bayes.json` | ベイズ収束ハイパーパラメータ（convergenceThreshold / decayRate 等） |
+| `throw.json` | 投擲エンジン（重力・最大パワー・空気抵抗） |
+| `extra_movement.json` | 拡張移動フィーチャー（wall jump / dash のパーティクル設定） |
+| `special.json` | 特殊フィーチャー（タワー / ボス撃破 / タイムボーナス） |
+| `puzzle.json` | パズルフィーチャー（グリッドサイズ・フェーズ時間・スコア） |
 
 ### ジャンル定義 (`src/data/genres/stg.json` 等)
 
@@ -230,7 +236,7 @@ src/
 - [x] 1画面横スクロール（エンドレス）
 - [x] 説明書UI（右下常時表示、テーマ切り替え対応）
 - [x] 説明書の多段階更新と2択選択
-- [x] ジャンルパラメータの蓄積と収束判定（genreParams + genrePoints 2方式）
+- [x] ジャンルパラメータの蓄積と収束判定（genreParams / genrePoints / ベイズ収束 3方式）
 - [x] 21ジャンルの完全実装（JSON定義 + TSプラグイン）
 
 ### 高度な機能
@@ -244,13 +250,14 @@ src/
 - [x] 矛盾カード機能（選択の組み合わせで展開変化）
 - [x] BGMフェードイン/アウト（SoundManager）
 - [x] LearningSystem（プレイ行動に応じた動的ルール変更）
+- [x] ベイズ収束システム（事後確率でジャンルを確定、bayes.json でチューニング可能）
 
 ### アーキテクチャ & 品質
 - [x] MVVMパターン（ViewModel: useScoreAnimation・useGameState・useManual）
 - [x] InputManager 分離（キー入力ロジックを SideScroller から独立）
 - [x] ParticleSystem 分離（パーティクル処理を SideScroller から独立）
 - [x] FeatureSystem インターフェース（Feature 追加が1ファイル+1行で完結）
-- [x] JSON駆動設計（config/ 17ファイル、genres/ 21ファイル）
+- [x] JSON駆動設計（config/ 21ファイル、genres/ 21ファイル）
 - [x] テーマカラーの完全JSON駆動化（CSS ハードコードなし）
 - [x] オフライン完全動作
 - [x] CI/CDパイプライン整備
