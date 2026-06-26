@@ -10,6 +10,7 @@ import { GenrePluginBase } from '../engine/GenrePluginBase'
 import type { GenrePlugin } from '../engine/GenrePlugin'
 import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
+import { TETRIS_COLORS } from '../game/systems/tetris-colors'
 
 export class TetrisPlugin extends GenrePluginBase {
   readonly id: GenreId = 'tetris'
@@ -29,16 +30,8 @@ export class TetrisPlugin extends GenrePluginBase {
   ]
 
   // テトリスブロックカラー（7種類）
-  // TetrisFeature.ts で TETROMINOS[].color として直接使用される
-  readonly tetrisColors = {
-    I: '#00f0f0', // シアン
-    O: '#f0f000', // イエロー
-    T: '#a000f0', // パープル
-    S: '#00f000', // グリーン
-    Z: '#f00000', // レッド
-    J: '#0000f0', // ブルー
-    L: '#f0a000', // オレンジ
-  }
+  // 共有定数 TETRIS_COLORS を参照（DRY 違反防止）
+  readonly tetrisColors = TETRIS_COLORS
 
   override drawFarLayer(_ctx: CanvasRenderingContext2D, _offsetX: number, _W: number, _gY: number): void {
     // 遠景なし（テトリスは暗い背景）

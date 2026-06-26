@@ -111,8 +111,8 @@ export interface FeatureSystem {
   onPlayerJump?(world: MutableWorld): void
 
   /**
-   * オプショナル: この Feature が非アクティブになる直前に呼ばれる。
-   * 状態のリセットや副作用のクリーンアップに使う。
+   * オプショナル: Feature が非アクティブになる時に呼ばれる。
+   * ジャンル変更やゲーム終了時に内部状態のクリーンアップ・復元を行う。
    * 省略可。
    */
   onDisable?(world: MutableWorld): void

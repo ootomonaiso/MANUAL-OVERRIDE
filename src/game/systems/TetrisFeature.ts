@@ -19,6 +19,7 @@
 import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import type { ScrollDirection } from '../../domain/types'
+import { TETRIS_COLORS } from './tetris-colors'
 
 // ─── グリッド定数 ───────────────────────────────────────────────────
 const COLS = 10
@@ -26,7 +27,7 @@ const ROWS = 20
 const CELL_SIZE = 24
 
 // ─── テトリミノ定義 ─────────────────────────────────────────────────
-type TetrominoId = 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L'
+type TetrominoId = keyof typeof TETRIS_COLORS
 
 interface TetrominoDef {
   id: TetrominoId
@@ -37,7 +38,7 @@ interface TetrominoDef {
 
 const TETROMINOS: TetrominoDef[] = [
   {
-    id: 'I', color: '#00f0f0',
+    id: 'I', color: TETRIS_COLORS.I,
     // Iピースは2状態のみ（0↔1を交互に使用）
     rotations: [
       [[0, 1], [1, 1], [2, 1], [3, 1]],   // State 0: 水平
@@ -47,7 +48,7 @@ const TETROMINOS: TetrominoDef[] = [
     ],
   },
   {
-    id: 'O', color: '#f0f000',
+    id: 'O', color: TETRIS_COLORS.O,
     // Oピースは回転不変（4状態すべて同一）
     rotations: [
       [[0, 0], [1, 0], [0, 1], [1, 1]],   // State 0
@@ -57,7 +58,7 @@ const TETROMINOS: TetrominoDef[] = [
     ],
   },
   {
-    id: 'T', color: '#a000f0',
+    id: 'T', color: TETRIS_COLORS.T,
     rotations: [
       [[1, 0], [0, 1], [1, 1], [2, 1]],
       [[1, 0], [1, 1], [2, 1], [1, 2]],
@@ -66,7 +67,7 @@ const TETROMINOS: TetrominoDef[] = [
     ],
   },
   {
-    id: 'S', color: '#00f000',
+    id: 'S', color: TETRIS_COLORS.S,
     // Sピースは2状態のみ（標準SRS準拠）
     rotations: [
       [[1, 0], [2, 0], [0, 1], [1, 1]],   // State 0
@@ -76,7 +77,7 @@ const TETROMINOS: TetrominoDef[] = [
     ],
   },
   {
-    id: 'Z', color: '#f00000',
+    id: 'Z', color: TETRIS_COLORS.Z,
     // Zピースは2状態のみ（標準SRS準拠）
     rotations: [
       [[0, 0], [1, 0], [1, 1], [2, 1]],   // State 0
@@ -86,7 +87,7 @@ const TETROMINOS: TetrominoDef[] = [
     ],
   },
   {
-    id: 'J', color: '#0000f0',
+    id: 'J', color: TETRIS_COLORS.J,
     rotations: [
       [[0, 0], [0, 1], [1, 1], [2, 1]],
       [[1, 0], [2, 0], [1, 1], [1, 2]],
@@ -95,7 +96,7 @@ const TETROMINOS: TetrominoDef[] = [
     ],
   },
   {
-    id: 'L', color: '#f0a000',
+    id: 'L', color: TETRIS_COLORS.L,
     rotations: [
       [[2, 0], [0, 1], [1, 1], [2, 1]],
       [[1, 0], [1, 1], [1, 2], [2, 2]],
@@ -201,7 +202,7 @@ function getBlocks(piece: ActivePiece): [number, number][] {
 
 function spawnPiece(state: TetrisState): void {
   const id = getNextPieceId(state)
-  const def = TETROMINOS.find(t => t.id === id)!
+  const def = TETROMINOS.find(t => t.id === id) ?? TETROMINOS[0]
   // Iピースは4幅なので中央寄せのためcolを調整
   const spawnCol = id === 'I' ? Math.floor(COLS / 2) - 2 : Math.floor(COLS / 2) - 1
   const piece: ActivePiece = {
@@ -278,7 +279,7 @@ function movePiece(state: TetrisState, dcol: number): boolean {
   return false
 }
 
-function hardDrop(state: TetrisState, world?: MutableWorld): number {
+function hardDrop(state: TetrisState, _world?: MutableWorld): number {
   if (!state.piece || state.gameOver) return 0
   let dropped = 0
   while (true) {
@@ -358,9 +359,15 @@ export class TetrisFeature implements FeatureSystem {
   private savedScrollDirection: ScrollDirection = 'horizontal'
   private savedScrollSpeed: number = 3
   private firstInit = true
+  // M3: cache canvas dimensions to avoid per-frame recalculation
+  private _lastCanvasW = 0
+  private _lastCanvasH = 0
 
   onInit(world: MutableWorld): void {
     this.state = initialState()
+    // Invalidate dimension cache so _calcBoardPosition recalculates after state reset
+    this._lastCanvasW = 0
+    this._lastCanvasH = 0
     this._calcBoardPosition(world.canvas.width, world.canvas.height)
     this.state.initialized = true
     // H7: save scrollDirection and scrollSpeed only on first init
@@ -377,7 +384,7 @@ export class TetrisFeature implements FeatureSystem {
   }
 
   onManualUpdated(world: MutableWorld, versionKey: string): void {
-    console.debug(`[Tetris] manual updated: ${versionKey}`)
+    void versionKey
     this.onInit(world)
   }
 
@@ -405,6 +412,9 @@ export class TetrisFeature implements FeatureSystem {
   update(world: MutableWorld, input: InputSnapshot, dt: number): void {
     // M1: guard with feature flag (consistent with preUpdate and render)
     if (!world.rules.features.has('tetris_mode')) return
+    // Zero player velocity after physics to prevent MovementFeature bleed-through
+    world.player.vx = 0
+    world.player.vy = 0
     if (!this.state.initialized) {
       this.state.initialized = true
       this._calcBoardPosition(world.canvas.width, world.canvas.height)
@@ -489,7 +499,10 @@ export class TetrisFeature implements FeatureSystem {
       this.state.dropTimer = 0
 
       if (canPieceDrop(this.state)) {
-        this.state.piece!.row++
+        const p = this.state.piece
+        if (p) {
+          p.row++
+        }
         this.state.lockTimer = 0  // 落下成功でロックタイマーリセット
         if (this.state.softDropActive) {
           this.state.totalScore += 1
@@ -528,6 +541,7 @@ export class TetrisFeature implements FeatureSystem {
 
     const W = world.canvas.width
     const H = world.canvas.height
+    // Safety net for unexpected canvas resize (rare; normally set in onInit)
     this._calcBoardPosition(W, H)
 
     const { spawnX, spawnY, boardWidth, boardHeight } = this.state
@@ -636,6 +650,10 @@ export class TetrisFeature implements FeatureSystem {
 
   // ─── 内部メソッド ───────────────────────────────────────────
   private _calcBoardPosition(W: number, H: number): void {
+    // M3: skip if canvas dimensions haven't changed
+    if (W === this._lastCanvasW && H === this._lastCanvasH) return
+    this._lastCanvasW = W
+    this._lastCanvasH = H
     const boardW = COLS * CELL_SIZE
     const boardH = ROWS * CELL_SIZE
     this.state.spawnX = Math.floor((W - boardW) / 2)

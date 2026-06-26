@@ -512,7 +512,7 @@ export class SideScroller {
 
     const isDouble         = r.features.has('double_jump')
     const jumpDisabled     = this._isActionDisabled('jump')
-    // tetris_mode: Space is repurposed for hard drop; skip jump detection entirely
+    // tetris_mode: jump key is repurposed for hard drop; skip jump detection entirely
     const tetrisMode       = r.features.has('tetris_mode')
     const jumpJustPressed  = !tetrisMode && !jumpDisabled && this.input.justPressed.has(jumpKey)
     const jumpJustReleased = this.input.justReleased.has(jumpKey)
