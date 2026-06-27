@@ -37,6 +37,11 @@ export interface GameSnapshot {
   learningNotification: string | null
   // スコア計算式のパースエラー（発生時のみ非 null）
   scoreFormulaError: string | null
+  // プレイスタイル検出用の統計（Issue #24）
+  statCollisions: number
+  statItemsCollected: number
+  statShots: number
+  statDashes: number | undefined
 }
 
 // ループ内 dt のクランプ上限（フレーム落ち時に物理が発散するのを防ぐ）
@@ -112,7 +117,7 @@ export class SideScroller {
   private _frameWorld: MutableWorld | null = null
 
   // ─── 統計 ────────────────────────────────────────────────────────
-  private stats: ActionStats = { jumps: 0, moveRight: 0, moveLeft: 0, shots: 0, ticks: 0 }
+  private stats: ActionStats = { jumps: 0, moveRight: 0, moveLeft: 0, shots: 0, ticks: 0, collisions: 0, itemsCollected: 0, dashes: 0 }
   private rafId = 0
   private lastTime = 0
 
@@ -138,7 +143,7 @@ export class SideScroller {
     this.ctx = ctx2d
     this.rules = rules
 
-    const gY = canvas.height - 80
+    const gY = canvas.height - PHYSICS.groundYOffset
     this.player = new Player(PLAYER_PHYSICS.startX, gY)
     this.player.jumpsLeft = rules.features.has('double_jump') ? 2 : 1
 
@@ -260,6 +265,10 @@ export class SideScroller {
       firstJumpDone: this.firstJumpDone,
       learningNotification,
       scoreFormulaError,
+      statCollisions: this.stats.collisions,
+      statItemsCollected: this.stats.itemsCollected,
+      statShots: this.stats.shots,
+      statDashes: this.stats.dashes,
     }
   }
 
@@ -274,7 +283,7 @@ export class SideScroller {
     }
   }
 
-  getStats(): ActionStats { return this.stats }
+  getStats(): ActionStats { return { ...this.stats } }
 
   /**
    * ScoreVars を構築し、ジャンル別 scoreFormula を使って playScore を再計算する。
@@ -376,7 +385,7 @@ export class SideScroller {
     const isVertical = r.scrollAxis === 'y'
 
     if (r.features.has('dash') && this.input.justPressed.has(dashKey)) {
-      this.stats.dashes = (this.stats.dashes ?? 0) + 1
+      this.stats.dashes += 1
     }
 
     // ─── 距離ベースの自動加速 ─────────────────────────────────────────
@@ -634,6 +643,7 @@ export class SideScroller {
 
   // ─── 被弾処理 ────────────────────────────────────────────────────
   private _onPlayerHit(p: Player): void {
+    this.stats.collisions += 1
     const world = this._getWorld()
     soundManager.onHit()
     for (const sys of getActiveSystems(this.rules.features)) {
@@ -671,7 +681,7 @@ export class SideScroller {
     const ctx = this.ctx
     const W = this.canvas.width, H = this.canvas.height
     const r = this.rules
-    const gY = H - 80
+    const gY = H - PHYSICS.groundYOffset
 
     ctx.save()
     ctx.translate(this.shakeX, this.shakeY)

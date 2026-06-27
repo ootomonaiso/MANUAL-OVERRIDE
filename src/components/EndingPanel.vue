@@ -1,12 +1,26 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import type { FinalScore, GenreId } from '../domain/types'
+import type { FinalScore, GenreId, PlayStyleResult, ContradictionState, SurpriseEnding } from '../domain/types'
 import { GENRES } from '../data/genres'
+import { SCORE } from '../data/tunables'
+
+/** EndingPanel で矛盾状態を表示するためのインターフェース（readonly 対応） */
+interface ContradictionDisplay {
+  pairs: ReadonlyArray<{ idA: string; idB: string }>
+  score: number
+  hasEffect: boolean
+}
 
 const props = defineProps<{
   finalScore: FinalScore
   genre: GenreId
   choiceCount: number
+  /** Issue #24: プレイスタイル検出結果 */
+  playStyle?: PlayStyleResult | null
+  /** Issue #24: 矛盾状態（readonly 対応のため専用インターフェース） */
+  contradiction?: ContradictionDisplay | null
+  /** Issue #24: サプライズエンド情報 */
+  surpriseEnding?: SurpriseEnding | null
 }>()
 
 const emit = defineEmits<{ (e: 'restart'): void }>()
@@ -17,6 +31,29 @@ const endingFlavor = genreDef?.endingFlavor ?? ''
 
 const otherGenres = GENRES.filter(g => g.id !== props.genre && g.id !== 'base')
 
+// ── Issue #24: プレイスタイルラベル ────────────────────────────
+const playStyleLabels: Record<string, string> = {
+  aggressive: '攻撃的',
+  defensive: '防御的',
+  explorer: '探索的',
+  balanced: '均衡',
+  chaotic: '混沌',
+  passive: '消極的',
+}
+const detectedPlayStyle = computed(() => {
+  if (!props.playStyle) return null
+  return {
+    label: playStyleLabels[props.playStyle.style] ?? props.playStyle.style,
+    confidence: Math.round(props.playStyle.confidence * 100),
+  }
+})
+
+// ── Issue #24: 矛盾バー ────────────────────────────────────────
+const contradictionPercentage = computed(() => {
+  if (!props.contradiction) return 0
+  return Math.round(props.contradiction.score * 100)
+})
+
 // ── カウントアップ ───────────────────────────────
 const displayPlay  = ref(0)
 const displayThrow = ref(0)
@@ -25,10 +62,11 @@ const gradeVisible = ref(false)
 const altVisible   = ref(false)
 
 function grade(total: number): string {
-  if (total >= 8000) return 'S'
-  if (total >= 5000) return 'A'
-  if (total >= 2500) return 'B'
-  if (total >= 1000) return 'C'
+  const t = SCORE.gradeThresholds
+  if (total >= t.S) return 'S'
+  if (total >= t.A) return 'A'
+  if (total >= t.B) return 'B'
+  if (total >= t.C) return 'C'
   return 'D'
 }
 
@@ -93,12 +131,34 @@ onUnmounted(() => {
     <div class="ending-card">
       <!-- ジャンル確定 -->
       <div class="ending-genre-section">
+        <!-- Issue #24: サプライズエンド表示 -->
+        <div v-if="surpriseEnding" class="ending-surprise" :class="'surprise-' + surpriseEnding.type">
+          <div class="surprise-icon">⚠</div>
+          <div class="surprise-title">{{ surpriseEnding.title }}</div>
+          <div class="surprise-desc">{{ surpriseEnding.description }}</div>
+        </div>
+
         <div class="ending-genre-label">ゲームが完成しました</div>
         <div class="ending-genre-name" :style="{ '--accent': accentColor }">
           {{ genreLabel }}
         </div>
         <div class="ending-genre-sub">
           {{ choiceCount }} 回の選択で作りました
+        </div>
+      </div>
+
+      <!-- Issue #24: プレイスタイル・矛盾表示 -->
+      <div v-if="detectedPlayStyle || contradiction" class="ending-meta-section">
+        <div v-if="detectedPlayStyle" class="meta-row">
+          <span class="meta-label">プレイスタイル</span>
+          <span class="meta-value">{{ detectedPlayStyle.label }} <span class="meta-conf">（{{ detectedPlayStyle.confidence }}%）</span></span>
+        </div>
+        <div v-if="contradiction" class="meta-row">
+          <span class="meta-label">矛盾レベル</span>
+          <div class="contradiction-bar">
+            <div class="contradiction-fill" :style="{ width: contradictionPercentage + '%' }"></div>
+          </div>
+          <span class="meta-value">{{ contradictionPercentage }}%</span>
         </div>
       </div>
 
@@ -364,4 +424,86 @@ onUnmounted(() => {
 }
 .restart-btn:hover { background: rgba(0,255,65,0.1); box-shadow: 0 0 12px rgba(0,255,65,0.2); }
 .restart-btn:active { transform: translateY(2px); box-shadow: 0 0 6px rgba(0,255,65,0.1); }
+
+/* ── Issue #24: サプライズエンド ── */
+.ending-surprise {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid #ff0040;
+  border-radius: 2px;
+  background: rgba(255, 0, 64, 0.08);
+  animation: glitchPulse 2s infinite;
+}
+@keyframes glitchPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+.surprise-icon {
+  font-size: 18px;
+  margin-bottom: 4px;
+  animation: glitchShake 0.3s infinite;
+}
+@keyframes glitchShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+.surprise-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #ff0040;
+  margin-bottom: 4px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+}
+.surprise-desc {
+  font-size: 11px;
+  color: rgba(255, 100, 120, 0.7);
+  line-height: 1.6;
+  font-family: 'M PLUS 1 Code', monospace;
+}
+
+/* ── Issue #24: メタ情報セクション ── */
+.ending-meta-section {
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  border: 1px solid rgba(0,255,65,0.15);
+  border-radius: 1px;
+  background: rgba(0,255,65,0.03);
+}
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 12px;
+  font-family: 'M PLUS 1 Code', monospace;
+}
+.meta-label {
+  color: rgba(184,255,184,0.45);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+.meta-value {
+  color: #b8ffb8;
+  font-size: 12px;
+}
+.meta-conf {
+  color: rgba(184,255,184,0.3);
+  font-size: 10px;
+}
+.contradiction-bar {
+  width: 80px;
+  height: 6px;
+  background: rgba(0,255,65,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 0 8px;
+}
+.contradiction-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #33aa55, #ff0040);
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
 </style>

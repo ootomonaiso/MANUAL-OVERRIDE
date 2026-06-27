@@ -79,6 +79,11 @@ export const GENRE_LOCKED_BOOST = {
 export const DEFAULT_FALLBACK_GENRE = _gb.defaultFallbackGenre as string
 
 // ─────────────────────────────────────────────────────────────
+// PARAM_JITTER_RANGE — ジャンルパラメータのジッター幅（±20%）
+// ─────────────────────────────────────────────────────────────
+export const PARAM_JITTER_RANGE = _gb.paramJitterRange
+
+// ─────────────────────────────────────────────────────────────
 // HAZARD_SPAWN — ハザードスポーン曲線
 // ─────────────────────────────────────────────────────────────
 export const HAZARD_SPAWN = {

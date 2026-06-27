@@ -1,0 +1,62 @@
+{
+  "cards": [
+    {
+      "id": "c-surprise-chaos",
+      "label": "ルールを意図的に矛盾させる",
+      "manualText": ["ルールに矛盾が生じました。", "ゲームの仕様が揺らぎ始めました。"],
+      "genreParams": { "combo": 1, "tempo": 1, "enemy": 1 },
+      "weight": 1,
+      "hint": "サプライズ: 矛盾を誘発",
+      "genreAffinity": ["puzzle", "hack_slash"],
+      "conflictsWith": ["c-combo-sequence", "c-stealth-hide"]
+    },
+    {
+      "id": "c-surprise-paradox",
+      "label": "同時に相反する2つの状態を作る",
+      "manualText": ["ゲームが2つの状態を同時に持つようになりました。", "何が起きるか分かりません。"],
+      "genreParams": { "stealth": 1, "enemy": 1 },
+      "weight": 1,
+      "hint": "サプライズ: 矛盾を誘発",
+      "genreAffinity": ["horror", "stealth_action"],
+      "conflictsWith": ["c-enemy-combat", "c-survive-danger"]
+    },
+    {
+      "id": "c-surprise-void",
+      "label": "存在しないものを操作できるようにする",
+      "manualText": ["見えないものを操作する仕様が加わりました。"],
+      "genreParams": { "stealth": 2, "combo": 1 },
+      "weight": 1,
+      "hint": "サプライズ: 隠し要素",
+      "genreAffinity": ["stealth_action", "puzzle"],
+      "conflictsWith": ["c-general-visual"]
+    },
+    {
+      "id": "c-surprise-loop",
+      "label": "同じことを繰り返すと変化が起きる",
+      "manualText": ["繰り返すことで隠れた仕様が解き放たれます。"],
+      "genreParams": { "combo": 2, "rhythm": 1 },
+      "weight": 1,
+      "hint": "サプライズ: ループ要素",
+      "genreAffinity": ["rhythm", "idle"]
+    },
+    {
+      "id": "c-surprise-memory",
+      "label": "過去の選択が今に影響する",
+      "manualText": ["過去の選択がゲームに影響し始めました。"],
+      "genreParams": { "growth": 1, "stealth": 1 },
+      "weight": 1,
+      "hint": "サプライズ: メタ要素",
+      "genreAffinity": ["rpg", "horror"]
+    },
+    {
+      "id": "c-surprise-break",
+      "label": "ゲームの枠組みそのものを変える",
+      "manualText": ["ゲームの根本が変わりつつあります。", "もはや説明書では追いつきません。"],
+      "genreParams": { "tempo": 1, "combo": 1, "enemy": 1, "growth": 1 },
+      "weight": 1,
+      "hint": "サプライズ: 根本変化",
+      "genreAffinity": ["hack_slash", "arena"],
+      "conflictsWith": ["c-combo-sequence", "c-tempo-smooth", "c-stealth-hide"]
+    }
+  ]
+}
