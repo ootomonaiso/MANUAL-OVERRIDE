@@ -1,4 +1,4 @@
-﻿/**
+/**
  * genres/BulletRunnerPlugin.ts
  * 'bullet_runner' ジャンル（弾幕ランナー）のプラグイン。
  *

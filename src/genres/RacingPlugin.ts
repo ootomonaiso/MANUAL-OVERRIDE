@@ -1,4 +1,4 @@
-﻿/**
+/**
  * genres/RacingPlugin.ts
  * 'racing' ジャンル（レーシングゲーム）のプラグイン。
  *

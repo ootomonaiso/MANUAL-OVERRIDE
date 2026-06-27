@@ -1,4 +1,4 @@
-﻿/**
+/**
  * genres/ArenaPlugin.ts
  * 'arena' ジャンル（アリーナバトル）のプラグイン。
  *

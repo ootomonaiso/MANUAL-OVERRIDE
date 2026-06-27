@@ -1,4 +1,4 @@
-﻿/**
+/**
  * genres/HackSlashPlugin.ts
  * 'hack_slash' ジャンル（ハックアンドスラッシュ）のプラグイン。
  *
