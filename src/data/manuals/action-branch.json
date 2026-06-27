@@ -881,6 +881,12 @@
           "next": "5.0-a-idle",
           "genreParams": { "craft": 1 },
           "hint": "idle方向"
+        },
+        {
+          "label": "ブロックを積み重ねてラインを完成させる",
+          "next": "2.0-t",
+          "genreParams": { "craft": 2, "combo": 2 },
+          "hint": "tetris方向へ分岐"
         }
       ]
     },

@@ -133,6 +133,12 @@
           "next": "11.0-b",
           "genreParams": { "tempo": 1 },
           "hint": "簡潔へ向かう"
+        },
+        {
+          "label": "ブロックを積み重ねるパズルへ",
+          "next": "2.0-t",
+          "genreParams": { "combo": 2, "craft": 2 },
+          "hint": "tetris方向へ分岐"
         }
       ]
     },

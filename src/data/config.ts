@@ -22,9 +22,14 @@ const _genreList = Object.values(_genreModules)
   .filter(g => typeof (g as GenreDefJSON).id === 'string')
 
 // genres.json の代わりに合成セクションとして注入する
+// themeColors は genres.json から直接取得（上書き防止のため）
+const _genresJsonModule = (_rawModules as Record<string, { default?: unknown }>)['./config/genres.json']
+const _genresJsonRaw = (_genresJsonModule?.default ?? _genresJsonModule) as { themeColors?: Record<string, unknown> }
+const _themeColors = _genresJsonRaw?.themeColors ?? {}
+
 const _merged: Record<string, unknown> = {
   ..._rawModules,
-  '__genres__': { section: 'genres', genres: _genreList },
+  '__genres__': { section: 'genres', genres: _genreList, themeColors: _themeColors },
 }
 
 export const GAME_CONFIG = loadConfigFromGlob(_merged)

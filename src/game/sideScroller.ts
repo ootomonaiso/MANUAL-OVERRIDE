@@ -1,4 +1,4 @@
-import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect } from '../domain/types'
+import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect, FeatureId } from '../domain/types'
 import type { MutableWorld, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup } from './entities'
 import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL } from '../data/gameBalance'
@@ -156,6 +156,17 @@ export class SideScroller {
         this.player.vy *= newGravity / oldGravity
       } else if (newGravity === 0) {
         this.player.vy *= 0.3
+      }
+    }
+
+    // 非アクティブになった Feature の onDisable を呼び出す（rules 更新前に旧 features を使う）
+    const oldFeatures = this.rules.features
+    const preWorld = this._buildWorld()
+    for (const sys of getActiveSystems(oldFeatures)) {
+      const ids = Array.isArray(sys.handles) ? sys.handles : [sys.handles]
+      const stillActive = ids.some((id: FeatureId) => rules.features.has(id))
+      if (!stillActive) {
+        sys.onDisable?.(preWorld)
       }
     }
 
@@ -493,15 +504,17 @@ export class SideScroller {
     const rightKey = r.controls.moveRight
     const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
 
-    if (!r.features.has('auto_run') && this.input.keys.has(leftKey))  this.stats.moveLeft++
-    if ( r.features.has('auto_run') || this.input.keys.has(rightKey)) this.stats.moveRight++
+    if (!r.features.has('auto_run') && !r.features.has('tetris_mode') && this.input.keys.has(leftKey))  this.stats.moveLeft++
+    if ((r.features.has('auto_run') || this.input.keys.has(rightKey)) && !r.features.has('tetris_mode')) this.stats.moveRight++
     if (p.onGround) {
       this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
     }
 
     const isDouble         = r.features.has('double_jump')
     const jumpDisabled     = this._isActionDisabled('jump')
-    const jumpJustPressed  = !jumpDisabled && this.input.justPressed.has(jumpKey)
+    // tetris_mode: jump key is repurposed for hard drop; skip jump detection entirely
+    const tetrisMode       = r.features.has('tetris_mode')
+    const jumpJustPressed  = !tetrisMode && !jumpDisabled && this.input.justPressed.has(jumpKey)
     const jumpJustReleased = this.input.justReleased.has(jumpKey)
 
     if (p.onGround) {
@@ -576,7 +589,7 @@ export class SideScroller {
     }
     if (p.landSquash > 0) p.landSquash *= PHYSICS.landSquashDecay
 
-    if (!r.features.has('auto_run')) p.x += p.vx * dt
+    if (!r.features.has('auto_run') && !r.features.has('tetris_mode')) p.x += p.vx * dt
     p.x = Math.max(PHYSICS.playerMinX, Math.min(W * PHYSICS.playerMaxXRatio, p.x))
 
     this.distance += speed * dt
