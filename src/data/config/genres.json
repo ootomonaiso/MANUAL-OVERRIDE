@@ -7,7 +7,8 @@
     "puzzle": { "accent": "#222222", "border": "#444444", "hint": "rgba(80,80,80,0.5)",    "bg": "#0d0d0d", "glow": "rgba(80,80,80,0.15)",   "font": "'Courier New', monospace" },
     "rhythm": { "accent": "#ee88ff", "border": "#9900ff", "hint": "rgba(204,136,255,0.5)", "bg": "#0d0019", "glow": "rgba(153,0,255,0.25)" },
     "horror": { "accent": "#cc4444", "border": "#880000", "hint": "rgba(204,68,68,0.4)",   "bg": "#1a0000", "glow": "rgba(204,68,68,0.25)" },
-    "aquatic":{ "accent": "#88ccff", "border": "#0088bb", "hint": "rgba(136,204,255,0.4)", "bg": "#00141a", "glow": "rgba(136,204,255,0.25)" }
+    "aquatic":{ "accent": "#88ccff", "border": "#0088bb", "hint": "rgba(136,204,255,0.4)", "bg": "#00141a", "glow": "rgba(136,204,255,0.25)" },
+    "tetris": { "accent": "#a000f0", "border": "#7000aa", "hint": "rgba(160,0,240,0.5)",  "bg": "#0a0a14", "glow": "rgba(160,0,240,0.25)", "font": "'Courier New', monospace" }
   },
   "genres": [
     {
@@ -473,6 +474,28 @@
       "gravity": 1600,
       "endingFlavor": "あなたはコンボを途切れさせなかった。説明書は斬られて散った。",
       "bgm": { "src": "bgm/hack_slash.ogg", "loop": true, "volume": 0.65, "fadeInMs": 600 }
+    },
+    {
+      "id": "tetris",
+      "label": "テトリス",
+      "thresholds": {"combo": 6, "craft": 4},
+      "enableFeatures": ["tetris"],
+      "disableFeatures": ["auto_run", "shoot", "beat_hazard", "enemy_hp"],
+      "scoreFormula": "playScore",
+      "manualReveal": "これはテトリスになりました。ブロックを積み上げて行を消してください。",
+      "theme": "tetris",
+      "bgColor": "#0a0a14",
+      "scrollDirection": "none",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
+      "gravity": 0,
+      "endingFlavor": "あなたはブロックを積み上げ続けた。説明書もブロックの一つになった。",
+      "bgm": { "src": "bgm/tetris.ogg", "loop": true, "volume": 0.5, "fadeInMs": 1000 }
     }
   ]
 }

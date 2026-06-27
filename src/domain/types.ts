@@ -45,6 +45,7 @@ export type ManualTheme =
   | 'rhythm'   // ネオン風・カラフル・アニメ
   | 'horror'   // 崩れた文字・血痕・暗黒
   | 'aquatic'  // 波紋・青緑・滲み
+  | 'tetris'   // 暗色背景・ブロック風
 
 // ─────────────────────────────────────────────────────────────
 // スクロール方向・環境
@@ -67,7 +68,7 @@ export type EnvironmentId   =
 //       hp / exp / item_pickup / shield
 //       grid_stop / puzzle_solve
 //       beat_hazard / just_input / beat_dash
-//       stealth_mode / time_bonus / tower / color_touch
+//       stealth_mode / time_bonus / tower / color_touch / tetris
 // 新規フィーチャーは FeatureSystem 実装 + systems/index.ts 登録で拡張可能。
 // ─────────────────────────────────────────────────────────────
 export type FeatureId = string

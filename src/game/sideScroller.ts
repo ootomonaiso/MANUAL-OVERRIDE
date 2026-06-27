@@ -278,6 +278,14 @@ export class SideScroller {
    * ゲーム終了時や最終スコア計算時に呼ぶ。
    */
   private _recalculatePlayScore(): void {
+    const genre = GENRES.find(g => g.id === this.rules.genre)
+    const formula = genre?.scoreFormula ?? 'distance * 0.8'
+
+    // playScore 式は蓄積されたスコアをそのまま維持する
+    if (formula === 'playScore') {
+      return
+    }
+
     // accuracy: 命中率（shots > 0 なら hits/shots, 0 なら 0）
     const accuracy = this.stats.shots > 0
       ? this.scoreVarsHits / this.stats.shots
@@ -299,8 +307,6 @@ export class SideScroller {
       colorTouches: this.scoreVarsColorTouches,
     }
 
-    const genre = GENRES.find(g => g.id === this.rules.genre)
-    const formula = genre?.scoreFormula ?? 'distance * 0.8'
     this.playScore = Math.max(0, Math.round(evalScoreFormula(formula, vars)))
   }
 
@@ -372,6 +378,26 @@ export class SideScroller {
     const dashKey  = r.controls.dash ?? 'Shift'
     const isVertical = r.scrollAxis === 'y'
 
+    // テトリスモードでは標準のゲームループをスキップし、Feature のみを実行
+    // これによりハザード衝突やプレイヤー移動による死亡を防ぐ
+    if (r.features.has('tetris')) {
+      const inputSnap = this.input.snapshot()
+      for (const sys of getActiveSystems(r.features)) {
+        sys.update(this._getWorld(), inputSnap, dt)
+      }
+      this.particles.update(dt, VFX.particleGravity)
+      for (const sp of this.scorePopups) {
+        sp.y += sp.vy * dt
+        sp.life -= dt
+      }
+      this.scorePopups = this.scorePopups.filter(s => s.life > 0)
+      this.shakeIntensity *= VFX.shakeDecay
+      if (this.shakeIntensity < VFX.shakeEpsilon) this.shakeIntensity = 0
+      this.shakeX = (Math.random() - 0.5) * this.shakeIntensity * 2
+      this.shakeY = (Math.random() - 0.5) * this.shakeIntensity * 2
+      return
+    }
+
     if (r.features.has('dash') && this.input.justPressed.has(dashKey)) {
       this.stats.dashes = (this.stats.dashes ?? 0) + 1
     }
@@ -420,8 +446,10 @@ export class SideScroller {
     this.shakeX = (Math.random() - 0.5) * this.shakeIntensity * 2
     this.shakeY = (Math.random() - 0.5) * this.shakeIntensity * 2
 
-    // ─── 距離スコア加算 ───────────────────────────────────────────
-    this.playScore += effectiveScrollSpeed * dt * SCORE.distanceScoreRate
+    // ─── 距離スコア加算（tetris は距離スコアを付与しない） ─────────
+    if (!r.features.has('tetris')) {
+      this.playScore += effectiveScrollSpeed * dt * SCORE.distanceScoreRate
+    }
   }
 
   // ─── 死亡演出更新 ────────────────────────────────────────────────

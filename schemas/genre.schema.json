@@ -39,7 +39,7 @@
         "speed":   { "type": "number", "description": "速度特化系（racing / sports 方向）" }
       }
     },
-    "enableFeatures": {
+"enableFeatures": {
       "type": "array",
       "description": "このジャンルで有効になるゲーム機能のリスト",
       "items": {
@@ -68,7 +68,8 @@
           "dash",
           "time_bonus",
           "tower",
-          "boss"
+          "boss",
+          "tetris"
         ]
       }
     },
@@ -101,13 +102,14 @@
           "dash",
           "time_bonus",
           "tower",
-          "boss"
+          "boss",
+          "tetris"
         ]
       }
     },
     "scoreFormula": {
       "type": "string",
-      "description": "スコア計算式（JavaScript式）。利用可能な変数: distance, survivedSec, kills, combo, maxCombo, exp, itemsCollected, beatHits, bossKills, stealthBonus, accuracy, deaths"
+      "description": "スコア計算式（JavaScript式）。利用可能な変数: distance, survivedSec, kills, combo, maxCombo, exp, itemsCollected, beatHits, bossKills, stealthBonus, accuracy, deaths。特別な値 playScore は蓄積されたスコアをそのまま使用することを意味する"
     },
     "manualReveal": {
       "type": "string",
@@ -116,7 +118,7 @@
     "theme": {
       "type": "string",
       "description": "説明書UIのビジュアルテーマ",
-      "enum": ["plain", "stg", "rpg", "puzzle", "rhythm", "horror", "aquatic"]
+      "enum": ["plain", "stg", "rpg", "puzzle", "rhythm", "horror", "aquatic", "tetris"]
     },
     "bgColor": {
       "type": "string",

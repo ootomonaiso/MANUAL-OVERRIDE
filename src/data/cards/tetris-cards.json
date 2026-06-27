@@ -1,0 +1,64 @@
+{
+  "cards": [
+    {
+      "id": "c-tetris-blocks",
+      "label": "ブロックを積み重ねて行を消す仕組みにする",
+      "manualText": ["ブロックが落ちてきます。", "一整列揃えると消えます。"],
+      "genreParams": { "combo": 3, "craft": 2 },
+      "genrePoints": { "tetris": 4 },
+      "weight": 2,
+      "hint": "tetris direction",
+      "genreAffinity": ["tetris"]
+    },
+    {
+      "id": "c-tetris-rotation",
+      "label": "ブロックを回転させて配置する操作を加える",
+      "manualText": ["ブロックを回転させて隙間に収めます。"],
+      "genreParams": { "combo": 2, "craft": 2 },
+      "genrePoints": { "tetris": 3 },
+      "weight": 2,
+      "hint": "tetris direction",
+      "genreAffinity": ["tetris"]
+    },
+    {
+      "id": "c-tetris-speed",
+      "label": "ブロックの落下速度を段階的に上げる",
+      "manualText": ["積み重ねるほど落下が速くなります。"],
+      "genreParams": { "combo": 2, "tempo": 1, "craft": 1 },
+      "genrePoints": { "tetris": 2 },
+      "weight": 2,
+      "hint": "tetris direction",
+      "genreAffinity": ["tetris"]
+    },
+    {
+      "id": "c-tetris-preview",
+      "label": "次に落ちるブロックを事前に表示する",
+      "manualText": ["次のブロックの予知が表示されます。", "計画性が重要になります。"],
+      "genreParams": { "combo": 1, "craft": 2 },
+      "genrePoints": { "tetris": 2 },
+      "weight": 2,
+      "hint": "tetris direction",
+      "genreAffinity": ["tetris"]
+    },
+    {
+      "id": "c-craft-stack",
+      "label": "積み上げることで新しい構造が生まれる",
+      "manualText": ["積み上げ方が重要になります。"],
+      "genreParams": { "craft": 3, "combo": 1 },
+      "genrePoints": { "tetris": 1, "idle": 1 },
+      "weight": 2,
+      "hint": "tetris/idle direction",
+      "genreAffinity": ["tetris", "idle"]
+    },
+    {
+      "id": "c-combo-clear",
+      "label": "連続して消去するとボーナスがある",
+      "manualText": ["連続消去でスコアが増加します。"],
+      "genreParams": { "combo": 3 },
+      "genrePoints": { "tetris": 2, "puzzle": 1 },
+      "weight": 2,
+      "hint": "tetris/puzzle direction",
+      "genreAffinity": ["tetris", "puzzle"]
+    }
+  ]
+}

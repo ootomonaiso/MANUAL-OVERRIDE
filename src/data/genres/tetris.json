@@ -1,0 +1,22 @@
+{
+  "$schema": "../../../../schemas/genre.schema.json",
+  "id": "tetris",
+  "label": "テトリス",
+  "thresholds": { "combo": 6, "craft": 4 },
+  "enableFeatures": ["tetris"],
+  "disableFeatures": ["auto_run", "shoot", "beat_hazard", "enemy_hp"],
+  "scoreFormula": "playScore",
+  "manualReveal": "これはテトリスになりました。ブロックを積み上げて行を消してください。",
+  "theme": "tetris",
+  "bgColor": "#0a0a14",
+  "scrollDirection": "none",
+  "controls": {
+    "jump": "Space",
+    "moveLeft": "ArrowLeft",
+    "moveRight": "ArrowRight",
+    "moveUp": "ArrowUp",
+    "moveDown": "ArrowDown"
+  },
+  "gravity": 0,
+  "endingFlavor": "あなたはブロックを積み上げ続けた。説明書もブロックの一つになった。"
+}
