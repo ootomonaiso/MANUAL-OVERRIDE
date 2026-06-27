@@ -1,5 +1,5 @@
-import { reactive, ref, readonly } from 'vue'
-import type { Phase, GenreId, RuntimeRules, FinalScore, ManualVersion, ManualCard, GenreParam, BayesianState } from '../domain/types'
+import { reactive, ref, readonly, computed } from 'vue'
+import type { Phase, GenreId, RuntimeRules, FinalScore, ManualVersion, ManualCard, GenreParam, BayesianState, ContradictionState, PlayStyleResult, GenreParams } from '../domain/types'
 import { BAYES_DEBUG_TOP_N } from '../domain/types'
 import { MANUAL_DECK } from '../data/manualDeck'
 import { GENRES } from '../data/genres'
@@ -11,10 +11,12 @@ import {
   DEFAULT_BAYES_CONFIG,
 } from '../domain/genreResolver'
 import { calcThrowScore, calcFinalScore } from '../domain/scoreCalc'
-import type { ThrowResult } from '../domain/types'
+import type { ThrowResult, ActionStats } from '../domain/types'
 import { soundManager } from '../plugins/SoundManager'
 import { sampleCards, CARD_POOL } from '../data/cardPool'
 import { MAX_ROUNDS, DEFAULT_FALLBACK_GENRE } from '../data/gameBalance'
+import { initContradictionState, recordContradiction } from '../domain/contradictionTracker'
+import { detectPlayStyle } from '../domain/playStyleDetector'
 
 // genreParams のジッター幅（±20%）
 const PARAM_JITTER_RANGE = 0.4
@@ -43,6 +45,12 @@ export function useGameState() {
 
   // ベイズ状態（事後確率分布を追跡）
   const bayesState = reactive<BayesianState>(initBayesianState(GENRES))
+
+  // 矛盾トラッキング（Issue #24: 矛盾選択ルート）
+  const contradictionState = reactive<ContradictionState>(initContradictionState())
+
+  // 直近の矛盾反応メッセージ（1フレームだけ表示）
+  const lastReactionMessage = ref<string | null>(null)
 
   // 現在有効なルール（ゲームループが参照）
   const rules = reactive<RuntimeRules>(
@@ -121,7 +129,7 @@ export function useGameState() {
       genrePoints: card.genrePoints,
     })
 
-    // 矛盾カード処理
+    // 矛盾カード処理（conflictsWith: 既存の取り消し線機能）
     if (card.conflictsWith?.length) {
       for (const conflictId of card.conflictsWith) {
         const wasSelected = choiceHistory.some(h => h.choiceId === conflictId)
@@ -132,6 +140,26 @@ export function useGameState() {
           const idx = accumulatedManualText.value.indexOf(line)
           if (idx >= 0) accumulatedManualText.value[idx] = `~~${line}~~`
         }
+      }
+    }
+
+    // 矛盾ペア処理（Issue #24: 矛盾選択ルート）
+    // 相手カードが既に選択されている場合、矛盾レベルを上昇させる
+    if (card.contradictionPair) {
+      const pairWasSelected = choiceHistory.some(h => h.choiceId === card.contradictionPair)
+      if (pairWasSelected) {
+        const prevState = { ...contradictionState }
+        const newState = recordContradiction(
+          prevState,
+          cardId,
+          card.contradictionPair,
+        )
+        Object.assign(contradictionState, newState)
+
+        // 反応メッセージを表示
+        lastReactionMessage.value = card.reactionMessage
+          ?? newState.events[newState.events.length - 1]?.reactionMessage
+          ?? null
       }
     }
 
@@ -199,6 +227,16 @@ export function useGameState() {
   }
 
   function startThrowing() {
+    // バッドエンド発動時はジャンルを 'glitch' に強制変更
+    if (contradictionState.badEndingTriggered && lockedGenre.value === null) {
+      lockedGenre.value = 'glitch' as GenreId
+      const genreDef = GENRES.find(g => g.id === 'glitch')
+      if (genreDef?.manualReveal) {
+        accumulatedManualText.value.push('', genreDef.manualReveal)
+      }
+      soundManager.onGenreLock('glitch' as GenreId)
+      _rebuildRules()
+    }
     soundManager.onThrowStart()
     phase.value = 'throwing'
   }
@@ -222,6 +260,9 @@ export function useGameState() {
     currentHazards.value = { ...MANUAL_DECK['1.0'].hazards }
     lastRuntimeConfig.value = undefined
     _syncBayesState(initBayesianState(GENRES))
+    // 矛盾状態をリセット
+    Object.assign(contradictionState, initContradictionState())
+    lastReactionMessage.value = null
     _rebuildRules()
   }
 
@@ -229,6 +270,22 @@ export function useGameState() {
   const currentManual = () => _buildFakeManual()
 
   const lockedGenreDef = () => GENRES.find(g => g.id === lockedGenre.value) ?? null
+
+  // エンディング用: プレイスタイル検出結果（Issue #24）
+  // scroller の参照は外部から注入されるため、computed でリアルタイム計算
+  const endingPlayStyleResult = ref<PlayStyleResult | null>(null)
+
+  // エンディング用: 累積 genreParams（別ルート計算用）
+  const endingAccumulatedParams = ref<GenreParams>({})
+
+  /**
+   * エンディングフェーズで呼び出される。
+   * プレイスタイル検出結果と累積パラメータを計算する。
+   */
+  function computeEndingData(stats: ActionStats) {
+    endingPlayStyleResult.value = detectPlayStyle(stats)
+    endingAccumulatedParams.value = accumulateWithMultiplier(choiceHistory)
+  }
 
   return {
     phase: readonly(phase),
@@ -240,6 +297,10 @@ export function useGameState() {
     roundCount: readonly(roundCount),
     maxRounds: MAX_ROUNDS,
     bayesState: readonly(bayesState) as BayesianState,
+    contradictionState: readonly(contradictionState) as ContradictionState,
+    lastReactionMessage: readonly(lastReactionMessage),
+    endingPlayStyleResult: readonly(endingPlayStyleResult),
+    endingAccumulatedParams: readonly(endingAccumulatedParams),
     currentManual,
     lockedGenreDef,
     startGame,
@@ -249,5 +310,6 @@ export function useGameState() {
     startThrowing,
     finalizeThrowing,
     restart,
+    computeEndingData,
   }
 }
