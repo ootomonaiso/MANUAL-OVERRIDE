@@ -15,7 +15,7 @@
 | `src/data/genres/tetris.json` | ジャンル定義JSON |
 | `src/data/config/genres.json` | テトリスのジャンルエントリ + テーマカラー |
 | `src/data/cards/tetris-cards.json` | テトリス関連カード6枚 |
-| `tests/unit/game/TetrisFeature.test.ts` | ユニットテスト（50テストケース） |
+| `tests/unit/game/TetrisFeature.test.ts` | ユニットテスト（46テストケース） |
 | `tests/tetris.spec.ts` | Playwright E2Eテスト |
 
 ## ゲーム仕様
@@ -32,7 +32,8 @@
 |---|---|
 | ← → | 左右移動 |
 | Space | 時計回り回転（CW） |
-| ↓ | ハードドロップ（即座に落下） |
+| ↓ (タップ) | ハードドロップ（即座に落下） |
+| ↓ (長押し) | ソフトドロップ（高速落下） |
 
 ### スコア
 

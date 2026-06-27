@@ -448,6 +448,8 @@ export class TetrisFeature implements FeatureSystem {
         world.triggerShake(lines * 2)
       }
       spawnPiece(this._state)
+      // dropTimer をリセットして次のピースに蓄積値が持ち込まれないようにする
+      this._state.dropTimer = 0
     }
 
     // ソフトドロップ（下キー長押し）

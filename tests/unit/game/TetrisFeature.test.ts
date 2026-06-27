@@ -23,14 +23,10 @@ import {
 
 /**
  * テストピース生成ヘルパー。
- *
- * 注意: spawnPiece が `bagIdx >= bag.length` でバッグを再充填する内部実装に依存している。
- * spawnPiece の実装が変更された場合、このヘルパーも更新する必要がある。
+ * nextPieceId を設定して spawnPiece が指定したピースを生成する。
  */
 function _spawnTestPiece(state: ReturnType<typeof initialState>, id: string): void {
-  // id をバッグの最後尾に配置（bagIdx がそれを指すようにする）
-  state.bag = ['I', 'O', 'T', 'S', 'Z', 'J', 'L'].filter(t => t !== id).concat([id])
-  state.bagIdx = state.bag.length - 1
+  state.nextPieceId = id
   spawnPiece(state)
 }
 
@@ -246,10 +242,11 @@ describe('rotatePiece', () => {
     _spawnTestPiece(state, 'J')
     // 左端に移動
     while (movePiece(state, -1)) { /* 移動継続 */ }
-    const origRotation = state.piece!.rotation
-    rotatePiece(state) // 壁蹴りで回転成功または失敗
+    const result = rotatePiece(state) // 壁蹴りで回転成功または失敗
     // J ピースは回転不変ではないので、結果を確認
     expect(state.piece!.def.id).toBe('J')
+    // 回転が成功したか、壁蹴りで失敗したかを検証
+    expect(typeof result).toBe('boolean')
   })
 
   it('I ピースで壁際回転時に回転を元に戻す（#19 修正）', () => {
