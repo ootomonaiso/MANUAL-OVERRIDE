@@ -181,7 +181,7 @@ export function useGameState() {
     if (roundCount.value >= MAX_ROUNDS || newState.converged) {
       lockedGenre.value = newState.convergedGenre ?? resolveHighestProbGenre(accumulated, GENRES)
       if (lockedGenre.value === 'base') {
-        lockedGenre.value = DEFAULT_FALLBACK_GENRE as GenreId
+        lockedGenre.value = DEFAULT_FALLBACK_GENRE
       }
       // ジャンル確定文を説明書本文に追記
       const genreDef = GENRES.find(g => g.id === lockedGenre.value)
