@@ -84,29 +84,62 @@
 
 ---
 
-## `src/composables/useThrow.ts`
+## `src/composables/useScoreAnimation.ts`
 
-投擲フェーズ状態管理 composable。
+スコア表示のカウントアップアニメーション composable。
 
-### `useThrow()`
+### `useScoreAnimation(source: Ref<number>)`
 
-| 戻り値プロパティ | 型 | 概要 |
-|---|---|---|
-| `state` | `ref<ThrowState>` | 投擲エンジン状態 |
-| `onDragStart(x, y): void` | — | ドラッグ開始 |
-| `onDragMove(x, y): void` | — | ドラッグ中更新 |
-| `onRelease(): void` | — | 放投 |
-| `update(dt, canvasHeight): void` | — | 物理更新 |
-| `reset(): void` | — | 状態リセット |
+| 項目 | 概要 |
+|---|---|
+| 引数 `source` | 監視対象のスコア `Ref<number>` |
+| 戻り値 | `displayScore`（`Ref<number>`）。表示用にアニメーションされた値 |
+
+`source` の変化を watch し、差分が小さい場合は即時反映、大きい場合は `requestAnimationFrame` で `ANIMATION_DURATION_MS` かけて補間する。アンマウント時に rAF を解放。
+
+> 投擲フェーズの状態は専用 composable ではなく、`App.vue` が `game/throwEngine.ts` を直接駆動して管理する。
 
 ---
 
-## `src/plugins/validateConfigs.ts`
+## `src/plugins/PluginManager.ts`
 
-Vite プラグイン。開発時に MANUAL_DECK と GAME_CONFIG の整合性を自動検証。
+ユーザーがインストールしたプラグイン（ジャンル / デッキ拡張）を管理する。localStorage 永続化（利用不可時はメモリにフォールバック）。
 
-### エクスポート関数
+### クラス `PluginManager`（シングルトン `pluginManager`）
 
-| 関数 | 概要 |
+| メソッド | 概要 |
 |---|---|
-| `validateConfigs(): Plugin` | Vite プラグインファクトリ（dev モードでのみ `buildStart` で検証実行） |
+| `loadAll(): UserPlugin[]` | 保存済みプラグインを全件読み込み |
+| `install(json): { success, error? }` | JSON を検証してインストール |
+| `uninstall(id): boolean` | 指定IDをアンインストール |
+| `listInstalled(): UserPlugin[]` | インストール済み一覧 |
+
+`GenrePlugin` / `DeckExtensionPlugin` インターフェースも定義する。
+
+---
+
+## `src/plugins/JSONGenrePlugin.ts`
+
+JSON 定義からジャンルの視覚テーマを生成するプラグイン。TSプラグインを持たない JSON ジャンルのフォールバックとして `genres/index.ts` が利用する。
+
+| エクスポート | 概要 |
+|---|---|
+| `class JSONGenrePlugin` | `GenreJsonDef`（id / theme / visual）から `GenrePlugin` 相当を構築 |
+| `interface GenreJsonDef` | JSON ジャンル定義のスキーマ |
+
+---
+
+## `src/plugins/SoundManager.ts`
+
+BGM フェードイン/アウトと効果音フックを管理する。
+
+### クラス `SoundManager`（シングルトン `soundManager`）
+
+| メソッド | 概要 |
+|---|---|
+| `playBgm(config: BgmConfig)` | BGM 再生（フェードイン） |
+| `stopBgm(fadeOutMs?)` | BGM 停止（フェードアウト） |
+| `register(impl: Partial<SoundHooks>)` | 効果音フック実装を登録 |
+| `onJump / onShoot / onHit / onGenreLock / onBeat …` | `SoundHooks` の各イベントフック |
+
+> 音声ファイルが存在しない場合、再生はスキップされる（オフライン動作を阻害しない）。

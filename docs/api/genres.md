@@ -6,7 +6,7 @@
 
 ## `index.ts`
 
-全ジャンルプラグインを GameRegistry に一括登録。新しいジャンルを追加するにはこのファイルに2行追加するだけ。
+`src/genres/*.ts` の default export を `import.meta.glob` で自動収集して GameRegistry に登録する。新しい TSプラグインを追加してもこのファイルの編集は不要（ファイル末尾で `export default new MyGenrePlugin()` するだけ）。詳細は末尾の[登録の仕組み](#indexts--登録の仕組み)を参照。
 
 ---
 
@@ -172,19 +172,103 @@
 
 ---
 
-## `index.ts` — 登録一覧
+## `RacingPlugin.ts`
 
-| 順 | クラス | ジャンルID |
-|---|---|---|
-| 1 | `BasePlugin` | `base` |
-| 2 | `RunnerPlugin` | `runner` |
-| 3 | `StgPlugin` | `stg` |
-| 4 | `RpgPlugin` | `rpg` |
-| 5 | `RhythmPlugin` | `rhythm` |
-| 6 | `PuzzlePlugin` | `puzzle` |
-| 7 | `AerialStgPlugin` | `aerial_stg` |
-| 8 | `SurvivalPlugin` | `survival` |
-| 9 | `BulletRunnerPlugin` | `bullet_runner` |
-| 10 | `PlatformerPlugin` | `platformer` |
+**id:** `racing` — レーシング。`GenrePluginBase` を継承。
 
-※ `bullet_hell`, `stealth_action`, `racing`, `dungeon`, `tower_def`, `sports`, `idle`, `arena`, `aquatic`, `horror`, `hack_slash` はまだプラグイン未実装。
+| 特性 | 値 |
+|---|---|
+| 背景 | 暗色（`#08060a` → `#100c14`） |
+| 星 | 黄 (`#ffee88`) |
+| ハザード | 橙 (`#ff8800`) / 水色 (`#44ddff`) |
+
+---
+
+## `ArenaPlugin.ts`
+
+**id:** `arena` — アリーナバトル。`GenrePluginBase` を継承。
+
+| 特性 | 値 |
+|---|---|
+| 背景 | 暗赤（`#0a0000` → `#180000`） |
+| 星 | 赤 (`#ff4422`) |
+| ハザード | 赤 (`#cc0000`) / 橙 (`#ffaa00`) |
+
+---
+
+## `AquaticPlugin.ts`
+
+**id:** `aquatic` — 水中アドベンチャー。`GenrePluginBase` を継承。
+
+| 特性 | 値 |
+|---|---|
+| 背景 | 深海青（`#000a1a` → `#001428`） |
+| 星 | 青緑 (`#44ffdd`) |
+| ハザード | ピンク (`#ff3366`) / 青緑 (`#00ffcc`) |
+
+---
+
+## `DungeonPlugin.ts`
+
+**id:** `dungeon` — ダンジョン探索。`GenrePluginBase` を継承。
+
+| 特性 | 値 |
+|---|---|
+| 背景 | 暗褐（`#060500` → `#0e0900`） |
+| 星 | なし（地下） |
+| ハザード | 橙褐 (`#bb5500`) / 黄 (`#ddcc44`) |
+
+---
+
+## `HackSlashPlugin.ts`
+
+**id:** `hack_slash` — ハックアンドスラッシュ。`GenrePluginBase` を継承。
+
+| 特性 | 値 |
+|---|---|
+| 背景 | 暗赤（`#0a0000` → `#150000`） |
+| 星 | 赤 (`#ff6644`) |
+| ハザード | 赤 (`#dd0000`) / 橙 (`#ffaa00`) |
+
+---
+
+## `TetrisPlugin.ts`
+
+**id:** `tetris` — テトリス（暗色系・グリッド線）。`GenrePluginBase` を継承。
+
+| 特性 | 値 |
+|---|---|
+| 背景 | 暗灰（`#0a0a0a` → `#111111`） |
+| 星 | なし |
+| ハザード | 赤 (`#e74c3c`) / 青 (`#3498db`) |
+
+> 実際のゲームロジック（グリッド・テトリミノ・ライン消去）は `TetrisFeature`（`tetris_mode`）が担当する。プラグインは視覚テーマを提供する。詳細は [tetris-genre.md](../tetris-genre.md) を参照。
+
+---
+
+## `index.ts` — 登録の仕組み
+
+`index.ts` は `import.meta.glob('./*.ts')` で各プラグインの default export を自動収集して登録する（手動の登録リストは持たない）。`BasePlugin.ts` のように複数クラスを配列で default export することもできる。さらに、TSプラグインが存在しない JSON 定義ジャンルには `JSONGenrePlugin` のフォールバックが自動生成される。
+
+### TSプラグインで実装済みのジャンル（16 クラス）
+
+| クラス | ジャンルID |
+|---|---|
+| `BasePlugin` | `base` |
+| `RunnerPlugin` | `runner` |
+| `StgPlugin` | `stg` |
+| `RpgPlugin` | `rpg` |
+| `RhythmPlugin` | `rhythm` |
+| `PuzzlePlugin` | `puzzle` |
+| `AerialStgPlugin` | `aerial_stg` |
+| `SurvivalPlugin` | `survival` |
+| `BulletRunnerPlugin` | `bullet_runner` |
+| `PlatformerPlugin` | `platformer` |
+| `RacingPlugin` | `racing` |
+| `ArenaPlugin` | `arena` |
+| `AquaticPlugin` | `aquatic` |
+| `DungeonPlugin` | `dungeon` |
+| `HackSlashPlugin` | `hack_slash` |
+| `TetrisPlugin` | `tetris` |
+
+※ `bullet_hell`, `stealth_action`, `tower_def`, `sports`, `idle`, `horror` は専用 TSプラグインを持たず、`JSONGenrePlugin` フォールバックで描画される。

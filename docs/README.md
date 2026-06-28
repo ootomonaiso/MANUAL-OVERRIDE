@@ -31,7 +31,7 @@
 
 | ファイル | 対象 | 内容 |
 |---|---|---|
-| [genre-system.md](genre-system.md) | ジャンル | 21ジャンル定義・ジャンル収束アルゴリズム |
+| [genre-system.md](genre-system.md) | ジャンル | 22ジャンル定義・ジャンル収束アルゴリズム |
 | [genre-plugin.md](genre-plugin.md) | ジャンル拡張 | GenrePlugin 実装ガイド・全フック一覧 |
 | [feature-ids.md](feature-ids.md) | フィーチャー | 全FeatureId リファレンス（分類別） |
 | [feature-system.md](feature-system.md) | フィーチャー拡張 | FeatureSystem 実装ガイド・全フック一覧 |
@@ -45,10 +45,10 @@
 | [api/domain.md](api/domain.md) | `src/domain/` | 型定義・ジャンル収束・ルール合成・スコア計算・学習システム |
 | [api/engine.md](api/engine.md) | `src/engine/` | GenrePlugin/FeatureSystem インターフェース・GameRegistry |
 | [api/game.md](api/game.md) | `src/game/` | SideScroller エンジン・エンティティ・FeatureSystem 実装 |
-| [api/genres.md](api/genres.md) | `src/genres/` | 全ジャンルプラグイン（10種）のテーマ・スポーン・描画 |
+| [api/genres.md](api/genres.md) | `src/genres/` | 全ジャンルプラグイン（16種 + JSONフォールバック）のテーマ・スポーン・描画 |
 | [api/framework.md](api/framework.md) | `src/framework/` | ManualLoader/Builder/Validator・ConfigLoader/Validator |
 | [api/data.md](api/data.md) | `src/data/` | GAME_CONFIG / MANUAL_DECK エントリポイント |
-| [api/composables_plugins.md](api/composables_plugins.md) | `src/tutorial/`・`src/composables/`・`src/plugins/` | チュートリアル・useGameState/useManual/useThrow composable・Vite 検証プラグイン |
+| [api/composables_plugins.md](api/composables_plugins.md) | `src/tutorial/`・`src/composables/`・`src/plugins/` | チュートリアル・useGameState/useManual/useScoreAnimation composable・PluginManager/SoundManager |
 
 ### プロジェクト管理
 
@@ -112,37 +112,39 @@
 
 ### 新ジャンルを追加する
 
-**必要なステップ:** 5 ファイル修正
+**必要なステップ:** JSON 1ファイル（+ 任意で TS プラグイン・説明書ルート）
 
-```typescript
-// 1. src/domain/types.ts — GenreId 追加
-export type GenreId = 'base' | 'runner' | 'stg' | 'rpg' | ... | 'my_new_genre'
-
-// 2. src/data/genres.ts — 定義追加
-const GENRES: GenreDef[] = [
-  // ...
-  { id: 'my_new_genre', label: 'My Genre', thresholds: { ... }, ... }
-]
-
-// 3. src/genres/MyNewGenrePlugin.ts — 実装（GenrePluginBase 継承）
-export class MyNewGenrePlugin extends GenrePluginBase {
-  readonly id = 'my_new_genre'
-  readonly skyColors = ['#000080', '#001a99']
-  readonly groundColors = ['#8b4513', '#a0522d']
-  readonly spawnTable = [ /* ... */ ]
-  // 以下で描画メソッドをオーバーライド
-}
-
-// 4. src/genres/index.ts — 登録
-registerGenre(new MyNewGenrePlugin())
-
-// 5. src/data/manuals/*.json — ルート追加
+```jsonc
+// 1. src/data/genres/my_new_genre.json — ジャンル定義（置くだけで自動登録）
 {
-  "id": "X.Y",
-  "genre": "my_new_genre",
-  // ...
+  "id": "my_new_genre",
+  "label": "My Genre",
+  "thresholds": { "tempo": 3 },
+  "enableFeatures": ["auto_run"],
+  "disableFeatures": [],
+  "scoreFormula": "distance * 1.5 + combo * 60",
+  "manualReveal": "これは My Genre になりました。",
+  "theme": "plain",
+  "bgColor": "#0a1020"
 }
 ```
+
+```typescript
+// 2.（任意）src/genres/MyNewGenrePlugin.ts — 独自ビジュアルを付ける場合のみ
+export class MyNewGenrePlugin extends GenrePluginBase {
+  readonly id: GenreId = 'my_new_genre'
+  readonly skyColors    = ['#000080', '#001a99'] as const
+  readonly groundColors = ['#8b4513', '#a0522d'] as const
+  readonly spawnTable   = [ /* ... */ ]
+}
+export default new MyNewGenrePlugin()   // index.ts が import.meta.glob で自動収集
+```
+
+```jsonc
+// 3. src/data/manuals/*.json — このジャンルへ収束する選択肢ルートを追加
+```
+
+> `GenreId` は `string` 型なので `types.ts` の編集は不要。TSプラグインを省略すると `JSONGenrePlugin` が自動でフォールバック描画する。
 
  詳細: [genre-plugin.md](genre-plugin.md) / [adding-content.md](adding-content.md)
 
@@ -150,13 +152,10 @@ registerGenre(new MyNewGenrePlugin())
 
 ### 新フィーチャーを追加する
 
-**必要なステップ:** 3 ファイル修正
+**必要なステップ:** 2 ファイル修正（`FeatureId` は `string` 型なので `types.ts` の編集は不要）
 
 ```typescript
-// 1. src/domain/types.ts — FeatureId 追加
-export type FeatureId = 'shoot' | 'hp' | 'auto_run' | ... | 'my_feature'
-
-// 2. src/game/systems/MyFeature.ts — 実装（FeatureSystem）
+// 1. src/game/systems/MyFeature.ts — 実装（FeatureSystem）
 export class MyFeature implements FeatureSystem {
   readonly handles = 'my_feature'
   
@@ -167,8 +166,7 @@ export class MyFeature implements FeatureSystem {
   // その他のフック...
 }
 
-// 3. src/game/systems/index.ts — 登録
-registerFeature(new MyFeature())
+// 2. src/game/systems/index.ts — import & registerFeature(new MyFeature()) を追加
 ```
 
  詳細: [feature-system.md](feature-system.md) / [adding-content.md](adding-content.md)
@@ -282,8 +280,8 @@ MutableWorld.cameraX を使い、座標変換を統一：
 ### コア実装
 
 -  Canvas 物理エンジン（衝突・描画・パーティクル・シェイク）
--  GenrePlugin × 15 種（Base, Runner, STG, RPG, Rhythm, Puzzle, Aerial STG, Survival, Bullet Runner, Platformer, Racing, Arena, Aquatic, Dungeon, Hack & Slash）+ JSON プラグイン対応
--  FeatureSystem × 7 種（Shoot, Rhythm, Movement, RPG, Extra Movement, Puzzle, Special）
+-  GenrePlugin × 16 種（Base, Runner, STG, RPG, Rhythm, Puzzle, Aerial STG, Survival, Bullet Runner, Platformer, Racing, Arena, Aquatic, Dungeon, Hack & Slash, Tetris）+ JSON フォールバックプラグイン対応
+-  FeatureSystem × 7 種（Shoot, Rhythm, Movement, RPG, Puzzle, Special, Tetris）※移動拡張（dash / wall_jump / vertical_scroll）は Movement に統合
 -  すべてのイベントフック完装備
 -  ManualLoader / Builder / Validator / genreResolver 完全実装
 
