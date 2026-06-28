@@ -510,6 +510,18 @@ export class SideScroller {
       this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
     }
 
+    // gravity === 0: 上下左右に自由移動する STG モード。ジャンプ・重力・着地は行わない
+    if (r.gravity === 0) {
+      const upKey   = r.controls.moveUp
+      const downKey = r.controls.moveDown
+      if (upKey   && this.input.keys.has(upKey))   p.y -= PLAYER_PHYSICS.runSpeed * dt
+      if (downKey && this.input.keys.has(downKey)) p.y += PLAYER_PHYSICS.runSpeed * dt
+      p.y = Math.max(0, Math.min(gY - p.h, p.y))
+      p.vy = 0
+      p.onGround = false
+      p.airTime += dt
+    } else {
+
     const isDouble         = r.features.has('double_jump')
     const jumpDisabled     = this._isActionDisabled('jump')
     // tetris_mode: jump key is repurposed for hard drop; skip jump detection entirely
@@ -588,6 +600,7 @@ export class SideScroller {
       p.airTime += dt
     }
     if (p.landSquash > 0) p.landSquash *= PHYSICS.landSquashDecay
+    }
 
     if (!r.features.has('auto_run') && !r.features.has('tetris_mode')) p.x += p.vx * dt
     p.x = Math.max(PHYSICS.playerMinX, Math.min(W * PHYSICS.playerMaxXRatio, p.x))
@@ -722,6 +735,9 @@ export class SideScroller {
 
     // ─── プレイヤー ───────────────────────────────────────────────
     if (!this.dead) this._drawPlayer()
+
+    // ─── 前景レイヤー（ジャンル装飾: 走査線・ビネット・HUD枠など） ──
+    getGenre(this.rules.genre).drawForeground?.(ctx, this.cameraX, W, H, gY)
 
     ctx.restore()  // shake の restore
 
@@ -891,6 +907,11 @@ export class SideScroller {
   // ─── ハザード描画 ─────────────────────────────────────────────────
   private _drawHazard(h: Hazard, sx: number, r: RuntimeRules): void {
     const ctx = this.ctx
+    const pluginH = getGenre(this.rules.genre)
+
+    // ジャンルプラグインが独自のハザード描画を提供する場合は委譲（true でデフォルト描画をスキップ）
+    if (pluginH.drawHazard?.(ctx, h, sx, this._getWorld()) === true) return
+
     const floatY = h.floatAmp > 0 ? Math.sin(h.pulse) * h.floatAmp : 0
 
     // ビートリズム反転色
@@ -902,7 +923,6 @@ export class SideScroller {
     }
 
     const y = h.y + floatY
-    const pluginH = getGenre(this.rules.genre)
     const hCfg = pluginH.hazardConfig
     const pulseSpd = hCfg?.pulseSpeed    ?? HAZARD_VFX.pulseSpeed
     const pulseAmp = hCfg?.pulseAmplitude ?? HAZARD_VFX.pulseAmplitude
