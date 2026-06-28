@@ -148,7 +148,7 @@ readonly scrollSpeedBonus = 50
 | `onGenreLocked(world)` | ジャンル確定直後に1回 | BGM変更・初期エフェクト |
 | `onUpdate(world, dt)` | 毎フレーム | ジャンル全体の継続処理 |
 | `drawHazard(ctx, hazard, sx, world)` | ハザード描画前 | カスタムハザード外見（`true` 返却でデフォルト描画をスキップ） |
-| `drawForeground(ctx, offsetX, W, H, gY)` | パーティクルの後 | 前景レイヤー（波・霧など） |
+| `drawForeground(ctx, offsetX, W, H, gY)` | プレイヤー描画の後（shake変換内） | 前景レイヤー（波・霧・走査線・HUD枠など） |
 | `drawGenreHUD(ctx, world, W, H)` | フレーム描画の最後 | ボスHPバー・タワー残数など |
 | `onPlayerJump(world)` | ジャンプの瞬間 | ジャンプSEキュー・エフェクト |
 | `onPlayerLand(world)` | 着地の瞬間 | ランディングエフェクト |
