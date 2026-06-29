@@ -612,6 +612,10 @@ export class SideScroller {
 
     for (const h of this.hazards) {
       h.pulse += dt * VFX.hazardPulseRate
+      // 左方向ハザードは右へ移動（スクロール速度と同速）
+      if (h.direction === 'left') {
+        h.x += speed * dt
+      }
     }
 
     if (p.invincible > 0) p.invincible -= dt
@@ -635,7 +639,13 @@ export class SideScroller {
       }
     }
 
-    this.hazards = this.hazards.filter(h => h.x - this.cameraX > SPAWN.hazardCullLeft)
+    // 右方向: 画面左外で除去、左方向: 画面右外で除去
+    this.hazards = this.hazards.filter(h => {
+      if (h.direction === 'left') {
+        return h.x - this.cameraX < this.canvas.width - SPAWN.hazardCullLeft
+      }
+      return h.x - this.cameraX > SPAWN.hazardCullLeft
+    })
 
     if (this.input.justPressed.has(shootKey)) this.stats.shots++
     return false
@@ -732,6 +742,10 @@ export class SideScroller {
 
     // ─── プレイヤー ───────────────────────────────────────────────
     if (!this.dead) this._drawPlayer()
+
+    // ─── ジャンル固有HUD ──────────────────────────────────────────
+    const plugin = getGenre(r.genre)
+    plugin.drawGenreHUD?.(ctx, this._getWorld(), W, H)
 
     ctx.restore()  // shake の restore
 
@@ -1023,7 +1037,7 @@ export class SideScroller {
     return `rgb(${rr},${gg},${bb})`
   }
 
-  // ─── アイテム描画 ─────────────────────────────────────────────────
+   // ─── アイテム描画 ─────────────────────────────────────────────────
   private _drawItem(item: Item, sx: number): void {
     const ctx = this.ctx
     const bounce = Math.sin(item.pulse) * 4
@@ -1036,7 +1050,7 @@ export class SideScroller {
       ctx.fillStyle = '#ffcc00'
       // 星形
       this._drawStar(ctx, sx + 11, y + 11, 10, 5, 5)
-    } else {
+    } else if (item.type === 'hp') {
       ctx.shadowColor = '#ff8888'
       ctx.shadowBlur = 12
       ctx.fillStyle = '#ff5555'
@@ -1047,6 +1061,36 @@ export class SideScroller {
       ctx.font = 'bold 11px sans-serif'
       ctx.textAlign = 'center'
       ctx.fillText('♥', sx + 11, y + 15)
+    } else if (item.type === 'food') {
+      // 食料: リンゴ形
+      ctx.shadowColor = '#88cc44'
+      ctx.shadowBlur = 10
+      ctx.fillStyle = '#66aa22'
+      ctx.beginPath()
+      ctx.arc(sx + 11, y + 13, 8, 0, Math.PI * 2)
+      ctx.fill()
+      // 葉
+      ctx.fillStyle = '#448800'
+      ctx.beginPath()
+      ctx.ellipse(sx + 13, y + 4, 4, 2, 0.3, 0, Math.PI * 2)
+      ctx.fill()
+    } else if (item.type === 'weapon') {
+      // 武器: 剣形
+      ctx.shadowColor = '#ccaa44'
+      ctx.shadowBlur = 10
+      ctx.fillStyle = '#ddbb55'
+      // 刃
+      ctx.beginPath()
+      ctx.moveTo(sx + 11, y + 2)
+      ctx.lineTo(sx + 14, y + 10)
+      ctx.lineTo(sx + 11, y + 20)
+      ctx.lineTo(sx + 8, y + 10)
+      ctx.closePath()
+      ctx.fill()
+      // 柄
+      ctx.fillStyle = '#886633'
+      ctx.fillRect(sx + 9, y + 19, 4, 5)
+      ctx.fillRect(sx + 6, y + 17, 10, 3)
     }
     ctx.restore()
   }
@@ -1086,13 +1130,14 @@ export class SideScroller {
     const color     = entry.colorOverride     ?? (isSafe ? pal.safe    : pal.danger)
     const glowColor = entry.safeColorOverride ?? (isSafe ? pal.safeGlow : pal.dangerGlow)
     const hp = r.features.has('enemy_hp') ? (entry.hpOverride ?? SPAWN.enemyHpAmount) : 1
+    const direction = entry.direction ?? 'right'
 
     if (isVertical) {
       // ─── 縦スクロール: 画面上端からランダムX位置に出現 ──────────
       // hazard は screen 座標で管理（y が増加 → 下に落ちる）
       const spawnX = Math.random() * (W - w - 20) + 10
       const spawnY = -h - 20  // 画面外上部
-      this.hazards.push(new Hazard(spawnX, spawnY, w, h, color, glowColor, entry.shape, hp, isSafe, 0))
+      this.hazards.push(new Hazard(spawnX, spawnY, w, h, color, glowColor, entry.shape, hp, isSafe, 0, direction))
       if (entry.isBoss) {
         const bw = this._getWorld()
         for (const sys of getActiveSystems(r.features)) sys.onBossSpawn?.(bw)
@@ -1122,7 +1167,11 @@ export class SideScroller {
         default: // 'ground'
           y = gY - h
       }
-      this.hazards.push(new Hazard(worldX, y, w, h, color, glowColor, entry.shape, hp, isSafe, floatAmp))
+      // 左方向ハザードは画面左外にスポーン
+      const spawnX = direction === 'left'
+        ? this.cameraX - w - SPAWN.hazardSpawnOffsetX
+        : worldX
+      this.hazards.push(new Hazard(spawnX, y, w, h, color, glowColor, entry.shape, hp, isSafe, floatAmp, direction))
       if (entry.isBoss) {
         const bw = this._getWorld()
         for (const sys of getActiveSystems(r.features)) sys.onBossSpawn?.(bw)

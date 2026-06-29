@@ -200,9 +200,9 @@
       "id": "survival",
       "label": "サバイバルゲーム",
       "thresholds": {"survive": 10, "growth": 9},
-      "enableFeatures": ["hp", "item_pickup", "shield"],
+      "enableFeatures": ["hp", "item_pickup", "shield", "survival_hunger", "survival_melee", "survival_level"],
       "disableFeatures": ["auto_run", "beat_hazard", "grid_stop"],
-      "scoreFormula": "survivedSec * 15 + itemsCollected * 80 + distance * 0.2",
+      "scoreFormula": "survivedSec * 15 + itemsCollected * 80 + distance * 0.2 + kills * 50 + exp * 0.5",
       "manualReveal": "これはサバイバルゲームになりました。生き延びてください。",
       "theme": "survival",
       "bgColor": "#0a1a0a",
@@ -212,7 +212,8 @@
         "moveLeft": "ArrowLeft",
         "moveRight": "ArrowRight",
         "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
+        "moveDown": "ArrowDown",
+        "shoot": "z"
       },
       "gravity": 1600,
       "endingFlavor": "あなたは生き延びた。説明書は焚き火の燃料になっていた。",

@@ -117,3 +117,8 @@ export const PUZZLE = _c.puzzle
 // EXTRA_MOVEMENT — 拡張移動フィーチャー
 // ─────────────────────────────────────────────────────────────
 export const EXTRA_MOVEMENT = _c.extra_movement
+
+// ─────────────────────────────────────────────────────────────
+// SURVIVAL — サバイバルゲーム（hunger / melee / level）
+// ─────────────────────────────────────────────────────────────
+export const SURVIVAL = _c.survival
