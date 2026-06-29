@@ -23,7 +23,7 @@
     "ci": "npm run typecheck && npm run lint && npm run validate && npm run build && npm run bundle-size"
   },
   "dependencies": {
-    "vue": "^3.5.13"
+    "vue": "^3.5.39"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
@@ -32,7 +32,7 @@
     "eslint-plugin-vue": "^9.32.0",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.19.0",
-    "vite": "^6.3.5",
+    "vite": "^8.1.0",
     "vue-tsc": "^2.2.8"
   }
 }
