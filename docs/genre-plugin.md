@@ -170,6 +170,10 @@ drawHazard(ctx, hazard, sx, world): boolean {
 }
 ```
 
+### 縦スクロールモードの背景レイヤー
+
+縦スクロール（`scrollAxis === 'y'`）では既定で空グラデーション＋星フィールドのみが描かれ、`drawFarLayer` / `drawMidLayer` は呼ばれない。縦モードでも遠景・中景を描きたいジャンルは `readonly verticalBackgroundLayers = true` を宣言する。true のときエンジンは `distance * parallax`（far / mid）を `offsetX` として両レイヤーに渡す。`aerial_stg`（都市上空のトップビュー）が利用例で、`offsetX` を横ではなく Y 方向スクロール量として使う。
+
 ---
 
 ## DarkThemePlugin 継承

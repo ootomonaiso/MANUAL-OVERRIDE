@@ -725,6 +725,9 @@ export class SideScroller {
 
     ctx.restore()  // shake の restore
 
+    // ─── ジャンル前景（HUD フレーム等。シェイクの影響を受けない画面固定レイヤー） ──
+    getGenre(r.genre).drawForeground?.(ctx, this.cameraX, W, H, gY)
+
     // ─── 死亡オーバーレイ ─────────────────────────────────────────
     if (this.dead) {
       const fadeIn = Math.min(1, this.deathTimer * UI.deathFadeSpeed)
@@ -763,6 +766,13 @@ export class SideScroller {
       ctx.fillRect(0, 0, W, H)
       if (plugin.starColor) {
         this._drawStarField(this.distance * CAMERA.parallaxStars, W, H * 0.9, plugin)
+      }
+      // 縦モードでも遠景・中景を描きたいジャンルだけレイヤーを委譲（gY は全画面高）
+      if (plugin.verticalBackgroundLayers) {
+        const parallaxFar = plugin.parallax?.far ?? CAMERA.parallaxFar
+        const parallaxMid = plugin.parallax?.mid ?? CAMERA.parallaxMid
+        plugin.drawFarLayer(ctx, this.distance * parallaxFar, W, H)
+        plugin.drawMidLayer(ctx, this.distance * parallaxMid, W, H)
       }
       this._drawEnvironmentOverlay(W, H)
       return
@@ -910,6 +920,12 @@ export class SideScroller {
     const pulse = Math.sin(h.pulse * pulseSpd) * pulseAmp + 1
 
     ctx.save()
+
+    // ジャンル固有のハザード描画フック。true ならデフォルト描画（形状・HPバー）をスキップ
+    if (pluginH.drawHazard?.(ctx, h, sx, this._getWorld())) {
+      ctx.restore()
+      return
+    }
 
     // グロー効果
     ctx.shadowColor = glow

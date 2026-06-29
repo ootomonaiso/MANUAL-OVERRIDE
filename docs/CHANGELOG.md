@@ -4,6 +4,39 @@
 
 ---
 
+## aerial_stg「近代都市の遥か上空・大気圏内」改修セッション（2026-06-29）
+
+### 概要
+
+`aerial_stg`（縦スクロールシューティング）を「近代都市の遥か上空・大気圏内」テーマへ刷新。視点を真上から見下ろすトップビューに統一した。
+
+### ジャンルプラグイン刷新 — `src/genres/AerialStgPlugin.ts`
+
+- `drawPlayer`: 近代戦闘機（俯瞰・グレー系・後退翼・エンジン炎・キャノピー）。
+- `drawHazard` 新規実装: 形状別の敵描画（`diamond`=敵戦闘機 / `rect`=爆撃機 / `pillar`=ミサイル）＋ `enemy_hp` 有効時のセグメント式 HP バー。`true` 返却でデフォルト描画をスキップ。
+- `drawFarLayer`: トップビューの都市地面（アスファルト・道路グリッド・街区屋上＋明かり・公園/川）。`distance` ベースで下方向に無限ループ。
+- `drawMidLayer`: 真上から見た雲。地面より速くスクロール（`distance × 1.4`）。`Math.sin` ベースの決定的配置。
+- `drawForeground` 新規実装: ビネット＋四隅 HUD ブラケット。
+- `spawnTable` 再設計（`diamond`/`rect`/`pillar`、`weightStart` 低→`weightEnd` 高で距離難易度上昇、`safeChance` 全 0）。
+- 色などの定数は readonly フィールドに集約（ハードコード回避）。
+
+### エンジン側の配線 — `src/engine/GenrePlugin.ts` / `src/game/sideScroller.ts`
+
+- `GenrePlugin` に `readonly verticalBackgroundLayers?: boolean` を追加（省略時 false）。縦スクロールモードでも `drawFarLayer`/`drawMidLayer` を呼びたいジャンルだけ true にする（`aerial_stg` のみ）。
+- `sideScroller` が `drawHazard?()`（`true` でデフォルトハザード描画をスキップ）と `drawForeground?()`（プレイヤー描画後の画面固定前景）を呼び出すよう配線。`verticalBackgroundLayers` が true のジャンルは縦モードで遠景・中景も描画。
+- いずれも optional フックのため、未実装の既存ジャンル（`bullet_hell`・`aquatic`・`stg` 等）の挙動は不変。
+
+### 説明書テキスト — `src/data/manuals/action-branch.json`
+
+- ノード `8.0-a-aerial-stg` の `manualText` を都市上空・空中戦の文言に更新（上下左右移動・Z で上方向射撃・敵機撃墜）。
+
+### 検証
+
+- `npm run typecheck`（vue-tsc）・`npm run build`（vite）・`npm run validate`（JSON）すべてパス。
+- `npm run lint`（eslint）はこの作業環境に eslint 未インストールのため未実行（手動確認では `any` 不使用・`const` 優先・`===`・PascalCase 準拠）。
+
+---
+
 ## 永遠システム・フレームワーク統合セッション（2026-05-31）
 
 ### 1. 無限選択肢システム実装
