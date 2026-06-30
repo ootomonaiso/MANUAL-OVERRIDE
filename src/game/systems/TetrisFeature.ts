@@ -440,11 +440,11 @@ export class TetrisFeature implements FeatureSystem {
     this.state.moveTimer += dt
 
     // 左右移動（null安全アクセス）
-    const leftKey = world.rules.controls.moveLeft?.toLowerCase() ?? 'arrowleft'
-    const rightKey = world.rules.controls.moveRight?.toLowerCase() ?? 'arrowright'
-    const upKey = world.rules.controls.moveUp?.toLowerCase() ?? 'arrowup'
-    const downKey = world.rules.controls.moveDown?.toLowerCase() ?? 'arrowdown'
-    const spaceKey = world.rules.controls.jump?.toLowerCase() ?? 'space'
+    const leftKey = world.rules.controls.moveLeft ?? 'ArrowLeft'
+    const rightKey = world.rules.controls.moveRight ?? 'ArrowRight'
+    const upKey = world.rules.controls.moveUp ?? 'ArrowUp'
+    const downKey = world.rules.controls.moveDown ?? 'ArrowDown'
+    const spaceKey = world.rules.controls.jump ?? 'Space'
 
     if (justPressed.has(leftKey) || (keys.has(leftKey) && this.state.moveTimer >= this.state.moveDelay)) {
       if (movePiece(this.state, -1)) {

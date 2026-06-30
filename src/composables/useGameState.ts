@@ -238,6 +238,13 @@ export function useGameState() {
     return undefined
   }
 
+  // デバッグ専用: ジャンルを強制確定する（収束判定を飛ばす）
+  function debugForceGenre(genreId: GenreId) {
+    lockedGenre.value = genreId
+    _rebuildRules()
+    phase.value = 'genreLocked'
+  }
+
   function startThrowing() {
     soundManager.onThrowStart()
     phase.value = 'throwing'
@@ -316,6 +323,7 @@ export function useGameState() {
     startTutorial,
     triggerUpdate,
     choose,
+    debugForceGenre,
     startThrowing,
     finalizeThrowing,
     restart,
