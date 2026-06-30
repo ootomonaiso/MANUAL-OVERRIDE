@@ -56,10 +56,12 @@ export class MyGenrePlugin implements GenrePlugin {
 ### 登録
 
 ```typescript
-// src/genres/index.ts に1行追加するだけ
-import { MyGenrePlugin } from './MyGenrePlugin'
-registerGenre(new MyGenrePlugin())
+// ファイル末尾で default export するだけ。
+// src/genres/index.ts が import.meta.glob で自動収集するため index.ts の編集は不要。
+export default new MyGenrePlugin()
 ```
+
+> `BasePlugin.ts` のように複数クラスを `export default [new A(), new B()]` の配列で返すこともできる。
 
 ---
 

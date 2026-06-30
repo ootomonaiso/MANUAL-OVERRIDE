@@ -56,7 +56,7 @@ function resolveGenre(params: GenreParams, genres: GenreDef[]): GenreId {
 
 ---
 
-## 全ジャンル一覧（21 種）
+## 全ジャンル一覧（22 種）
 
 ### コアジャンル（プラグイン実装済み）
 
@@ -88,6 +88,7 @@ function resolveGenre(params: GenreParams, genres: GenreDef[]): GenreId {
 | `aquatic` | 水中アドベンチャー | vertical≥3, aerial≥3, survive≥4 | distance + itemsCollected + survivedSec |
 | `horror` | サバイバルホラー | survive≥6, stealth≥4 | survivedSec + stealthBonus − deaths |
 | `hack_slash` | ハックアンドスラッシュ | enemy≥5, combo≥6 | kills + maxCombo + exp + bossKills |
+| `tetris` | テトリス | combo≥4, craft≥4 | combo + survivedSec（`scrollSpeed=0` のため distance は加算されない） |
 
 ---
 
@@ -111,10 +112,12 @@ function resolveGenre(params: GenreParams, genres: GenreDef[]): GenreId {
 
 ---
 
-## ジャンル定義の書き方（config/genres.json）
+## ジャンル定義の書き方（src/data/genres/&lt;id&gt;.json）
+
+ジャンル定義は1ジャンル1ファイルで `src/data/genres/<id>.json` に置く。`import.meta.glob` で自動収集されるため、ファイルを追加するだけで登録される（`src/data/config/genres.json` はテーマカラー等の補助設定で、定義本体ではない）。
 
 ```json
-// src/data/config/genres.json の配列に追加
+// 例: src/data/genres/my_genre.json
 {
   "id": "my_genre",
   "label": "私のジャンル",

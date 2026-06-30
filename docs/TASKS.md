@@ -1,7 +1,7 @@
 # 未実装・改善タスク一覧
 
 このドキュメントは、現在の実装状況から見た「やるべきこと」を優先度順にまとめています。  
-**最終更新:** 2026-06-09 | **総タスク数:** 61 件
+**最終更新:** 2026-06-29 | **総タスク数:** 62 件
 
 ---
 
@@ -150,9 +150,9 @@
 
 | ファイル | 未実装フィーチャー |
 |---|---|
-| `src/game/systems/ExtraMovementFeature.ts:19` | `dash`, `wall_jump`, `slide`, `gravity_flip` |
-| `src/game/systems/PuzzleFeature.ts:19` | `grid_stop`, `puzzle_solve` |
-| `src/game/systems/SpecialFeature.ts:41` | `stealth_mode`, `time_bonus`, `tower`, `boss` |
+| `src/game/systems/MovementFeature.ts`（旧 ExtraMovementFeature を統合） | `dash`, `wall_jump`, `slide`, `gravity_flip` |
+| `src/game/systems/PuzzleFeature.ts` | `grid_stop`, `puzzle_solve` |
+| `src/game/systems/SpecialFeature.ts` | `stealth_mode`, `time_bonus`, `tower`, `boss` |
 
 **タスク:**
 - [x] 各フィーチャーについて「実装する」か「JSON から削除して使わない」かを決定する（commit f0112b3）
@@ -161,7 +161,7 @@
 - [x] `boss` フィーチャー: HP バー・撃破スコア・爆発演出・スポーン制御を実装済み
 
 **推定作業時間:** 4～8 時間（実装する数による）  
-**対象ファイル:** `src/game/systems/ExtraMovementFeature.ts` 、`src/game/systems/PuzzleFeature.ts` 、`src/game/systems/SpecialFeature.ts` 、`src/data/manuals/*.json`
+**対象ファイル:** `src/game/systems/MovementFeature.ts`（旧 ExtraMovementFeature を統合）、`src/game/systems/PuzzleFeature.ts` 、`src/game/systems/SpecialFeature.ts` 、`src/data/manuals/*.json`
 
 ---
 
@@ -338,9 +338,9 @@
 **現状:** 同一概念が複数の形式・ファイルで管理されており、どこを見ればよいかわかりにくい
 
 **問題箇所:**
-- `ShootFeature.ts` と `shootSystem.ts` — 関係が不明確。どちらがどの責務を持つか
-- `RhythmFeature.ts` と `rhythmSystem.ts` — 同上
-- ジャンル定義が 4 箇所に分散: `src/data/config/genres.json` / `src/data/genres.ts` / `src/engine/GenrePlugin.ts` / `src/plugins/JSONGenrePlugin.ts`
+- ~~`ShootFeature.ts` と `shootSystem.ts`~~ — 解消済み: 射撃ロジックは `ShootFeature.ts` に統合され、独立した `shootSystem.ts` は存在しない
+- ~~`RhythmFeature.ts` と `rhythmSystem.ts`~~ — 解消済み: 同上（`rhythmSystem.ts` は存在しない）
+- ジャンル関連が複数箇所に分散: `src/data/genres/*.json`（定義本体）/ `src/data/genres.ts`（GAME_CONFIG からの再エクスポート）/ `src/engine/GenrePlugin.ts`（インターフェース）/ `src/plugins/JSONGenrePlugin.ts`（JSONフォールバック生成）
 - `src/engine/` と `src/framework/` の役割の差が不明確
 
 **タスク:**
@@ -489,6 +489,29 @@
 
 **推定作業時間:** 2～3 時間  
 **対象ファイル:** `docs/` 、`src/data/manuals/TEMPLATE.json`
+
+---
+
+### B-13. ドキュメントとコード実態の乖離（2026-06-29 ドキュメント側は解消済み）
+
+**現状:** `docs/` 配下の記述が、tetris 追加・FeatureSystem 統合・JSON駆動化などのコード変更に追従できておらず、複数箇所が実態とズレていた。  
+**問題:** リファレンス・入門ガイドが古い構成を案内し、新規参加者を誤誘導する。  
+**影響:** ドキュメント全般の信頼性。なお下記のうち末尾の「コード側」項目は実装の話であり未対応で残る。
+
+**検出した乖離と対応:**
+- [x] ジャンル数 21 → **22**（tetris 追加）を全ドキュメントに反映
+- [x] TSプラグイン 10種／15種 → **16種 + JSONフォールバック6種**（`bullet_hell` / `stealth_action` / `tower_def` / `sports` / `idle` / `horror`）
+- [x] `ExtraMovementFeature` 廃止 → **`MovementFeature` に統合**（dash / wall_jump / vertical_scroll）。FeatureSystem は7種（+ `TetrisFeature`）
+- [x] `PuzzleFeature` / `SpecialFeature` を「未実装」と誤記 → **実装済み**に修正
+- [x] 実在しないファイル記述を削除／差替: `shootSystem.ts` / `rhythmSystem.ts`（各 Feature に統合）、`useThrow.ts` → `useScoreAnimation.ts`、`validateConfigs.ts` → `PluginManager` / `JSONGenrePlugin` / `SoundManager`
+- [x] config JSON 17／19個 → **21個**、ManualTheme 7種 → **15種**、ベイズ収束関数群を `api/domain.md` に追記
+- [x] `LearningSystem` を「未統合」と誤記 → **sideScroller のループに統合済み**に修正
+- [x] ジャンル/フィーチャー追加手順を実態に修正: `GenreId`/`FeatureId` は `string` 型で `types.ts` 編集不要、ジャンルは `src/data/genres/<id>.json` を置くだけ、プラグインは `export default` で `import.meta.glob` 自動収集
+- [ ]（コード側・要確認）`slide` / `gravity_flip` / `shield` は未実装のまま（有効化時 console.warn）。B-1 と重複
+- [ ]（コード側・要確認）`src/data/config/genres.json` に旧 genres 配列が残存（実効値は `src/data/genres/*.json` 側）。混乱回避のため整理を検討。B-8 と関連
+
+**推定作業時間:** 完了（ドキュメント）／ コード側項目は B-1・B-8 に集約  
+**対象ファイル:** `docs/`（README・architecture・genre-system・feature-ids・framework・design・adding-content・genre-plugin・TASKS・api/* ・guide/* 等）
 
 ---
 

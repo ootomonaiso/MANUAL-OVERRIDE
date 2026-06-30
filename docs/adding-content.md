@@ -34,7 +34,7 @@
 ```
 
 **選択肢を追加する = JSON ファイルを編集するだけ**
-**エンディングを追加する = JSON + TypeScript の4箇所を編集する**
+**ジャンル・エンディングを追加する = `src/data/genres/<id>.json` を置くだけ（見た目を作り込むなら TS プラグインも）**
 
 ---
 
@@ -171,74 +171,55 @@ cp src/data/manuals/TEMPLATE.json src/data/manuals/my-branch.json
 
 ## 新しいジャンルエンディングを追加する
 
-エンディングを追加するには **4箇所** を変更します。
+エンディングを追加するには **最小1箇所（JSON）、見た目を作り込むなら3箇所** を変更します。
 
-### ステップ 1: GenreId を追加する
+> `GenreId` / `FeatureId` は `string` 型のため、`src/domain/types.ts` の編集は不要です。
 
-[src/domain/types.ts](../src/domain/types.ts) の `GenreId` 型に新しい ID を追加します。
+### ステップ 1: GenreDef（ジャンル定義）を JSON で追加する
 
-```typescript
-export type GenreId =
-  | 'base'
-  | 'runner'
-  // ... 既存 ...
-  | 'my_genre'   // ← 追加
-```
+`src/data/genres/my_genre.json` を新規作成します。`src/data/genres/*.json` は `import.meta.glob` で自動収集されるため、**ファイルを置くだけ**で登録されます（`src/data/genres.ts` は `GAME_CONFIG` からの再エクスポートなので編集不要）。
 
-### ステップ 2: GenreDef（ジャンル定義）を追加する
-
-[src/data/genres.ts](../src/data/genres.ts) に1エントリ追加します。
-
-```typescript
+```jsonc
 {
-  id: 'my_genre',
-  label: 'マイジャンル',
+  "id": "my_genre",
+  "label": "マイジャンル",
 
-  // ─── 収束条件 ─────────────────────────────────────────────────
-  // このジャンルに確定するために必要な最低パラメータ値。
-  // 複数指定した場合はすべての条件を満たす必要がある。
-  thresholds: { tempo: 3, aerial: 3 },
+  // ─── 収束条件（軸パラメータ閾値）。複数指定時はすべて満たす必要がある ───
+  "thresholds": { "tempo": 3, "aerial": 3 },
 
-  // ─── フィーチャー ──────────────────────────────────────────────
-  // ジャンル確定時に有効になるメカニクス。
-  enableFeatures: ['double_jump', 'dash'],
-  // ジャンル確定時に無効化するメカニクス。
-  disableFeatures: ['grid_stop'],
+  // ─── フィーチャー：確定時に有効/無効になるメカニクス ───
+  "enableFeatures": ["double_jump", "dash"],
+  "disableFeatures": ["grid_stop"],
 
-  // ─── スコア計算式 ──────────────────────────────────────────────
+  // ─── スコア計算式 ───
   // 変数: distance, kills, combo, exp, beatHits, survivedSec,
   //        accuracy, maxCombo, deaths, itemsCollected, bossKills,
   //        stealthBonus, colorTouches
-  scoreFormula: 'distance * 1.5 + combo * 60 + kills * 80',
+  "scoreFormula": "distance * 1.5 + combo * 60 + kills * 80",
 
-  // ─── エンディングテキスト ──────────────────────────────────────
-  // ジャンル確定時に説明書に書き込まれる宣言文。
-  manualReveal: 'これはマイジャンルになりました。',
-  // 投擲後のエンディング画面に表示される締めくくりの一文。
-  endingFlavor: 'あなたは独自のゲームを作り上げた。',
+  // ─── エンディングテキスト ───
+  "manualReveal": "これはマイジャンルになりました。",
+  "endingFlavor": "あなたは独自のゲームを作り上げた。",
 
-  // ─── UI テーマ ─────────────────────────────────────────────────
-  // 'plain' | 'stg' | 'rpg' | 'puzzle' | 'rhythm' | 'horror' | 'aquatic'
-  theme: 'plain',
+  // ─── UI テーマ（ManualTheme のいずれか。例: plain / stg / rpg / puzzle / rhythm / tetris …）───
+  "theme": "plain",
 
-  // ─── Canvas 背景色 ─────────────────────────────────────────────
-  bgColor: '#0a1020',
+  // ─── Canvas 背景色 ───
+  "bgColor": "#0a1020",
 
-  // ─── 環境（任意） ──────────────────────────────────────────────
-  // 'ground' | 'sky' | 'space' | 'ocean' | 'dungeon' | 'forest' | 'city'
-  environment: 'sky',
-
-  // ─── 重力（任意） ──────────────────────────────────────────────
-  // 重力加速度 px/s²。省略時は 1600。0 にすると無重力になる。
-  gravity: 1600,
-},
+  // ─── 任意 ───
+  // environment: 'ground' | 'sky' | 'space' | 'ocean' | 'dungeon' | 'forest' | 'city'
+  "environment": "sky",
+  // 重力加速度 px/s²。省略時は 1600。0 で無重力。
+  "gravity": 1600
+}
 ```
 
-### ステップ 3: GenrePlugin（見た目）を実装する
+### ステップ 2: GenrePlugin（見た目）を実装する（任意）
 
-[次節](#ジャンルの見た目genrepluginを実装する) を参照してください。
+専用ビジュアルが必要な場合のみ実装します。省略すると `JSONGenrePlugin` が `theme` からフォールバック描画します。[次節](#ジャンルの見た目genrepluginを実装する) を参照してください。
 
-### ステップ 4: 選択肢が収束するようにパラメータを設計する
+### ステップ 3: 選択肢が収束するようにパラメータを設計する
 
 マニュアルの JSON ファイルの `genreParams` を調整して、
 プレイヤーが特定の選択を続けると `thresholds` に到達するようにします。
@@ -313,11 +294,10 @@ export class MyGenrePlugin extends DarkThemePlugin {
 
 ### 登録する
 
-[src/genres/index.ts](../src/genres/index.ts) に2行追加します。
+ファイル末尾で `default export` するだけです。`src/genres/index.ts` が `import.meta.glob` で自動収集するため、`index.ts` の編集は不要です。
 
 ```typescript
-import { MyGenrePlugin } from './MyGenrePlugin'   // ← 追加
-registerGenre(new MyGenrePlugin())                  // ← 追加
+export default new MyGenrePlugin()   // ← これだけ
 ```
 
 ### spawnTable の書き方
@@ -439,9 +419,9 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
 |---|---|
 | 選択肢を選んでも何も起きない | `next` のキーが存在しない or タイプミス |
 | いつまでもジャンルが確定しない | `thresholds` の値が選択肢の合計を超えている |
-| エンディングテキストが表示されない | `endingFlavor` が `genres.ts` に未記載 |
-| 見た目が変わらない | `genres/index.ts` への登録漏れ |
-| ゲームが起動しない | `domain/types.ts` の `GenreId` への追加漏れ |
+| エンディングテキストが表示されない | `endingFlavor` が `src/data/genres/<id>.json` に未記載 |
+| 見た目が変わらない | TSプラグインの `export default` 忘れ、または `id` の不一致 |
+| ジャンルが認識されない | `src/data/genres/<id>.json` の `id` 重複・JSON 構文エラー（起動時の validation を確認） |
 
 ---
 
@@ -456,16 +436,15 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
 
 ### 新しいジャンルエンディングを追加する
 
-- [ ] `src/domain/types.ts` の `GenreId` に ID を追加
-- [ ] `src/data/genres.ts` に `GenreDef` を追加（thresholds, enableFeatures, scoreFormula, manualReveal, endingFlavor）
-- [ ] `src/genres/MyGenrePlugin.ts` を作成（視覚テーマ + spawnTable）
-- [ ] `src/genres/index.ts` に import と `registerGenre()` を追加
+- [ ] `src/data/genres/<id>.json` を作成（thresholds, enableFeatures, scoreFormula, manualReveal, endingFlavor, theme, bgColor）
+- [ ]（任意）`src/genres/MyGenrePlugin.ts` を作成し末尾で `export default new MyGenrePlugin()`（視覚テーマ + spawnTable）
+- [ ] ※ `src/domain/types.ts` や `src/genres/index.ts` の編集は不要（GenreId は string・プラグインは自動収集）
 - [ ] `src/data/manuals/` の JSON で genreParams を調整し、新ジャンルの thresholds へ収束するルートが存在することを確認
 - [ ] ブラウザで実際にそのジャンルへ収束するか動作確認
 
 ### テスト時のショートカット
 
-`genreParams` の初期値を `genres.ts` の thresholds ちょうどに設定した URL パラメータや
+`genreParams` の初期値を `src/data/genres/<id>.json` の thresholds ちょうどに設定した URL パラメータや
 ブラウザコンソールからの直接呼び出しで、エンディング画面を素早く確認できます。
 （実装方法は `composables/useGameState.ts` の `debugForceGenre()` を参照）
 

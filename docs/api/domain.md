@@ -14,12 +14,12 @@
 |---|---|
 | `GenreParam` | ジャンル分岐の軸パラメータ (12種: tempo, range, enemy, combo, growth, rhythm, stealth, vertical, aerial, survive, craft, speed) |
 | `GenreParams` | `Partial<Record<GenreParam, number>>` — 軸パラメータのマップ |
-| `GenreId` | ジャンルID (20種 + base: runner, stg, rpg, puzzle, rhythm, aerial_stg, bullet_hell, survival, stealth_action, racing, platformer, dungeon, tower_def, sports, idle, bullet_runner, arena, aquatic, horror, hack_slash) |
+| `GenreId` | ジャンルID。実体は `string` 型（union ではない）。定義は 22種（base 含む）: base, runner, stg, rpg, puzzle, rhythm, aerial_stg, bullet_hell, survival, stealth_action, racing, platformer, dungeon, tower_def, sports, idle, bullet_runner, arena, aquatic, horror, hack_slash, tetris |
 | `Phase` | ゲームフェーズ (`title`, `tutorialIntro`, `tutorial`, `updating`, `playing`, `genreLocked`, `throwing`, `ending`) |
-| `ManualTheme` | 説明書テーマ (`plain`, `stg`, `rpg`, `puzzle`, `rhythm`, `horror`, `aquatic`) |
+| `ManualTheme` | 説明書テーマ (15種: `plain`, `stg`, `rpg`, `puzzle`, `rhythm`, `horror`, `aquatic`, `runner`, `stealth`, `racing`, `platformer`, `dungeon`, `hack_slash`, `survival`, `tetris`) |
 | `ScrollDirection` | スクロール方向 (`horizontal`, `vertical`, `none`) |
 | `EnvironmentId` | 環境設定 (`ground`, `sky`, `space`, `ocean`, `dungeon`, `forest`, `city`) |
-| `FeatureId` | Feature フラグ (30種: shoot, three_way, charge_shot, spread_shot, bomb, enemy_hp, boss, auto_run, slow_precise, double_jump, long_air, dash, wall_jump, slide, gravity_flip, vertical_scroll, hp, exp, item_pickup, shield, grid_stop, puzzle_solve, beat_hazard, just_input, beat_dash, stealth_mode, time_bonus, tower, color_touch) |
+| `FeatureId` | Feature フラグ。実体は `string` 型（union ではない）。既知の ID: shoot, three_way, charge_shot, spread_shot, bomb, enemy_hp, boss, movement, auto_run, slow_precise, double_jump, long_air, dash, wall_jump, slide, gravity_flip, vertical_scroll, hp, exp, item_pickup, shield, grid_stop, puzzle_solve, beat_hazard, just_input, beat_dash, stealth_mode, time_bonus, tower, color_touch, tetris_mode |
 | `Controls` | キー設定 (`jump`, `moveLeft`, `moveRight`, `moveUp`, `moveDown`, `shoot?`, `dash?`, `slide?`) |
 | `Choice` | 説明書選択肢 (`id`, `label`, `hint?`, `next`, `genreParams`, `paramMultiplier?`) |
 | `ManualRuntimeConfig` | バージョン固有のruntime上書き (`scrollSpeed?`, `gravity?`, `bpm?`, `scrollDirection?`, `environment?`, `playerMaxHp?`, `timescale?`, `colorTouchScore?`, `forceGenreId?`) |
@@ -48,7 +48,22 @@
 | `resolveGenre(accumulated: GenreParams, genres: GenreDef[]): GenreId` | 累積パラメータからジャンルを決定（超過量最大のものを選択） |
 | `resolveFeaturesForGenre(genreId, genres): { enable: Set<FeatureId>, disable: Set<FeatureId> }` | ジャンルの enable/disable features を取得 |
 | `resolveGenreProgress(accumulated, genres): { closestGenre: GenreId, progress: number }` | 収束の近さを 0〜1 で返す（UI 演出用） |
+| `resolveAllGenreProgress(accumulated, genres)` | 全ジャンルの進捗を返す |
 | `resolveAllMetGenres(accumulated, genres): GenreId[]` | 収束済みの全ジャンルを返す（「◯◯にもできた」表示用） |
+
+### ベイズ収束（主方式）
+
+現在の主たる収束判定はベイズ事後確率方式。各軸の閾値との乖離量から尤度 `L = exp(-decayRate × deviation)` を求め、事後確率で収束を判定する（ハイパーパラメータは `config/bayes.json`）。
+
+| 関数 | 概要 |
+|---|---|
+| `accumulateGenrePoints(history)` | 選択履歴から genrePoints（ジャンル直接ポイント）を合算 |
+| `computeBayesianPosteriors(accumulated, genres, config)` | 各ジャンルの事後確率を計算 |
+| `initBayesianState(genres): BayesianState` | ベイズ状態（事後分布）を初期化 |
+| `updateBayesianState(state, accumulated, genres, config): BayesianState` | 1選択分の事後分布を更新し収束判定 |
+| `resolveHighestProbGenre(accumulated, genres, config): GenreId` | 最尤ジャンルを返す |
+| `getGenreDistribution(accumulated, genres, config)` | デバッグ用に上位ジャンルの確率分布を返す |
+| `DEFAULT_BAYES_CONFIG` | `bayes.json` 不在時のフォールバック設定 |
 
 ---
 
