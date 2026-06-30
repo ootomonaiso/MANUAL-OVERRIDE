@@ -230,6 +230,9 @@ export function useGameState() {
 
   const lockedGenreDef = () => GENRES.find(g => g.id === lockedGenre.value) ?? null
 
+  /** 選択履歴から累積 genreParams を計算（UI 演出用に公開） */
+  const getAccumulatedParams = () => accumulateWithMultiplier(choiceHistory)
+
   return {
     phase: readonly(phase),
     rules: readonly(rules) as RuntimeRules,
@@ -242,6 +245,7 @@ export function useGameState() {
     bayesState: readonly(bayesState) as BayesianState,
     currentManual,
     lockedGenreDef,
+    getAccumulatedParams,
     startGame,
     startTutorial,
     triggerUpdate,

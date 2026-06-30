@@ -14,7 +14,9 @@ import PluginLoader from './components/PluginLoader.vue'
 import GenreRevealOverlay from './components/GenreRevealOverlay.vue'
 import { GENRES, GENRE_THEME_COLORS } from './data/genres'
 import { GENRE_LOCKED_BOOST } from './data/gameBalance'
-import type { ThrowResult, RuntimeRules } from './domain/types'
+import { resolveGenreProgress } from './domain/genreResolver'
+import type { ThrowResult, RuntimeRules, GenreParams } from './domain/types'
+import { computeGenreBlendStyle, isBlendActive, BLEND_START, BLEND_END } from './domain/genreBlend'
 import { TUTORIAL_ENABLED, TutorialScreen } from './tutorial'
 import { soundManager } from './plugins/SoundManager'
 
@@ -198,6 +200,35 @@ const currentTheme = computed(() => {
   return GENRES.find(g => g.id === genre)?.theme ?? 'plain'
 })
 
+// ─── 収束前のジャンル匂わせ（lockedGenre 未確定時のみ有効） ─────────
+/** 説明書のテーマが目標ジャンルに段階的に遷移する進捗率 (0〜1) */
+const genreProgress = computed(() => {
+  if (gameState.lockedGenre.value !== null) return 1
+  const accumulated = gameState.getAccumulatedParams() as GenreParams
+  return resolveGenreProgress(accumulated, GENRES).progress
+})
+
+/** 収束先に最も近いジャンルのテーマ（lockedGenre 未確定時のみ有効） */
+const preConvergeGenre = computed(() => {
+  if (gameState.lockedGenre.value !== null) return null
+  const accumulated = gameState.getAccumulatedParams() as GenreParams
+  const closestId = resolveGenreProgress(accumulated, GENRES).closestGenre
+  return GENRES.find(g => g.id === closestId)?.theme ?? null
+})
+
+/** 収束前の説明書パネル用色補間スタイル（isBlendActive の間のみ適用） */
+const genreBlendStyle = computed(() => {
+  const locked = gameState.lockedGenre.value
+  const progress = genreProgress.value
+  if (!isBlendActive(progress) || locked !== null) return {}
+
+  const targetTheme = preConvergeGenre.value
+  if (!targetTheme) return {}
+  // progress BLEND_START〜BLEND_END を 0〜1 にマッピング
+  const t = Math.min(1, Math.max(0, (progress - BLEND_START) / (BLEND_END - BLEND_START)))
+  return computeGenreBlendStyle(targetTheme, t)
+})
+
 // ─── ゲームプレイ中UIの表示判定（フェーズ追加時の保守性向上） ─────
 const showGameUI = computed(() => {
   const p = gameState.phase.value
@@ -367,6 +398,9 @@ onUnmounted(() => {
         :features="gameState.rules.features"
         :controls="gameState.rules.controls"
         :highlight="gameState.phase.value === 'tutorial'"
+        :genre-progress="genreProgress"
+        :pre-converge-genre="preConvergeGenre"
+        :genre-blend-style="genreBlendStyle"
       />
 
       <!-- 説明書更新時のフォーカスオーバーレイ -->
@@ -418,6 +452,7 @@ onUnmounted(() => {
         :choices="gameState.activeCards.value"
         :version="gameState.currentManual().version"
         :locked-genre="gameState.lockedGenre.value ?? undefined"
+        :pre-converge-genre="preConvergeGenre ?? undefined"
         @choose="onChoose"
       />
     </Transition>

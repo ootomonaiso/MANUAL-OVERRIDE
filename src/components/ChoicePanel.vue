@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps<{
   choices: readonly { id: string; label: string }[]
   version: string
   lockedGenre?: string
+  /** lockedGenre 未確定時の最接近ジャンル（選択肢カードに匂わせ） */
+  preConvergeGenre?: string
 }>()
 
 const emit = defineEmits<{
@@ -13,6 +15,12 @@ const emit = defineEmits<{
 
 const selected = ref<string | null>(null)
 const revealed = ref(false)
+
+/** lockedGenre または preConvergeGenre から有効なジャンル class を計算 */
+const activeGenreClass = computed(() => {
+  const genre = props.lockedGenre ?? props.preConvergeGenre
+  return genre ? `genre-${genre}` : ''
+})
 
 let choiceTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -43,7 +51,7 @@ onUnmounted(() => {
   <div class="choice-overlay">
     <div class="scanline-overlay" />
 
-    <div class="choice-card" :class="[{ revealed }, lockedGenre ? `genre-${lockedGenre}` : '']">
+    <div class="choice-card" :class="[{ revealed }, activeGenreClass]">
       <!-- ヘッダー -->
       <div class="choice-header">
         <div class="choice-stamp">UPDATE</div>

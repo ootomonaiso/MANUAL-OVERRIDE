@@ -12,10 +12,22 @@ const props = defineProps<{
   features?: Set<string> | ReadonlySet<string>
   controls: Controls
   highlight?: boolean
+  /** 収束までの近さ (0〜1)。1 以上で lockedGenre 確定済み */
+  genreProgress: number
+  /** lockedGenre 未確定時の最接近ジャンル */
+  preConvergeGenre: ManualTheme | null
+  /** JS 計算済みの色補間 inline style オブジェクト */
+  genreBlendStyle: Record<string, string>
 }>()
 
 const showHistory = ref(false)
 const themeClass = computed(() => `theme-${props.theme}`)
+
+/** progress >= 0.5 で目標ジャンルの font-family に遷移 */
+const preConvergeThemeClass = computed(() => {
+  if (props.genreProgress < 0.5 || !props.preConvergeGenre) return ''
+  return `theme-${props.preConvergeGenre}`
+})
 
 // auto_run が有効な場合、左右移動の説明を除外
 const filteredManualText = computed(() => {
@@ -42,7 +54,11 @@ function keyLabel(key: string): string {
 </script>
 
 <template>
-  <div class="manual-panel" :class="[themeClass, { 'panel-centered': isCentered, 'manual-highlight': highlight }]">
+  <div
+    class="manual-panel"
+    :class="[themeClass, preConvergeThemeClass, { 'panel-centered': isCentered, 'manual-highlight': highlight }]"
+    :style="genreBlendStyle"
+  >
     <!-- ヘッダー -->
     <div class="manual-header">
       <div class="manual-ver-badge">
@@ -134,17 +150,22 @@ function keyLabel(key: string): string {
   position: absolute;
   bottom: 58px; right: 16px;
   width: 340px;
-  background: #0d120d;
-  border: 2px solid #33aa55;
+  background: var(--blend-bg, #0d120d);
+  border: 2px solid var(--blend-border, #33aa55);
   border-radius: 2px;
   padding: 16px 18px;
   font-family: 'M PLUS 1 Code', cursive;
   font-size: 13px;
   line-height: 1.8;
-  color: #b8ffb8;
-  box-shadow: 0 0 20px rgba(0,255,65,0.15), 0 2px 8px rgba(0,0,0,0.5);
+  color: var(--blend-color, #b8ffb8);
+  box-shadow: 0 0 20px var(--blend-shadow, rgba(0,255,65,0.15)), 0 2px 8px rgba(0,0,0,0.5);
   z-index: 20;
-  transition: font-family 0.6s, background 0.6s, border-color 0.6s, box-shadow 0.6s;
+  transition:
+    font-family 0.6s,
+    background 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   user-select: none;
   max-height: 380px;
   overflow-y: auto;
@@ -182,8 +203,9 @@ function keyLabel(key: string): string {
     padding 0.5s cubic-bezier(0.22, 1, 0.36, 1),
     font-size 0.5s cubic-bezier(0.22, 1, 0.36, 1),
     font-family 0.6s,
-    background 0.6s,
-    border-color 0.6s;
+    background 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    color 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .manual-header {
