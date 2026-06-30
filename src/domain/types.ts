@@ -134,6 +134,10 @@ export interface ManualCard {
   genreAffinity?: string[]
   /** 矛盾するカードID群。選択時、対象カードの説明書テキストが取り消し線になる */
   conflictsWith?: string[]
+  /** 矛盾ペアの相手カードID。双方が選択されると矛盾レベルが上昇する */
+  contradictionPair?: string
+  /** 矛盾発生時の反応メッセージ（矛盾ペア選択時に表示） */
+  reactionMessage?: string
 }
 
 /** 説明書バージョンが runtime に適用できる上書き設定 */
@@ -279,6 +283,8 @@ export interface ActionStats {
   shots: number
   ticks: number     // フレーム数（分母）
   dashes?: number   // ダッシュ使用回数（dash Feature 有効時のみ）
+  /** 衝突回数（障害物に当たった回数。プレイスタイル検出用） */
+  collisions: number
 }
 
 export interface LearningTrigger {
@@ -346,6 +352,59 @@ export interface BayesConfig {
 
 /** ベイズデバッグログで表示する上位ジャンル数 */
 export const BAYES_DEBUG_TOP_N = 5
+
+// ─────────────────────────────────────────────────────────────
+// プレイスタイル検出（Issue #24: 意外な結末）
+// ─────────────────────────────────────────────────────────────
+
+/** 検出可能なプレイスタイル */
+export type DetectedPlayStyle =
+  | 'low_jumper'      // ジャンプをほとんどしない → Stealth / Horror 方向
+  | 'jump_spammer'    // ジャンプ連打 → Platformer 方向
+  | 'left_runner'     // ずっと左に走っている → Idle 方向
+  | 'collision_prone' // 何度も衝突している → 挑戦的なルート
+  | 'speed_demon'     // 高速移動を好む → Racing 方向
+  | 'sniper'          // 慎重に射撃 → STG 方向
+
+/** プレイスタイル検出結果 */
+export interface PlayStyleResult {
+  /** 検出されたスタイル一覧（強弱付き） */
+  styles: { style: DetectedPlayStyle; strength: number }[]
+  /** 最も強いスタイル */
+  dominant: DetectedPlayStyle | null
+  /** 隠しジャンル誘導ボーナス（ベイズ尤度に追加されるパラメータ） */
+  genreBonus: GenreParams
+}
+
+// ─────────────────────────────────────────────────────────────
+// 矛盾トラッキング（Issue #24: 矛盾選択ルート）
+// ─────────────────────────────────────────────────────────────
+
+/** 矛盾レベル（0〜1） */
+export type ContradictionLevel = number
+
+/** 矛盾イベント（矛盾カード選択時に発生） */
+export interface ContradictionEvent {
+  /** 矛盾が発生したカードID */
+  cardId: string
+  /** 矛盾した既存カードID */
+  conflictedId: string
+  /** 反応メッセージ */
+  reactionMessage: string
+}
+
+/** 矛盾トラッキングの状態 */
+export interface ContradictionState {
+  /** 累積矛盾レベル（0〜1、1で最大） */
+  level: ContradictionLevel
+  /** 発生した矛盾イベント履歴 */
+  events: ContradictionEvent[]
+  /** バッドエンドトリガー済みか */
+  badEndingTriggered: boolean
+}
+
+/** 矛盾の深刻度レベル */
+export type ContradictionSeverity = 'none' | 'mild' | 'moderate' | 'severe' | 'broken'
 
 /** scoreFormula で使える変数 */
 export interface ScoreVars {
