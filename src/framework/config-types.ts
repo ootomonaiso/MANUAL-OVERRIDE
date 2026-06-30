@@ -306,12 +306,30 @@ export interface SpecialConfig {
   timeBonusScore: number
 }
 
-/** puzzle.json — パズルフィーチャー */
+/** puzzle.json — パズルフィーチャー (スライド移動パズル) */
+export interface PuzzleGridConfig {
+  n: number
+  /** このサイズで採用する盤面の目標最短手数（下限） */
+  minMoves: number
+  /** このサイズで採用する盤面の目標最短手数（上限） */
+  maxMoves: number
+  timeSec: number
+  weightStart: number
+  weightEnd: number
+}
+
 export interface PuzzleConfig {
-  gridSize: number
-  movePhaseSec: number
-  solvePhaseSec: number
-  solveScore: number
+  grids: PuzzleGridConfig[]
+  cellPx: number
+  weightMaxDist: number
+  /** 各セルが壁になる確率 0〜1（盤面生成の壁密度） */
+  wallRatio: number
+  /** 盤面生成の再試行上限。到達時は目標手数に最も近い盤面へフォールバック */
+  maxGenAttempts: number
+  /** 制限時間スケールの下限（元の時間に対する割合。これ以上は短くしない） */
+  timeScaleMin: number
+  /** 制限時間が半減するまでの問題数。第(1+N)問で 0.5 倍になる（第1問=1.0倍） */
+  timeHalfLifeSteps: number
 }
 
 /** extra_movement.json — 拡張移動フィーチャー */

@@ -50,6 +50,17 @@
 | [api/data.md](api/data.md) | `src/data/` | GAME_CONFIG / MANUAL_DECK エントリポイント |
 | [api/composables_plugins.md](api/composables_plugins.md) | `src/tutorial/`・`src/composables/`・`src/plugins/` | チュートリアル・useGameState/useManual/useThrow composable・Vite 検証プラグイン |
 
+### ジャンル別実装ドキュメント
+
+個々のジャンルをどう実装したか（アーキテクチャ・収束条件・ゲーム仕様・テスト）を記録したドキュメント群。
+新ジャンルを実装したら [genre/TEMPLATE.md](genre/TEMPLATE.md) のフォーマットに沿って追加してください。
+
+| ファイル | 内容 |
+|---|---|
+| [genre/TEMPLATE.md](genre/TEMPLATE.md) | ジャンル実装ドキュメントのフォーマット定義 |
+| [genre/tetris-genre.md](genre/tetris-genre.md) | テトリスジャンルの実装記録 |
+| [genre/puzzle-genre.md](genre/puzzle-genre.md) | パズル（スライドパズル）ジャンルの実装記録 |
+
 ### プロジェクト管理
 
 | ファイル | 対象 | 内容 |

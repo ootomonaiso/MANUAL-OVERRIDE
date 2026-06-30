@@ -10,11 +10,20 @@ import { DarkThemePlugin } from './BasePlugin'
 
 export class PuzzlePlugin extends DarkThemePlugin {
   readonly id: GenreId = 'puzzle'
-  readonly skyColors: readonly [string, string] = ['#e8e8f0', '#d0d0e0']
-  readonly groundColors: readonly [string, string] = ['#d8d8e8', '#c0c0d0']
-  readonly farLayerColor = '#c0c0d0'
-  readonly midLayerColor = '#b0b0c0'
+  // puzzle テーマは白系「方眼紙」。背景が紺くならないよう明るい白寄りに統一する
+  // （genres.json の bgColor:#f0f0f0 と整合）。
+  readonly skyColors: readonly [string, string] = ['#f4f4f8', '#e9e9f2']
+  readonly groundColors: readonly [string, string] = ['#e4e4ee', '#d2d2de']
+  readonly farLayerColor = '#dcdce8'
+  readonly midLayerColor = '#c8c8d6'
   readonly starColor: string | undefined = undefined
+
+  // 方眼紙の罫線設定（細罫: opacity 0.1 / 太罫: 数セルごと）
+  private readonly _gridSize = 40
+  private readonly _gridAlpha = 0.1
+  private readonly _majorEvery = 5
+  private readonly _majorAlpha = 0.16
+  private readonly _gridColor = '#5a5a78'
   readonly palette: GenrePlugin['palette'] = {
     danger: '#e84393', dangerGlow: '#fd79a8',
     safe:   '#0984e3', safeGlow:   '#74b9ff',
@@ -30,15 +39,20 @@ export class PuzzlePlugin extends DarkThemePlugin {
   }
 
   override drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // グリッドライン（方眼紙風）
-    ctx.globalAlpha = 0.1
-    ctx.strokeStyle = '#888888'; ctx.lineWidth = 1
-    const gridSize = 60
-    const startX = -(offsetX % gridSize)
-    for (let x = startX; x < W; x += gridSize) {
+    // 方眼紙風のグリッド罫線（白背景上に薄く敷く。数セルごとに太罫を入れて作り込む）
+    ctx.strokeStyle = this._gridColor
+    ctx.lineWidth = 1
+    const g = this._gridSize
+    const startCol = Math.floor(offsetX / g)
+    const startX = -(((offsetX % g) + g) % g)
+    let col = startCol
+    for (let x = startX; x < W; x += g, col++) {
+      ctx.globalAlpha = col % this._majorEvery === 0 ? this._majorAlpha : this._gridAlpha
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, gY); ctx.stroke()
     }
-    for (let y = gY % gridSize; y < gY; y += gridSize) {
+    let row = 0
+    for (let y = ((gY % g) + g) % g; y < gY; y += g, row++) {
+      ctx.globalAlpha = row % this._majorEvery === 0 ? this._majorAlpha : this._gridAlpha
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke()
     }
     ctx.globalAlpha = 1
