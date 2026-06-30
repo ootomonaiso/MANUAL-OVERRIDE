@@ -15,6 +15,7 @@
     "bundle-size": "node scripts/check-bundle-size.mjs",
     "new-genre": "node scripts/new-genre.mjs",
     "test": "playwright test",
+  "test:unit": "vitest run",
     "test:smoke": "playwright test tests/smoke.spec.ts",
     "test:e2e": "node tests/test_game.mjs",
     "test:choices": "node tests/test_choices.mjs",

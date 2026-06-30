@@ -1,0 +1,147 @@
+﻿diff --git a/src/data/config/genres.json b/src/data/config/genres.json
+index 6bc3149..a4cbffd 100644
+--- a/src/data/config/genres.json
++++ b/src/data/config/genres.json
+@@ -481,27 +481,6 @@
+       "gravity": 1600,
+       "endingFlavor": "縺ゅ↑縺溘・繧ｳ繝ｳ繝懊ｒ騾泌・繧後＆縺帙↑縺九▲縺溘りｪｬ譏取嶌縺ｯ譁ｬ繧峨ｌ縺ｦ謨｣縺｣縺溘・,
+       "bgm": { "src": "bgm/hack_slash.ogg", "loop": true, "volume": 0.65, "fadeInMs": 600 }
+-    },
+-    {
+-      "id": "tetris",
+-      "label": "繝・ヨ繝ｪ繧ｹ",
+-      "thresholds": {"combo": 4, "craft": 4},
+-      "enableFeatures": ["tetris_mode"],
+-      "disableFeatures": ["auto_run", "shoot", "beat_hazard", "boss", "stealth_mode", "slow_precise"],
+-      "scoreFormula": "combo * 300 + survivedSec * 5 + distance * 0.1",
+-      "manualReveal": "縺薙ｌ縺ｯ繝・ヨ繝ｪ繧ｹ縺ｫ縺ｪ繧翫∪縺励◆縲ゅヶ繝ｭ繝・け繧堤ｩ阪∩荳翫￡縺ｦ縺上□縺輔＞縲・,
+-      "theme": "tetris",
+-      "bgColor": "#0a0a0a",
+-      "scrollDirection": "none",
+-      "controls": {
+-        "jump": "Space",
+-        "moveLeft": "ArrowLeft",
+-        "moveRight": "ArrowRight",
+-        "moveUp": "ArrowUp",
+-        "moveDown": "ArrowDown"
+-      },
+-      "gravity": 0,
+-      "endingFlavor": "縺ゅ↑縺溘・繝悶Ο繝・け繧堤ｩ阪∩驥阪・縺溘りｪｬ譏取嶌繧ゅ◎縺ｮ蝪斐・荳驛ｨ縺ｫ縺ｪ縺｣縺溘・
+     }
+   ]
+ }
+diff --git a/src/data/genres/tetris.json b/src/data/genres/tetris.json
+index 499b235..9004087 100644
+--- a/src/data/genres/tetris.json
++++ b/src/data/genres/tetris.json
+@@ -2,10 +2,10 @@
+   "$schema": "../../../../schemas/genre.schema.json",
+   "id": "tetris",
+   "label": "繝・ヨ繝ｪ繧ｹ",
+-  "thresholds": { "combo": 4, "craft": 4 },
++  "thresholds": { "combo": 10, "craft": 10 },
+   "enableFeatures": ["tetris_mode"],
+   "disableFeatures": ["auto_run", "shoot", "beat_hazard", "boss", "stealth_mode", "slow_precise"],
+-  "scoreFormula": "combo * 300 + survivedSec * 5 + distance * 0.1",
++  "scoreFormula": "combo * 300 + survivedSec * 10",
+   "manualReveal": "縺薙ｌ縺ｯ繝・ヨ繝ｪ繧ｹ縺ｫ縺ｪ繧翫∪縺励◆縲ゅヶ繝ｭ繝・け繧堤ｩ阪∩荳翫￡縺ｦ縺上□縺輔＞縲・,
+   "theme": "tetris",
+   "bgColor": "#0a0a0a",
+diff --git a/tests/feature-tetris.test.mjs b/tests/feature-tetris.test.mjs
+new file mode 100644
+index 0000000..408f9cb
+--- /dev/null
++++ b/tests/feature-tetris.test.mjs
+@@ -0,0 +1,99 @@
++// tetris: 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ縺ｮ謨ｴ蜷域ｧ繝・せ繝・+//
++// TetrisFeature.ts + tetris.json + config/genres.json 縺ｮ謨ｴ蜷域ｧ繧呈､懆ｨｼ縺吶ｋ縲・+// 髢ｾ蛟､縺御ｽ弱☆縺弱↑縺・％縺ｨ縲《coreFormula 縺ｫ distance 縺御ｽｿ繧上ｌ縺ｦ縺・↑縺・％縺ｨ縲・+// config/genres.json 縺ｫ驥崎､・ｮ夂ｾｩ縺後↑縺・％縺ｨ繧堤｢ｺ隱阪☆繧九・+import fs from 'node:fs'
++import path from 'node:path'
++import assert from 'node:assert'
++import { fileURLToPath } from 'node:url'
++
++const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
++const src = fs.readFileSync(path.join(root, 'src/game/systems/TetrisFeature.ts'), 'utf-8')
++
++// 笏笏笏 TetrisFeature.ts 縺ｮ髱咏噪讀懆ｨｼ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++
++// tetris_mode 繝輔Λ繧ｰ縺ｮ繧ｬ繝ｼ繝峨′ preUpdate / update / render 縺ｫ蟄伜惠縺吶ｋ縺薙→
++assert.ok(src.includes("world.rules.features.has('tetris_mode')"),
++  'preUpdate / update / render 縺ｫ tetris_mode 繝輔Λ繧ｰ縺ｮ繧ｬ繝ｼ繝峨′蠢・ｦ√〒縺・)
++
++// handles = 'tetris_mode' 縺ｧ縺ゅｋ縺薙→
++assert.ok(src.includes("handles = 'tetris_mode'"),
++  "TetrisFeature.handles 縺・'tetris_mode' 縺ｧ縺ｯ縺ゅｊ縺ｾ縺帙ｓ")
++
++// 10x20 繧ｰ繝ｪ繝・ラ
++assert.ok(src.includes('const COLS = 10'), 'COLS 縺・10 縺ｧ縺ｯ縺ゅｊ縺ｾ縺帙ｓ')
++assert.ok(src.includes('const ROWS = 20'), 'ROWS 縺・20 縺ｧ縺ｯ縺ゅｊ縺ｾ縺帙ｓ')
++
++// 7-bag 繧ｷ繧ｹ繝・Β
++assert.ok(src.includes("'I', 'O', 'T', 'S', 'Z', 'J', 'L'"),
++  '7-bag 繧ｷ繧ｹ繝・Β縺ｮ繝斐・繧ｹ螳夂ｾｩ縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ')
++
++// SRS 貅匁侠縺ｮ螢∬ｹｴ繧・+assert.ok(src.includes('[-1, 1, -2, 2]'), '豌ｴ蟷ｳ螢∬ｹｴ繧翫・螳夂ｾｩ縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ')
++assert.ok(src.includes("state.piece.def.id === 'I'"), 'I繝斐・繧ｹ縺ｮ蝙ら峩繧ｭ繝・け縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ')
++
++// 繝ｭ繝・け繝・ぅ繝ｬ繧､
++assert.ok(src.includes('LOCK_DELAY'), 'LOCK_DELAY 螳壽焚縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ')
++assert.ok(src.includes('LOCK_RESETS_MAX'), 'LOCK_RESETS_MAX 螳壽焚縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ')
++
++// 繧ｹ繧ｳ繧｢蠑・ combo * 300 + survivedSec * 10 (distance 繧剃ｽｿ繧上↑縺・
++assert.ok(!src.includes('distance'), 'TetrisFeature.ts 縺ｫ distance 蜿ら・縺後≠繧翫∪縺帙ｓ')
++
++// 笏笏笏 tetris.json 縺ｮ髱咏噪讀懆ｨｼ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++
++const tetrisJson = JSON.parse(
++  fs.readFileSync(path.join(root, 'src/data/genres/tetris.json'), 'utf-8')
++)
++
++// 髢ｾ蛟､縺碁←蛻・〒縺ゅｋ縺薙→・井ｻ悶・繧ｸ繝｣繝ｳ繝ｫ縺ｮ髢ｾ蛟､ 10-18 縺ｨ蜷檎ｭ我ｻ･荳奇ｼ・+const combo = tetrisJson.thresholds?.combo ?? 0
++const craft = tetrisJson.thresholds?.craft ?? 0
++assert.ok(combo >= 8, `combo 髢ｾ蛟､縺御ｽ弱☆縺弱∪縺・ ${combo} (8莉･荳翫′蠢・ｦ√〒縺・`)
++assert.ok(craft >= 8, `craft 髢ｾ蛟､縺御ｽ弱☆縺弱∪縺・ ${craft} (8莉･荳翫′蠢・ｦ√〒縺・`)
++
++// scoreFormula 縺ｫ distance 繧剃ｽｿ繧上↑縺・ｼ・istance 縺ｯ tetris 繝｢繝ｼ繝峨〒蜃咲ｵ舌☆繧具ｼ・+assert.ok(!tetrisJson.scoreFormula.includes('distance'),
++  `scoreFormula 縺ｫ distance 縺悟性縺ｾ繧後※縺・∪縺・ "${tetrisJson.scoreFormula}"`)
++
++// enableFeatures 縺ｫ tetris_mode 縺悟性縺ｾ繧後ｋ
++assert.ok(tetrisJson.enableFeatures.includes('tetris_mode'),
++  'enableFeatures 縺ｫ tetris_mode 縺後≠繧翫∪縺帙ｓ')
++
++// disableFeatures 縺ｫ auto_run 縺悟性縺ｾ繧後ｋ
++assert.ok(tetrisJson.disableFeatures.includes('auto_run'),
++  'disableFeatures 縺ｫ auto_run 縺後≠繧翫∪縺帙ｓ')
++
++// theme 縺・tetris
++assert.strictEqual(tetrisJson.theme, 'tetris', 'theme 縺・tetris 縺ｧ縺ｯ縺ゅｊ縺ｾ縺帙ｓ')
++
++// scrollDirection 縺・none
++assert.strictEqual(tetrisJson.scrollDirection, 'none', 'scrollDirection 縺・none 縺ｧ縺ｯ縺ゅｊ縺ｾ縺帙ｓ')
++
++// gravity 縺・0
++assert.strictEqual(tetrisJson.gravity, 0, 'gravity 縺・0 縺ｧ縺ｯ縺ゅｊ縺ｾ縺帙ｓ')
++
++// 笏笏笏 config/genres.json 縺ｫ驥崎､・ｮ夂ｾｩ縺後↑縺・％縺ｨ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++
++const genresConfig = JSON.parse(
++  fs.readFileSync(path.join(root, 'src/data/config/genres.json'), 'utf-8')
++)
++
++const tetrisGenres = genresConfig.genres.filter(g => g.id === 'tetris')
++assert.strictEqual(tetrisGenres.length, 0,
++  `config/genres.json 縺ｫ tetris 繧ｸ繝｣繝ｳ繝ｫ縺ｮ驥崎､・ｮ夂ｾｩ縺後≠繧翫∪縺・(${tetrisGenres.length}莉ｶ)`)
++
++// 笏笏笏 繝・ヨ繝ｪ繝溘ヮ螳夂ｾｩ縺ｮ讀懆ｨｼ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++
++const tetrominoIds = ['I', 'O', 'T', 'S', 'Z', 'J', 'L']
++for (const id of tetrominoIds) {
++  assert.ok(src.includes(`id: '${id}'`),
++    `TetrisFeature.ts 縺ｫ ${id} 繝・ヨ繝ｪ繝溘ヮ螳夂ｾｩ縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ`)
++}
++
++// 笏笏笏 邨先棡陦ｨ遉ｺ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++console.log(`笨・tetris.json: thresholds.combo=${combo}, thresholds.craft=${craft}`)
++console.log(`笨・tetris.json: scoreFormula="${tetrisJson.scoreFormula}"`)
++console.log(`笨・tetris.json: theme="${tetrisJson.theme}", scrollDirection="${tetrisJson.scrollDirection}"`)
++console.log(`笨・config/genres.json: tetris 驥崎､・ｮ夂ｾｩ縺ｪ縺・(${tetrisGenres.length}莉ｶ)`)
++console.log('PASS')

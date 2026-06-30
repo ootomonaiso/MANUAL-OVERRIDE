@@ -1,0 +1,46 @@
+﻿diff --git a/src/game/systems/RhythmFeature.ts b/src/game/systems/RhythmFeature.ts
+index 3170f7d..48e7653 100644
+--- a/src/game/systems/RhythmFeature.ts
++++ b/src/game/systems/RhythmFeature.ts
+@@ -11,6 +11,8 @@ interface RhythmState {
+   beatHazardInverted: boolean
+   beatHits: number
+   justWindowMs: number
++  // beat_hazard縺ｮ蜀肴怏蜉ｹ蛹悶ｒ讀懷・縺吶ｋ・育┌蜉ｹ竊呈怏蜉ｹ縺ｮ繝医Λ繝ｳ繧ｸ繧ｷ繝ｧ繝ｳ縺ｧbeatHazardInverted繧偵Μ繧ｻ繝・ヨ・・+  prevBeatHazardActive: boolean
+ }
+ 
+ export class RhythmFeature implements FeatureSystem {
+@@ -32,6 +34,7 @@ export class RhythmFeature implements FeatureSystem {
+       beatHazardInverted: false,
+       beatHits: 0,
+       justWindowMs: RHYTHM_TUNING.justWindowSec * 1000,
++      prevBeatHazardActive: false,
+     }
+   }
+ 
+@@ -52,17 +55,25 @@ export class RhythmFeature implements FeatureSystem {
+     s.beatMarkers.forEach(m => { m.t -= dtMs })
+     s.beatMarkers = s.beatMarkers.filter(m => m.t > 0)
+ 
++    // beat_hazard 縺ｮ蜀肴怏蜉ｹ蛹悶ｒ讀懷・縲ら┌蜉ｹ竊呈怏蜉ｹ縺ｮ繝医Λ繝ｳ繧ｸ繧ｷ繝ｧ繝ｳ縺ｧ beatHazardInverted 繧偵Μ繧ｻ繝・ヨ縲・+    // 縺薙ｌ縺ｫ繧医ｊ縲∫┌蜉ｹ譛滄俣荳ｭ縺ｫ騾ｲ繧薙□繝薙・繝医け繝ｭ繝・け縺ｮ蠖ｱ髻ｿ縺悟・譛牙柑蛹匁凾縺ｫ蜿肴丐縺輔ｌ縺ｪ縺・・+    const beatHazardActive = r.features.has('beat_hazard')
++    if (beatHazardActive && !s.prevBeatHazardActive) {
++      s.beatHazardInverted = false
++    }
++    s.prevBeatHazardActive = beatHazardActive
++
+     if (s.nextBeat <= 0) {
+       s.nextBeat += s.beatInterval
+       s.beatCount++
+ 
+-      if (r.features.has('beat_hazard')) {
++      if (beatHazardActive) {
+         s.beatHazardInverted = s.beatCount % 2 === 0
+         s.beatMarkers.push({ t: 400, x: Math.random() * 600 + 100, strength: 1 })
+       }
+     }
+ 
+-    if (r.features.has('beat_hazard')) {
++    if (beatHazardActive) {
+       world.setBeatHazardInverted(s.beatHazardInverted)
+     }
+ 

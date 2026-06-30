@@ -1,0 +1,311 @@
+﻿diff --git a/src/App.vue b/src/App.vue
+index 153300f..c156e7c 100644
+--- a/src/App.vue
++++ b/src/App.vue
+@@ -17,10 +17,15 @@ import { GENRE_LOCKED_BOOST } from './data/gameBalance'
+ import type { ThrowResult, RuntimeRules } from './domain/types'
+ import { TUTORIAL_ENABLED, TutorialScreen } from './tutorial'
+ import { soundManager } from './plugins/SoundManager'
++import { DEBUG_MODE } from './debug/const'
++import { useDebugSettings } from './debug/useDebugSettings'
++import DebugPanel from './debug/DebugPanel.vue'
++import type { DebugSettings } from './debug/types'
+ 
+ // 笏笏笏 迥ｶ諷・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ const gameState = useGameState()
+ const manualCtl = useManual(gameState.currentManual)
++const debugCtl = useDebugSettings()
+ 
+ /** readonly() 繝ｩ繝・ヱ繝ｼ繧貞翁縺後＠縺ｦ RuntimeRules 縺ｨ縺励※霑斐☆ */
+ function getRules(): RuntimeRules {
+@@ -87,9 +92,24 @@ function startGame() {
+   if (TUTORIAL_ENABLED) {
+     scroller.setPaused(true)
+   }
++
++  // 繝・ヰ繝・げ: 繧ｸ繝｣繝ｳ繝ｫ蠑ｷ蛻ｶ・・ockedGenre 縺ｮ watch 縺・scroller 縺ｸ繝ｫ繝ｼ繝ｫ繧貞渚譏縺吶ｋ・・+  if (debugCtl.debugSettings.forceGenre) {
++    gameState.debugForceGenre(debugCtl.debugSettings.forceGenre)
++    // 繝√Η繝ｼ繝医Μ繧｢繝ｫ繧偵せ繧ｭ繝・・縺励※ genreLocked 縺ｸ逶ｴ陦後☆繧九◆繧∵・遉ｺ逧・↓蜀埼幕縺吶ｋ縲・+    // phase 縺・title竊暖enreLocked 縺ｨ驕ｷ遘ｻ縺・shouldPause 縺悟､牙喧縺励↑縺・◆繧・watch 縺ｧ縺ｯ蜀埼幕縺輔ｌ縺ｪ縺・・+    scroller.setPaused(false)
++  }
++
+   beginSnapshotLoop()
+ }
+ 
++// 笏笏笏 繝・ヰ繝・げ繝代ロ繝ｫ縲薫K縲・ 險ｭ螳壹ｒ蜿肴丐縺励※騾壼ｸｸ繝輔Ο繝ｼ縺ｧ繧ｲ繝ｼ繝髢句ｧ・笏笏笏
++function onDebugApply(settings: DebugSettings) {
++  debugCtl.applyDebug(settings)
++  startGame()
++}
++
+ // 笏笏笏 繝√Η繝ｼ繝医Μ繧｢繝ｫ螳御ｺ・竊・繧ｲ繝ｼ繝繝励Ξ繧､髢句ｧ・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ function startTutorial() {
+   if (TUTORIAL_ENABLED) {
+@@ -189,6 +209,8 @@ function restart() {
+   revealActive.value = false
+   soundManager.stopBgm(600)
+   gameState.restart()
++  // 繧ｿ繧､繝医Ν縺ｸ謌ｻ繧矩圀縺ｫ繝・ヰ繝・げ險ｭ螳壹ｒ繧ｯ繝ｪ繧｢・・ebugPanel 蜀阪・繧ｦ繝ｳ繝域凾縺ｮ陦ｨ遉ｺ縺ｨ荳閾ｴ縺輔○繧具ｼ・+  debugCtl.resetDebug()
+ }
+ 
+ // 笏笏笏 迴ｾ蝨ｨ縺ｮ繧ｸ繝｣繝ｳ繝ｫ繝・・繝・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+@@ -230,7 +252,8 @@ const shouldPause = computed(() => {
+   const p = gameState.phase.value
+   if (p === 'updating') return true
+   if (p === 'tutorialIntro') return true
+-  if (manualCtl.isCentered.value) return true
++  // 隱ｬ譏取嶌髱櫁｡ｨ遉ｺ譎ゅ・繧ｻ繝ｳ繧ｿ繝ｪ繝ｳ繧ｰ貍泌・縺瑚ｦ九∴縺ｪ縺・◆繧∝●豁｢繧ゅ＠縺ｪ縺・+  if (manualCtl.isCentered.value && debugCtl.debugSettings.showManual) return true
+   return false
+ })
+ 
+@@ -333,6 +356,12 @@ onUnmounted(() => {
+       </div>
+     </Transition>
+ 
++    <!-- 笏笏笏 繝・ヰ繝・げ繝代ロ繝ｫ・・EBUG_MODE 譎ゅ・縺ｿ繝ｻ繧ｿ繧､繝医Ν逕ｻ髱｢縺ｫ驥咲糞・・笏笏笏 -->
++    <DebugPanel
++      v-if="DEBUG_MODE && gameState.phase.value === 'title'"
++      @apply="onDebugApply"
++    />
++
+     <!-- 笏笏笏 繝√Η繝ｼ繝医Μ繧｢繝ｫ逕ｻ髱｢ 笏笏笏 -->
+     <Transition name="fade">
+       <TutorialScreen
+@@ -357,7 +386,7 @@ onUnmounted(() => {
+ 
+       <!-- 隱ｬ譏取嶌繝代ロ繝ｫ・域兜謫ｲ荳ｭ縺ｯ ThrowOverlay 縺御ｻ｣譖ｿ・・-->
+       <ManualPanel
+-        v-if="gameState.phase.value !== 'throwing'"
++        v-if="gameState.phase.value !== 'throwing' && debugCtl.debugSettings.showManual"
+         :manual="gameState.currentManual()"
+         :theme="currentTheme"
+         :diff-lines="manualCtl.diffLines.value"
+@@ -371,7 +400,7 @@ onUnmounted(() => {
+ 
+       <!-- 隱ｬ譏取嶌譖ｴ譁ｰ譎ゅ・繝輔か繝ｼ繧ｫ繧ｹ繧ｪ繝ｼ繝舌・繝ｬ繧､ -->
+       <Transition name="fade">
+-        <div v-if="manualCtl.isCentered.value" class="manual-focus-overlay" />
++        <div v-if="manualCtl.isCentered.value && debugCtl.debugSettings.showManual" class="manual-focus-overlay" />
+       </Transition>
+ 
+       <!-- 繝√Η繝ｼ繝医Μ繧｢繝ｫ繝偵Φ繝茨ｼ亥ｺ冗乢縺ｮ縺ｿ陦ｨ遉ｺ・・-->
+diff --git a/src/composables/useGameState.ts b/src/composables/useGameState.ts
+index 75ba8d1..0675b89 100644
+--- a/src/composables/useGameState.ts
++++ b/src/composables/useGameState.ts
+@@ -198,6 +198,13 @@ export function useGameState() {
+     return undefined
+   }
+ 
++  // 繝・ヰ繝・げ蟆ら畑: 繧ｸ繝｣繝ｳ繝ｫ繧貞ｼｷ蛻ｶ遒ｺ螳壹☆繧具ｼ亥庶譚溷愛螳壹ｒ鬟帙・縺呻ｼ・+  function debugForceGenre(genreId: GenreId) {
++    lockedGenre.value = genreId
++    _rebuildRules()
++    phase.value = 'genreLocked'
++  }
++
+   function startThrowing() {
+     soundManager.onThrowStart()
+     phase.value = 'throwing'
+@@ -246,6 +253,7 @@ export function useGameState() {
+     startTutorial,
+     triggerUpdate,
+     choose,
++    debugForceGenre,
+     startThrowing,
+     finalizeThrowing,
+     restart,
+diff --git a/src/debug/DebugPanel.vue b/src/debug/DebugPanel.vue
+new file mode 100644
+index 0000000..d31c1ab
+--- /dev/null
++++ b/src/debug/DebugPanel.vue
+@@ -0,0 +1,115 @@
++<script setup lang="ts">
++import { ref } from 'vue'
++import { GENRES } from '../data/genres'
++import type { GenreId } from '../domain/types'
++import type { DebugSettings } from './types'
++
++const emit = defineEmits<{
++  (e: 'apply', settings: DebugSettings): void
++}>()
++
++const forceGenre = ref<GenreId | null>(null)
++const showManual = ref(true)
++
++function onOk() {
++  emit('apply', {
++    forceGenre: forceGenre.value,
++    showManual: showManual.value,
++  })
++}
++</script>
++
++<template>
++  <div class="debug-panel">
++    <div class="debug-title">// DEBUG</div>
++
++    <label class="debug-row">
++      <span class="debug-label">force genre</span>
++      <select v-model="forceGenre" class="debug-select">
++        <option :value="null">騾壼ｸｸ・亥庶譚溘＆縺帙ｋ・・/option>
++        <option v-for="g in GENRES" :key="g.id" :value="g.id">
++          {{ g.id }} 窶・{{ g.label }}
++        </option>
++      </select>
++    </label>
++
++    <label class="debug-row debug-check">
++      <input v-model="showManual" type="checkbox" />
++      <span class="debug-label">隱ｬ譏取嶌繧定｡ｨ遉ｺ縺吶ｋ</span>
++    </label>
++
++    <button class="debug-ok" @click="onOk">OK</button>
++  </div>
++</template>
++
++<style scoped>
++.debug-panel {
++  position: fixed;
++  top: 50%;
++  left: 50%;
++  transform: translate(-50%, -50%);
++  z-index: 9999;
++  background: rgba(0, 0, 0, 0.82);
++  border: 1px solid #555;
++  border-radius: 4px;
++  padding: 16px 18px;
++  min-width: 280px;
++  font-family: 'Courier New', 'Consolas', monospace;
++  font-size: 12px;
++  color: #d0d0d0;
++  display: flex;
++  flex-direction: column;
++  gap: 12px;
++  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
++}
++
++.debug-title {
++  font-size: 11px;
++  letter-spacing: 2px;
++  color: #8a8a8a;
++}
++
++.debug-row {
++  display: flex;
++  flex-direction: column;
++  gap: 5px;
++}
++
++.debug-label {
++  color: #b0b0b0;
++}
++
++.debug-select {
++  background: #111;
++  color: #e0e0e0;
++  border: 1px solid #555;
++  border-radius: 3px;
++  padding: 5px 6px;
++  font-family: inherit;
++  font-size: 12px;
++}
++
++.debug-check {
++  flex-direction: row;
++  align-items: center;
++  gap: 8px;
++}
++
++.debug-ok {
++  align-self: flex-end;
++  background: #1a1a1a;
++  color: #e0e0e0;
++  border: 1px solid #666;
++  border-radius: 3px;
++  padding: 6px 22px;
++  font-family: inherit;
++  font-size: 12px;
++  cursor: pointer;
++  transition: background 0.15s, border-color 0.15s;
++}
++
++.debug-ok:hover {
++  background: #2a2a2a;
++  border-color: #999;
++}
++</style>
+diff --git a/src/debug/const.ts b/src/debug/const.ts
+new file mode 100644
+index 0000000..01998bc
+--- /dev/null
++++ b/src/debug/const.ts
+@@ -0,0 +1,2 @@
++/** 縺薙％繧・true 縺ｫ縺吶ｋ縺ｨ繝・ヰ繝・げUI縺梧怏蜉ｹ縺ｫ縺ｪ繧・*/
++export const DEBUG_MODE = false
+diff --git a/src/debug/types.ts b/src/debug/types.ts
+new file mode 100644
+index 0000000..64c69fd
+--- /dev/null
++++ b/src/debug/types.ts
+@@ -0,0 +1,8 @@
++import type { GenreId } from '../domain/types'
++
++export interface DebugSettings {
++  /** 蠑ｷ蛻ｶ縺吶ｋ繧ｸ繝｣繝ｳ繝ｫID縲Ｏull 縺ｪ繧蛾壼ｸｸ騾壹ｊ蜿取據縺輔○繧・*/
++  forceGenre: GenreId | null
++  /** 隱ｬ譏取嶌繝代ロ繝ｫ繧定｡ｨ遉ｺ縺吶ｋ縺・*/
++  showManual: boolean
++}
+diff --git a/src/debug/useDebugSettings.ts b/src/debug/useDebugSettings.ts
+new file mode 100644
+index 0000000..48f6f73
+--- /dev/null
++++ b/src/debug/useDebugSettings.ts
+@@ -0,0 +1,27 @@
++import { reactive, readonly } from 'vue'
++import type { DebugSettings } from './types'
++
++const DEFAULT_DEBUG_SETTINGS: DebugSettings = {
++  forceGenre: null,
++  showManual: true,
++}
++
++export function useDebugSettings() {
++  const debugSettings = reactive<DebugSettings>({ ...DEFAULT_DEBUG_SETTINGS })
++
++  /** OK繝懊ち繝ｳ謚ｼ荳区凾縺ｫ蜻ｼ縺ｰ繧後ｋ縲ゅョ繝舌ャ繧ｰ險ｭ螳壹ｒ蜿肴丐縺吶ｋ */
++  function applyDebug(settings: DebugSettings) {
++    Object.assign(debugSettings, settings)
++  }
++
++  /** 繝・ヰ繝・げ險ｭ螳壹ｒ蛻晄悄迥ｶ諷九∈謌ｻ縺・*/
++  function resetDebug() {
++    Object.assign(debugSettings, DEFAULT_DEBUG_SETTINGS)
++  }
++
++  return {
++    debugSettings: readonly(debugSettings) as DebugSettings,
++    applyDebug,
++    resetDebug,
++  }
++}
+diff --git a/src/game/systems/TetrisFeature.ts b/src/game/systems/TetrisFeature.ts
+index 1087c2e..b2fdaa2 100644
+--- a/src/game/systems/TetrisFeature.ts
++++ b/src/game/systems/TetrisFeature.ts
+@@ -440,11 +440,11 @@ export class TetrisFeature implements FeatureSystem {
+     this.state.moveTimer += dt
+ 
+     // 蟾ｦ蜿ｳ遘ｻ蜍包ｼ・ull螳牙・繧｢繧ｯ繧ｻ繧ｹ・・-    const leftKey = world.rules.controls.moveLeft?.toLowerCase() ?? 'arrowleft'
+-    const rightKey = world.rules.controls.moveRight?.toLowerCase() ?? 'arrowright'
+-    const upKey = world.rules.controls.moveUp?.toLowerCase() ?? 'arrowup'
+-    const downKey = world.rules.controls.moveDown?.toLowerCase() ?? 'arrowdown'
+-    const spaceKey = world.rules.controls.jump?.toLowerCase() ?? 'space'
++    const leftKey = world.rules.controls.moveLeft ?? 'ArrowLeft'
++    const rightKey = world.rules.controls.moveRight ?? 'ArrowRight'
++    const upKey = world.rules.controls.moveUp ?? 'ArrowUp'
++    const downKey = world.rules.controls.moveDown ?? 'ArrowDown'
++    const spaceKey = world.rules.controls.jump ?? 'Space'
+ 
+     if (justPressed.has(leftKey) || (keys.has(leftKey) && this.state.moveTimer >= this.state.moveDelay)) {
+       if (movePiece(this.state, -1)) {

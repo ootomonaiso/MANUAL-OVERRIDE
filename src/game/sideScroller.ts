@@ -37,6 +37,11 @@ export interface GameSnapshot {
   learningNotification: string | null
   // スコア計算式のパースエラー（発生時のみ非 null）
   scoreFormulaError: string | null
+  // プレイスタイル検出用の統計（Issue #24）
+  statCollisions: number
+  statItemsCollected: number
+  statShots: number
+  statDashes: number | undefined
 }
 
 // ループ内 dt のクランプ上限（フレーム落ち時に物理が発散するのを防ぐ）
@@ -112,7 +117,7 @@ export class SideScroller {
   private _frameWorld: MutableWorld | null = null
 
   // ─── 統計 ────────────────────────────────────────────────────────
-  private stats: ActionStats = { jumps: 0, moveRight: 0, moveLeft: 0, shots: 0, ticks: 0, collisions: 0 }
+  private stats: ActionStats = { jumps: 0, moveRight: 0, moveLeft: 0, shots: 0, ticks: 0, collisions: 0, itemsCollected: 0, dashes: 0 }
   private rafId = 0
   private lastTime = 0
 
@@ -123,8 +128,8 @@ export class SideScroller {
   private _disabledActions = new Map<string, number>()
   // invertHazard 解除予定時刻（-Infinity = 永続/未設定）
   private _invertHazardUntil = -Infinity
-  // changeKey キースタック: action名 → 元のキーのスタック（複数エフェクト対応）
-  private _keyStack = new Map<string, string[]>()
+  // changeKey 元キー保存: action名 → 元のキー文字列
+  private _originalKeys: Partial<Record<string, string>> = {}
   // changeKey 解除予定時刻: action名 → 解除時刻
   private _changeKeyUntil = new Map<string, number>()
   // 次の getSnapshot() で一度だけ返す通知メッセージ
@@ -138,7 +143,7 @@ export class SideScroller {
     this.ctx = ctx2d
     this.rules = rules
 
-    const gY = canvas.height - 80
+    const gY = canvas.height - PHYSICS.groundYOffset
     this.player = new Player(PLAYER_PHYSICS.startX, gY)
     this.player.jumpsLeft = rules.features.has('double_jump') ? 2 : 1
 
@@ -179,7 +184,7 @@ export class SideScroller {
     this._disabledActions.clear()
     this._invertHazardUntil = -Infinity
     this._changeKeyUntil.clear()
-    this._keyStack.clear()
+    this._originalKeys = {}
     this._pendingLearningMsg = null
     this._gameStats.beatHazardInverted = false
     // ManualVersion から learningRules を取得
@@ -260,6 +265,10 @@ export class SideScroller {
       firstJumpDone: this.firstJumpDone,
       learningNotification,
       scoreFormulaError,
+      statCollisions: this.stats.collisions,
+      statItemsCollected: this.stats.itemsCollected,
+      statShots: this.stats.shots,
+      statDashes: this.stats.dashes,
     }
   }
 
@@ -274,7 +283,7 @@ export class SideScroller {
     }
   }
 
-  getStats(): ActionStats { return this.stats }
+  getStats(): ActionStats { return { ...this.stats } }
 
   /**
    * ScoreVars を構築し、ジャンル別 scoreFormula を使って playScore を再計算する。
@@ -361,12 +370,10 @@ export class SideScroller {
     }
     for (const [action, until] of this._changeKeyUntil) {
       if (now >= until) {
-        const stack = this._keyStack.get(action)
-        const orig = stack?.pop()
+        const orig = this._originalKeys[action]
         if (orig !== undefined) {
           this._setControl(action, orig)
-        } else {
-          this._keyStack.delete(action)
+          delete this._originalKeys[action]
         }
         this._changeKeyUntil.delete(action)
       }
@@ -378,7 +385,7 @@ export class SideScroller {
     const isVertical = r.scrollAxis === 'y'
 
     if (r.features.has('dash') && this.input.justPressed.has(dashKey)) {
-      this.stats.dashes = (this.stats.dashes ?? 0) + 1
+      this.stats.dashes += 1
     }
 
     // ─── 距離ベースの自動加速 ─────────────────────────────────────────
@@ -636,8 +643,7 @@ export class SideScroller {
 
   // ─── 被弾処理 ────────────────────────────────────────────────────
   private _onPlayerHit(p: Player): void {
-    // 衝突回数をカウント（プレイスタイル検出用）
-    this.stats.collisions++
+    this.stats.collisions += 1
     const world = this._getWorld()
     soundManager.onHit()
     for (const sys of getActiveSystems(this.rules.features)) {
@@ -675,7 +681,7 @@ export class SideScroller {
     const ctx = this.ctx
     const W = this.canvas.width, H = this.canvas.height
     const r = this.rules
-    const gY = H - 80
+    const gY = H - PHYSICS.groundYOffset
 
     ctx.save()
     ctx.translate(this.shakeX, this.shakeY)
@@ -1311,14 +1317,8 @@ export class SideScroller {
       case 'changeKey': {
         // payload = "jump:w" のような形式（action:newKey）
         const [action, newKey] = effect.payload.split(':')
-        // スタック方式: 各エフェクトが現在のキーをプッシュし、期限切れでポップして復元
-        if (!this._keyStack.has(action)) {
-          this._keyStack.set(action, [])
-        }
-        const currentKey = this._getControl(action)
-        if (currentKey) {
-          const stack = this._keyStack.get(action)
-          if (stack) stack.push(currentKey)
+        if (!(action in this._originalKeys)) {
+          this._originalKeys[action] = this._getControl(action)
         }
         this._setControl(action, newKey)
         if (effect.durationSec != null) {

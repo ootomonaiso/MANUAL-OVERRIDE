@@ -58,6 +58,7 @@ const snapshot = ref<GameSnapshot>({
   beatHits: 0, survivedSec: 0, hp: 3, maxHp: 3, dead: false, shouldUpdate: null,
   statJumps: 0, statMoveLeft: 0, statMoveRight: 0, firstJumpDone: false,
   learningNotification: null, scoreFormulaError: null,
+  statCollisions: 0, statItemsCollected: 0, statShots: 0, statDashes: undefined,
 })
 
 // ─── Canvas サイズをウィンドウに合わせる ───────────────────────────
@@ -173,8 +174,14 @@ function giveUp() {
 
 // ─── 投擲完了 ────────────────────────────────────────────────────
 function onThrown(result: ThrowResult) {
+  // getStats() を stop() より先に呼ぶ（stop() で内部状態がクリアされるため）
+  const gameStats = scroller?.getStats()
   scroller?.stop()  // 投擲後はscrollerループを停止
-  gameState.finalizeThrowing(result, snapshot.value.playScore)
+  if (gameStats) {
+    gameState.finalizeThrowing(result, snapshot.value.playScore, gameStats)
+  } else {
+    gameState.finalizeThrowing(result, snapshot.value.playScore)
+  }
 }
 
 // ─── リスタート ──────────────────────────────────────────────────
@@ -202,31 +209,6 @@ const currentTheme = computed(() => {
 const showGameUI = computed(() => {
   const p = gameState.phase.value
   return !['title', 'ending', 'tutorialIntro'].includes(p)
-})
-
-// ─── エンディング用: プレイスタイル検出結果（Issue #24） ──────────
-// useGameState から expose される
-const endingPlayStyleResult = computed(() => {
-  const result = gameState.endingPlayStyleResult.value
-  if (!result) return undefined
-  // readonly を解除するためにディープコピー
-  return {
-    styles: [...result.styles],
-    dominant: result.dominant,
-    genreBonus: { ...result.genreBonus },
-  }
-})
-
-// ─── エンディング用: 累積 genreParams（別ルート計算用） ───────────
-const endingAccumulatedParams = computed(() => {
-  return gameState.endingAccumulatedParams.value
-})
-
-// ─── エンディングデータ計算（フェーズ遷移時に1回だけ実行） ────────
-watch(() => gameState.phase.value, (newPhase) => {
-  if (newPhase === 'ending' && scroller) {
-    gameState.computeEndingData(scroller.getStats())
-  }
 })
 
 // ─── ジャンル別テーマカラー CSS 変数（JSON 駆動 #36） ─────────────
@@ -262,13 +244,6 @@ const shouldPause = computed(() => {
 
 watch(shouldPause, (paused) => {
   scroller?.setPaused(paused)
-})
-
-// ─── 矛盾反応メッセージの表示（Issue #24: 矛盾選択ルート） ─────
-watch(() => gameState.lastReactionMessage.value, (msg) => {
-  if (msg) {
-    showToast(`💬 ${msg}`)
-  }
 })
 
 // ─── ジャンル確定オーバーレイ ────
@@ -471,9 +446,9 @@ onUnmounted(() => {
         :final-score="gameState.finalScore.value"
         :genre="gameState.lockedGenre.value ?? 'runner'"
         :choice-count="gameState.choiceHistory.length"
-        :play-style-result="endingPlayStyleResult"
-        :contradiction-state="gameState.contradictionState"
-        :accumulated-params="endingAccumulatedParams"
+        :play-style="gameState.playStyle.value"
+        :contradiction="gameState.contradiction.value"
+        :surprise-ending="gameState.surpriseEnding.value"
         @restart="restart"
       />
     </Transition>

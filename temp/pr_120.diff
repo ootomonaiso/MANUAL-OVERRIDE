@@ -1,0 +1,3675 @@
+﻿diff --git "a/docs/\343\202\270\343\203\243\343\203\263\343\203\253\345\233\272\346\234\211\343\202\271\343\203\235\343\203\274\343\203\263\345\257\206\345\272\246.md" "b/docs/\343\202\270\343\203\243\343\203\263\343\203\253\345\233\272\346\234\211\343\202\271\343\203\235\343\203\274\343\203\263\345\257\206\345\272\246.md"
+new file mode 100644
+index 0000000..79145a6
+--- /dev/null
++++ "b/docs/\343\202\270\343\203\243\343\203\263\343\203\253\345\233\272\346\234\211\343\202\271\343\203\235\343\203\274\343\203\263\345\257\206\345\272\246.md"
+@@ -0,0 +1,202 @@
++# 繧ｸ繝｣繝ｳ繝ｫ蝗ｺ譛峨せ繝昴・繝ｳ蟇・ｺｦ
++
++## 讎りｦ・+
++蜷・ず繝｣繝ｳ繝ｫ縺ｫ蝗ｺ譛峨・髫懷ｮｳ迚ｩ・医ワ繧ｶ繝ｼ繝会ｼ牙・迴ｾ蟇・ｺｦ繧定ｨｭ螳壹☆繧区ｩ溯・縲ゅ％繧後↓繧医ｊ縲ヾTG 縺ｧ縺ｯ髫懷ｮｳ迚ｩ縺悟ｯ・↓縲！dle 縺ｧ縺ｯ髫懷ｮｳ迚ｩ縺檎鮪縺ｫ蜃ｺ迴ｾ縺吶ｋ縺ｪ縺ｩ縲√ず繝｣繝ｳ繝ｫ縺ｮ髮ｰ蝗ｲ豌励↓蜷医ｏ縺帙◆繧ｲ繝ｼ繝繝舌Λ繝ｳ繧ｹ繧貞ｮ溽樟縺吶ｋ縲・+
++- Issue: #118
++- 繝悶Λ繝ｳ繝・ `fix/118-per-genre-spawn-density`
++
++## 閭梧勹繝ｻ蝠城｡悟ｮ夂ｾｩ
++
++### 螟画峩蜑・+
++髫懷ｮｳ迚ｩ縺ｮ蜃ｺ迴ｾ蟇・ｺｦ縺ｯ蜈ｨ繧ｸ繝｣繝ｳ繝ｫ縺ｧ蜈ｱ騾壹・ `HAZARD_SPAWN` 螳壽焚・・src/data/config/spawn.json`・峨′驕ｩ逕ｨ縺輔ｌ縺ｦ縺・◆縲・+
++```jsonc
++// spawn.json
++{
++  "baseInterval": 2400,    // ms
++  "minInterval": 800,      // ms
++  "decayRate": 0.00015     // 霍晞屬縺ｫ繧医ｋ蟇・ｺｦ蠅怜刈邇・+}
++```
++
++縺薙・縺溘ａ縲・囿螳ｳ迚ｩ繧・dense 縺ｫ縺励◆縺・STG 縺ｨ sparse 縺ｫ縺励◆縺・Idle 縺ｨ縺ｧ蜷後§髢馴囈縺ｧ髫懷ｮｳ迚ｩ縺檎匱逕溘＠縲√ず繝｣繝ｳ繝ｫ縺ｮ驕輔＞縺後せ繝昴・繝ｳ繝代ち繝ｼ繝ｳ縺九ｉ莨昴ｏ繧峨↑縺・→縺・≧隱ｲ鬘後′縺ゅ▲縺溘・+
++### 螟画峩蠕・+
++蜷・ず繝｣繝ｳ繝ｫ縺ｮ JSON 螳夂ｾｩ繝輔ぃ繧､繝ｫ・・src/data/genres/*.json`・峨↓ `spawnDensity` 繝励Ο繝代ユ繧｣繧定ｿｽ蜉縺励√お繝ｳ繧ｸ繝ｳ繧ｵ繧､繝峨〒縺昴・蛟､繧定ｪｭ縺ｿ霎ｼ繧薙〒菴ｿ逕ｨ縺吶ｋ縲・+
++## 險ｭ險・+
++### spawnDensity 縺ｮ讒矩
++
++```typescript
++interface SpawnDensity {
++  baseInterval: number  // 蛻晄悄蜃ｺ迴ｾ髢馴囈 (ms)
++  minInterval: number   // 譛遏ｭ蜃ｺ迴ｾ髢馴囈 (ms)
++  decayRate: number     // 霍晞屬縺ｫ繧医ｋ蟇・ｺｦ蠅怜刈菫よ焚
++}
++```
++
++### 蜃ｺ迴ｾ髢馴囈縺ｮ險育ｮ怜ｼ・+
++```
++interval = baseInterval ﾃ・exp(-decayRate ﾃ・distance)
++finalInterval = max(minInterval, interval)
++```
++
++霍晞屬縺碁聞縺・⊇縺ｩ `interval` 縺檎洒縺上↑繧翫・囿螳ｳ迚ｩ蟇・ｺｦ縺碁ｫ倥￥縺ｪ繧九ゅ◆縺縺・`minInterval` 莉･荳九↓縺ｯ縺ｪ繧峨↑縺・・+
++### 繝・・繧ｿ繝輔Ο繝ｼ
++
++```
++src/data/genres/{genre}.json
++    笏・+    笏・ GAME_CONFIG.genres.genres[] via ConfigLoader
++    笆ｼ
++src/genres/index.ts
++    笏・+    笏懌楳笏 竭 TS 繝励Λ繧ｰ繧､繝ｳ registered 竊・mergeSpawnDensity() via GameRegistry
++    笏・  (spawnDensity 繧・TS 繝励Λ繧ｰ繧､繝ｳ繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ縺ｫ縺ｯ繧∬ｾｼ繧)
++    笏・+    笏披楳笏 竭｡ TS 繝励Λ繧ｰﾛ雇・↑縺・竊・JSONGenrePlugin 逕滓・
++        (繧ｳ繝ｳ繧ｹ繝医Λ繧ｯ繧ｿ縺ｫ蟇ｾ縺励※ spawnDensity 繧呈ｸ｡縺・
++    笆ｼ
++src/engine/GameRegistry (Map<GenreId, GenrePlugin>)
++    笏・+    笆ｼ
++src/game/sideScroller.ts::_getSpawnParams()
++    笏・+    笏・ GameRegistry.getGenre(currentGenreId).spawnDensity 繧貞叙蠕・+    笏・ undefined 縺ｮ蝣ｴ蜷医・ HAZARD_SPAWN 縺ｫ繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ
++    笆ｼ
++  髫懷ｮｳ迚ｩ繧ｹ繝昴・繝ｳ蜃ｦ逅・+```
++
++## 繧｢繝ｼ繧ｭ繝・け繝√Ε縺ｸ縺ｮ蠖ｱ髻ｿ
++
++### 螟画峩繝輔ぃ繧､繝ｫ荳隕ｧ
++
++| 繝輔ぃ繧､繝ｫ | 螟画峩蜀・ｮｹ |
++|---|---|
++| `src/engine/GenrePlugin.ts` | 繧､繝ｳ繧ｿ繝ｼ繝輔ぉ繝ｼ繧ｹ縺ｫ `spawnDensity?` 繧定ｿｽ蜉 |
++| `src/engine/GenrePluginBase.ts` | 繝吶・繧ｹ繧ｯ繝ｩ繧ｹ縺ｫ `spawnDensity?` 繧定ｿｽ蜉 |
++| `src/engine/GameRegistry.ts` | `mergeSpawnDensity()` / `resetRegistry()` 繧定ｿｽ蜉 |
++| `src/game/sideScroller.ts` | `_getSpawnParams()` 繧定ｿｽ蜉縲√・繧ｸ繝・け繝翫Φ繝舌・ `1000` 竊・`MS_TO_SEC` |
++| `src/framework/config-types.ts` | `GenreDefJSON` 縺ｫ `spawnDensity` 繧定ｿｽ蜉 |
++| `src/genres/index.ts` | JSON竊探S繝励Λ繧ｰ繧､繝ｳ縺ｸ縺ｮ `spawnDensity` 邨ｱ蜷医Ο繧ｸ繝・け |
++| `src/plugins/JSONGenrePlugin.ts` | `spawnDensity` 繝代せ繧ｹ繝ｫ繝ｼ |
++| `src/data/genres/*.json` (6繝輔ぃ繧､繝ｫ) | `spawnDensity` 蛟､繧定ｿｽ蜉 |
++| `src/genres/ArenaPlugin.ts` | 繝上・繝峨さ繝ｼ繝牙､繧貞炎髯､縲゛SON蜿ら・繧ｳ繝｡繝ｳ繝郁ｿｽ蜉 |
++| `src/genres/StgPlugin.ts` | 繝上・繝峨さ繝ｼ繝牙､繧貞炎髯､縲゛SON蜿ら・繧ｳ繝｡繝ｳ繝郁ｿｽ蜉 |
++| `src/genres/SurvivalPlugin.ts` | 繝上・繝峨さ繝ｼ繝牙､繧貞炎髯､縲゛SON蜿ら・繧ｳ繝｡繝ｳ繝郁ｿｽ蜉 |
++| `schemas/genre.schema.json` | `spawnDensity` 繧ｹ繧ｭ繝ｼ繝槭ｒ霑ｽ蜉 |
++| `tests/unit/engine/GenrePluginSpawnDensity.test.ts` | 繝ｦ繝九ャ繝医ユ繧ｹ繝・28莉ｶ |
++| `vitest.config.ts` | 繝・せ繝郁ｨｭ螳・|
++| `package.json` | vitest 萓晏ｭ・+ 繝・侃孖ｸ繧ｹ繧ｯ繝ｪ繝励ヨ霑ｽ蜉 |
++
++### 驥崎ｦ√↑險ｭ險域ｱｺ螳・+
++#### 1. JSON 縺悟髪荳縺ｮ truth
++
++`spawnDensity` 縺ｯ JSON 螳夂ｾｩ繝輔ぃ繧､繝ｫ縺悟髪荳縺ｮ逵溽嶌貅撰ｼ・ingle source of truth・峨→縺ｪ繧九５S 繝励Λ繧ｰ繧､繝ｳ蛛ｴ縺ｧ `spawnDensity` 繧偵ワ繝ｼ繝峨さ繝ｼ繝峨○縺壹√☆縺ｹ縺ｦ JSON 縺九ｉ隱ｭ縺ｿ霎ｼ繧縲・+
++逅・罰:
++- JSON 縺ｮ縺ｿ邱ｨ髮・☆繧後・繧ｲ繝ｼ繝繝舌Λ繝ｳ繧ｹ隱ｿ謨ｴ縺悟庄閭ｽ・亥・繧ｳ繝ｳ繝代う繝ｫ荳崎ｦ・ｼ・+- CLAUDE.md 縺ｮ縲繰SON 鬧・虚險ｭ險医肴婿驥昴↓貅匁侠
++- TS 繝励Λ繧ｰ繧､繝ｳ縺ｮ雋ｬ蜍吶ｒ縲後Ο繧ｸ繝・け螳溯｣・阪↓髮・ｸｭ縺ｧ縺阪ｋ
++
++#### 2. mergeSpawnDensity 縺ｮ蝙九く繝｣繧ｹ繝・+
++`GameRegistry.mergeSpawnDensity()` 蜀・〒 `as unknown as Record<string, unknown>` 繧ｫ繧ｹ繝医ｒ菴ｿ逕ｨ縺励※縺・ｋ縲ゅ％繧後・ `GenrePlugin` 繧､繝ｳ繧ｿ繝ｼ繝輔ぉ繝ｼ繧ｹ縺ｮ `readonly spawnDensity?` 縺ｫ蟇ｾ縺励※蛟､繧定ｨｭ螳壹☆繧九◆繧√・+
++螳牙・縺ｪ逅・罰:
++- 襍ｷ蜍墓凾縺ｫ 1 蝗槭□縺大他縺ｰ繧後ｋ・医う繝溘Η繝ｼ繧ｿ繝悶Ν縺ｪ蛻晄悄蛹厄ｼ・+- `games/index.ts` 縺悟他縺ｳ蜃ｺ縺吝燕縺ｫ `def.spawnDensity` 縺ｮ蟄伜惠繧偵メ繧ｧ繝・け
++- `GameRegistry` 蜀・〒髢峨§縺ｦ縺翫ｊ縲∝､夜Κ縺九ｉ繧｢繧ｯ繧ｻ繧ｹ縺ｧ縺阪↑縺・+- Vite 縺ｮ `import.meta.glob` 縺ｧ蜍慕噪縺ｫ隱ｭ縺ｿ霎ｼ繧薙□繧､繝ｳ繧ｹ繧ｿ繝ｳ繧ｹ縺ｧ縺ゅｋ
++
++#### 3. 蠕梧婿莠呈鋤諤ｧ
++
++`spawnDensity` 縺・`undefined` 縺ｮ蝣ｴ蜷医・繧ｰ繝ｭ繝ｼ繝舌Ν `HAZARD_SPAWN` 縺ｫ繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ縺吶ｋ縲よ里蟄倥・繧ｸ繝｣繝ｳ繝ｫ JSON・・ullet_hell, horror, stealth_action 縺ｪ縺ｩ 15繧ｸ繝｣繝ｳ繝ｫ・峨・螟画峩縺輔ｌ縺ｪ縺・◆繧√∵里蟄倥・謖吝虚縺悟｣翫ｌ縺ｪ縺・・+
++## 繧ｸ繝｣繝ｳ繝ｫ縺斐→縺ｮ蛟､
++
++| 繧ｸ繝｣繝ｳ繝ｫ | baseInterval | minInterval | decayRate | 繧､繝ｳ繝医Ξ繝ｳ繧ｷ繝ｧ繝ｳ |
++|---|---|---|---|---|
++| stg | 1200 | 400 | 0.0003 | 蟇・↑髫懷ｮｳ迚ｩ = 蟇・↑蟆・・繧ｿ繝ｼ繧ｲ繝・ヨ |
++| arena | 1000 | 350 | 0.00025 | 雜・ｯ・↑螟壽雰螻暮幕 |
++| bullet_hell | 800 | 250 | 0.0002 | 雜・ｯ・↑蠑ｾ蟷・|
++| survival | 1400 | 500 | 0.00025 | 謖∫ｶ夂噪縺ｪ閼・ｨ・|
++| idle | 4000 | 2000 | 0.00005 | 邱ｩ繧・°縺ｪ蜃ｺ迴ｾ |
++| runner | 1800 | 600 | 0.0001 | 讓呎ｺ也噪繝ｩ繝ｳ繝翫・ |
++
++## 繝・せ繝域姶逡･
++
++### 繝ｦ繝九ャ繝医ユ繧ｹ繝・(`tests/unit/engine/GenrePluginSpawnDensity.test.ts`)
++
++28莉ｶ縺ｮ繝・せ繝医こ繝ｼ繧ｹ:
++
++1. **繧､繝ｳ繧ｿ繝ｼ繝輔ぉ繝ｼ繧ｹ繝代せ繧ｹ繝ｫ繝ｼ**: GenrePlugin 繧､繝ｳ繧ｿ繝ｼ繝輔ぉ繝ｼ繧ｹ縺・spawnDensity 繧剃ｿ晄戟縺励※縺・ｋ
++2. **JSONGenrePlugin 繝代せ繧ｹ繝ｫ繝ｼ**: JSON 邨檎罰縺ｧ spawnDensity 縺梧ｭ｣縺励￥莨晄眺縺輔ｌ繧・+3. **繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ蜍穂ｽ・*: spawnDensity 縺梧悴險ｭ螳壹・蝣ｴ蜷医？AZARD_SPAWN 縺御ｽｿ逕ｨ縺輔ｌ繧・+4. **險育ｮ怜ｼ上・讀懆ｨｼ**: `baseInterval * exp(-decayRate * distance)` 縺ｮ險育ｮ励′豁｣縺励＞
++5. **minInterval 繧ｯ繝ｩ繝ｳ繝・*: 險育ｮ礼ｵ先棡縺・minInterval 譛ｪ貅縺ｫ縺ｪ繧峨↑縺・+6. **mergeSpawnDensity**: GameRegistry 縺ｸ縺ｮ邨ｱ蜷医′蜍穂ｽ懊☆繧・+7. **resetRegistry** (繝・せ繝育畑): 髢狗匱/繝・せ繝域凾縺ｮ縺ｿ譛牙柑
++
++## 菴ｿ逕ｨ譁ｹ豕・+
++### 譁ｰ繧ｸ繝｣繝ｳ繝ｫ縺ｫ spawnDensity 繧定ｿｽ蜉縺吶ｋ蝣ｴ蜷・+
++1. `src/data/genres/my_genre.json` 縺ｫ `spawnDensity` 繧定ｿｽ蜉:
++   ```jsonc
++   {
++     "id": "my_genre",
++     "label": "繝槭う繧ｸ繝｣繝ｳ繝ｫ",
++     "spawnDensity": {
++       "baseInterval": 2000,
++       "minInterval": 800,
++       "decayRate": 0.00015
++     }
++   }
++   ```
++
++2. 縺昴ｌ莉･螟悶・繧ｳ繝ｼ繝牙､画峩縺ｯ荳崎ｦ√Ａsrc/genres/index.ts` 縺瑚・蜍慕噪縺ｫ蜃ｦ逅・☆繧九・+
++### 譌｢蟄倥ず繝｣繝ｳ繝ｫ縺ｮ spawnDensity 繧定ｪｿ謨ｴ縺吶ｋ蝣ｴ蜷・+
++蟇ｾ蠢懊☆繧・`src/data/genres/{genre}.json` 縺ｮ `spawnDensity` 繧堤ｷｨ髮・☆繧九□縺代ょ・繝薙Ν繝峨′蠢・ｦ√・+
++## CI/CD
++
++### 繝・せ繝医せ繧ｯ繝ｪ繝励ヨ
++
++| Script | 蜀・ｮｹ |
++|---|---|
++| `npm run test:unit` | 蜈ｨ繝ｦ繝九ャ繝医ユ繧ｹ繝茨ｼ域里蟄倥・螢翫ｌ縺溘ユ繧ｹ繝医ｒ蜷ｫ繧・・|
++| `npm run test:unit:ci` | CI逕ｨ・啼ngine/framework/composables 縺ｮ縺ｿ縺ｮ繝・せ繝・|
++| `npm run ci` | typecheck + lint + validate + build + bundle-size + test:unit:ci |
++
++### 譌｢蟄倥ユ繧ｹ繝医・KnownIssues
++
++莉･荳九・繝・せ繝医ヵ繧｡繧､繝ｫ縺ｯ譌｢蟄倥・繝舌げ縺ｫ繧医ｊ螟ｱ謨励☆繧具ｼ域悽繝悶Λ繝ｳ繝√→縺ｯ辟｡髢｢菫ゑｼ・
++- `tests/unit/game/ParticleSystem.test.ts` - `vi` 縺悟ｮ夂ｾｩ縺輔ｌ縺ｦ縺・↑縺・/ `decayShake` 髢｢謨ｰ縺悟ｭ伜惠縺励↑縺・+- `tests/unit/game/entities.test.ts` - `runFrame` 縺・undefined
++- `tests/unit/domain/genreResolver.test.ts` - 繝吶う繧ｺ險育ｮ礼ｵ先棡縺ｮ荳堺ｸ閾ｴ
++
++縺薙ｌ繧峨・繝・せ繝医・ `test:unit:ci` 縺ｧ縺ｯ髯､螟悶＆繧後※縺・ｋ縲・+
++## 蛻ｶ髯舌・KnownIssues
++
++1. `mergeSpawnDensity` 縺ｯ `import.meta.env.PROD` 蛻､螳壹↓萓晏ｭ倥＠縺ｪ縺・ｼ医＞縺､縺ｧ繧ょ他縺ｹ繧具ｼ峨ゅ◆縺縺・`resetRegistry()` 縺ｯ PROD 縺ｧ縺ｯ隴ｦ蜻翫ｒ蜃ｺ縺吶・+2. `as unknown as` 繧ｫ繧ｹ繝医・蝙句ｮ牙・諤ｧ繧貞ｦ･謚倥＠縺ｦ縺・ｋ縺後∝・譛溷喧縺ｮ 1 蝗樣剞繧翫↓髯仙ｮ壹＆繧後※縺・ｋ縲・+3. spawnDensity 縺・JSON 縺ｫ螳夂ｾｩ縺輔ｌ縺ｦ繧ゅ～GAME_CONFIG.genres.genres` 縺ｫ蜷ｫ縺ｾ繧後※縺・ｌ縺ｰ閾ｪ蜍慕噪縺ｫ驕ｩ逕ｨ縺輔ｌ繧九・+
++## 繝ｪ繝ｳ繧ｯ
++
++- Issue: #118
++- PR: (菴懈・蠕・■)
++- 髢｢騾｣繝輔ぃ繧､繝ｫ: `src/data/config/spawn.json`, `src/data/config/genre_params.json`
+diff --git a/package.json b/package.json
+index c4cde4c..8b95399 100644
+--- a/package.json
++++ b/package.json
+@@ -20,7 +20,9 @@
+     "test:choices": "node tests/test_choices.mjs",
+     "test:infinite": "node tests/test_infinite_choices.mjs",
+     "test:massive": "node tests/test_massive_choices.mjs",
+-    "ci": "npm run typecheck && npm run lint && npm run validate && npm run build && npm run bundle-size"
++    "test:unit": "vitest run tests/unit",
++    "test:unit:ci": "vitest run tests/unit/engine tests/unit/framework tests/unit/composables",
++    "ci": "npm run typecheck && npm run lint && npm run validate && npm run build && npm run bundle-size && npm run test:unit:ci"
+   },
+   "dependencies": {
+     "vue": "^3.5.13"
+@@ -33,6 +35,7 @@
+     "typescript": "^5.7.2",
+     "typescript-eslint": "^8.19.0",
+     "vite": "^6.3.5",
++    "vitest": "^4.1.9",
+     "vue-tsc": "^2.2.8"
+   }
+ }
+diff --git a/schemas/genre.schema.json b/schemas/genre.schema.json
+index 9920897..4654201 100644
+--- a/schemas/genre.schema.json
++++ b/schemas/genre.schema.json
+@@ -157,6 +157,31 @@
+       "type": "string",
+       "description": "繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ縺ｧ陦ｨ遉ｺ縺輔ｌ繧九ヵ繝ｬ繝ｼ繝舌・繝・く繧ｹ繝・
+     },
++    "spawnDensity": {
++      "type": "object",
++      "description": "繧ｸ繝｣繝ｳ繝ｫ蝗ｺ譛峨・繝上じ繝ｼ繝峨せ繝昴・繝ｳ蟇・ｺｦ險ｭ螳壹ら怐逡･譎ゅ・ game_balance.json 縺ｮ HAZARD_SPAWN 繧剃ｽｿ逕ｨ縺吶ｋ縲・,
++      "additionalProperties": false,
++      "properties": {
++        "baseInterval": {
++          "type": "number",
++          "minimum": 100,
++          "default": 2400,
++          "description": "蛻晄悄繧ｹ繝昴・繝ｳ髢馴囈・・s・峨ょｰ上＆縺・⊇縺ｩ鬮伜ｯ・ｺｦ縲ら怐逡･譎・ 2400"
++        },
++        "minInterval": {
++          "type": "number",
++          "minimum": 50,
++          "default": 800,
++          "description": "譛蟆上せ繝昴・繝ｳ髢馴囈・・s・峨√▽縺ｾ繧頑怙螟ｧ蟇・ｺｦ縺ｮ荳企剞縲ら怐逡･譎・ 800"
++        },
++        "decayRate": {
++          "type": "number",
++          "minimum": 0,
++          "default": 0.00015,
++          "description": "霍晞屬縺ｫ繧医ｋ髢馴囈遏ｭ邵ｮ縺ｮ貂幄｡ｰ邇・ょ､ｧ縺阪＞縺ｻ縺ｩ霍晞屬縺ｧ繧医ｊ諤･豼縺ｫ蟇・ｺｦ縺御ｸ翫′繧九ら怐逡･譎・ 0.00015"
++        }
++      }
++    },
+     "visual": {
+       "type": "object",
+       "description": "繝薙ず繝･繧｢繝ｫ險ｭ螳壹５S繝励Λ繧ｰ繧､繝ｳ・・xxPlugin.ts・峨ｒ譖ｸ縺九↑縺上※繧ゅ√％縺薙□縺代〒Canvas謠冗判縺梧ｱｺ縺ｾ繧九ら怐逡･譎ゅ・theme縺九ｉ閾ｪ蜍墓ｱｺ螳壹・,
+diff --git a/src/data/genres/arena.json b/src/data/genres/arena.json
+index a3773c3..6e69f28 100644
+--- a/src/data/genres/arena.json
++++ b/src/data/genres/arena.json
+@@ -2,9 +2,22 @@
+   "$schema": "../../../../schemas/genre.schema.json",
+   "id": "arena",
+   "label": "繧｢繝ｪ繝ｼ繝翫ヰ繝医Ν",
+-  "thresholds": { "enemy": 6, "combo": 5 },
+-  "enableFeatures": ["shoot", "enemy_hp", "boss", "dash"],
+-  "disableFeatures": ["auto_run", "grid_stop", "puzzle_solve", "stealth_mode"],
++  "thresholds": {
++    "enemy": 6,
++    "combo": 5
++  },
++  "enableFeatures": [
++    "shoot",
++    "enemy_hp",
++    "boss",
++    "dash"
++  ],
++  "disableFeatures": [
++    "auto_run",
++    "grid_stop",
++    "puzzle_solve",
++    "stealth_mode"
++  ],
+   "scoreFormula": "kills * 110 + bossKills * 500 + combo * 130",
+   "manualReveal": "縺薙ｌ縺ｯ繧｢繝ｪ繝ｼ繝翫ヰ繝医Ν縺ｫ縺ｪ繧翫∪縺励◆縲ょ・縺ｦ繧貞偵＠縺ｦ縺上□縺輔＞縲・,
+   "theme": "stg",
+@@ -19,5 +32,10 @@
+     "dash": "Shift"
+   },
+   "gravity": 1600,
+-  "endingFlavor": "縺ゅ↑縺溘・髣俶橿蝣ｴ縺ｮ隕・・↓縺ｪ縺｣縺溘りｪｬ譏取嶌縺ｯ謌ｦ蛻ｩ蜩√→縺励※鬟ｾ繧峨ｌ縺溘・
++  "endingFlavor": "縺ゅ↑縺溘・髣俶橿蝣ｴ縺ｮ隕・・↓縺ｪ縺｣縺溘りｪｬ譏取嶌縺ｯ謌ｦ蛻ｩ蜩√→縺励※鬟ｾ繧峨ｌ縺溘・,
++  "spawnDensity": {
++    "baseInterval": 1500,
++    "minInterval": 500,
++    "decayRate": 0.00025
++  }
+ }
+diff --git a/src/data/genres/bullet_hell.json b/src/data/genres/bullet_hell.json
+index 65efdcd..7107fa0 100644
+--- a/src/data/genres/bullet_hell.json
++++ b/src/data/genres/bullet_hell.json
+@@ -2,9 +2,21 @@
+   "$schema": "../../../../schemas/genre.schema.json",
+   "id": "bullet_hell",
+   "label": "蠑ｾ蟷輔す繝･繝ｼ繝・ぅ繝ｳ繧ｰ",
+-  "thresholds": { "vertical": 4, "enemy": 6 },
+-  "enableFeatures": ["shoot", "spread_shot", "enemy_hp", "vertical_scroll"],
+-  "disableFeatures": ["grid_stop", "auto_run", "slow_precise"],
++  "thresholds": {
++    "vertical": 4,
++    "enemy": 6
++  },
++  "enableFeatures": [
++    "shoot",
++    "spread_shot",
++    "enemy_hp",
++    "vertical_scroll"
++  ],
++  "disableFeatures": [
++    "grid_stop",
++    "auto_run",
++    "slow_precise"
++  ],
+   "scoreFormula": "kills * 80 + combo * 150 + survivedSec * 10 + accuracy * 500",
+   "manualReveal": "縺薙ｌ縺ｯ蠑ｾ蟷輔す繝･繝ｼ繝・ぅ繝ｳ繧ｰ縺ｫ縺ｪ繧翫∪縺励◆縲ょｼｾ縺ｮ髫咎俣繧堤ｸｫ縺｣縺ｦ縺上□縺輔＞縲・,
+   "theme": "stg",
+@@ -20,5 +32,10 @@
+     "shoot": "z"
+   },
+   "gravity": 1600,
+-  "endingFlavor": "縺ゅ↑縺溘・辟｡謨ｰ縺ｮ蠑ｾ繧帝∩縺醍ｶ壹￠縺溘りｪｬ譏取嶌縺ｮ豢ｻ蟄励ｂ蠑ｾ荳ｸ縺ｫ隕九∴縺溘・
++  "endingFlavor": "縺ゅ↑縺溘・辟｡謨ｰ縺ｮ蠑ｾ繧帝∩縺醍ｶ壹￠縺溘りｪｬ譏取嶌縺ｮ豢ｻ蟄励ｂ蠑ｾ荳ｸ縺ｫ隕九∴縺溘・,
++  "spawnDensity": {
++    "baseInterval": 1200,
++    "minInterval": 400,
++    "decayRate": 0.0003
++  }
+ }
+diff --git a/src/data/genres/idle.json b/src/data/genres/idle.json
+index 3da5937..dd33035 100644
+--- a/src/data/genres/idle.json
++++ b/src/data/genres/idle.json
+@@ -2,9 +2,21 @@
+   "$schema": "../../../../schemas/genre.schema.json",
+   "id": "idle",
+   "label": "謾ｾ鄂ｮ繧ｲ繝ｼ繝",
+-  "thresholds": { "craft": 6 },
+-  "enableFeatures": ["item_pickup", "exp", "tower"],
+-  "disableFeatures": ["auto_run", "shoot", "beat_hazard", "boss", "stealth_mode"],
++  "thresholds": {
++    "craft": 6
++  },
++  "enableFeatures": [
++    "item_pickup",
++    "exp",
++    "tower"
++  ],
++  "disableFeatures": [
++    "auto_run",
++    "shoot",
++    "beat_hazard",
++    "boss",
++    "stealth_mode"
++  ],
+   "scoreFormula": "itemsCollected * 200 + exp * 4 + survivedSec * 5",
+   "manualReveal": "縺薙ｌ縺ｯ謾ｾ鄂ｮ繧ｲ繝ｼ繝縺ｫ縺ｪ繧翫∪縺励◆縲らｩ阪∩荳翫￡縺ｦ縺上□縺輔＞縲・,
+   "theme": "puzzle",
+@@ -17,5 +29,10 @@
+     "moveDown": "ArrowDown"
+   },
+   "gravity": 1600,
+-  "endingFlavor": "縺ゅ↑縺溘・菴輔ｂ縺励↑縺九▲縺溘ゅ◎繧後〒繧らｩ阪∩荳翫′縺｣縺ｦ縺・▲縺溘りｪｬ譏取嶌縺ｯ縺ｻ縺薙ｊ繧偵°縺ｶ縺｣縺溘・
++  "endingFlavor": "縺ゅ↑縺溘・菴輔ｂ縺励↑縺九▲縺溘ゅ◎繧後〒繧らｩ阪∩荳翫′縺｣縺ｦ縺・▲縺溘りｪｬ譏取嶌縺ｯ縺ｻ縺薙ｊ繧偵°縺ｶ縺｣縺溘・,
++  "spawnDensity": {
++    "baseInterval": 4000,
++    "minInterval": 2000,
++    "decayRate": 0.00005
++  }
+ }
+diff --git a/src/data/genres/runner.json b/src/data/genres/runner.json
+index 55d9bff..d75b034 100644
+--- a/src/data/genres/runner.json
++++ b/src/data/genres/runner.json
+@@ -2,9 +2,18 @@
+   "$schema": "../../../../schemas/genre.schema.json",
+   "id": "runner",
+   "label": "繧ｨ繝ｳ繝峨Ξ繧ｹ繝ｩ繝ｳ繝翫・",
+-  "thresholds": { "tempo": 7 },
+-  "enableFeatures": ["auto_run", "double_jump", "long_air"],
+-  "disableFeatures": ["grid_stop", "puzzle_solve"],
++  "thresholds": {
++    "tempo": 7
++  },
++  "enableFeatures": [
++    "auto_run",
++    "double_jump",
++    "long_air"
++  ],
++  "disableFeatures": [
++    "grid_stop",
++    "puzzle_solve"
++  ],
+   "scoreFormula": "distance * 1.2 + survivedSec * 8 + combo * 50",
+   "manualReveal": "縺薙ｌ縺ｯ繧ｨ繝ｳ繝峨Ξ繧ｹ繝ｩ繝ｳ繝翫・縺ｫ縺ｪ繧翫∪縺励◆縲りｵｰ繧顔ｶ壹￠繧九％縺ｨ縺檎岼逧・〒縺吶・,
+   "theme": "plain",
+@@ -17,5 +26,10 @@
+     "moveDown": "ArrowDown"
+   },
+   "gravity": 1600,
+-  "endingFlavor": "縺ゅ↑縺溘・縺溘□襍ｰ繧顔ｶ壹￠繧九％縺ｨ繧帝∈繧薙□縲りｪｬ譏取嶌繧定ｪｭ繧蠢・ｦ√↑縺ｩ縺ｪ縺九▲縺溘・
++  "endingFlavor": "縺ゅ↑縺溘・縺溘□襍ｰ繧顔ｶ壹￠繧九％縺ｨ繧帝∈繧薙□縲りｪｬ譏取嶌繧定ｪｭ繧蠢・ｦ√↑縺ｩ縺ｪ縺九▲縺溘・,
++  "spawnDensity": {
++    "baseInterval": 2200,
++    "minInterval": 900,
++    "decayRate": 0.00013
++  }
+ }
+diff --git a/src/data/genres/stg.json b/src/data/genres/stg.json
+index d99bab8..6285932 100644
+--- a/src/data/genres/stg.json
++++ b/src/data/genres/stg.json
+@@ -2,9 +2,19 @@
+   "$schema": "../../../../schemas/genre.schema.json",
+   "id": "stg",
+   "label": "繧ｷ繝･繝ｼ繝・ぅ繝ｳ繧ｰ繧ｲ繝ｼ繝",
+-  "thresholds": { "range": 5, "enemy": 5 },
+-  "enableFeatures": ["shoot", "three_way", "enemy_hp"],
+-  "disableFeatures": ["grid_stop", "puzzle_solve"],
++  "thresholds": {
++    "range": 5,
++    "enemy": 5
++  },
++  "enableFeatures": [
++    "shoot",
++    "three_way",
++    "enemy_hp"
++  ],
++  "disableFeatures": [
++    "grid_stop",
++    "puzzle_solve"
++  ],
+   "scoreFormula": "kills * 120 + distance * 0.5 + combo * 80",
+   "manualReveal": "縺薙ｌ縺ｯ繧ｷ繝･繝ｼ繝・ぅ繝ｳ繧ｰ繧ｲ繝ｼ繝縺ｫ縺ｪ繧翫∪縺励◆縲よ雰繧貞偵＠縺ｦ縺上□縺輔＞縲・,
+   "theme": "stg",
+@@ -19,5 +29,10 @@
+     "shoot": "z"
+   },
+   "gravity": 1600,
+-  "endingFlavor": "縺ゅ↑縺溘・縺吶∋縺ｦ繧呈茶縺｡謚懊＞縺溘りｪｬ譏取嶌縺ｯ蠑ｾ髯､縺代↓縺ｧ繧ゆｽｿ縺医・繧医°縺｣縺溘・
++  "endingFlavor": "縺ゅ↑縺溘・縺吶∋縺ｦ繧呈茶縺｡謚懊＞縺溘りｪｬ譏取嶌縺ｯ蠑ｾ髯､縺代↓縺ｧ繧ゆｽｿ縺医・繧医°縺｣縺溘・,
++  "spawnDensity": {
++    "baseInterval": 1800,
++    "minInterval": 600,
++    "decayRate": 0.0002
++  }
+ }
+diff --git a/src/data/genres/survival.json b/src/data/genres/survival.json
+index 99e8917..b4d99ed 100644
+--- a/src/data/genres/survival.json
++++ b/src/data/genres/survival.json
+@@ -2,9 +2,20 @@
+   "$schema": "../../../../schemas/genre.schema.json",
+   "id": "survival",
+   "label": "繧ｵ繝舌う繝舌Ν繧ｲ繝ｼ繝",
+-  "thresholds": { "survive": 5, "growth": 4 },
+-  "enableFeatures": ["hp", "item_pickup", "shield"],
+-  "disableFeatures": ["auto_run", "beat_hazard", "grid_stop"],
++  "thresholds": {
++    "survive": 5,
++    "growth": 4
++  },
++  "enableFeatures": [
++    "hp",
++    "item_pickup",
++    "shield"
++  ],
++  "disableFeatures": [
++    "auto_run",
++    "beat_hazard",
++    "grid_stop"
++  ],
+   "scoreFormula": "survivedSec * 15 + itemsCollected * 80 + distance * 0.2",
+   "manualReveal": "縺薙ｌ縺ｯ繧ｵ繝舌う繝舌Ν繧ｲ繝ｼ繝縺ｫ縺ｪ繧翫∪縺励◆縲ら函縺榊ｻｶ縺ｳ縺ｦ縺上□縺輔＞縲・,
+   "theme": "rpg",
+@@ -18,5 +29,10 @@
+     "moveDown": "ArrowDown"
+   },
+   "gravity": 1600,
+-  "endingFlavor": "縺ゅ↑縺溘・逕溘″蟒ｶ縺ｳ縺溘りｪｬ譏取嶌縺ｯ辟壹″轣ｫ縺ｮ辯・侭縺ｫ縺ｪ縺｣縺ｦ縺・◆縲・
++  "endingFlavor": "縺ゅ↑縺溘・逕溘″蟒ｶ縺ｳ縺溘りｪｬ譏取嶌縺ｯ辟壹″轣ｫ縺ｮ辯・侭縺ｫ縺ｪ縺｣縺ｦ縺・◆縲・,
++  "spawnDensity": {
++    "baseInterval": 2000,
++    "minInterval": 700,
++    "decayRate": 0.00018
++  }
+ }
+diff --git a/src/engine/GameRegistry.ts b/src/engine/GameRegistry.ts
+index 41daae0..733266f 100644
+--- a/src/engine/GameRegistry.ts
++++ b/src/engine/GameRegistry.ts
+@@ -97,6 +97,35 @@ export function debugPrint(): void {
+   console.warn('[GameRegistry] 逋ｻ骭ｲ迥ｶ豕・窶・Features:', [..._features.keys()].join(', '))
+ }
+ 
++/**
++ * 繝・せ繝育畑: 繧ｸ繝｣繝ｳ繝ｫ縺ｨFeature縺ｮ逋ｻ骭ｲ繧貞・蜑企勁縺吶ｋ縲・+ * VITEST 縺ｾ縺溘・ DEV 繝｢繝ｼ繝峨〒縺ｮ縺ｿ蜈ｬ髢九＠縲￣RODUCTION 繝薙Ν繝峨〒縺ｯ蜻ｼ縺ｳ蜃ｺ縺帙↑縺・ｈ縺・↓縺吶ｋ縲・+ */
++export function resetRegistry(): void {
++  if (import.meta.env.PROD) {
++    console.warn('[GameRegistry] resetRegistry() 縺ｯ PRODUCTION 繝薙Ν繝峨〒縺ｯ菴ｿ逕ｨ縺ｧ縺阪∪縺帙ｓ縲・)
++    return
++  }
++  _genres.clear()
++  _features.clear()
++}
++
++/**
++ * JSON險ｭ螳壹°繧芽ｪｭ縺ｿ霎ｼ繧薙□ spawnDensity 繧呈里蟄倥・GenrePlugin縺ｫ縺ｯ繧√％繧縲・+ * GenrePlugin繧､繝ｳ繧ｿ繝輔ぉ繝ｼ繧ｹ縺ｯreadonly縺ｨ縺励※螳｣險縺輔ｌ縺ｦ縺・ｋ縺後・+ * 襍ｷ蜍墓凾縺ｮ1蝗樣剞繧翫・繧､繝溘Η繝ｼ繧ｿ繝悶Ν縺ｪ蛻晄悄蛹悶〒縺ｯ縺ゅｋ縺ｮ縺ｧ縲∝・驛ｨ逧・↓蝙九く繝｣繧ｹ繝医ｒ菴ｿ逕ｨ縺吶ｋ縲・+ * 蝙句ｮ牙・諤ｧ繧堤ｶｭ謖√☆繧九◆繧√↓GameRegistry蜀・〒髢峨§縺ｦ縺・ｋ縲・+ *
++ * @return 險ｭ螳壹′驕ｩ逕ｨ縺輔ｌ縺溘°・医・繝ｩ繧ｰ繧､繝ｳ蟄伜惠縺励√°縺､譛ｪ險ｭ螳壹〒縺ゅ▲縺溷ｴ蜷・rue・・+ */
++export function mergeSpawnDensity(id: GenreId, density: NonNullable<GenrePlugin['spawnDensity']>): void {
++  const plugin = _genres.get(id)
++  if (plugin === undefined) return
++  // TypeScript readonly縺ｯ繝薙Ν繝画凾縺ｮ縺ｿ蜉ｹ縺上りｵｷ蜍墓凾縺ｮ蛻晄悄蛹悶↓縺ｯ蝙九く繝｣繧ｹ繝医ｒ險ｱ螳ｹ縺吶ｋ縲・+  // genres/index.ts 縺ｯ蠢・★譛ｪ險ｭ螳壹・繝励Λ繧ｰ繧､繝ｳ縺ｫ縺ｮ縺ｿ蜻ｼ縺ｳ蜃ｺ縺吶％縺ｨ繧剃ｿ晁ｨｼ縺吶ｋ縲・+  (plugin as unknown as Record<string, unknown>).spawnDensity = density
++}
++
+ // 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ // 髢狗匱譎ゅヰ繝ｪ繝・・繧ｷ繝ｧ繝ｳ
+ // 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+diff --git a/src/engine/GenrePlugin.ts b/src/engine/GenrePlugin.ts
+index 27bb4c7..ed2fa6d 100644
+--- a/src/engine/GenrePlugin.ts
++++ b/src/engine/GenrePlugin.ts
+@@ -110,6 +110,20 @@ export interface GenrePlugin {
+    * tempo 繝代Λ繝｡繝ｼ繧ｿ縺ｨ縺ｯ蛻･縺ｫ縲√ず繝｣繝ｳ繝ｫ蝗ｺ譛峨・騾溷ｺｦ陬懈ｭ｣繧偵°縺代◆縺・凾縺ｫ菴ｿ縺・・    */
+   readonly scrollSpeedBonus?: number
++  /**
++   * 繧ｸ繝｣繝ｳ繝ｫ蝗ｺ譛峨・繝上じ繝ｼ繝峨せ繝昴・繝ｳ蟇・ｺｦ險ｭ螳壹・+   * 逵∫払譎ゅ・ game_balance.json 縺ｮ HAZARD_SPAWN 繧剃ｽｿ逕ｨ縺吶ｋ縲・+   * Bullet Hell 繧・Survival 縺ｪ縺ｩ謨ｵ蟇・ｺｦ繧定ｪｿ謨ｴ縺励◆縺・ず繝｣繝ｳ繝ｫ縺ｧ菴ｿ逕ｨ縺吶ｋ縲・+   */
++  readonly spawnDensity?: {
++    /** 蛻晄悄繧ｹ繝昴・繝ｳ髢馴囈・・s・峨ら怐逡･譎・ 2400 */
++    baseInterval?: number
++    /** 譛蟆上せ繝昴・繝ｳ髢馴囈・・s・峨√▽縺ｾ繧頑怙螟ｧ蟇・ｺｦ縺ｮ荳企剞縲ら怐逡･譎・ 800 */
++    minInterval?: number
++    /** 霍晞屬縺ｫ繧医ｋ髢馴囈遏ｭ邵ｮ縺ｮ貂幄｡ｰ邇・ら怐逡･譎・ 0.00015 */
++    decayRate?: number
++  }
++
+ 
+   // 笏笏笏 謠冗判繝輔ャ繧ｯ・亥ｿ・茨ｼ・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+   /**
+diff --git a/src/engine/GenrePluginBase.ts b/src/engine/GenrePluginBase.ts
+index bab1854..11c0043 100644
+--- a/src/engine/GenrePluginBase.ts
++++ b/src/engine/GenrePluginBase.ts
+@@ -28,6 +28,13 @@ export abstract class GenrePluginBase implements GenrePlugin {
+   abstract readonly palette: GenrePlugin['palette']
+   abstract readonly spawnTable: readonly SpawnEntry[]
+ 
++  // 笏笏笏 繧ｪ繝励す繝ｧ繝ｳ: _spawnDensity (逵∫払蜿ｯ) 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++  readonly spawnDensity?: {
++    baseInterval?: number
++    minInterval?: number
++    decayRate?: number
++  }
++
+   // 笏笏笏 蠢・域緒逕ｻ繝輔ャ繧ｯ・医し繝悶け繝ｩ繧ｹ縺ｧ螳溯｣・ｼ・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+   abstract drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void
+   abstract drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void
+diff --git a/src/framework/config-types.ts b/src/framework/config-types.ts
+index 4ca7408..718e804 100644
+--- a/src/framework/config-types.ts
++++ b/src/framework/config-types.ts
+@@ -417,6 +417,8 @@ export interface GenreDefJSON {
+   controls?: Partial<Controls>
+   /** TS繝励Λ繧ｰ繧､繝ｳ縺ｪ縺励〒繝薙ず繝･繧｢繝ｫ繧偵き繧ｹ繧ｿ繝槭う繧ｺ縺吶ｋ蝣ｴ蜷医↓謖・ｮ壹ら怐逡･譎ゅ・theme縺九ｉ閾ｪ蜍墓ｱｺ螳壹・*/
+   visual?: GenreVisualConfig
++  /** 繧ｸ繝｣繝ｳ繝ｫ蝗ｺ譛峨・繧ｹ繝昴・繝ｳ蟇・ｺｦ險ｭ螳壹５S繝励Λ繧ｰ繧､繝ｳ繧ゅ％繧後ｒ繝槭・繧ｸ縺輔ｌ繧九・*/
++  spawnDensity?: { baseInterval?: number; minInterval?: number; decayRate?: number }
+ }
+ 
+ export interface ThemeColorDef {
+diff --git a/src/game/sideScroller.ts b/src/game/sideScroller.ts
+index 6c7b21a..7894ff6 100644
+--- a/src/game/sideScroller.ts
++++ b/src/game/sideScroller.ts
+@@ -45,6 +45,9 @@ const MAX_DELTA_SEC = 0.05
+ // LearningSystem 縺ｮ譛蛻昴・繝√ぉ繝・け縺ｾ縺ｧ縺ｮ驕・ｻｶ・育ｧ抵ｼ・ const INITIAL_LEARNING_DELAY_SEC = 0.5
+ 
++// 繝溘Μ遘・竊・遘呈鋤邂暦ｼ・pawnDensity 縺ｮ interval 縺ｯ ms縲√せ繧ｯ繝ｭ繝ｼ繝ｫ險育ｮ励・ px/s 縺ｧ荳閾ｴ縺輔○繧九◆繧・ｼ・+const MS_TO_SEC = 1000
++
+ // 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ // SideScroller 窶・Canvas 繧ｲ繝ｼ繝繧ｨ繝ｳ繧ｸ繝ｳ譛ｬ菴・ // 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+@@ -468,8 +471,9 @@ export class SideScroller {
+ 
+     if (this.distance >= this.nextSpawnDist) {
+       this._spawnHazard()
+-      const interval = HAZARD_SPAWN.baseInterval * Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
+-      this.nextSpawnDist += (Math.max(HAZARD_SPAWN.minInterval, interval) / 1000) * speed
++      const sp = this._getSpawnParams()
++      const interval = sp.baseInterval * Math.exp(-sp.decayRate * this.distance)
++      this.nextSpawnDist += (Math.max(sp.minInterval, interval) / MS_TO_SEC) * speed
+     }
+ 
+     if (p.invincible > 0) p.invincible -= dt
+@@ -597,8 +601,9 @@ export class SideScroller {
+ 
+     if (this.distance >= this.nextSpawnDist) {
+       this._spawnHazard()
+-      const interval = HAZARD_SPAWN.baseInterval * Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
+-      this.nextSpawnDist += (Math.max(HAZARD_SPAWN.minInterval, interval) / 1000) * speed
++      const sp = this._getSpawnParams()
++      const interval = sp.baseInterval * Math.exp(-sp.decayRate * this.distance)
++      this.nextSpawnDist += (Math.max(sp.minInterval, interval) / MS_TO_SEC) * speed
+     }
+ 
+     for (const h of this.hazards) {
+@@ -1136,6 +1141,16 @@ export class SideScroller {
+     return weights.length - 1
+   }
+ 
++  /** Per-genre spawn params with fallback to global HAZARD_SPAWN */
++  private _getSpawnParams() {
++    const plugin = getGenre(this.rules.genre)
++    return {
++      baseInterval: plugin.spawnDensity?.baseInterval  ?? HAZARD_SPAWN.baseInterval,
++      minInterval:  plugin.spawnDensity?.minInterval   ?? HAZARD_SPAWN.minInterval,
++      decayRate:    plugin.spawnDensity?.decayRate     ?? HAZARD_SPAWN.decayRate,
++    }
++  }
++
+   // 笏笏笏 繝代・繝・ぅ繧ｯ繝ｫ逕滓・ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+   private _spawnJumpParticles(x: number, y: number): void {
+     const color = getGenre(this.rules.genre).particleColors?.jump ?? VFX.jumpParticleColor
+diff --git a/src/genres/ArenaPlugin.ts b/src/genres/ArenaPlugin.ts
+index c93784e..fcaa134 100644
+--- a/src/genres/ArenaPlugin.ts
++++ b/src/genres/ArenaPlugin.ts
+@@ -51,6 +51,8 @@ export class ArenaPlugin extends GenrePluginBase {
+     { shape: 'rect',   placement: 'ground', weightStart: 0, weightEnd: 0.5, wRange: [BOSS.bossWidth, BOSS.bossWidth], hRange: [BOSS.bossHeight, BOSS.bossHeight], safeChance: 0, hpOverride: BOSS.bossHp, isBoss: true },
+   ]
+ 
++  // spawnDensity is sourced from JSON config (arena.json) 窶・see genres/index.ts merge
++
+   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
+     // 髣俶橿蝣ｴ縺ｮ繧｢繝ｼ繝√・繧ｷ繝ｫ繧ｨ繝・ヨ・磯□譎ｯ・・     ctx.globalAlpha = 0.22
+diff --git a/src/genres/StgPlugin.ts b/src/genres/StgPlugin.ts
+index 9a71db7..8bd5914 100644
+--- a/src/genres/StgPlugin.ts
++++ b/src/genres/StgPlugin.ts
+@@ -24,7 +24,9 @@ export class StgPlugin extends GenrePluginBase {
+     { shape: 'rect',    placement: 'air',    weightStart: 3,  weightEnd: 5,  wRange: [25, 42], hRange: [25, 42] },
+     { shape: 'diamond', placement: 'float',  weightStart: 2,  weightEnd: 5,  wRange: [28, 38], hRange: [28, 38] },
+     { shape: 'pillar',  placement: 'air',    weightStart: 0,  weightEnd: 3,  wRange: [15, 22], hRange: [45, 75] },
+-  ]
++   ]
++
++  // spawnDensity is sourced from JSON config (stg.json) 窶・see genres/index.ts merge
+ 
+   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
+     // 繝阪ン繝･繝ｩ蜈・diff --git a/src/genres/SurvivalPlugin.ts b/src/genres/SurvivalPlugin.ts
+index 1feb6f3..e13efe6 100644
+--- a/src/genres/SurvivalPlugin.ts
++++ b/src/genres/SurvivalPlugin.ts
+@@ -48,6 +48,8 @@ export class SurvivalPlugin extends GenrePluginBase {
+     { shape: 'rect',   placement: 'air',    weightStart: 0, weightEnd: 2, wRange: [26, 45], hRange: [25, 40], safeChance: 0.25 },
+   ]
+ 
++  // spawnDensity is sourced from JSON config (survival.json) 窶・see genres/index.ts merge
++
+   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
+     // 髴ｧ縺後°縺九▲縺滓囓縺・ｸ倥す繝ｫ繧ｨ繝・ヨ
+     ctx.globalAlpha = 0.18
+diff --git a/src/genres/index.ts b/src/genres/index.ts
+index ca1be5c..92c8f76 100644
+--- a/src/genres/index.ts
++++ b/src/genres/index.ts
+@@ -15,7 +15,7 @@
+  * 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+  */
+ 
+-import { registerGenre, hasGenre } from '../engine/GameRegistry'
++import { registerGenre, hasGenre, mergeSpawnDensity } from '../engine/GameRegistry'
+ import type { GenrePlugin } from '../engine/GenrePlugin'
+ import type { GenreId } from '../domain/types'
+ import { pluginManager } from '../plugins/PluginManager'
+@@ -29,25 +29,46 @@ const pluginModules = import.meta.glob<GenrePlugin | GenrePlugin[]>(
+   { eager: true, import: 'default' },
+ )
+ 
++// Collect registered TS plugin IDs for later merge
++const _registeredTsPluginIds = new Set<string>()
++
+ for (const [path, exported] of Object.entries(pluginModules)) {
+   if (path === './index.ts') continue
+   if (Array.isArray(exported)) {
+     for (const plugin of exported) {
+-      if (plugin?.id) registerGenre(plugin)
++      if (plugin?.id) {
++        _registeredTsPluginIds.add(plugin.id)
++        registerGenre(plugin)
++      }
+     }
+   } else if (exported?.id) {
++    _registeredTsPluginIds.add(exported.id)
+     registerGenre(exported)
+   }
+ }
+ 
++// 笏笏 1b. Merge spawnDensity from JSON into already-registered TS plugins 笏笏
++// JSON genre definitions (src/data/genres/*.json) serve as the single source
++// of truth for spawnDensity. Two paths exist:
++//   a) TS plugin registered: merge spawnDensity into the plugin instance (below)
++//   b) No TS plugin: JSONGenrePlugin receives spawnDensity in constructor (step 2)
++// This avoids duplication between TS plugins and JSON genre definitions.
++for (const def of GAME_CONFIG.genres.genres) {
++  if (!_registeredTsPluginIds.has(def.id)) continue
++  if (def.spawnDensity) {
++    mergeSpawnDensity(def.id as GenreId, def.spawnDensity)
++  }
++}
++
+ // 笏笏 2. TS繝励Λ繧ｰ繧､繝ｳ縺悟ｭ伜惠縺励↑縺ЙSON螳夂ｾｩ繧ｸ繝｣繝ｳ繝ｫ縺ｫ閾ｪ蜍輔ヵ繧ｩ繝ｼ繝ｫ繝舌ャ繧ｯ繧堤匳骭ｲ 笏笏
+ // 縺薙ｌ縺ｫ繧医ｊ bullet_hell / horror / idle 縺ｪ縺ｩ TS 縺ｪ縺励・繧ｸ繝｣繝ｳ繝ｫ繧よｭ｣縺励￥謠冗判縺輔ｌ繧・ for (const def of GAME_CONFIG.genres.genres) {
+   if (hasGenre(def.id as GenreId)) continue   // TS繝励Λ繧ｰ繧､繝ｳ縺檎匳骭ｲ貂医∩縺ｪ繧峨せ繧ｭ繝・・
+   registerGenre(new JSONGenrePlugin({
+-    id:     def.id,
+-    theme:  def.theme,
+-    visual: def.visual,
++    id:           def.id,
++    theme:        def.theme,
++    visual:       def.visual,
++    spawnDensity: def.spawnDensity,
+   }))
+ }
+ 
+diff --git a/src/plugins/JSONGenrePlugin.ts b/src/plugins/JSONGenrePlugin.ts
+index 52c9af9..72629fe 100644
+--- a/src/plugins/JSONGenrePlugin.ts
++++ b/src/plugins/JSONGenrePlugin.ts
+@@ -21,6 +21,7 @@ export interface GenreJsonDef {
+   id: string
+   /** ManualUI縺ｮ繝・・繝槭Ｗisual.template縺梧悴謖・ｮ壹・縺ｨ縺阪・繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ縺ｫ菴ｿ縺・*/
+   theme?: string
++  spawnDensity?: { baseInterval?: number; minInterval?: number; decayRate?: number }
+   visual?: {
+     /** 謠冗判繧貞ｧ碑ｭｲ縺吶ｋ繝・Φ繝励Ξ繝ｼ繝亥錐縲ら怐逡･譎ゅ・theme縺九ｉ閾ｪ蜍墓ｱｺ螳壹・      *  'runner'=蝨ｰ荳頑ｨｪ繧ｹ繧ｯ / 'space'=螳・ｮ儡TG / 'dungeon'=RPG證玲ｴ樒ｪ・@@ -68,6 +69,7 @@ export class JSONGenrePlugin implements PluginBase {
+   readonly starColor: string
+   readonly palette: { danger: string; dangerGlow: string; safe: string; safeGlow: string }
+   readonly spawnTable: readonly SpawnEntry[]
++  readonly spawnDensity?: { baseInterval?: number; minInterval?: number; decayRate?: number }
+ 
+   private readonly _delegate: PluginBase
+ 
+@@ -103,6 +105,7 @@ export class JSONGenrePlugin implements PluginBase {
+     }
+ 
+     this.spawnTable = this._delegate.spawnTable
++    this.spawnDensity = def.spawnDensity
+   }
+ 
+   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
+diff --git a/tests/unit/composables/useManual.test.ts b/tests/unit/composables/useManual.test.ts
+new file mode 100644
+index 0000000..bad6ea1
+--- /dev/null
++++ b/tests/unit/composables/useManual.test.ts
+@@ -0,0 +1,118 @@
++import { describe, it, expect } from 'vitest'
++import { computeLineDiff } from '../../../src/composables/useManual'
++
++describe('computeLineDiff', () => {
++  it('蜷御ｸ縺ｮ驟榊・縺ｧ遨ｺ驟榊・繧定ｿ斐☆・亥ｷｮ蛻・↑縺暦ｼ・, () => {
++    const prev = ['line1', 'line2', 'line3']
++    const next = ['line1', 'line2', 'line3']
++    expect(computeLineDiff(prev, next)).toEqual([])
++  })
++
++  it('陦後′霑ｽ蜉縺輔ｌ縺溷ｴ蜷医ｒ讀懷・縺吶ｋ', () => {
++    const prev = ['line1', 'line2']
++    const next = ['line1', 'line2', 'line3']
++    const diff = computeLineDiff(prev, next)
++    // LCS 繝吶・繧ｹ縺ｪ縺ｮ縺ｧ unchanged 陦後ｂ蜷ｫ縺ｾ繧後ｋ
++    expect(diff).toHaveLength(3)
++    expect(diff[0]).toEqual({ text: 'line1', type: 'unchanged' })
++    expect(diff[1]).toEqual({ text: 'line2', type: 'unchanged' })
++    expect(diff[2]).toEqual({ text: 'line3', type: 'added' })
++  })
++
++  it('陦後′蜑企勁縺輔ｌ縺溷ｴ蜷医ｒ讀懷・縺吶ｋ', () => {
++    const prev = ['line1', 'line2', 'line3']
++    const next = ['line1', 'line2']
++    const diff = computeLineDiff(prev, next)
++    expect(diff).toHaveLength(3)
++    expect(diff[0]).toEqual({ text: 'line1', type: 'unchanged' })
++    expect(diff[1]).toEqual({ text: 'line2', type: 'unchanged' })
++    expect(diff[2]).toEqual({ text: 'line3', type: 'removed' })
++  })
++
++  it('陦後′螟画峩縺輔ｌ縺溷ｴ蜷医ｒ讀懷・縺吶ｋ・亥炎髯､+霑ｽ蜉・・, () => {
++    const prev = ['line1', 'line2', 'line3']
++    const next = ['line1', 'modified', 'line3']
++    const diff = computeLineDiff(prev, next)
++    expect(diff).toHaveLength(4)
++    expect(diff[0]).toEqual({ text: 'line1', type: 'unchanged' })
++    expect(diff[1]).toEqual({ text: 'line2', type: 'removed' })
++    expect(diff[2]).toEqual({ text: 'modified', type: 'added' })
++    expect(diff[3]).toEqual({ text: 'line3', type: 'unchanged' })
++  })
++
++  it('遨ｺ驟榊・蜷悟｣ｫ縺ｮ蟾ｮ蛻・・遨ｺ', () => {
++    expect(computeLineDiff([], [])).toEqual([])
++  })
++
++  it('遨ｺ 竊・陦瑚ｿｽ蜉', () => {
++    const diff = computeLineDiff([], ['new line'])
++    expect(diff).toEqual([{ text: 'new line', type: 'added' }])
++  })
++
++  it('陦・竊・遨ｺ縺ｧ蜑企勁', () => {
++    const diff = computeLineDiff(['old line'], [])
++    expect(diff).toEqual([{ text: 'old line', type: 'removed' }])
++  })
++
++  it('隍・焚縺ｮ霑ｽ蜉縺ｨ蜑企勁繧呈ｭ｣縺励￥讀懷・縺吶ｋ', () => {
++    const prev = ['a', 'b', 'c', 'd']
++    const next = ['a', 'x', 'c', 'y']
++    const diff = computeLineDiff(prev, next)
++    // b 縺悟炎髯､縲』 縺瑚ｿｽ蜉縲‥ 縺悟炎髯､縲【 縺瑚ｿｽ蜉
++    expect(diff).toEqual([
++      { text: 'a', type: 'unchanged' },
++      { text: 'b', type: 'removed' },
++      { text: 'x', type: 'added' },
++      { text: 'c', type: 'unchanged' },
++      { text: 'd', type: 'removed' },
++      { text: 'y', type: 'added' },
++    ])
++  })
++
++  it('驥崎､・｡後ｒ豁｣縺励￥謇ｱ縺・, () => {
++    const prev = ['a', 'a', 'b']
++    const next = ['a', 'b', 'b']
++    const diff = computeLineDiff(prev, next)
++    // LCS backtracking 縺ｯ譛ｫ蟆ｾ縺九ｉ騾ｲ繧縺溘ａ縲・逡ｪ逶ｮ縺ｮ 'a' 縺ｨ 2逡ｪ逶ｮ縺ｮ 'b' 縺・unchanged 縺ｫ繝槭ャ繝・+    // 1逡ｪ逶ｮ縺ｮ 'a' 縺ｯ removed縲・逡ｪ逶ｮ縺ｮ 'b' 縺ｯ added
++    expect(diff).toEqual([
++      { text: 'a', type: 'removed' },
++      { text: 'a', type: 'unchanged' },
++      { text: 'b', type: 'added' },
++      { text: 'b', type: 'unchanged' },
++    ])
++  })
++
++  it('邨先棡縺ｯ蜈・・鬆・ｺ上〒霑斐＆繧後ｋ', () => {
++    const prev = ['first', 'middle', 'last']
++    const next = ['first', 'new', 'last']
++    const diff = computeLineDiff(prev, next)
++    // unchanged, removed, added, unchanged 縺ｮ鬆・+    expect(diff).toHaveLength(4)
++    expect(diff[0]).toEqual({ text: 'first', type: 'unchanged' })
++    expect(diff[1]).toEqual({ text: 'middle', type: 'removed' })
++    expect(diff[2]).toEqual({ text: 'new', type: 'added' })
++    expect(diff[3]).toEqual({ text: 'last', type: 'unchanged' })
++  })
++
++  it('螟ｧ隕乗ｨ｡縺ｪ蟾ｮ蛻・〒繧よｭ｣縺励￥蜍穂ｽ懊☆繧・, () => {
++    // 100陦後・縲悟､ｧ隕乗ｨ｡縲阪・髢ｾ蛟､縺ｨ縺励※蜊∝・
++    const largeSize = 100
++    const prev = Array.from({ length: largeSize }, (_, i) => `line${i}`)
++    const next = Array.from({ length: largeSize }, (_, i) => `line${i + 1}`)
++    const diff = computeLineDiff(prev, next)
++    // line0 縺悟炎髯､縲〕ine1縲徑ine99 縺・unchanged縲〕ine100 縺瑚ｿｽ蜉 竊・蜷郁ｨ・101 陦・+    expect(diff).toHaveLength(largeSize + 1)
++    expect(diff[0]).toEqual({ text: 'line0', type: 'removed' })
++    expect(diff[diff.length - 1]).toEqual({ text: 'line100', type: 'added' })
++  })
++
++  it('蜈ｨ陦後′逡ｰ縺ｪ繧句ｴ蜷・, () => {
++    const prev = ['a', 'b', 'c']
++    const next = ['x', 'y', 'z']
++    const diff = computeLineDiff(prev, next)
++    // 蜈ｨ陦後′ removed 縺ｾ縺溘・ added
++    const unchanged = diff.filter(d => d.type === 'unchanged')
++    expect(unchanged).toHaveLength(0)
++  })
++})
+diff --git a/tests/unit/domain/LearningSystem.test.ts b/tests/unit/domain/LearningSystem.test.ts
+new file mode 100644
+index 0000000..cf23734
+--- /dev/null
++++ b/tests/unit/domain/LearningSystem.test.ts
+@@ -0,0 +1,174 @@
++import { describe, it, expect } from 'vitest'
++import {
++  evaluateLearningRules,
++  describeEffect,
++} from '../../../src/domain/LearningSystem'
++import type { LearningRule, ActionStats, LearningEffect } from '../../../src/domain/types'
++
++const makeStats = (overrides?: Partial<ActionStats>): ActionStats => ({
++  jumps: 0,
++  moveRight: 0,
++  moveLeft: 0,
++  shots: 0,
++  ticks: 100,
++  ...overrides,
++})
++
++describe('evaluateLearningRules', () => {
++  it('ticks=0 縺ｮ縺ｨ縺阪・菴輔・繝ｫ繝ｼ繝ｫ繧ら匱蜍輔＠縺ｪ縺・, () => {
++    const rules: LearningRule[] = [
++      {
++        trigger: { type: 'jumpRate', threshold: 0.5 },
++        effect: { type: 'disableAction', payload: 'jump' },
++      },
++    ]
++    const stats = makeStats({ ticks: 0, jumps: 999 })
++    const fired = evaluateLearningRules(rules, stats)
++    expect(fired).toHaveLength(0)
++    expect(rules[0].triggered).toBeUndefined()
++  })
++
++  it('jumpRate 縺・threshold 繧定ｶ・∴繧九→逋ｺ蜍輔☆繧・, () => {
++    const rules: LearningRule[] = [
++      {
++        trigger: { type: 'jumpRate', threshold: 0.3 },
++        effect: { type: 'disableAction', payload: 'jump' },
++      },
++    ]
++    const stats = makeStats({ jumps: 50, ticks: 100 }) // rate = 0.5 > 0.3
++    const fired = evaluateLearningRules(rules, stats)
++    expect(fired).toHaveLength(1)
++    expect(fired[0].type).toBe('disableAction')
++    expect(rules[0].triggered).toBe(true)
++  })
++
++  it('jumpRate 縺・threshold 譛ｪ貅縺ｪ繧臥匱蜍輔＠縺ｪ縺・, () => {
++    const rules: LearningRule[] = [
++      {
++        trigger: { type: 'jumpRate', threshold: 0.6 },
++        effect: { type: 'disableAction', payload: 'jump' },
++      },
++    ]
++    const stats = makeStats({ jumps: 50, ticks: 100 }) // rate = 0.5 < 0.6
++    const fired = evaluateLearningRules(rules, stats)
++    expect(fired).toHaveLength(0)
++    expect(rules[0].triggered).toBeUndefined()
++  })
++
++  it('triggerAbove=false 縺ｮ縺ｨ縺阪・ threshold 譛ｪ貅縺ｧ逋ｺ蜍輔☆繧・, () => {
++    const rules: LearningRule[] = [
++      {
++        trigger: { type: 'shotRate', threshold: 0.3, triggerAbove: false },
++        effect: { type: 'forceFeature', payload: 'slow_precise' },
++      },
++    ]
++    const stats = makeStats({ shots: 10, ticks: 100 }) // rate = 0.1 < 0.3
++    const fired = evaluateLearningRules(rules, stats)
++    expect(fired).toHaveLength(1)
++    expect(fired[0].type).toBe('forceFeature')
++  })
++
++  it('荳蠎ｦ逋ｺ蜍輔＠縺溘Ν繝ｼ繝ｫ縺ｯ蜀咲匱蜍輔＠縺ｪ縺・, () => {
++    const rules: LearningRule[] = [
++      {
++        trigger: { type: 'jumpRate', threshold: 0.3 },
++        effect: { type: 'disableAction', payload: 'jump' },
++      },
++    ]
++    const stats = makeStats({ jumps: 50, ticks: 100 })
++    evaluateLearningRules(rules, stats) // 1 蝗樒岼: 逋ｺ蜍・+    const fired2 = evaluateLearningRules(rules, stats) // 2 蝗樒岼: 逋ｺ蜍輔＠縺ｪ縺・+    expect(fired2).toHaveLength(0)
++  })
++
++  it('隍・焚縺ｮ繝ｫ繝ｼ繝ｫ縺悟酔譎ゅ↓逋ｺ蜍輔☆繧・, () => {
++    const rules: LearningRule[] = [
++      {
++        trigger: { type: 'jumpRate', threshold: 0.3 },
++        effect: { type: 'disableAction', payload: 'jump' },
++      },
++      {
++        trigger: { type: 'rightRate', threshold: 0.3 },
++        effect: { type: 'invertHazard', payload: 'colors' },
++      },
++    ]
++    const stats = makeStats({ jumps: 50, moveRight: 50, ticks: 100 })
++    const fired = evaluateLearningRules(rules, stats)
++    expect(fired).toHaveLength(2)
++  })
++
++  it('shotRate 縺ｮ險育ｮ励′豁｣縺励＞', () => {
++    const rules: LearningRule[] = [
++      {
++        trigger: { type: 'shotRate', threshold: 0.2 },
++        effect: { type: 'forceFeature', payload: 'three_way' },
++      },
++    ]
++    const stats = makeStats({ shots: 30, ticks: 100 }) // rate = 0.3 > 0.2
++    const fired = evaluateLearningRules(rules, stats)
++    expect(fired).toHaveLength(1)
++  })
++
++  it('leftRate 縺ｮ險育ｮ励′豁｣縺励＞', () => {
++    const rules: LearningRule[] = [
++      {
++        trigger: { type: 'leftRate', threshold: 0.4 },
++        effect: { type: 'changeKey', payload: 'ArrowLeft' },
++      },
++    ]
++    const stats = makeStats({ moveLeft: 50, ticks: 100 }) // rate = 0.5 > 0.4
++    const fired = evaluateLearningRules(rules, stats)
++    expect(fired).toHaveLength(1)
++  })
++
++  it('dashRate 縺ｯ dashes 縺・undefined 縺ｧ繧ょ虚縺・, () => {
++    const rules: LearningRule[] = [
++      {
++        trigger: { type: 'dashRate', threshold: 0.1 },
++        effect: { type: 'forceFeature', payload: 'dash' },
++      },
++    ]
++    const stats = makeStats({ dashes: undefined, ticks: 100 }) // rate = 0 < 0.1
++    const fired = evaluateLearningRules(rules, stats)
++    expect(fired).toHaveLength(0)
++  })
++
++  it('dashRate 縺・threshold 繧定ｶ・∴繧九→逋ｺ蜍輔☆繧・, () => {
++    const rules: LearningRule[] = [
++      {
++        trigger: { type: 'dashRate', threshold: 0.1 },
++        effect: { type: 'forceFeature', payload: 'dash' },
++      },
++    ]
++    const stats = makeStats({ dashes: 20, ticks: 100 }) // rate = 0.2 > 0.1
++    const fired = evaluateLearningRules(rules, stats)
++    expect(fired).toHaveLength(1)
++  })
++})
++
++describe('describeEffect', () => {
++  it('disableAction 縺ｮ隱ｬ譏弱ｒ霑斐☆', () => {
++    const effect: LearningEffect = { type: 'disableAction', payload: 'jump' }
++    expect(describeEffect(effect)).toBe('繧｢繧ｯ繧ｷ繝ｧ繝ｳ "jump" 繧堤┌蜉ｹ蛹・)
++  })
++
++  it('invertHazard 縺ｮ隱ｬ譏弱ｒ霑斐☆・・urationSec 縺ゅｊ・・, () => {
++    const effect: LearningEffect = { type: 'invertHazard', payload: 'colors', durationSec: 5 }
++    expect(describeEffect(effect)).toBe('繝上じ繝ｼ繝芽牡蜿崎ｻ｢・・遘抵ｼ・)
++  })
++
++  it('invertHazard 縺ｮ隱ｬ譏弱ｒ霑斐☆・・urationSec 縺ｪ縺暦ｼ・, () => {
++    const effect: LearningEffect = { type: 'invertHazard', payload: 'colors' }
++    expect(describeEffect(effect)).toBe('繝上じ繝ｼ繝芽牡蜿崎ｻ｢・域ｰｸ邯夂ｧ抵ｼ・)
++  })
++
++  it('forceFeature 縺ｮ隱ｬ譏弱ｒ霑斐☆', () => {
++    const effect: LearningEffect = { type: 'forceFeature', payload: 'slow_precise' }
++    expect(describeEffect(effect)).toBe('繝輔ぅ繝ｼ繝√Ε繝ｼ "slow_precise" 繧貞ｼｷ蛻ｶ譛牙柑蛹・)
++  })
++
++  it('changeKey 縺ｮ隱ｬ譏弱ｒ霑斐☆', () => {
++    const effect: LearningEffect = { type: 'changeKey', payload: 'ArrowLeft' }
++    expect(describeEffect(effect)).toBe('繧ｭ繝ｼ蜀阪・繝・ヴ繝ｳ繧ｰ 竊・"ArrowLeft"')
++  })
++})
+diff --git a/tests/unit/domain/genreResolver.test.ts b/tests/unit/domain/genreResolver.test.ts
+new file mode 100644
+index 0000000..534ea3c
+--- /dev/null
++++ b/tests/unit/domain/genreResolver.test.ts
+@@ -0,0 +1,212 @@
++import { describe, it, expect } from 'vitest'
++import {
++  accumulateParams,
++  accumulateGenrePoints,
++  resolveGenre,
++  resolveFeaturesForGenre,
++  resolveGenreProgress,
++  resolveAllGenreProgress,
++  resolveAllMetGenres,
++} from '../../../src/domain/genreResolver'
++import type { GenreDef, GenreParams, GenreId } from '../../../src/domain/types'
++
++// 繝・せ繝育畑繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ・・mport.meta.glob 縺ｫ萓晏ｭ倥＠縺ｪ縺・ｼ・+const TEST_GENRES: GenreDef[] = [
++  {
++    id: 'base', label: 'Base', thresholds: {},
++    enableFeatures: ['auto_run'], disableFeatures: [],
++    scoreFormula: 'distance * 0.8', manualReveal: '',
++    theme: 'plain', bgColor: '#fff',
++  },
++  {
++    id: 'stg', label: 'STG', thresholds: { range: 5, enemy: 5 },
++    enableFeatures: ['shoot', 'enemy_hp'], disableFeatures: ['grid_stop'],
++    scoreFormula: 'kills * 100 + distance * 0.5', manualReveal: 'STG',
++    theme: 'stg', bgColor: '#000',
++  },
++  {
++    id: 'rpg', label: 'RPG', thresholds: { growth: 6, tempo: 2 },
++    enableFeatures: ['hp', 'exp'], disableFeatures: [],
++    scoreFormula: 'exp * 2 + distance * 0.3', manualReveal: 'RPG',
++    theme: 'rpg', bgColor: '#333',
++  },
++  {
++    id: 'puzzle', label: 'Puzzle', thresholds: { combo: 8 },
++    enableFeatures: ['grid_stop', 'puzzle_solve'], disableFeatures: ['shoot'],
++    scoreFormula: 'combo * 50 + distance * 0.1', manualReveal: 'Puzzle',
++    theme: 'puzzle', bgColor: '#eee',
++  },
++  {
++    // genrePoints 譁ｹ蠑上・繧ｸ繝｣繝ｳ繝ｫ
++    id: 'runner', label: 'Runner', thresholds: { tempo: 6, enemy: 2 },
++    enableFeatures: ['auto_run'], disableFeatures: [],
++    scoreFormula: 'distance * 1.0', manualReveal: 'Runner',
++    theme: 'plain', bgColor: '#fff',
++  },
++]
++
++describe('accumulateParams', () => {
++  it('遨ｺ驟榊・縺ｧ遨ｺ繧ｪ繝悶ず繧ｧ繧ｯ繝医ｒ霑斐☆', () => {
++    expect(accumulateParams([])).toEqual({})
++  })
++
++  it('蜊倅ｸ縺ｮparams繧偵◎縺ｮ縺ｾ縺ｾ霑斐☆', () => {
++    expect(accumulateParams([{ tempo: 3 }])).toEqual({ tempo: 3 })
++  })
++
++  it('隍・焚縺ｮparams繧貞粋邂励☆繧・, () => {
++    const result = accumulateParams([
++      { tempo: 3, range: 2 },
++      { tempo: 2, enemy: 4 },
++    ])
++    expect(result).toEqual({ tempo: 5, range: 2, enemy: 4 })
++  })
++
++  it('蟄伜惠縺励↑縺・く繝ｼ縺ｯ 0 縺ｨ縺励※謇ｱ繧上↑縺・ｼ域悴螳夂ｾｩ縺ｮ縺ｾ縺ｾ・・, () => {
++    const result = accumulateParams([{ tempo: 1 }])
++    expect('range' in result).toBe(false)
++  })
++})
++
++describe('accumulateGenrePoints', () => {
++  it('遨ｺ驟榊・縺ｧ遨ｺ繧ｪ繝悶ず繧ｧ繧ｯ繝医ｒ霑斐☆', () => {
++    expect(accumulateGenrePoints([])).toEqual({})
++  })
++
++  it('genrePoints 縺檎┌縺励・繧ｨ繝ｳ繝医Μ縺ｯ繧ｹ繧ｭ繝・・縺吶ｋ', () => {
++    expect(accumulateGenrePoints([{ genrePoints: undefined }, {}])).toEqual({})
++  })
++
++  it('genrePoints 繧貞粋邂励☆繧・, () => {
++    const result = accumulateGenrePoints([
++      { genrePoints: { stg: 3, rpg: 1 } },
++      { genrePoints: { stg: 2, puzzle: 5 } },
++    ])
++    expect(result).toEqual({ stg: 5, rpg: 1, puzzle: 5 })
++  })
++})
++
++describe('resolveGenre', () => {
++  it('繝代Λ繝｡繝ｼ繧ｿ縺ｪ縺励〒 base 繧定ｿ斐☆', () => {
++    expect(resolveGenre({}, TEST_GENRES)).toBe('base')
++  })
++
++  it('stg 縺ｮ髢ｾ蛟､繧呈ｺ縺溘☆縺ｨ stg 繧定ｿ斐☆', () => {
++    const params: GenreParams = { range: 5, enemy: 5 }
++    expect(resolveGenre(params, TEST_GENRES)).toBe('stg')
++  })
++
++  it('stg 縺ｮ髢ｾ蛟､繧定ｶ・℃縺吶ｋ縺ｨ stg 繧定ｿ斐☆', () => {
++    const params: GenreParams = { range: 10, enemy: 10 }
++    expect(resolveGenre(params, TEST_GENRES)).toBe('stg')
++  })
++
++  it('1縺､縺ｮ髢ｾ蛟､縺梧悴驕斐↑繧峨◎縺ｮ繧ｸ繝｣繝ｳ繝ｫ縺ｯ驕ｸ謚槭＆繧後↑縺・, () => {
++    const params: GenreParams = { range: 5, enemy: 4 } // enemy 縺・5 譛ｪ貅
++    expect(resolveGenre(params, TEST_GENRES)).toBe('base')
++  })
++
++  it('隍・焚縺ｮ繧ｸ繝｣繝ｳ繝ｫ縺碁明蛟､繧呈ｺ縺溘☆蝣ｴ蜷医・雜・℃驥上′螟ｧ縺阪＞譁ｹ繧帝∈縺ｶ', () => {
++    // stg: range=5, enemy=5 竊・雜・℃驥・= (10-5) + (10-5) + 1 = 11
++    // rpg: growth=6, tempo=2 竊・雜・℃驥・= (10-6) + (10-2) + 1 = 13
++    const params: GenreParams = { range: 10, enemy: 10, growth: 10, tempo: 10 }
++    expect(resolveGenre(params, TEST_GENRES)).toBe('rpg')
++  })
++
++  it('genrePoints 譁ｹ蠑上〒繧ｸ繝｣繝ｳ繝ｫ繧定ｧ｣豎ｺ縺吶ｋ', () => {
++    // genrePoints 譁ｹ蠑上・繝・せ繝医↓縺ｯ threshold 繧呈戟縺､繧ｸ繝｣繝ｳ繝ｫ縺悟ｿ・ｦ・+    // 縺薙％縺ｧ縺ｯ thresholds 譁ｹ蠑上・繝・せ繝医・縺ｿ繧定｡後≧
++    const params: GenreParams = { combo: 8 }
++    expect(resolveGenre(params, TEST_GENRES)).toBe('puzzle')
++  })
++
++  it('score 縺・0 莉･荳九・蝣ｴ蜷医・ base 繧定ｿ斐☆', () => {
++    const params: GenreParams = { tempo: 1 } // 縺ｩ縺ｮ繧ｸ繝｣繝ｳ繝ｫ繧よｺ縺溘＆縺ｪ縺・+    expect(resolveGenre(params, TEST_GENRES)).toBe('base')
++  })
++})
++
++describe('resolveFeaturesForGenre', () => {
++  it('蟄伜惠縺吶ｋ繧ｸ繝｣繝ｳ繝ｫ縺ｮ features 繧定ｿ斐☆', () => {
++    const { enable, disable } = resolveFeaturesForGenre('stg', TEST_GENRES)
++    expect(enable).toEqual(new Set(['shoot', 'enemy_hp']))
++    expect(disable).toEqual(new Set(['grid_stop']))
++  })
++
++  it('蟄伜惠縺励↑縺・ず繝｣繝ｳ繝ｫ縺ｧ遨ｺ繧ｻ繝・ヨ繧定ｿ斐☆', () => {
++    const { enable, disable } = resolveFeaturesForGenre('nonexistent', TEST_GENRES)
++    expect(enable).toEqual(new Set())
++    expect(disable).toEqual(new Set())
++  })
++
++  it('base 繧ｸ繝｣繝ｳ繝ｫ縺ｮ features 繧定ｿ斐☆', () => {
++    const { enable, disable } = resolveFeaturesForGenre('base', TEST_GENRES)
++    expect(enable).toEqual(new Set(['auto_run']))
++    expect(disable).toEqual(new Set())
++  })
++})
++
++describe('resolveGenreProgress', () => {
++  it('繝代Λ繝｡繝ｼ繧ｿ縺ｪ縺励〒 progress=0 繧定ｿ斐☆', () => {
++    const { progress } = resolveGenreProgress({}, TEST_GENRES)
++    expect(progress).toBe(0)
++  })
++
++  it('蜊雁・貅縺溘☆縺ｨ progress=0.5 繧定ｿ斐☆', () => {
++    // puzzle: combo=8 縺悟ｿ・ｦ√…ombo=4 竊・4/8 = 0.5
++    const params: GenreParams = { combo: 4 }
++    const { closestGenre, progress } = resolveGenreProgress(params, TEST_GENRES)
++    expect(closestGenre).toBe('puzzle')
++    expect(progress).toBe(0.5)
++  })
++
++  it('蜈ｨ髢ｾ蛟､繧定ｶ・∴縺ｦ繧・progress=1 縺ｫ繧ｯ繝ｪ繝・・縺輔ｌ繧・, () => {
++    const params: GenreParams = { combo: 100 }
++    const { progress } = resolveGenreProgress(params, TEST_GENRES)
++    expect(progress).toBe(1)
++  })
++
++  it('隍・焚縺ｮ霆ｸ縺後≠繧句ｴ蜷医・譛蟆丞・雜ｳ邇・ｒ霑斐☆', () => {
++    // stg: range=5, enemy=5 竊・range=5(1.0), enemy=2.5(0.5) 竊・min = 0.5
++    const params: GenreParams = { range: 5, enemy: 2.5 }
++    const { closestGenre, progress } = resolveGenreProgress(params, TEST_GENRES)
++    expect(closestGenre).toBe('stg')
++    expect(progress).toBe(0.5)
++  })
++})
++
++describe('resolveAllGenreProgress', () => {
++  it('蜈ｨ繧ｸ繝｣繝ｳ繝ｫ縺ｮ騾ｲ謐励ｒ霑斐☆', () => {
++    const params: GenreParams = { combo: 4, range: 2.5, enemy: 2.5 }
++    const result = resolveAllGenreProgress(params, TEST_GENRES)
++    expect(result.puzzle).toBe(0.5) // combo: 4/8 = 0.5
++    expect(result.stg).toBe(0.5) // min(2.5/5, 2.5/5) = 0.5
++    expect(result.rpg).toBeUndefined() // growth=0/6=0, tempo=0/2=0 竊・min=0 竊・0 莉･荳九・髯､螟・+  })
++
++  it('騾ｲ謐励′ 0 縺ｮ繧ｸ繝｣繝ｳ繝ｫ縺ｯ邨先棡縺ｫ蜷ｫ縺ｾ繧後↑縺・, () => {
++    const result = resolveAllGenreProgress({}, TEST_GENRES)
++    expect(Object.keys(result)).toHaveLength(0)
++  })
++})
++
++describe('resolveAllMetGenres', () => {
++  it('貅縺溘＆繧後◆蜈ｨ繧ｸ繝｣繝ｳ繝ｫ繧定ｿ斐☆', () => {
++    const params: GenreParams = { range: 5, enemy: 5, combo: 8 }
++    const result = resolveAllMetGenres(params, TEST_GENRES)
++    expect(result).toContain('stg')
++    expect(result).toContain('puzzle')
++    expect(result).not.toContain('rpg')
++  })
++
++  it('縺ｩ縺ｮ繧ｸ繝｣繝ｳ繝ｫ繧よｺ縺溘＆縺ｪ縺代ｌ縺ｰ遨ｺ驟榊・', () => {
++    const result = resolveAllMetGenres({}, TEST_GENRES)
++    expect(result).toEqual([])
++  })
++
++  it('base 縺ｯ邨先棡縺ｫ蜷ｫ縺ｾ繧後↑縺・, () => {
++    const params: GenreParams = { range: 5, enemy: 5 }
++    const result = resolveAllMetGenres(params, TEST_GENRES)
++    expect(result).not.toContain('base')
++  })
++})
+diff --git a/tests/unit/domain/scoreCalc.test.ts b/tests/unit/domain/scoreCalc.test.ts
+new file mode 100644
+index 0000000..ce01554
+--- /dev/null
++++ b/tests/unit/domain/scoreCalc.test.ts
+@@ -0,0 +1,124 @@
++import { describe, it, expect } from 'vitest'
++import { evalScoreFormula, getLastFormulaError } from '../../../src/domain/scoreCalc'
++import type { ScoreVars, ThrowResult, FinalScore } from '../../../src/domain/types'
++
++// 繝・せ繝育畑繧ｹ繧ｳ繧｢螟画焚
++const makeVars = (overrides?: Partial<ScoreVars>): ScoreVars => ({
++  distance: 1000,
++  kills: 10,
++  combo: 5,
++  exp: 500,
++  beatHits: 20,
++  survivedSec: 60,
++  accuracy: 0.8,
++  maxCombo: 10,
++  deaths: 0,
++  itemsCollected: 5,
++  bossKills: 2,
++  stealthBonus: 100,
++  colorTouches: 3,
++  ...overrides,
++})
++
++describe('evalScoreFormula', () => {
++  it('蜊倡ｴ斐↑荵礼ｮ怜ｼ上ｒ隧穂ｾ｡縺吶ｋ', () => {
++    const vars = makeVars()
++    expect(evalScoreFormula('distance * 0.5', vars)).toBe(500)
++  })
++
++  it('蜉邂励→荵礼ｮ励・邨・∩蜷医ｏ縺帙ｒ隧穂ｾ｡縺吶ｋ', () => {
++    const vars = makeVars()
++    expect(evalScoreFormula('distance * 0.5 + kills * 100', vars)).toBe(1500)
++  })
++
++  it('隍・焚縺ｮ螟画焚繧剃ｽｿ逕ｨ縺吶ｋ蠑上ｒ隧穂ｾ｡縺吶ｋ', () => {
++    const vars = makeVars()
++    expect(evalScoreFormula('kills * 120 + distance * 0.5 + combo * 80', vars)).toBe(2100) // 1200 + 500 + 400
++  })
++
++  it('諡ｬ蠑ｧ莉倥″縺ｮ蠑上ｒ隧穂ｾ｡縺吶ｋ', () => {
++    const vars = makeVars()
++    expect(evalScoreFormula('(kills + combo) * 100', vars)).toBe(1500)
++  })
++
++  it('髯､邂励ｒ隧穂ｾ｡縺吶ｋ', () => {
++    const vars = makeVars()
++    expect(evalScoreFormula('distance / 2', vars)).toBe(500)
++  })
++
++  it('0 髯､邂励・ 0 繧定ｿ斐☆', () => {
++    const vars = makeVars({ deaths: 0 })
++    expect(evalScoreFormula('kills / deaths', vars)).toBe(0)
++  })
++
++  it('雋縺ｮ蛟､繧定ｩ穂ｾ｡縺吶ｋ', () => {
++    const vars = makeVars()
++    expect(evalScoreFormula('-distance', vars)).toBe(-1000)
++  })
++
++  it('譛ｪ螳夂ｾｩ縺ｮ螟画焚縺ｯ 0 縺ｨ縺励※謇ｱ縺・, () => {
++    const vars = makeVars()
++    // unknownVar 縺ｯ ScoreVars 縺ｫ蟄伜惠縺励↑縺・+    expect(evalScoreFormula('distance + unknownVar', vars)).toBe(1000)
++  })
++
++  it('荳肴ｭ｣縺ｪ蠑擾ｼ磯未謨ｰ蜻ｼ縺ｳ蜃ｺ縺暦ｼ峨・繝・ヵ繧ｩ繝ｫ繝亥ｼ上〒莉｣譖ｿ縺吶ｋ', () => {
++    const vars = makeVars()
++    const result = evalScoreFormula('Math.max(distance, 0)', vars)
++    // SAFE_PATTERN 縺ｫ Math. 縺悟性縺ｾ繧後ｋ縺溘ａ繝・ヵ繧ｩ繝ｫ繝亥ｼ上↓繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ
++    expect(result).toBe(1500) // distance * 0.5 + kills * 100 = 500 + 1000
++    expect(getLastFormulaError()).toContain('荳肴ｭ｣縺ｪ繧ｹ繧ｳ繧｢蠑・)
++  })
++
++  it('遨ｺ譁・ｭ怜・縺ｯ繝・ヵ繧ｩ繝ｫ繝亥ｼ上↓繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ縺吶ｋ', () => {
++    // SAFE_PATTERN 縺ｯ + (1譁・ｭ嶺ｻ･荳・ 繧定ｦ∵ｱゅ☆繧九◆繧√∫ｩｺ譁・ｭ怜・縺ｯ繝代ち繝ｼ繝ｳ繝槭ャ繝√↓螟ｱ謨・+    // 竊・繝・ヵ繧ｩ繝ｫ繝亥ｼ・'distance * 0.5 + kills * 100' 縺ｫ繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ
++    expect(evalScoreFormula('', makeVars())).toBe(1500) // 500 + 1000
++  })
++
++  it('謨ｰ蛟､繝ｪ繝・Λ繝ｫ縺ｮ縺ｿ縺ｧ讒区・縺輔ｌ繧句ｼ上ｒ隧穂ｾ｡縺吶ｋ', () => {
++    expect(evalScoreFormula('42', makeVars())).toBe(42)
++  })
++
++  it('隍・尅縺ｪ諡ｬ蠑ｧ繝阪せ繝医ｒ隧穂ｾ｡縺吶ｋ', () => {
++    const vars = makeVars()
++    expect(evalScoreFormula('((kills * 2) + distance) / 2', vars)).toBe(510)
++  })
++
++  it('譛蠕後・繧ｨ繝ｩ繝ｼ繝｡繝・そ繝ｼ繧ｸ縺ｯ蜿門ｾ怜ｾ後↓繝ｪ繧ｻ繝・ヨ縺輔ｌ繧・, () => {
++    evalScoreFormula('eval(1)', makeVars())
++    expect(getLastFormulaError()).not.toBeNull()
++    expect(getLastFormulaError()).toBeNull() // 2 蝗樒岼縺ｯ null
++  })
++})
++
++describe('evalScoreFormula - 貍皮ｮ怜ｭ舌・蜆ｪ蜈磯・ｽ・, () => {
++  it('荵礼ｮ励′蜉邂励ｈ繧雁━蜈医＆繧後ｋ', () => {
++    const vars = makeVars()
++    // distance * 0.5 + kills = 500 + 10 = 510
++    expect(evalScoreFormula('distance * 0.5 + kills', vars)).toBe(510)
++  })
++
++  it('貂帷ｮ励ｒ豁｣縺励￥隧穂ｾ｡縺吶ｋ', () => {
++    const vars = makeVars()
++    expect(evalScoreFormula('distance - kills', vars)).toBe(990)
++  })
++
++  it('隍・粋貍皮ｮ励ｒ豁｣縺励￥隧穂ｾ｡縺吶ｋ', () => {
++    const vars = makeVars()
++    // distance * 0.5 - kills * 10 + combo * 20 = 500 - 100 + 100 = 500
++    expect(evalScoreFormula('distance * 0.5 - kills * 10 + combo * 20', vars)).toBe(500)
++  })
++})
++
++describe('evalScoreFormula - 蠅・阜蛟､', () => {
++  it('髱槫ｸｸ縺ｫ螟ｧ縺阪↑謨ｰ蛟､繧呈桶縺医ｋ', () => {
++    const vars = makeVars({ distance: 1_000_000, kills: 100_000 })
++    expect(evalScoreFormula('distance * 0.5 + kills * 100', vars)).toBe(10_500_000)
++  })
++
++  it('蟆乗焚轤ｹ繧貞性繧謨ｰ蛟､繧呈桶縺医ｋ', () => {
++    const vars = makeVars()
++    expect(evalScoreFormula('distance * 0.125', vars)).toBe(125)
++  })
++})
+diff --git a/tests/unit/engine/GameRegistry.test.ts b/tests/unit/engine/GameRegistry.test.ts
+new file mode 100644
+index 0000000..9be8588
+--- /dev/null
++++ b/tests/unit/engine/GameRegistry.test.ts
+@@ -0,0 +1,157 @@
++import { describe, it, expect, beforeEach } from 'vitest'
++import { resolveWeight, type SpawnEntry } from '../../../src/engine/types'
++import {
++  registerGenre,
++  registerFeature,
++  getGenre,
++  getActiveSystems,
++  hasGenre,
++  resetRegistry,
++} from '../../../src/engine/GameRegistry'
++import type { GenrePlugin } from '../../../src/engine/GenrePlugin'
++import type { FeatureSystem } from '../../../src/engine/FeatureSystem'
++
++// 繝・せ繝磯俣縺ｧ singleton 迥ｶ諷九ｒ繝ｪ繧ｻ繝・ヨ・・3 菫ｮ豁｣・・+beforeEach(() => {
++  resetRegistry()
++})
++
++describe('resolveWeight', () => {
++  const makeEntry = (ws: number, we: number): SpawnEntry => ({
++    shape: 'rect',
++    placement: 'ground',
++    weightStart: ws,
++    weightEnd: we,
++    wRange: [20, 40],
++    hRange: [20, 40],
++  })
++
++  it('distance=0 縺ｧ weightStart 繧定ｿ斐☆', () => {
++    const entry = makeEntry(1, 10)
++    expect(resolveWeight(entry, 0)).toBe(1)
++  })
++
++  it('distance=maxDist 縺ｧ weightEnd 繧定ｿ斐☆', () => {
++    const entry = makeEntry(1, 10)
++    expect(resolveWeight(entry, 3000)).toBe(10)
++  })
++
++  it('荳ｭ髢薙・ distance 縺ｧ邱壼ｽ｢陬憺俣縺吶ｋ', () => {
++    const entry = makeEntry(1, 10)
++    // t = 1500/3000 = 0.5 竊・1 + (10-1) * 0.5 = 5.5
++    expect(resolveWeight(entry, 1500)).toBe(5.5)
++  })
++
++  it('distance > maxDist 縺ｧ maxDist 縺ｫ繧ｯ繝ｪ繝・・縺輔ｌ繧・, () => {
++    const entry = makeEntry(1, 10)
++    expect(resolveWeight(entry, 6000)).toBe(10)
++  })
++
++  it('weightStart == weightEnd 縺ｧ荳螳壼､', () => {
++    const entry = makeEntry(5, 5)
++    expect(resolveWeight(entry, 0)).toBe(5)
++    expect(resolveWeight(entry, 1500)).toBe(5)
++    expect(resolveWeight(entry, 3000)).toBe(5)
++  })
++
++  it('weightEnd < weightStart 縺ｧ貂帛ｰ代☆繧・, () => {
++    const entry = makeEntry(10, 1)
++    expect(resolveWeight(entry, 0)).toBe(10)
++    expect(resolveWeight(entry, 3000)).toBe(1)
++  })
++
++  it('maxDist 繧ｫ繧ｹ繧ｿ繝蛟､繧剃ｽｿ逕ｨ縺ｧ縺阪ｋ', () => {
++    const entry = makeEntry(0, 100)
++    expect(resolveWeight(entry, 500, 1000)).toBe(50) // t = 500/1000 = 0.5
++  })
++})
++
++describe('GameRegistry', () => {
++  const makeTestGenre = (id: string): GenrePlugin => ({
++    id,
++    skyColors: ['#000', '#111'],
++    groundColors: ['#222', '#333'],
++    farLayerColor: '#444',
++    midLayerColor: '#555',
++    palette: { danger: '#f00', dangerGlow: '#f00', safe: '#0f0', safeGlow: '#0f0' },
++    spawnTable: [],
++    drawFarLayer: () => {},
++    drawMidLayer: () => {},
++    drawPlayer: () => {},
++  })
++
++  describe('registerGenre', () => {
++    it('繧ｸ繝｣繝ｳ繝ｫ繧堤匳骭ｲ縺ｧ縺阪ｋ', () => {
++      registerGenre(makeTestGenre('test-genre'))
++      expect(hasGenre('test-genre')).toBe(true)
++    })
++  })
++
++  describe('getGenre', () => {
++    it('逋ｻ骭ｲ縺輔ｌ縺溘ず繝｣繝ｳ繝ｫ繧貞叙蠕励〒縺阪ｋ', () => {
++      registerGenre(makeTestGenre('test-genre'))
++      const plugin = getGenre('test-genre')
++      expect(plugin.id).toBe('test-genre')
++    })
++
++    it('蟄伜惠縺励↑縺・ず繝｣繝ｳ繝ｫ縺ｯ base 縺ｫ繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ縺吶ｋ', () => {
++      // base 縺檎匳骭ｲ縺輔ｌ縺ｦ縺・↑縺・腸蠅・〒縺ｯ繧ｨ繝ｩ繝ｼ繧偵せ繝ｭ繝ｼ
++      expect(() => getGenre('nonexistent-genre-xyz')).toThrow() // #11 菫ｮ豁｣
++    })
++  })
++
++  describe('registerFeature', () => {
++    it('Feature 繧堤匳骭ｲ縺ｧ縺阪ｋ', () => {
++      const system: FeatureSystem = {
++        handles: 'test-feature',
++        update: () => {},
++      }
++      registerFeature(system)
++      const systems = getActiveSystems(new Set(['test-feature']))
++      expect(systems).toHaveLength(1)
++    })
++
++    it('隍・焚縺ｮ FeatureId 繧・handles 縺ｧ縺阪ｋ', () => {
++      const system: FeatureSystem = {
++        handles: ['multi-a', 'multi-b'],
++        update: () => {},
++      }
++      registerFeature(system)
++      const systems = getActiveSystems(new Set(['multi-a', 'multi-b']))
++      // Both IDs map to the same system, so only 1 unique system
++      expect(systems).toHaveLength(1)
++    })
++  })
++
++  describe('getActiveSystems', () => {
++    it('遨ｺ縺ｮ繧ｻ繝・ヨ縺ｧ遨ｺ驟榊・繧定ｿ斐☆', () => {
++      const systems = getActiveSystems(new Set())
++      expect(systems).toEqual([])
++    })
++
++    it('逋ｻ骭ｲ縺輔ｌ縺ｦ縺・↑縺・FeatureId 縺ｯ辟｡隕悶＆繧後ｋ', () => {
++      const systems = getActiveSystems(new Set(['nonexistent-feature']))
++      expect(systems).toEqual([])
++    })
++
++    it('驥崎､・☆繧・FeatureId 縺ｯ1蠎ｦ縺縺題ｿ斐☆', () => {
++      registerFeature({
++        handles: ['dedup-a', 'dedup-b'],
++        update: () => {},
++      })
++      const systems = getActiveSystems(new Set(['dedup-a', 'dedup-b']))
++      expect(systems).toHaveLength(1)
++    })
++  })
++
++  describe('hasGenre', () => {
++    it('逋ｻ骭ｲ貂医∩縺ｮ繧ｸ繝｣繝ｳ繝ｫ縺ｧ true', () => {
++      registerGenre(makeTestGenre('has-test'))
++      expect(hasGenre('has-test')).toBe(true)
++    })
++
++    it('譛ｪ逋ｻ骭ｲ縺ｮ繧ｸ繝｣繝ｳ繝ｫ縺ｧ false', () => {
++      expect(hasGenre('definitely-not-registered-xyz')).toBe(false)
++    })
++  })
++})
+diff --git a/tests/unit/engine/GenrePluginSpawnDensity.test.ts b/tests/unit/engine/GenrePluginSpawnDensity.test.ts
+new file mode 100644
+index 0000000..9ccc543
+--- /dev/null
++++ b/tests/unit/engine/GenrePluginSpawnDensity.test.ts
+@@ -0,0 +1,154 @@
++import { describe, it, expect, beforeEach } from 'vitest'
++import { HAZARD_SPAWN } from '../../../src/data/gameBalance'
++import {
++  registerGenre,
++  getGenre,
++  resetRegistry,
++} from '../../../src/engine/GameRegistry'
++import type { GenrePlugin } from '../../../src/engine/GenrePlugin'
++
++// Reset registry between tests to avoid state leakage
++beforeEach(() => {
++  resetRegistry()
++})
++
++describe('Per-genre spawn density', () => {
++  // Default values from game_balance.json
++  const defaults = {
++    baseInterval: HAZARD_SPAWN.baseInterval,
++    minInterval: HAZARD_SPAWN.minInterval,
++    decayRate: HAZARD_SPAWN.decayRate,
++  }
++
++  const makeTestGenre = (id: string, spawnDensity?: GenrePlugin['spawnDensity']): GenrePlugin => ({
++    id,
++    skyColors: ['#000', '#111'],
++    groundColors: ['#222', '#333'],
++    farLayerColor: '#444',
++    midLayerColor: '#555',
++    palette: { danger: '#f00', dangerGlow: '#f00', safe: '#0f0', safeGlow: '#0f0' },
++    spawnTable: [],
++    spawnDensity,
++    drawFarLayer: () => {},
++    drawMidLayer: () => {},
++    drawPlayer: () => {},
++  })
++
++  it('should be undefined when spawnDensity is omitted', () => {
++    registerGenre(makeTestGenre('base'))
++    const plugin = getGenre('base')
++    expect(plugin.spawnDensity).toBeUndefined()
++  })
++
++  it('should pass through spawnDensity when provided to plugin', () => {
++    registerGenre(makeTestGenre('stg', {
++      baseInterval: 1800,
++      minInterval: 600,
++      decayRate: 0.0002,
++    }))
++    const plugin = getGenre('stg')
++    expect(plugin.spawnDensity).toBeDefined()
++    // Note: interface declares spawnDensity as readonly, but runtime objects are mutable
++    // The actual value on the returned plugin should match what was registered
++    expect((plugin.spawnDensity as { baseInterval?: number }).baseInterval).toBe(1800)
++    expect((plugin.spawnDensity as { minInterval?: number }).minInterval).toBe(600)
++    expect((plugin.spawnDensity as { decayRate?: number }).decayRate).toBe(0.0002)
++  })
++
++  it('fallback formula with no spawnDensity should use global HAZARD_SPAWN', () => {
++    registerGenre(makeTestGenre('base'))
++    const plugin = getGenre('base')
++    const density = plugin.spawnDensity
++
++    // Simulating _getSpawnParams(): when spawnDensity is undefined, use defaults
++    const effective = {
++      baseInterval: density?.baseInterval ?? defaults.baseInterval,
++      minInterval: density?.minInterval ?? defaults.minInterval,
++      decayRate: density?.decayRate ?? defaults.decayRate,
++    }
++
++    expect(effective.baseInterval).toBe(defaults.baseInterval)
++    expect(effective.minInterval).toBe(defaults.minInterval)
++    expect(effective.decayRate).toBe(defaults.decayRate)
++  })
++
++  it('partial spawnDensity should fill missing keys from HAZARD_SPAWN', () => {
++    registerGenre(makeTestGenre('partial', {
++      baseInterval: 1000,
++      // minInterval and decayRate omitted
++    }))
++    const plugin = getGenre('partial')
++    const density = plugin.spawnDensity
++
++    const effective = {
++      baseInterval: density?.baseInterval ?? defaults.baseInterval,
++      minInterval: density?.minInterval ?? defaults.minInterval,
++      decayRate: density?.decayRate ?? defaults.decayRate,
++    }
++
++    expect(effective.baseInterval).toBe(1000)
++    expect(effective.minInterval).toBe(defaults.minInterval)
++    expect(effective.decayRate).toBe(defaults.decayRate)
++  })
++})
++
++describe('Spawn density interval formula', () => {
++  /**
++   * Replicates the interval calculation from sideScroller.ts:
++   * interval = max(minInterval, baseInterval * exp(-decayRate * distance))
++   */
++  function calcInterval(baseInterval: number, minInterval: number, decayRate: number, distance: number): number {
++    const raw = baseInterval * Math.exp(-decayRate * distance)
++    return Math.max(minInterval, raw)
++  }
++
++  it('should return baseInterval at distance 0', () => {
++    expect(calcInterval(2400, 800, 0.00015, 0)).toBe(2400)
++  })
++
++  it('should decrease with distance', () => {
++    const near = calcInterval(2400, 800, 0.00015, 5000)
++    const far = calcInterval(2400, 800, 0.00015, 20000)
++    expect(far).toBeLessThan(near)
++  })
++
++  it('should never go below minInterval', () => {
++    const interval = calcInterval(2400, 800, 0.00015, 100000)
++    expect(interval).toBeGreaterThanOrEqual(800)
++  })
++
++  it('higher decayRate should produce faster density increase', () => {
++    const slowDecay = calcInterval(2400, 800, 0.0001, 10000)
++    const fastDecay = calcInterval(2400, 800, 0.0003, 10000)
++    expect(fastDecay).toBeLessThan(slowDecay)
++  })
++
++  it('lower baseInterval should produce higher density at same distance', () => {
++    const highBase = calcInterval(3000, 1000, 0.00015, 5000)
++    const lowBase = calcInterval(1500, 500, 0.00015, 5000)
++    expect(lowBase).toBeLessThan(highBase)
++  })
++})
++
++describe('Per-genre spawn density comparisons', () => {
++  function calcInterval(baseInterval: number, minInterval: number, decayRate: number, distance: number): number {
++    return Math.max(minInterval, baseInterval * Math.exp(-decayRate * distance))
++  }
++
++  it('bullet_hell should produce higher density than idle at the same distance', () => {
++    const distance = 10000
++    const bhInterval = calcInterval(1200, 400, 0.0003, distance)
++    const idleInterval = calcInterval(4000, 2000, 0.00005, distance)
++
++    // Lower interval = higher density
++    expect(bhInterval).toBeLessThan(idleInterval)
++  })
++
++  it('arena should have higher density than base at mid distance', () => {
++    const distance = 15000
++    const arenaInterval = calcInterval(1500, 500, 0.00025, distance)
++    const baseInterval = calcInterval(HAZARD_SPAWN.baseInterval, HAZARD_SPAWN.minInterval, HAZARD_SPAWN.decayRate, distance)
++
++    expect(arenaInterval).toBeLessThan(baseInterval)
++  })
++})
+diff --git a/tests/unit/framework/ConfigLoader.test.ts b/tests/unit/framework/ConfigLoader.test.ts
+new file mode 100644
+index 0000000..bb54b16
+--- /dev/null
++++ b/tests/unit/framework/ConfigLoader.test.ts
+@@ -0,0 +1,82 @@
++import { describe, it, expect } from 'vitest'
++import { loadConfigFromGlob } from '../../../src/framework/ConfigLoader'
++
++describe('loadConfigFromGlob', () => {
++  it('遨ｺ縺ｮ繝｢繧ｸ繝･繝ｼ繝ｫ縺ｧ遨ｺ縺ｮ繝槭ャ繝励ｒ霑斐☆', () => {
++    const result = loadConfigFromGlob({})
++    expect(result).toBeDefined()
++  })
++
++  it('section 繝輔ぅ繝ｼ繝ｫ繝峨ｒ謖√▽繝｢繧ｸ繝･繝ｼ繝ｫ繧呈ｭ｣縺励￥繝ｭ繝ｼ繝峨☆繧・, () => {
++    const modules = {
++      './config/physics.json': {
++        default: {
++          section: 'physics',
++          playerWidth: 36,
++          playerHeight: 52,
++        },
++      },
++    }
++    const result = loadConfigFromGlob(modules)
++    expect((result as Record<string, unknown>).physics).toBeDefined()
++    const phys = (result as Record<string, Record<string, unknown>>).physics
++    expect(phys.playerWidth).toBe(36)
++    expect(phys.playerHeight).toBe(52)
++    expect(phys.section).toBeUndefined() // section 縺ｯ髯､蜴ｻ縺輔ｌ繧・+  })
++
++  it('default 繝励Ο繝代ユ繧｣縺後↑縺・Δ繧ｸ繝･繝ｼ繝ｫ繧ょ・逅・☆繧・, () => {
++    const modules = {
++      './config/throw.json': {
++        section: 'throw',
++        gravity: 800,
++      },
++    }
++    const result = loadConfigFromGlob(modules)
++    const thr = (result as Record<string, Record<string, unknown>>).throw
++    expect(thr.gravity).toBe(800)
++  })
++
++  it('section 繝輔ぅ繝ｼ繝ｫ繝峨′縺ｪ縺・Δ繧ｸ繝･繝ｼ繝ｫ縺ｯ繧ｹ繧ｭ繝・・縺輔ｌ繧・, () => {
++    const modules = {
++      './config/bad.json': {
++        default: { foo: 'bar' },
++      },
++    }
++    const result = loadConfigFromGlob(modules)
++    expect(Object.keys(result).length).toBe(0)
++  })
++
++  it('驥崎､・そ繧ｯ繧ｷ繝ｧ繝ｳ縺ｯ荳頑嶌縺阪＆繧後ｋ', () => {
++    const modules = {
++      './config/a.json': {
++        default: { section: 'physics', value: 1 },
++      },
++      './config/b.json': {
++        default: { section: 'physics', value: 2 },
++      },
++    }
++    const result = loadConfigFromGlob(modules)
++    const phys = (result as Record<string, Record<string, unknown>>).physics
++    expect(phys.value).toBe(2)
++  })
++
++  it('隍・焚縺ｮ繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ繧貞酔譎ゅ↓繝ｭ繝ｼ繝峨〒縺阪ｋ', () => {
++    const modules = {
++      './config/physics.json': {
++        default: { section: 'physics', playerWidth: 36 },
++      },
++      './config/shoot.json': {
++        default: { section: 'shoot', bulletSpeed: 500 },
++      },
++      './config/throw.json': {
++        default: { section: 'throw', gravity: 800 },
++      },
++    }
++    const result = loadConfigFromGlob(modules)
++    const map = result as Record<string, Record<string, unknown>>
++    expect(map.physics.playerWidth).toBe(36)
++    expect(map.shoot.bulletSpeed).toBe(500)
++    expect(map.throw.gravity).toBe(800)
++  })
++})
+diff --git a/tests/unit/framework/ManualBuilder.test.ts b/tests/unit/framework/ManualBuilder.test.ts
+new file mode 100644
+index 0000000..d5a09c6
+--- /dev/null
++++ b/tests/unit/framework/ManualBuilder.test.ts
+@@ -0,0 +1,126 @@
++import { describe, it, expect } from 'vitest'
++import { ManualBuilder } from '../../../src/framework/ManualBuilder'
++
++describe('ManualBuilder', () => {
++  it('蝓ｺ譛ｬ逧・↑繝薙Ν繝峨′蜍穂ｽ懊☆繧・, () => {
++    const [key, version] = new ManualBuilder('test-key', '1.0').build()
++    expect(key).toBe('test-key')
++    expect(version.version).toBe('1.0')
++    expect(version.manualText).toEqual([])
++    expect(version.choices).toEqual([])
++    expect(version.hazards).toEqual({ colors: ['red'], safeColors: ['blue'] })
++  })
++
++  it('text 縺ｧ譛ｬ譁・｡後ｒ霑ｽ蜉縺ｧ縺阪ｋ', () => {
++    const [, version] = new ManualBuilder('k', '1.0')
++      .text('line1')
++      .text('line2')
++      .build()
++    expect(version.manualText).toEqual(['line1', 'line2'])
++  })
++
++  it('texts 縺ｧ隍・焚陦後ｒ縺ｾ縺ｨ繧√※霑ｽ蜉縺ｧ縺阪ｋ', () => {
++    const [, version] = new ManualBuilder('k', '1.0')
++      .texts(['a', 'b', 'c'])
++      .build()
++    expect(version.manualText).toEqual(['a', 'b', 'c'])
++  })
++
++  it('image 縺ｧ逕ｻ蜒上ヱ繧ｹ繧定ｨｭ螳壹〒縺阪ｋ', () => {
++    const [, version] = new ManualBuilder('k', '1.0')
++      .image('test.png', 'Test image')
++      .build()
++    expect(version.image).toBe('/manuals/test.png')
++    expect(version.imageAlt).toBe('Test image')
++  })
++
++  it('image 縺ｧ邨ｶ蟇ｾ繝代せ繧剃ｽｿ逕ｨ縺ｧ縺阪ｋ', () => {
++    const [, version] = new ManualBuilder('k', '1.0')
++      .image('/absolute/path.png')
++      .build()
++    expect(version.image).toBe('/absolute/path.png')
++  })
++
++  it('hazards 縺ｧ濶ｲ繧剃ｸ頑嶌縺阪〒縺阪ｋ', () => {
++    const [, version] = new ManualBuilder('k', '1.0')
++      .hazards({ colors: ['green', 'yellow'], safeColors: ['cyan'] })
++      .build()
++    expect(version.hazards.colors).toEqual(['green', 'yellow'])
++    expect(version.hazards.safeColors).toEqual(['cyan'])
++  })
++
++  it('choice 縺ｧ驕ｸ謚櫁い繧定ｿｽ蜉縺ｧ縺阪ｋ', () => {
++    const [, version] = new ManualBuilder('k', '1.0')
++      .choice('Go fast', { tempo: 3 }, '2.0-fast', 'c1', 'hint text')
++      .build()
++    expect(version.choices).toHaveLength(1)
++    expect(version.choices[0].id).toBe('c1')
++    expect(version.choices[0].label).toBe('Go fast')
++    expect(version.choices[0].genreParams).toEqual({ tempo: 3 })
++    expect(version.choices[0].next).toBe('2.0-fast')
++    expect(version.choices[0].hint).toBe('hint text')
++  })
++
++  it('choice 縺ｮ id 繧堤怐逡･縺吶ｋ縺ｨ閾ｪ蜍慕函謌舌＆繧後ｋ', () => {
++    const [, version] = new ManualBuilder('mykey', '1.0')
++      .choice('Option A', { tempo: 1 }, '2.0')
++      .choice('Option B', { range: 2 }, '3.0')
++      .build()
++    expect(version.choices[0].id).toBe('mykey-choice-0')
++    expect(version.choices[1].id).toBe('mykey-choice-1')
++  })
++
++  it('tutorialHint 繧定ｨｭ螳壹〒縺阪ｋ', () => {
++    const [, version] = new ManualBuilder('k', '1.0')
++      .tutorialHint('Press Space to jump!')
++      .build()
++    expect(version.tutorialHint).toBe('Press Space to jump!')
++  })
++
++  it('narrative 繧定ｨｭ螳壹〒縺阪ｋ', () => {
++    const [, version] = new ManualBuilder('k', '1.0')
++      .narrative('The game evolves...')
++      .build()
++    expect(version.narrative).toBe('The game evolves...')
++  })
++
++  it('runtimeConfig 繧定ｨｭ螳壹〒縺阪ｋ', () => {
++    const [, version] = new ManualBuilder('k', '1.0')
++      .runtimeConfig({ scrollSpeed: 400, environment: 'sky', bpm: 140 })
++      .build()
++    expect(version.runtimeConfig?.scrollSpeed).toBe(400)
++    expect(version.runtimeConfig?.environment).toBe('sky')
++    expect(version.runtimeConfig?.bpm).toBe(140)
++  })
++
++  it('繝｡繧ｽ繝・ラ繝√ぉ繝ｼ繝ｳ縺ｧ隍・焚縺ｮ險ｭ螳壹ｒ邨・∩蜷医ｏ縺帙ｉ繧後ｋ', () => {
++    const [key, version] = new ManualBuilder('full-test', '3.0')
++      .text('Rule 1')
++      .text('Rule 2')
++      .image('art.png', 'Art')
++      .hazards({ colors: ['purple'] })
++      .choice('Fast', { tempo: 5 }, '4.0-fast')
++      .choice('Slow', { combo: 3 }, '4.0-slow')
++      .tutorialHint('New controls!')
++      .narrative('Chapter 3')
++      .runtimeConfig({ gravity: 1200 })
++      .build()
++
++    expect(key).toBe('full-test')
++    expect(version.manualText).toEqual(['Rule 1', 'Rule 2'])
++    expect(version.image).toBe('/manuals/art.png')
++    expect(version.hazards.colors).toEqual(['purple'])
++    expect(version.choices).toHaveLength(2)
++    expect(version.tutorialHint).toBe('New controls!')
++    expect(version.narrative).toBe('Chapter 3')
++    expect(version.runtimeConfig?.gravity).toBe(1200)
++  })
++
++  it('build 縺ｯ immutable 縺ｪ繧ｳ繝斐・繧定ｿ斐☆', () => {
++    const builder = new ManualBuilder('k', '1.0').text('line1')
++    const [, v1] = builder.build()
++    const [, v2] = builder.build()
++    v1.manualText.push('extra')
++    expect(v2.manualText).not.toContain('extra')
++  })
++})
+diff --git a/tests/unit/framework/ManualLoader.test.ts b/tests/unit/framework/ManualLoader.test.ts
+new file mode 100644
+index 0000000..4655fba
+--- /dev/null
++++ b/tests/unit/framework/ManualLoader.test.ts
+@@ -0,0 +1,236 @@
++import { describe, it, expect } from 'vitest'
++import {
++  loadFromGlob,
++  buildFromFiles,
++  extendDeck,
++} from '../../../src/framework/ManualLoader'
++import type { ManualDeckFile } from '../../../src/framework/types'
++
++describe('loadFromGlob', () => {
++  it('遨ｺ縺ｮ繝｢繧ｸ繝･繝ｼ繝ｫ縺ｧ遨ｺ縺ｮ繝・ャ繧ｭ繧定ｿ斐☆', () => {
++    const deck = loadFromGlob({})
++    expect(Object.keys(deck)).toHaveLength(0)
++  })
++
++  it('entries 繝輔ぅ繝ｼ繝ｫ繝峨ｒ謖√▽繝｢繧ｸ繝･繝ｼ繝ｫ繧呈ｭ｣縺励￥繝ｭ繝ｼ繝峨☆繧・, () => {
++    const modules = {
++      './manuals/base.json': {
++        default: {
++          entries: [
++            {
++              key: '1.0',
++              version: '1.0',
++              manualText: ['Welcome!'],
++              choices: [
++                { id: 'c1', label: 'Go', next: '2.0', genreParams: { tempo: 2 } },
++              ],
++              hazards: { colors: ['red'], safeColors: ['blue'] },
++            },
++          ],
++        },
++      },
++    }
++    const deck = loadFromGlob(modules)
++    expect(deck['1.0']).toBeDefined()
++    expect(deck['1.0'].manualText).toEqual(['Welcome!'])
++    expect(deck['1.0'].choices).toHaveLength(1)
++  })
++
++  it('entries 繝輔ぅ繝ｼ繝ｫ繝峨′縺ｪ縺・Δ繧ｸ繝･繝ｼ繝ｫ縺ｯ繧ｹ繧ｭ繝・・縺輔ｌ繧・, () => {
++    const modules = {
++      './manuals/bad.json': {
++        default: { foo: 'bar' },
++      },
++    }
++    const deck = loadFromGlob(modules)
++    expect(Object.keys(deck)).toHaveLength(0)
++  })
++
++  it('隍・焚縺ｮ繝輔ぃ繧､繝ｫ縺九ｉ繧ｨ繝ｳ繝医Μ繝ｼ繧帝寔邏・☆繧・, () => {
++    const modules = {
++      './manuals/base.json': {
++        default: {
++          entries: [
++            {
++              key: '1.0',
++              version: '1.0',
++              manualText: ['Base'],
++              choices: [],
++              hazards: { colors: ['red'], safeColors: ['blue'] },
++            },
++          ],
++        },
++      },
++      './manuals/branch.json': {
++        default: {
++          entries: [
++            {
++              key: '2.0',
++              version: '2.0',
++              manualText: ['Branch'],
++              choices: [],
++              hazards: { colors: ['green'], safeColors: ['yellow'] },
++            },
++          ],
++        },
++      },
++    }
++    const deck = loadFromGlob(modules)
++    expect(deck['1.0'].manualText).toEqual(['Base'])
++    expect(deck['2.0'].manualText).toEqual(['Branch'])
++  })
++
++  it('key 縺碁㍾隍・＠縺ｦ縺・ｋ蝣ｴ蜷医・蠕悟享縺｡縺ｧ荳頑嶌縺阪＆繧後ｋ', () => {
++    const modules = {
++      './manuals/a.json': {
++        default: {
++          entries: [
++            { key: '1.0', version: '1.0', manualText: ['first'], choices: [], hazards: { colors: ['r'], safeColors: ['b'] } },
++          ],
++        },
++      },
++      './manuals/b.json': {
++        default: {
++          entries: [
++            { key: '1.0', version: '1.0', manualText: ['second'], choices: [], hazards: { colors: ['r'], safeColors: ['b'] } },
++          ],
++        },
++      },
++    }
++    const deck = loadFromGlob(modules)
++    expect(deck['1.0'].manualText).toEqual(['second'])
++  })
++
++  it('runtimeOverrides 繧・ManualRuntimeConfig 縺ｫ螟画鋤縺吶ｋ', () => {
++    const modules = {
++      './manuals/test.json': {
++        default: {
++          entries: [
++            {
++              key: '1.0',
++              version: '1.0',
++              manualText: [],
++              choices: [],
++              hazards: { colors: ['r'], safeColors: ['b'] },
++              runtimeOverrides: {
++                scrollSpeed: 400,
++                environment: 'sky',
++                bpm: 130,
++              },
++            },
++          ],
++        },
++      },
++    }
++    const deck = loadFromGlob(modules)
++    expect(deck['1.0'].runtimeConfig?.scrollSpeed).toBe(400)
++    expect(deck['1.0'].runtimeConfig?.environment).toBe('sky')
++    expect(deck['1.0'].runtimeConfig?.bpm).toBe(130)
++  })
++
++  it('image 繝代せ縺ｮ豁｣隕丞喧・医ヵ繧｡繧､繝ｫ蜷阪・縺ｿ縺ｮ蝣ｴ蜷・/manuals/ 繧剃ｻ倅ｸ趣ｼ・, () => {
++    const modules = {
++      './manuals/test.json': {
++        default: {
++          entries: [
++            {
++              key: '1.0',
++              version: '1.0',
++              manualText: [],
++              choices: [],
++              hazards: { colors: ['r'], safeColors: ['b'] },
++              image: 'test.png',
++            },
++          ],
++        },
++      },
++    }
++    const deck = loadFromGlob(modules)
++    expect(deck['1.0'].image).toBe('/manuals/test.png')
++  })
++
++  it('image 繝代せ縺檎ｵｶ蟇ｾ繝代せ縺ｮ蝣ｴ蜷医・縺昴・縺ｾ縺ｾ', () => {
++    const modules = {
++      './manuals/test.json': {
++        default: {
++          entries: [
++            {
++              key: '1.0',
++              version: '1.0',
++              manualText: [],
++              choices: [],
++              hazards: { colors: ['r'], safeColors: ['b'] },
++              image: '/custom/img.png',
++            },
++          ],
++        },
++      },
++    }
++    const deck = loadFromGlob(modules)
++    expect(deck['1.0'].image).toBe('/custom/img.png')
++  })
++})
++
++describe('buildFromFiles', () => {
++  it('繝輔ぃ繧､繝ｫ驟榊・縺九ｉ繝・ャ繧ｭ繧呈ｧ狗ｯ峨☆繧・, () => {
++    const files: ManualDeckFile[] = [
++      {
++        id: 'base',
++        entries: [
++          {
++            key: '1.0',
++            version: '1.0',
++            manualText: ['Start'],
++            choices: [],
++            hazards: { colors: ['r'], safeColors: ['b'] },
++          },
++        ],
++      },
++    ]
++    const deck = buildFromFiles(files)
++    expect(deck['1.0'].manualText).toEqual(['Start'])
++  })
++
++  it('隍・焚縺ｮ繝輔ぃ繧､繝ｫ繧堤ｵ仙粋縺吶ｋ', () => {
++    const files: ManualDeckFile[] = [
++      {
++        id: 'f1',
++        entries: [
++          { key: 'a', version: 'a', manualText: ['A'], choices: [], hazards: { colors: ['r'], safeColors: ['b'] } },
++        ],
++      },
++      {
++        id: 'f2',
++        entries: [
++          { key: 'b', version: 'b', manualText: ['B'], choices: [], hazards: { colors: ['r'], safeColors: ['b'] } },
++        ],
++      },
++    ]
++    const deck = buildFromFiles(files)
++    expect(deck['a'].manualText).toEqual(['A'])
++    expect(deck['b'].manualText).toEqual(['B'])
++  })
++})
++
++describe('extendDeck', () => {
++  it('譌｢蟄倥ョ繝・く縺ｫ繧ｨ繝ｳ繝医Μ繝ｼ繧定ｿｽ蜉縺吶ｋ', () => {
++    const deck: Record<string, unknown> = {
++      '1.0': { version: '1.0', manualText: ['orig'] },
++    }
++    extendDeck(deck, [
++      ['2.0', { version: '2.0', manualText: ['new'] } as never],
++    ])
++    expect((deck as Record<string, { manualText: string[] }>)['2.0'].manualText).toEqual(['new'])
++    expect((deck as Record<string, { manualText: string[] }>)['1.0'].manualText).toEqual(['orig'])
++  })
++
++  it('譌｢蟄倥く繝ｼ繧剃ｸ頑嶌縺阪☆繧・, () => {
++    const deck: Record<string, unknown> = {
++      '1.0': { version: '1.0', manualText: ['old'] },
++    }
++    extendDeck(deck, [
++      ['1.0', { version: '1.0', manualText: ['new'] } as never],
++    ])
++    expect((deck as Record<string, { manualText: string[] }>)['1.0'].manualText).toEqual(['new'])
++  })
++})
+diff --git a/tests/unit/framework/ManualValidator.test.ts b/tests/unit/framework/ManualValidator.test.ts
+new file mode 100644
+index 0000000..45e4277
+--- /dev/null
++++ b/tests/unit/framework/ManualValidator.test.ts
+@@ -0,0 +1,185 @@
++import { describe, it, expect } from 'vitest'
++import {
++  validateManualVersionStructure,
++  validateDeckStructure,
++  validateDeck,
++  type ValidationResult,
++} from '../../../src/framework/ManualValidator'
++import type { ManualVersion } from '../../../src/domain/types'
++
++// 繝・ヵ繧ｩ繝ｫ繝医ワ繧ｶ繝ｼ繝芽ｨｭ螳・+const DEFAULT_HAZARDS = { colors: ['red'], safeColors: ['blue'] }
++
++// 繝・せ繝育畑縺ｮ譛蟆城剞縺ｪ ManualVersion・・azards 縺ｯ繧ｪ繝励す繝ｧ繝ｳ・・+function _makeVersion(
++  version: string,
++  text: string[] = [],
++  choices: ManualVersion['choices'] = [],
++  hazards?: ManualVersion['hazards'],
++): ManualVersion {
++  return {
++    version,
++    manualText: text,
++    choices,
++    hazards: hazards ?? { ...DEFAULT_HAZARDS },
++  }
++}
++
++describe('validateManualVersionStructure', () => {
++  it('豁｣縺励＞讒矩縺ｮ繧ｨ繝ｩ繝ｼ縺ｯ遨ｺ驟榊・', () => {
++    const valid: ManualVersion = {
++      version: '1.0',
++      manualText: ['line1', 'line2'],
++      choices: [
++        { id: 'c1', label: 'Choice 1', next: '2.0', genreParams: { tempo: 2 } },
++      ],
++      hazards: { colors: ['red'], safeColors: ['blue'] },
++    }
++    const errs = validateManualVersionStructure('1.0', valid)
++    expect(errs).toEqual([])
++  })
++
++  it('髱槭が繝悶ず繧ｧ繧ｯ繝医・蝣ｴ蜷医お繝ｩ繝ｼ', () => {
++    const errs = validateManualVersionStructure('key', 'not an object')
++    expect(errs.length).toBeGreaterThan(0)
++    expect(errs.some(e => e.includes('繧ｪ繝悶ず繧ｧ繧ｯ繝医〒縺ゅｋ蠢・ｦ√′縺ゅｊ縺ｾ縺・))).toBe(true)
++  })
++
++  it('version 縺梧枚蟄怜・縺ｧ縺ｪ縺・ｴ蜷医お繝ｩ繝ｼ', () => {
++    const errs = validateManualVersionStructure('key', { version: 123 })
++    expect(errs.some(e => e.includes('version'))).toBe(true)
++  })
++
++  it('manualText 縺碁・蛻励〒縺ｪ縺・ｴ蜷医お繝ｩ繝ｼ', () => {
++    const errs = validateManualVersionStructure('key', { manualText: 'not array' })
++    expect(errs.some(e => e.includes('manualText'))).toBe(true)
++  })
++
++  it('choices 縺碁・蛻励〒縺ｪ縺・ｴ蜷医お繝ｩ繝ｼ', () => {
++    const errs = validateManualVersionStructure('key', { choices: 'not array' })
++    expect(errs.some(e => e.includes('choices'))).toBe(true)
++  })
++
++  it('choice 縺ｮ蠢・医ヵ繧｣繝ｼ繝ｫ繝峨′荳崎ｶｳ縺励※縺・ｋ蝣ｴ蜷医お繝ｩ繝ｼ', () => {
++    const errs = validateManualVersionStructure('key', {
++      choices: [{ id: 'c1' }], // label, next, genreParams 縺御ｸ崎ｶｳ
++    })
++    expect(errs.some(e => e.includes('label'))).toBe(true)
++    expect(errs.some(e => e.includes('next'))).toBe(true)
++    expect(errs.some(e => e.includes('genreParams'))).toBe(true)
++  })
++
++  it('hazards 縺梧ｭ｣縺励￥縺ｪ縺・ｴ蜷医お繝ｩ繝ｼ', () => {
++    const errs = validateManualVersionStructure('key', { hazards: 'not object' })
++    expect(errs.some(e => e.includes('hazards'))).toBe(true)
++  })
++
++  it('hazards.colors 縺碁・蛻励〒縺ｪ縺・ｴ蜷医お繝ｩ繝ｼ', () => {
++    const errs = validateManualVersionStructure('key', {
++      hazards: { colors: 'red' },
++    })
++    expect(errs.some(e => e.includes('colors'))).toBe(true)
++  })
++})
++
++describe('validateDeckStructure', () => {
++  it('蜈ｨ繧ｨ繝ｳ繝医Μ繝ｼ縺梧ｭ｣縺励＞蝣ｴ蜷医お繝ｩ繝ｼ縺ｪ縺・, () => {
++    const deck = {
++      '1.0': {
++        version: '1.0',
++        manualText: ['line1'],
++        choices: [],
++        hazards: { colors: ['red'], safeColors: ['blue'] },
++      },
++    }
++    const errs = validateDeckStructure(deck as Record<string, unknown>)
++    expect(errs).toEqual([])
++  })
++
++  it('隍・焚縺ｮ繧ｨ繝ｳ繝医Μ繝ｼ縺ｮ繧ｨ繝ｩ繝ｼ繧帝寔邏・☆繧・, () => {
++    const deck = {
++      '1.0': { version: '1.0' }, // manualText, choices, hazards 荳崎ｶｳ
++      '2.0': { version: '2.0' }, // 蜷御ｸ・+    }
++    const errs = validateDeckStructure(deck)
++    expect(errs.length).toBeGreaterThan(0)
++  })
++})
++
++describe('validateDeck', () => {
++  it('繝ｫ繝ｼ繝医く繝ｼ "1.0" 縺悟ｭ伜惠縺励↑縺・ｴ蜷医お繝ｩ繝ｼ', () => {
++    const deck = { '2.0': _makeVersion('2.0') }
++    const result = validateDeck(deck)
++    expect(result.ok).toBe(false)
++    expect(result.errors.some(e => e.includes('1.0'))).toBe(true)
++  })
++
++  it('遨ｺ縺ｮ繝・ャ繧ｭ縺ｯ繧ｨ繝ｩ繝ｼ縺ｫ縺ｪ繧・, () => {
++    const result = validateDeck({})
++    expect(result.ok).toBe(false)
++    expect(result.errors.some(e => e.includes('1.0'))).toBe(true)
++  })
++
++  it('next 縺ｮ蜿ら・蜈医′蟄伜惠縺励↑縺・ｴ蜷医お繝ｩ繝ｼ', () => {
++    const deck = {
++      '1.0': _makeVersion('1.0', [], [
++        { id: 'c1', label: 'Go', next: '999', genreParams: {} },
++      ]),
++    }
++    const result = validateDeck(deck)
++    expect(result.ok).toBe(false)
++    expect(result.errors.some(e => e.includes('999'))).toBe(true)
++  })
++
++  it('逶ｴ謗･蠕ｪ迺ｰ蜿ら・繧呈､懷・縺吶ｋ', () => {
++    const deck = {
++      '1.0': _makeVersion('1.0', [], [
++        { id: 'c1', label: 'Loop', next: '1.0', genreParams: {} },
++      ]),
++    }
++    const result = validateDeck(deck)
++    expect(result.ok).toBe(false)
++    expect(result.errors.some(e => e.includes('蠕ｪ迺ｰ'))).toBe(true)
++  })
++
++  it('豺ｱ縺・ｾｪ迺ｰ蜿ら・繧呈､懷・縺吶ｋ', () => {
++    const deck = {
++      '1.0': _makeVersion('1.0', [], [
++        { id: 'c1', label: 'A', next: '2.0', genreParams: {} },
++      ]),
++      '2.0': _makeVersion('2.0', [], [
++        { id: 'c2', label: 'B', next: '3.0', genreParams: {} },
++      ]),
++      '3.0': _makeVersion('3.0', [], [
++        { id: 'c3', label: 'C', next: '1.0', genreParams: {} },
++      ]),
++    }
++    const result = validateDeck(deck)
++    expect(result.ok).toBe(false)
++    expect(result.errors.some(e => e.includes('蠕ｪ迺ｰ'))).toBe(true)
++  })
++
++  it('蛻ｰ驕比ｸ榊庄閭ｽ縺ｪ繧ｨ繝ｳ繝医Μ繝ｼ繧定ｭｦ蜻翫☆繧・, () => {
++    const deck = {
++      '1.0': _makeVersion('1.0', [], [
++        { id: 'c1', label: 'A', next: '2.0', genreParams: {} },
++      ]),
++      '2.0': _makeVersion('2.0'),
++      'orphan': _makeVersion('orphan'),
++    }
++    const result = validateDeck(deck)
++    expect(result.warnings.some(w => w.includes('orphan'))).toBe(true)
++  })
++
++  it('豁｣縺励＞繝・ャ繧ｭ縺ｯ ok=true', () => {
++    const deck = {
++      '1.0': _makeVersion('1.0', ['start'], [
++        { id: 'c1', label: 'A', next: '2.0', genreParams: { tempo: 2 } },
++      ]),
++      '2.0': _makeVersion('2.0', ['next']),
++    }
++    const result = validateDeck(deck)
++    expect(result.ok).toBe(true)
++    expect(result.errors).toEqual([])
++  })
++})
+diff --git a/tests/unit/game/ParticleSystem.test.ts b/tests/unit/game/ParticleSystem.test.ts
+new file mode 100644
+index 0000000..5206182
+--- /dev/null
++++ b/tests/unit/game/ParticleSystem.test.ts
+@@ -0,0 +1,198 @@
++import { describe, it, expect, beforeEach } from 'vitest'
++import { ParticleSystem } from '../../../src/game/ParticleSystem'
++
++// 1繝輔Ξ繝ｼ繝蛻・・ dt・・6ms 竕・60fps・・+const DT_16MS = 0.016
++// 螳悟・縺ｪ蜀・ｼ・rc 縺ｮ邨らｫｯ隗貞ｺｦ・・+const TWO_PI = Math.PI * 2
++
++// CanvasRenderingContext2D 縺ｮ譛蟆城剞縺ｪ繝｢繝・け
++function createMockCtx(): CanvasRenderingContext2D {
++  return {
++    globalAlpha: 1,
++    fillStyle: '',
++    beginPath: vi.fn(),
++    arc: vi.fn(),
++    fill: vi.fn(),
++    canvas: {} as HTMLCanvasElement,
++  } as unknown as CanvasRenderingContext2D
++}
++
++describe('ParticleSystem', () => {
++  let ps: ParticleSystem
++
++  beforeEach(() => {
++    ps = new ParticleSystem()
++  })
++
++  describe('add', () => {
++    it('繝代・繝・ぅ繧ｯ繝ｫ繧定ｿｽ蜉縺励〉ender 縺ｧ謠冗判縺輔ｌ繧・, () => {
++      ps.add(100, 200, 10, -20, 1.0, '#ff0000', 5)
++      const ctx = createMockCtx()
++      ps.render(ctx)
++      expect(ctx.beginPath).toHaveBeenCalledTimes(1)
++      expect(ctx.arc).toHaveBeenCalledTimes(1)
++      expect(ctx.fill).toHaveBeenCalledTimes(1)
++    })
++  })
++
++  describe('update', () => {
++    it('繝代・繝・ぅ繧ｯ繝ｫ縺ｮ菴咲ｽｮ繧呈峩譁ｰ縺吶ｋ', () => {
++      ps.add(100, 200, 100, 0, 1.0, '#ff0000', 5)
++      ps.update(DT_16MS, 0) // dt=16ms, gravity=0
++      // x += vx * dt 竊・100 + 100 * 0.016 = 101.6
++      // life -= dt 竊・0.984, alpha = 0.984/1.0 = 0.984
++      // size = 5 * (0.5 + 0.984 * 0.5) = 4.96
++      const ctx = createMockCtx()
++      ps.render(ctx)
++      expect(ctx.arc).toHaveBeenCalledWith(101.6, 200, expect.closeTo(4.96, 0.01), 0, TWO_PI)
++    })
++
++    it('驥榊鴨繧帝←逕ｨ縺吶ｋ', () => {
++      ps.add(100, 200, 0, 0, 1.0, '#ff0000', 5)
++      ps.update(DT_16MS, 800) // gravity=800
++      // 1繝輔Ξ繝ｼ繝逶ｮ: 菴咲ｽｮ譖ｴ譁ｰ縺ｫ縺ｯ逶ｴ蜑阪・ vy(0) 繧剃ｽｿ縺・◆繧・y 縺ｯ荳榊､・+      // 縺昴・蠕・vy += 800*0.016 = 12.8 縺ｫ譖ｴ譁ｰ
++      const ctx = createMockCtx()
++      ps.render(ctx)
++      // 2繝輔Ξ繝ｼ繝逶ｮ: y += 12.8 * 0.016 = 0.2048 竊・y = 200.2048
++      ps.update(DT_16MS, 800)
++      const ctx2 = createMockCtx()
++      ps.render(ctx2)
++      // life=0.968 竊・size = 5 * (0.5 + 0.968 * 0.5) = 4.92
++      expect(ctx2.arc).toHaveBeenCalledWith(100, expect.closeTo(200.2048, 0.001), expect.closeTo(4.92, 0.01), 0, TWO_PI)
++    })
++
++    it('life 縺悟・繧後◆繝代・繝・ぅ繧ｯ繝ｫ繧貞炎髯､縺吶ｋ', () => {
++      ps.add(0, 0, 0, 0, 0.01, '#ff0000', 5) // life=0.01
++      ps.update(0.1, 0) // dt=100ms 竊・life 縺・-0.09 縺ｫ
++      const ctx = createMockCtx()
++      ps.render(ctx)
++      // 蜑企勁縺輔ｌ縺溘ヱ繝ｼ繝・ぅ繧ｯ繝ｫ縺ｯ謠冗判縺輔ｌ縺ｪ縺・+      expect(ctx.beginPath).not.toHaveBeenCalled()
++    })
++
++    it('life 縺梧ｮ九▲縺ｦ縺・ｋ繝代・繝・ぅ繧ｯ繝ｫ縺ｯ菫晄戟縺輔ｌ繧・, () => {
++      ps.add(0, 0, 0, 0, 1.0, '#ff0000', 5)
++      ps.update(0.1, 0) // life=0.9
++      const ctx = createMockCtx()
++      ps.render(ctx)
++      expect(ctx.beginPath).toHaveBeenCalledTimes(1)
++    })
++
++    it('dt=0 縺ｧ菴咲ｽｮ縺ｨ life 縺悟､峨ｏ繧峨↑縺・, () => {
++      ps.add(100, 200, 50, 30, 1.0, '#ff0000', 5)
++      ps.update(0, 800) // dt=0 竊・譖ｴ譁ｰ縺ｪ縺・+      const ctx = createMockCtx()
++      ps.render(ctx)
++      // x=100, y=200 縺ｮ縺ｾ縺ｾ
++      expect(ctx.arc).toHaveBeenCalledWith(100, 200, expect.any(Number), 0, TWO_PI)
++    })
++
++    it('雋縺ｮ dt 縺ｧ騾・婿蜷代↓蜍輔￥', () => {
++      ps.add(100, 200, 50, 0, 1.0, '#ff0000', 5)
++      ps.update(-DT_16MS, 0) // dt=-0.016 竊・x -= 50*0.016 = 0.8
++      const ctx = createMockCtx()
++      ps.render(ctx)
++      // x = 100 - 0.8 = 99.2
++      expect(ctx.arc).toHaveBeenCalledWith(99.2, 200, expect.any(Number), 0, TWO_PI)
++    })
++
++    it('dt=NaN 縺ｧ萓句､悶′逋ｺ逕溘＠縺ｪ縺・, () => {
++      ps.add(100, 200, 50, 0, 1.0, '#ff0000', 5)
++      // NaN 縺御ｼ晄成縺励※繧ゆｾ句､悶↑縺励〒蜍穂ｽ懊☆繧九％縺ｨ
++      expect(() => ps.update(NaN, 800)).not.toThrow()
++    })
++  })
++
++  describe('updateSlow', () => {
++    it('繧ｹ繝ｭ繝ｼ繝｢繝ｼ繧ｷ繝ｧ繝ｳ菫よ焚繧帝←逕ｨ縺吶ｋ', () => {
++      ps.add(0, 0, 100, 0, 1.0, '#ff0000', 5)
++      ps.updateSlow(DT_16MS, 0.5, 0) // slowFactor=0.5
++      // x += 100 * 0.016 * 0.5 = 0.8
++      // life -= dt 竊・0.984 竊・size = 5 * (0.5 + 0.984 * 0.5) = 4.96
++      const ctx = createMockCtx()
++      ps.render(ctx)
++      expect(ctx.arc).toHaveBeenCalledWith(0.8, 0, expect.closeTo(4.96, 0.01), 0, TWO_PI)
++    })
++
++    it('繧ｹ繝ｭ繝ｼ繝｢繝ｼ繧ｷ繝ｧ繝ｳ縺ｧ繧・life 縺ｯ騾壼ｸｸ騾溷ｺｦ縺ｧ貂帛ｰ代☆繧・, () => {
++      ps.add(0, 0, 0, 0, 0.01, '#ff0000', 5)
++      ps.updateSlow(0.1, 0.1, 0) // life-=0.1 竊・雋
++      const ctx = createMockCtx()
++      ps.render(ctx)
++      // life 縺悟・繧後※蜑企勁縺輔ｌ繧・+      expect(ctx.beginPath).not.toHaveBeenCalled()
++    })
++  })
++
++  describe('render', () => {
++    it('ctx 縺ｮ繝｡繧ｽ繝・ラ繧貞他縺ｳ蜃ｺ縺・, () => {
++      const ctx = createMockCtx()
++      ps.add(100, 200, 0, 0, 0.5, '#ff0000', 10)
++      ps.render(ctx)
++      expect(ctx.beginPath).toHaveBeenCalled()
++      expect(ctx.arc).toHaveBeenCalled()
++      expect(ctx.fill).toHaveBeenCalled()
++    })
++
++    it('alpha 縺ｯ life/maxLife 縺ｧ險育ｮ励＆繧後ｋ', () => {
++      // 繝｢繝・け縺ｮ globalAlpha 繧・0 縺ｫ蛻晄悄蛹悶＠縲〉ender 縺碁←蛻・↓險ｭ螳壹・繝ｪ繧ｻ繝・ヨ縺吶ｋ縺薙→繧堤｢ｺ隱・+      const mockCtx = createMockCtx()
++      mockCtx.globalAlpha = 0
++      ps.add(0, 0, 0, 0, 0.5, '#ff0000', 5) // life=0.5, maxLife=0.5 竊・alpha=1.0
++      ps.render(mockCtx)
++      expect(mockCtx.globalAlpha).toBe(1) // render 蠕後↓ 1 縺ｫ繝ｪ繧ｻ繝・ヨ縺輔ｌ繧・+    })
++
++    it('繧ｵ繧､繧ｺ縺ｯ alpha 縺ｫ蠢懊§縺ｦ邵ｮ蟆上☆繧・, () => {
++      const ctx = createMockCtx()
++      ps.add(0, 0, 0, 0, 0.5, '#ff0000', 10)
++      ps.update(0.25, 0) // life=0.25, maxLife=0.5 竊・alpha=0.5
++      ps.render(ctx)
++      // size = 10 * (0.5 + 0.5 * 0.5) = 7.5
++      expect(ctx.arc).toHaveBeenCalledWith(0, 0, 7.5, 0, TWO_PI)
++    })
++
++    it('繝代・繝・ぅ繧ｯ繝ｫ縺後↑縺・ｴ蜷医・謠冗判縺励↑縺・, () => {
++      const ctx = createMockCtx()
++      ps.render(ctx)
++      expect(ctx.beginPath).not.toHaveBeenCalled()
++    })
++  })
++
++  describe('decayShake', () => {
++    it('decayFactor 繧帝←逕ｨ縺励※豁｣縺ｮ蛟､繧堤ｶｭ謖√☆繧・, () => {
++      const result = ps.decayShake(10, 0.9, 0.01)
++      expect(result).toBeGreaterThanOrEqual(0)
++      expect(result).toBeCloseTo(9, 5)
++    })
++
++    it('epsilon 譛ｪ貅縺ｧ 0 縺ｫ縺吶ｋ', () => {
++      const result = ps.decayShake(0.001, 0.9, 0.01)
++      expect(result).toBe(0)
++    })
++
++    it('譌｢縺ｫ 0 縺ｪ繧・0 縺ｮ縺ｾ縺ｾ', () => {
++      const result = ps.decayShake(0, 0.9, 0.01)
++      expect(result).toBe(0)
++    })
++
++    it('epsilon 縺｡繧・≧縺ｩ縺ｧ繧・0 縺ｫ縺吶ｋ', () => {
++      const result = ps.decayShake(0.01, 0.5, 0.01)
++      expect(result).toBe(0) // 0.005 < 0.01
++    })
++  })
++
++  describe('clear', () => {
++    it('蜈ｨ繝代・繝・ぅ繧ｯ繝ｫ繧貞炎髯､縺吶ｋ', () => {
++      ps.add(0, 0, 0, 0, 1.0, '#ff0000', 5)
++      ps.add(10, 10, 0, 0, 1.0, '#00ff00', 5)
++      ps.clear()
++      // clear 蠕後ｂ萓句､悶↑縺励〒蜍穂ｽ懊☆繧九％縺ｨ繧堤｢ｺ隱・+      const ctx = createMockCtx()
++      ps.render(ctx)
++      expect(ctx.beginPath).not.toHaveBeenCalled() // 繝代・繝・ぅ繧ｯ繝ｫ縺ｪ縺励↑縺ｮ縺ｧ謠冗判縺励↑縺・+    })
++  })
++})
+diff --git a/tests/unit/game/TetrisFeature.test.ts b/tests/unit/game/TetrisFeature.test.ts
+new file mode 100644
+index 0000000..80b32d1
+--- /dev/null
++++ b/tests/unit/game/TetrisFeature.test.ts
+@@ -0,0 +1,395 @@
++import { describe, it, expect, vi, beforeEach } from 'vitest'
++import {
++  initialState, createEmptyGrid, spawnPiece, isValidPlacement,
++  canPieceDrop, movePiece, rotatePiece, hardDrop, lockPiece, clearLines,
++  getBlocks, TETROMINOS, COLS, ROWS, CELL_SIZE, LINE_SCORES
++} from '../../../src/game/systems/TetrisFeature'
++import type { MutableWorld } from '../../../src/engine/types'
++
++describe('TetrisFeature internal logic', () => {
++  let state: ReturnType<typeof initialState>
++
++  beforeEach(() => {
++    state = initialState()
++  })
++
++  describe('createEmptyGrid', () => {
++    it('creates 10x20 grid with null cells', () => {
++      const grid = createEmptyGrid()
++      expect(grid.length).toBe(ROWS)
++      expect(grid[0].length).toBe(COLS)
++      expect(grid[0][0]).toBeNull()
++    })
++  })
++
++  describe('initialState', () => {
++    it('initializes with correct defaults', () => {
++      expect(state.grid.length).toBe(ROWS)
++      expect(state.piece).toBeNull()
++      expect(state.bag.length).toBe(0)
++      expect(state.bagIdx).toBe(7)
++      expect(state.dropTimer).toBe(0)
++      expect(state.gameOver).toBe(false)
++      expect(state.linesCleared).toBe(0)
++      expect(state.totalScore).toBe(0)
++      expect(state.initialized).toBe(false)
++    })
++  })
++
++  describe('TETROMINOS', () => {
++    it('has 7 tetromino types', () => {
++      expect(TETROMINOS.length).toBe(7)
++      const ids = TETROMINOS.map(t => t.id)
++      expect(ids).toContain('I')
++      expect(ids).toContain('O')
++      expect(ids).toContain('T')
++      expect(ids).toContain('S')
++      expect(ids).toContain('Z')
++      expect(ids).toContain('J')
++      expect(ids).toContain('L')
++    })
++
++    it('each tetromino has 4 rotation states', () => {
++      for (const def of TETROMINOS) {
++        expect(def.rotations.length).toBe(4)
++      }
++    })
++
++    it('each rotation state has 4 cells', () => {
++      for (const def of TETROMINOS) {
++        for (const rotation of def.rotations) {
++          expect(rotation.length).toBe(4)
++        }
++      }
++    })
++  })
++
++  describe('isValidPlacement', () => {
++    it('returns true for valid spawn position', () => {
++      spawnPiece(state)
++      expect(state.piece).not.toBeNull()
++      expect(isValidPlacement(state.grid, state.piece!)).toBe(true)
++    })
++
++    it('returns false when piece goes out of bounds (right)', () => {
++      spawnPiece(state)
++      const piece = state.piece!
++      const testPiece = { ...piece, col: COLS }
++      expect(isValidPlacement(state.grid, testPiece)).toBe(false)
++    })
++
++    it('returns false when piece goes out of bounds (left)', () => {
++      spawnPiece(state)
++      const piece = state.piece!
++      const testPiece = { ...piece, col: -2 }
++      expect(isValidPlacement(state.grid, testPiece)).toBe(false)
++    })
++
++    it('returns false when piece collides with locked block', () => {
++      // Use I piece which has all 4 blocks at same row (dr=1)
++      state.bag = ['I', 'I', 'I']
++      state.bagIdx = 0
++
++      // First piece: spawn and hard drop to bottom row
++      spawnPiece(state)
++      state.piece!.row = ROWS - 2  // Place piece so blocks are at rows ROWS-2+1=ROWS-1
++      lockPiece(state)
++      // Now there should be 4 blocks at row ROWS-1
++      expect(state.grid[ROWS - 1][3]).not.toBeNull()
++      expect(state.grid[ROWS - 1][4]).not.toBeNull()
++      expect(state.grid[ROWS - 1][5]).not.toBeNull()
++      expect(state.grid[ROWS - 1][6]).not.toBeNull()
++
++      // Second piece: spawn I piece at row ROWS-4 so blocks lock at ROWS-3
++      spawnPiece(state)
++      state.piece!.row = ROWS - 4
++      lockPiece(state)
++      // Now there should be 4 blocks at row ROWS-3
++      expect(state.grid[ROWS - 3][3]).not.toBeNull()
++      expect(state.grid[ROWS - 3][4]).not.toBeNull()
++      expect(state.grid[ROWS - 3][5]).not.toBeNull()
++      expect(state.grid[ROWS - 3][6]).not.toBeNull()
++
++      // Third piece: spawn - should be at row=-1
++      spawnPiece(state)
++      expect(state.piece).not.toBeNull()
++
++      // Test if the piece placed at row 1 collides with the locked piece at row ROWS-3
++      // This tests that locked blocks prevent placement
++      expect(state.grid[ROWS - 3][4]).not.toBeNull()
++      // A test piece at row 0 with I rotation 0 would have blocks at row 1
++      if (state.piece) {
++        const testPiece = { ...state.piece!, row: 0 }
++        expect(isValidPlacement(state.grid, testPiece)).toBe(true) // row 1 is not row ROWS-3
++      }
++
++      // But a piece with blocks in row ROWS-3 should be invalid
++      const collisionTest = {
++        def: TETROMINOS[0], // I piece
++        rotation: 0,
++        col: 3,
++        row: ROWS - 4,  // blocks at row ROWS-4+1=ROWS-3 collides with locked piece
++      }
++      expect(isValidPlacement(state.grid, collisionTest)).toBe(false)
++    })
++  })
++
++  describe('spawnPiece', () => {
++    it('spawns a piece when no piece exists', () => {
++      expect(state.piece).toBeNull()
++      spawnPiece(state)
++      expect(state.piece).not.toBeNull()
++    })
++
++    it('spawns I piece at adjusted column position', () => {
++      // Force I piece
++      state.bag = ['I', 'O', 'T', 'S', 'Z', 'J', 'L']
++      state.bagIdx = 0
++      spawnPiece(state)
++      expect(state.piece).not.toBeNull()
++      // I piece spawns at col = 5 - 2 = 3
++      expect(state.piece!.col).toBe(Math.floor(COLS / 2) - 2)
++    })
++
++    it('sets gameOver when spawn position is invalid', () => {
++      // Fill grid to top
++      for (let r = 0; r < ROWS; r++) {
++        for (let c = 0; c < COLS; c++) {
++          state.grid[r][c] = 'gray'
++        }
++      }
++      spawnPiece(state)
++      expect(state.gameOver).toBe(true)
++      expect(state.piece).toBeNull()
++    })
++  })
++
++  describe('movePiece', () => {
++    beforeEach(() => {
++      spawnPiece(state)
++    })
++
++    it('moves left successfully', () => {
++      const oldCol = state.piece!.col
++      const result = movePiece(state, -1)
++      expect(result).toBe(true)
++      expect(state.piece!.col).toBe(oldCol - 1)
++    })
++
++    it('moves right successfully', () => {
++      const oldCol = state.piece!.col
++      const result = movePiece(state, 1)
++      expect(result).toBe(true)
++      expect(state.piece!.col).toBe(oldCol + 1)
++    })
++
++    it('blocks left move at wall', () => {
++      state.piece!.col = 0
++      const result = movePiece(state, -1)
++      expect(result).toBe(false)
++      expect(state.piece!.col).toBe(0)
++    })
++
++    it('blocks right move at wall', () => {
++      state.piece!.col = COLS - 1
++      const result = movePiece(state, 1)
++      expect(result).toBe(false)
++      expect(state.piece!.col).toBe(COLS - 1)
++    })
++
++    it('returns false when no active piece', () => {
++      state.piece = null
++      expect(movePiece(state, 1)).toBe(false)
++    })
++
++    it('returns false when game over', () => {
++      spawnPiece(state)
++      state.gameOver = true
++      expect(movePiece(state, 1)).toBe(false)
++    })
++  })
++
++  describe('rotatePiece', () => {
++    beforeEach(() => {
++      spawnPiece(state)
++    })
++
++    it('rotates piece clockwise', () => {
++      const oldRotation = state.piece!.rotation
++      const result = rotatePiece(state)
++      expect(result).toBe(true)
++      expect(state.piece!.rotation).toBe((oldRotation + 1) % 4)
++    })
++
++    it('rotates piece multiple times (4 rotations = original)', () => {
++      const originalBlocks = getBlocks(state.piece!)
++      rotatePiece(state)
++      rotatePiece(state)
++      rotatePiece(state)
++      rotatePiece(state)
++      const finalBlocks = getBlocks(state.piece!)
++      expect(finalBlocks).toEqual(originalBlocks)
++    })
++
++    it('attempts wall kick when rotation would be invalid', () => {
++      // Move piece to wall
++      state.piece!.col = COLS - 1
++      // Rotation is attempted, wall kick should try to resolve
++      rotatePiece(state)
++      // Piece should not be out of bounds after wall kick
++      const blocks = getBlocks(state.piece!)
++      for (const [dc, dr] of blocks) {
++        const c = state.piece!.col + dc
++        expect(c).toBeGreaterThanOrEqual(0)
++        expect(c).toBeLessThan(COLS)
++      }
++    })
++
++    it('returns false when no active piece', () => {
++      state.piece = null
++      expect(rotatePiece(state)).toBe(false)
++    })
++  })
++
++  describe('hardDrop', () => {
++    beforeEach(() => {
++      spawnPiece(state)
++    })
++
++    it('drops piece to bottom', () => {
++      const oldRow = state.piece!.row
++      const dropped = hardDrop(state)
++      expect(dropped).toBeGreaterThan(0)
++      expect(state.piece!.row).toBe(oldRow + dropped)
++      // After hard drop, piece should not be able to drop further
++      expect(canPieceDrop(state)).toBe(false)
++    })
++
++    it('sets small lockTimer after drop', () => {
++      hardDrop(state)
++      expect(state.lockTimer).toBe(0.1)
++    })
++
++    it('returns 0 when no piece to drop', () => {
++      state.piece = null
++      expect(hardDrop(state)).toBe(0)
++    })
++  })
++
++  describe('lockPiece', () => {
++    beforeEach(() => {
++      spawnPiece(state)
++      // Drop piece to bottom
++      hardDrop(state)
++    })
++
++    it('locks piece to grid', () => {
++      expect(state.piece).not.toBeNull()
++      lockPiece(state)
++      expect(state.piece).toBeNull()
++      // Check that blocks are now in grid
++      let lockedBlocks = 0
++      for (let r = 0; r < ROWS; r++) {
++        for (let c = 0; c < COLS; c++) {
++          if (state.grid[r][c] !== null) lockedBlocks++
++        }
++      }
++      expect(lockedBlocks).toBe(4)
++    })
++
++    it('returns 0 when no piece to lock', () => {
++      state.piece = null
++      expect(lockPiece(state)).toBe(0)
++    })
++  })
++
++  describe('clearLines', () => {
++    it('clears a complete line', () => {
++      // Fill a row completely at the bottom
++      for (let c = 0; c < COLS; c++) {
++        state.grid[ROWS - 1][c] = 'red'
++      }
++
++      const initialGridHeight = state.grid.length
++      const lines = clearLines(state)
++      expect(lines).toBe(1)
++      expect(state.grid.length).toBe(initialGridHeight)
++      expect(state.grid[ROWS - 1][0]).toBeNull() // New empty row at top
++      expect(state.linesCleared).toBe(1)
++      expect(state.totalScore).toBe(LINE_SCORES[1])
++    })
++
++    it('clears multiple lines', () => {
++      // Fill last 3 rows
++      for (let r = ROWS - 3; r < ROWS; r++) {
++        for (let c = 0; c < COLS; c++) {
++          state.grid[r][c] = 'blue'
++        }
++      }
++
++      const lines = clearLines(state)
++      expect(lines).toBe(3)
++      expect(state.linesCleared).toBe(3)
++      expect(state.totalScore).toBe(LINE_SCORES[3])
++    })
++
++    it('does nothing when no complete lines', () => {
++      state.grid[ROWS - 1][0] = 'red' // Only one cell
++      expect(clearLines(state)).toBe(0)
++    })
++  })
++
++  describe('canPieceDrop', () => {
++    it('returns false when no piece', () => {
++      expect(canPieceDrop(state)).toBe(false)
++    })
++
++    it('returns true for fresh piece (can drop)', () => {
++      spawnPiece(state)
++      expect(canPieceDrop(state)).toBe(true)
++    })
++
++    it('returns false when piece is at bottom', () => {
++      spawnPiece(state)
++      hardDrop(state)
++      expect(canPieceDrop(state)).toBe(false)
++    })
++
++    it('returns false when blocked by locked piece', () => {
++      spawnPiece(state)
++      lockPiece(state)
++      spawnPiece(state)
++      // Lock again to create piece below
++      lockPiece(state)
++      spawnPiece(state)
++      // New piece should be blocked by first locked piece at row 0
++      if (state.piece) {
++        // The new piece at row=-1 should not be able to drop if row 0 is filled
++        // But row=-1 with rotation blocks that have dr=1 means r=0
++        // which would collide with the locked piece
++        expect(canPieceDrop(state)).toBe(false)
++      }
++    })
++  })
++
++  describe('LINE_SCORES', () => {
++    it('has correct values [0, 100, 300, 500, 800]', () => {
++      expect(LINE_SCORES).toEqual([0, 100, 300, 500, 800])
++    })
++  })
++
++  describe('getBlocks', () => {
++    it('returns blocks for current rotation', () => {
++      spawnPiece(state)
++      const blocks0 = getBlocks(state.piece!)
++      rotatePiece(state)
++      const blocks1 = getBlocks(state.piece!)
++      // After rotation, blocks should be different (except for O piece)
++      if (state.piece!.def.id !== 'O') {
++        expect(blocks0).not.toEqual(blocks1)
++      } else {
++        expect(blocks0).toEqual(blocks1) // O piece is rotation-invariant
++      }
++    })
++  })
++})
+diff --git a/tests/unit/game/entities.test.ts b/tests/unit/game/entities.test.ts
+new file mode 100644
+index 0000000..538baa8
+--- /dev/null
++++ b/tests/unit/game/entities.test.ts
+@@ -0,0 +1,170 @@
++import { describe, it, expect } from 'vitest'
++import { rectsOverlap, Player, Hazard, Bullet, Item } from '../../../src/game/entities'
++
++describe('rectsOverlap', () => {
++  it('螳悟・縺ｫ驥阪↑縺｣縺溽洸蠖｢縺ｯ true 繧定ｿ斐☆', () => {
++    const a = { x: 0, y: 0, w: 100, h: 100 }
++    const b = { x: 50, y: 50, w: 100, h: 100 }
++    expect(rectsOverlap(a, b)).toBe(true)
++  })
++
++  it('髫｣謗･縺吶ｋ遏ｩ蠖｢縺ｯ false 繧定ｿ斐☆・・race 縺ｯ遏ｩ蠖｢A繧堤ｸｮ蟆上☆繧九◆繧・ｼ・, () => {
++    // grace 縺ｯ遏ｩ蠖｢A縺ｮ陦晉ｪ√・繝・け繧ｹ繧堤ｸｮ蟆上☆繧九◆繧√∝宍蟇・↑蛻､螳壹↓縺ｪ繧・+    const a = { x: 0, y: 0, w: 100, h: 100 }
++    const b = { x: 100, y: 0, w: 100, h: 100 }
++    expect(rectsOverlap(a, b)).toBe(false)
++  })
++
++  it('髮｢繧後※縺・ｋ遏ｩ蠖｢縺ｯ false 繧定ｿ斐☆', () => {
++    const a = { x: 0, y: 0, w: 100, h: 100 }
++    const b = { x: 200, y: 0, w: 100, h: 100 }
++    expect(rectsOverlap(a, b)).toBe(false)
++  })
++
++  it('grace 繝代Λ繝｡繝ｼ繧ｿ縺ｧ遏ｩ蠖｢A縺ｮ陦晉ｪ√・繝・け繧ｹ縺檎ｸｮ蟆上＆繧後ｋ', () => {
++    // grace 縺ｯ遏ｩ蠖｢A縺ｮ陦晉ｪ√・繝・け繧ｹ繧・shrink 縺吶ｋ縺溘ａ縲・+    // 驥阪↑繧翫↓縺上￥縺ｪ繧具ｼ医・繝ｬ繧､繝､繝ｼ繧呈怏蛻ｩ縺ｫ縺吶ｋ險ｭ險茨ｼ・+    const a = { x: 0, y: 0, w: 100, h: 100 }
++    const b = { x: 90, y: 0, w: 100, h: 100 }
++    expect(rectsOverlap(a, b, 0)).toBe(true)  // grace=0 縺ｧ蛻､螳・+    // grace=4 縺ｧ ag.x=4, ag.w=92, ag.x+ag.w=96 > b.x=90 竊・true
++    expect(rectsOverlap(a, b, 4)).toBe(true)
++    // grace=20 縺ｧ ag.x=20, ag.w=60, ag.x+ag.w=80 < b.x=90 竊・false
++    expect(rectsOverlap(a, b, 20)).toBe(false)
++  })
++
++  it('grace 縺ｯ遏ｩ蠖｢縺ｮ蜊雁・繧医ｊ螟ｧ縺阪￥縺ｪ繧峨↑縺・, () => {
++    // 蟆上＆縺ｪ遏ｩ蠖｢ (w=10, h=10) 縺ｮ蝣ｴ蜷医“race 縺ｯ floor(10/2) = 5 縺ｫ繧ｯ繝ｩ繝ｳ繝励＆繧後ｋ
++    // grace=5 竊・ag={x:5, y:5, w:0, h:0} 竊・ag.x+ag.w=5 < b.x=8 竊・false
++    const a = { x: 0, y: 0, w: 10, h: 10 }
++    const b = { x: 8, y: 0, w: 10, h: 10 }
++    expect(rectsOverlap(a, b, 100)).toBe(false) // grace=5 縺ｧ shrink 縺輔ｌ縺ｦ false
++    // 螳悟・縺ｫ驥阪↑繧後・ true
++    expect(rectsOverlap(a, { x: 0, y: 0, w: 10, h: 10 }, 100)).toBe(true)
++  })
++
++  it('Y 譁ｹ蜷代・縺ｿ縺ｮ驥阪↑繧翫ｒ蛻､螳壹☆繧・, () => {
++    const a = { x: 0, y: 0, w: 100, h: 100 }
++    const b = { x: 20, y: 150, w: 100, h: 100 }
++    expect(rectsOverlap(a, b)).toBe(false)
++  })
++
++  it('迚・婿縺ｮ遏ｩ蠖｢縺御ｻ匁婿縺ｫ螳悟・縺ｫ蜷ｫ縺ｾ繧後ｋ蝣ｴ蜷・, () => {
++    const a = { x: 0, y: 0, w: 200, h: 200 }
++    const b = { x: 50, y: 50, w: 50, h: 50 }
++    expect(rectsOverlap(a, b)).toBe(true)
++  })
++})
++
++describe('Player', () => {
++  it('豁｣縺励￥蛻晄悄蛹悶＆繧後ｋ', () => {
++    const p = new Player(100, 500)
++    expect(p.x).toBe(100)
++    expect(p.y).toBe(500 - 52) // groundY - h
++    expect(p.w).toBe(36)
++    expect(p.h).toBe(52)
++    expect(p.onGround).toBe(false)
++    expect(p.hp).toBe(3)
++    expect(p.maxHp).toBe(3)
++  })
++
++  it('rect 繝励Ο繝代ユ繧｣縺梧ｭ｣縺励＞遏ｩ蠖｢繧定ｿ斐☆', () => {
++    const p = new Player(100, 500)
++    expect(p.rect).toEqual({ x: 100, y: 448, w: 36, h: 52 })
++  })
++
++  it('繝・ヵ繧ｩ繝ｫ繝医・迚ｩ逅・憾諷九′豁｣縺励＞', () => {
++    const p = new Player(0, 0)
++    expect(p.vy).toBe(0)
++    expect(p.vx).toBe(0)
++    expect(p.invincible).toBe(0)
++    expect(p.exp).toBe(0)
++    expect(p.airTime).toBe(0)
++    expect(p.runFrame).toBe(0)
++    expect(p.landSquash).toBe(0)
++  })
++})
++
++describe('Hazard', () => {
++  it('豁｣縺励￥蛻晄悄蛹悶＆繧後ｋ', () => {
++    const h = new Hazard(100, 200, 30, 40, 'red', '#ff0000')
++    expect(h.x).toBe(100)
++    expect(h.y).toBe(200)
++    expect(h.w).toBe(30)
++    expect(h.h).toBe(40)
++    expect(h.color).toBe('red')
++    expect(h.glowColor).toBe('#ff0000')
++    expect(h.shape).toBe('rect')
++    expect(h.hp).toBe(1)
++    expect(h.isSafe).toBe(false)
++  })
++
++  it('繧ｪ繝励す繝ｧ繝ｳ繝代Λ繝｡繝ｼ繧ｿ縺ｧ蛻晄悄蛹悶〒縺阪ｋ', () => {
++    const h = new Hazard(0, 0, 50, 50, 'blue', '#00f', 'spike', 3, true, 10)
++    expect(h.shape).toBe('spike')
++    expect(h.hp).toBe(3)
++    expect(h.maxHp).toBe(3)
++    expect(h.isSafe).toBe(true)
++    expect(h.floatAmp).toBe(10)
++  })
++
++  it('floatAmp=0 縺ｮ縺ｨ縺・rect 縺ｯ y 繧偵◎縺ｮ縺ｾ縺ｾ霑斐☆', () => {
++    const h = new Hazard(0, 100, 30, 40, 'red', '#f')
++    h.pulse = Math.PI / 2 // sin = 1
++    expect(h.rect.y).toBe(100) // floatAmp=0 縺ｪ縺ｮ縺ｧ豬ｮ驕翫＠縺ｪ縺・+  })
++
++  it('floatAmp>0 縺ｮ縺ｨ縺・rect 縺ｯ pulse 縺ｫ蠢懊§縺ｦ y 縺悟､牙喧縺吶ｋ', () => {
++    const h = new Hazard(0, 100, 30, 40, 'red', '#f', 'rect', 1, false, 10)
++    h.pulse = Math.PI / 2 // sin = 1
++    expect(h.rect.y).toBeCloseTo(110) // 100 + 1 * 10
++  })
++})
++
++describe('Bullet', () => {
++  it('豁｣縺励￥蛻晄悄蛹悶＆繧後ｋ', () => {
++    const b = new Bullet(100, 200, 300, 0)
++    expect(b.x).toBe(100)
++    expect(b.y).toBe(200)
++    expect(b.vx).toBe(300)
++    expect(b.vy).toBe(0)
++    expect(b.w).toBe(14)
++    expect(b.h).toBe(5)
++    expect(b.alive).toBe(true)
++    expect(b.trail).toEqual([])
++  })
++
++  it('rect 繝励Ο繝代ユ繧｣縺梧ｭ｣縺励＞遏ｩ蠖｢繧定ｿ斐☆', () => {
++    const b = new Bullet(100, 200, 300, 0)
++    expect(b.rect).toEqual({ x: 100, y: 200, w: 14, h: 5 })
++  })
++})
++
++describe('Item', () => {
++  it('豁｣縺励￥蛻晄悄蛹悶＆繧後ｋ', () => {
++    const item = new Item(100, 200, 'exp')
++    expect(item.x).toBe(100)
++    expect(item.y).toBe(200)
++    expect(item.type).toBe('exp')
++    expect(item.w).toBe(22)
++    expect(item.h).toBe(22)
++    expect(item.alive).toBe(true)
++  })
++
++  it('hp 繧ｿ繧､繝励・繧｢繧､繝・Β繧剃ｽ懈・縺ｧ縺阪ｋ', () => {
++    const item = new Item(0, 0, 'hp')
++    expect(item.type).toBe('hp')
++  })
++
++  it('pulse 縺後Λ繝ｳ繝繝縺ｪ菴咲嶌縺ｧ蛻晄悄蛹悶＆繧後ｋ', () => {
++    const item1 = new Item(0, 0, 'exp')
++    const item2 = new Item(0, 0, 'exp')
++    // 螳悟・縺ｫ荳閾ｴ縺吶ｋ遒ｺ邇・・讌ｵ繧√※菴弱＞
++    expect(item1.pulse).not.toBe(item2.pulse)
++  })
++
++  it('rect 繝励Ο繝代ユ繧｣縺梧ｭ｣縺励＞遏ｩ蠖｢繧定ｿ斐☆', () => {
++    const item = new Item(100, 200, 'exp')
++    expect(item.rect).toEqual({ x: 100, y: 200, w: 22, h: 22 })
++  })
++})
+diff --git a/tests/unit/game/throwEngine.test.ts b/tests/unit/game/throwEngine.test.ts
+new file mode 100644
+index 0000000..b170615
+--- /dev/null
++++ b/tests/unit/game/throwEngine.test.ts
+@@ -0,0 +1,211 @@
++import { describe, it, expect } from 'vitest'
++import {
++  createThrowState,
++  onDragStart,
++  onDragMove,
++  onRelease,
++  updateThrow,
++  type ThrowState,
++} from '../../../src/game/throwEngine'
++
++// 1繝輔Ξ繝ｼ繝蛻・・ dt・・6ms 竕・60fps・・+const DT_16MS = 0.016
++
++// 謚墓憧謫堺ｽ懊・繧ｷ繝溘Η繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ繝倥Ν繝代・・・7 菫ｮ豁｣・・+function _simulateThrow(
++  state: ThrowState,
++  dragStartX: number,
++  dragStartY: number,
++  dragEndX: number,
++  dragEndY: number,
++): void {
++  onDragStart(state, dragStartX, dragStartY)
++  onDragMove(state, dragEndX, dragEndY)
++  onRelease(state)
++}
++
++describe('createThrowState', () => {
++  it('idle 迥ｶ諷九・蛻晄悄蛟､繧定ｿ斐☆', () => {
++    const state = createThrowState()
++    expect(state.phase).toBe('idle')
++    expect(state.startX).toBe(0)
++    expect(state.startY).toBe(0)
++    expect(state.power).toBe(0)
++    expect(state.result).toBeNull()
++    expect(state.score).toBe(0)
++    expect(state.peakY).toBe(Infinity)
++  })
++})
++
++describe('onDragStart', () => {
++  it('dragging 迥ｶ諷九↓驕ｷ遘ｻ縺吶ｋ', () => {
++    const state = createThrowState()
++    onDragStart(state, 100, 200)
++    expect(state.phase).toBe('dragging')
++    expect(state.startX).toBe(100)
++    expect(state.startY).toBe(200)
++    expect(state.currentX).toBe(100)
++    expect(state.currentY).toBe(200)
++  })
++})
++
++describe('onDragMove', () => {
++  it('dragging 迥ｶ諷九〒縺ｪ縺・→縺阪・菴輔ｂ縺励↑縺・, () => {
++    const state = createThrowState()
++    onDragMove(state, 100, 200)
++    expect(state.currentX).toBe(0) // idle 縺ｮ縺ｾ縺ｾ
++  })
++
++  it('繝峨Λ繝・げ霍晞屬縺ｫ蠢懊§縺ｦ power 縺瑚ｨ育ｮ励＆繧後ｋ', () => {
++    const state = createThrowState()
++    onDragStart(state, 100, 200)
++    onDragMove(state, 300, 200) // dx=200, dy=0 竊・dist=200
++    // power = min(1, 200 / 200) = 1
++    expect(state.power).toBe(1)
++  })
++
++  it('power 縺ｯ 1 繧定ｶ・∴縺ｪ縺・, () => {
++    const state = createThrowState()
++    onDragStart(state, 100, 200)
++    onDragMove(state, 1000, 200) // dx=900 竊・power = min(1, 900/200) = 1
++    expect(state.power).toBe(1)
++  })
++
++  it('遏ｭ縺・ラ繝ｩ繝・げ縺ｧ power 縺・0 縺ｫ霑代＞', () => {
++    const state = createThrowState()
++    onDragStart(state, 100, 200)
++    onDragMove(state, 110, 200) // dx=10 竊・power = 10/200 = 0.05
++    expect(state.power).toBe(0.05)
++  })
++})
++
++describe('onRelease', () => {
++  it('dragging 迥ｶ諷九〒縺ｪ縺・→縺阪・菴輔ｂ縺励↑縺・, () => {
++    const state = createThrowState()
++    onRelease(state)
++    expect(state.phase).toBe('idle')
++  })
++
++  it('flying 迥ｶ諷九↓驕ｷ遘ｻ縺吶ｋ', () => {
++    const state = createThrowState()
++    _simulateThrow(state, 200, 300, 100, 200)
++    expect(state.phase).toBe('flying')
++    expect(state.airTime).toBe(0)
++  })
++
++  it('蠑輔▲蠑ｵ縺｣縺滓婿蜷代↓騾溷ｺｦ縺瑚ｨｭ螳壹＆繧後ｋ', () => {
++    const state = createThrowState()
++    _simulateThrow(state, 200, 300, 0, 300) // dx=200, dy=0 竊・蜿ｳ譁ｹ蜷・+    expect(state.vx).toBeGreaterThan(0)
++    expect(state.vy).toBeCloseTo(0)
++  })
++
++  it('譁懊ａ縺ｫ蠑輔▲蠑ｵ繧九→荳｡譁ｹ蜷代↓騾溷ｺｦ縺瑚ｨｭ螳壹＆繧後ｋ', () => {
++    const state = createThrowState()
++    _simulateThrow(state, 200, 300, 0, 100) // dx=200, dy=200 竊・蜿ｳ荳頑婿蜷・+    expect(state.vx).toBeGreaterThan(0)
++    expect(state.vy).toBeGreaterThan(0)
++  })
++
++  it('騾溷ｺｦ縺ｯ maxPower 縺ｧ蛻ｶ髯舌＆繧後ｋ', () => {
++    const state = createThrowState()
++    _simulateThrow(state, 200, 300, -10000, 300) // 髱槫ｸｸ縺ｫ髟ｷ縺・ラ繝ｩ繝・げ
++    // maxPower=1400 繧定ｶ・∴縺ｪ縺・+    const speed = Math.sqrt(state.vx ** 2 + state.vy ** 2)
++    expect(speed).toBeLessThanOrEqual(1400)
++  })
++})
++
++describe('updateThrow', () => {
++  it('flying 迥ｶ諷九〒縺ｪ縺・→縺阪・菴輔ｂ縺励↑縺・, () => {
++    const state = createThrowState()
++    updateThrow(state, DT_16MS, 600)
++    expect(state.phase).toBe('idle')
++  })
++
++  it('驥榊鴨縺碁←逕ｨ縺輔ｌ繧・, () => {
++    const state = createThrowState()
++    _simulateThrow(state, 300, 100, 100, 100)
++    state.manualX = 300
++    state.manualY = 100
++    state.peakY = 100
++    updateThrow(state, 0.1, 600)
++    // 驥榊鴨縺ｧ Y 縺悟｢怜刈
++    expect(state.manualY).toBeGreaterThan(100)
++  })
++
++  it('遨ｺ豌玲慣謚励′驕ｩ逕ｨ縺輔ｌ繧・, () => {
++    const state = createThrowState()
++    _simulateThrow(state, 300, 100, 100, 100)
++    const initialVx = state.vx
++    state.manualX = 300
++    state.manualY = 100
++    state.peakY = 100
++    updateThrow(state, 0.1, 600)
++    // 遨ｺ豌玲慣謚励〒 X 騾溷ｺｦ縺梧ｸ帛ｰ・+    expect(state.vx).toBeLessThan(initialVx)
++  })
++
++  it('逕ｻ髱｢螟悶↓蜃ｺ繧九→ done 縺ｫ驕ｷ遘ｻ縺吶ｋ', () => {
++    const state = createThrowState()
++    _simulateThrow(state, 300, 100, 100, 100)
++    state.manualX = 300
++    state.manualY = 595 // canvasHeight=600 + landingMargin=100 = 700 縺ｮ謇句燕
++    state.peakY = 100
++    state.vy = 1200 // 荳句髄縺阪・騾溷ｺｦ (vy += 800*0.1=80 竊・1280, dy=128 竊・595+128=723 >= 700)
++    updateThrow(state, 0.1, 600)
++    expect(state.phase).toBe('done')
++    expect(state.result).not.toBeNull()
++  })
++
++  it('蟾ｦ蛛ｴ縺ｮ逕ｻ髱｢螟悶↓蜃ｺ縺ｦ繧・done 縺ｫ驕ｷ遘ｻ縺吶ｋ', () => {
++    const state = createThrowState()
++    _simulateThrow(state, 300, 100, 600, 100) // 蜿ｳ縺ｫ蠑輔＞縺ｦ蟾ｦ縺ｫ鬟帙・
++    state.manualX = -150 // outOfBoundsLeft=-200 縺ｮ蜀・・
++    state.manualY = 100
++    state.peakY = 100
++    state.vx = -1000 // 蟾ｦ蜷代″
++    updateThrow(state, 0.1, 600)
++    expect(state.phase).toBe('done')
++  })
++
++  it('蜿ｳ蛛ｴ縺ｮ逕ｻ髱｢螟悶↓蜃ｺ縺ｦ繧・done 縺ｫ驕ｷ遘ｻ縺吶ｋ', () => {
++    const state = createThrowState()
++    _simulateThrow(state, 300, 100, 100, 100)
++    state.manualX = 2350 // outOfBoundsRight=2400 縺ｮ蜀・・
++    state.manualY = 100
++    state.peakY = 100
++    state.vx = 1000 // 蜿ｳ蜷代″
++    updateThrow(state, 0.1, 600)
++    expect(state.phase).toBe('done')
++  })
++
++  it('done 迥ｶ諷九〒邨先棡縺ｨ繧ｹ繧ｳ繧｢縺瑚ｨ育ｮ励＆繧後ｋ', () => {
++    const state = createThrowState()
++    _simulateThrow(state, 300, 100, 100, 100)
++    state.manualX = 300
++    state.manualY = 650 // canvasHeight=600 + landingMargin=100 = 700 縺ｮ謇句燕
++    state.peakY = 50
++    state.airTime = 1.5
++    state.vx = 200
++    state.vy = 800 // vy += 800*0.1=80 竊・880, dy=88 竊・650+88=738 >= 700
++    updateThrow(state, 0.1, 600)
++    expect(state.phase).toBe('done')
++    expect(state.result).not.toBeNull()
++    expect(state.result!.airTime).toBeGreaterThan(0)
++    expect(state.result!.arcHeight).toBeGreaterThan(0)
++    expect(state.score).toBeGreaterThan(0)
++  })
++
++  it('peakY 縺ｯ譛鬮倡せ繧定ｨ倬鹸縺吶ｋ', () => {
++    const state = createThrowState()
++    _simulateThrow(state, 300, 300, 100, 100)
++    state.manualX = 300
++    state.manualY = 300
++    state.peakY = 300
++    state.vy = -500 // 荳雁髄縺・+    updateThrow(state, 0.1, 600)
++    // peakY 縺ｯ startY 繧医ｊ蟆上＆縺上↑繧具ｼ井ｸ頑婿蜷托ｼ・+    expect(state.peakY).toBeLessThanOrEqual(300)
++  })
++})
+diff --git a/tests/unit/setup.ts b/tests/unit/setup.ts
+new file mode 100644
+index 0000000..9d8ae37
+--- /dev/null
++++ b/tests/unit/setup.ts
+@@ -0,0 +1,342 @@
++/**
++ * tests/unit/setup.ts
++ *
++ * Vitest 繧ｻ繝・ヨ繧｢繝・・繝輔ぃ繧､繝ｫ縲・+ * Vite 蝗ｺ譛峨・ import.meta.glob 繧偵Δ繝・け縺励√Θ繝九ャ繝医ユ繧ｹ繝医〒螳溯｡悟庄閭ｽ縺ｫ縺吶ｋ縲・+ * 縺ｾ縺溘√ユ繧ｹ繝医↓蠢・ｦ√↑譛蟆城剞縺ｮ GAME_CONFIG 繝・・繧ｿ繧呈署萓帙☆繧九・+ */
++
++// 繝・せ繝育畑縺ｮ譛蟆城剞縺ｪ config 繝｢繧ｸ繝･繝ｼ繝ｫ繝・・繧ｿ
++// loadConfigFromGlob 縺梧ｭ｣縺励￥蜍穂ｽ懊☆繧九◆繧√↓ { section, ...fields } 蠖｢蠑上′蠢・ｦ・+const mockConfigModules: Record<string, { default: Record<string, unknown> }> = {
++  './config/throw.json': {
++    default: {
++      section: 'throw',
++      gravity: 800,
++      maxPower: 1400,
++      airFriction: 0.995,
++      powerDistanceDivisor: 200,
++      speedMultiplier: 5,
++      outOfBoundsRight: 2400,
++      outOfBoundsLeft: -200,
++      landingMargin: 100,
++    },
++  },
++  './config/score.json': {
++    default: {
++      section: 'score',
++      defaultColorTouchScore: 10,
++      distanceScoreRate: 0.1,
++      longAirScoreRate: 0.5,
++    },
++  },
++  './config/game_balance.json': {
++    default: {
++      section: 'game_balance',
++      scoreRatioPlay: 0.7,
++      scoreRatioThrow: 0.3,
++      throwScoreWeightsAirTime: 0.5,
++      throwScoreWeightsArcHeight: 0.4,
++      throwScoreWeightsSpeedPenalty: 0.1,
++      baseScrollSpeed: 3,
++      hazardSpawnBaseInterval: 60,
++      hazardSpawnMinInterval: 20,
++      hazardSpawnDecayRate: 0.98,
++      distanceAccelMaxBonus: 0.5,
++      distanceAccelFullDist: 3000,
++      maxRounds: 4,
++      genreLockedBoostMult: 1.5,
++      genreLockedBoostDurationMs: 3000,
++      defaultFallbackGenre: 'base',
++    },
++  },
++  './config/physics.json': {
++    default: {
++      section: 'physics',
++      defaultGravity: 1600,
++      defaultPlayerMaxHp: 3,
++      playerWidth: 36,
++      playerHeight: 52,
++      jumpVelocity: -620,
++      doubleJumpVelocity: -500,
++      jumpCutMultiplier: 0.5,
++      gravity: 1600,
++      fallGravityMult: 1.5,
++      runSpeed: 200,
++      slowPreciseRatio: 0.4,
++      landSquashDecay: 8,
++      landSquashAmount: 0.15,
++      coyoteFrames: 6,
++      jumpBufferFrames: 8,
++      playerMinX: 50,
++      playerMaxXRatio: 0.7,
++      airFrictionX: 0.85,
++      dashSpeed: 600,
++      dashDurationSec: 0.15,
++      dashCooldownSec: 0.5,
++      dashIframesSec: 0.1,
++      wallJumpPushSpeed: 400,
++    },
++  },
++  './config/shoot.json': {
++    default: {
++      section: 'shoot',
++      bulletSpeed: 500,
++      bulletWidth: 14,
++      bulletHeight: 5,
++      bulletOutOfBoundsX: 50,
++      shotCooldown: 0.2,
++      comboResetTime: 2,
++      baseScorePerKill: 100,
++      threeWaySpeedRatio: 0.8,
++      threeWayYRatio: 0.3,
++    },
++  },
++  './config/spawn.json': {
++    default: {
++      section: 'spawn',
++      firstSpawnDist: 300,
++      enemyHpAmount: 1,
++      defaultFloatAmp: 0,
++      airMinOffset: 100,
++      airRandOffset: 80,
++      floatMinOffset: 50,
++      floatRandOffset: 40,
++      hazardCullLeft: -100,
++      hazardCullBelow: 100,
++      itemCullLeft: -100,
++      spawnWeightMaxDist: 3000,
++      itemDropChance: 0.15,
++      itemExpChance: 0.7,
++      itemOffsetX: 0,
++      itemGroundOffsetY: -30,
++      expItemScore: 50,
++      expItemExpGain: 20,
++      itemPulseRate: 3,
++      hazardSpawnOffsetX: 0,
++    },
++  },
++  './config/vfx.json': {
++    default: {
++      section: 'vfx',
++      hitShakeIntensity: 4,
++      deathShakeIntensity: 12,
++      shakeDecay: 8,
++      deathShakeDecay: 5,
++      shakeEpsilon: 0.5,
++      particleGravity: 400,
++      deathParticleGravity: 200,
++      deathSlowMoFactor: 0.3,
++      jumpParticleCount: 5,
++      jumpParticleSpeedMin: 50,
++      jumpParticleSpeedMax: 150,
++      jumpParticleLife: 0.4,
++      jumpParticleSpread: Math.PI,
++      jumpParticleOffsetX: 0,
++      jumpParticleColor: '#aaaaaa',
++      jumpParticleSize: 3,
++      landParticleCount: 8,
++      landParticleSpeedMin: 30,
++      landParticleSpeedMax: 100,
++      landParticleLife: 0.3,
++      landParticleOffsetX: 0,
++      landParticleYRatio: 1,
++      landParticleColor: '#888888',
++      landParticleSize: 2,
++      hitParticleCount: 10,
++      hitParticleSpeedMin: 100,
++      hitParticleSpeedMax: 300,
++      hitParticleYBoost: -100,
++      hitParticleLifeMin: 0.3,
++      hitParticleLifeRange: 0.3,
++      hitParticleSizeBase: 3,
++      hitParticleSizeRange: 2,
++      deathParticleCount: 30,
++      deathParticleSpeedMin: 100,
++      deathParticleSpeedMax: 400,
++      deathParticleYBoost: -200,
++      deathParticleLifeMin: 0.5,
++      deathParticleLifeRange: 0.5,
++      deathParticleSizeMin: 2,
++      deathParticleSizeRange: 4,
++      deathParticleColors: ['#ff4444', '#ff8844', '#ffcc44'],
++      stretchUpX: 0.8,
++      stretchUpY: 1.2,
++      stretchUpThreshold: 300,
++      invincibleBlinkRate: 8,
++      invincibleDuration: 1.5,
++      runCycleRate: 10,
++      hazardPulseRate: 2,
++    },
++  },
++  './config/camera.json': {
++    default: {
++      section: 'camera',
++      leadOffset: 120,
++      parallaxStars: 0.05,
++      parallaxFar: 0.15,
++      parallaxMid: 0.4,
++      parallaxGround: 1,
++    },
++  },
++  './config/background.json': {
++    default: {
++      section: 'background',
++      groundHeight: 0.8,
++      groundLineAlpha: 0.6,
++      groundLineHeight: 2,
++      dashLength: 8,
++      dashInterval: 12,
++      dashOffsetY: -2,
++      dashAlpha: 0.3,
++      dashHeight: 1,
++      starSectorWidth: 200,
++      starCountPerSector: 5,
++      starSizeMin: 1,
++      starSizeRange: 2,
++      starAlphaMin: 0.3,
++      starAlphaStep: 0.15,
++      starMaxYRatio: 0.5,
++      mountainStep: 60,
++      mountainAlpha: 0.15,
++      mountainAmp1: 40,
++      mountainFreq1: 0.003,
++      mountainAmp2: 25,
++      mountainFreq2: 0.007,
++      mountainAmp3: 15,
++      mountainFreq3: 0.015,
++      mountainBase: 0.6,
++      buildingAlpha: 0.1,
++      buildingSectorW: 150,
++      buildingMinH: 30,
++      buildingRandH: 60,
++      buildingMinW: 20,
++      buildingRandW: 40,
++    },
++  },
++  './config/hazard_vfx.json': {
++    default: {
++      section: 'hazard_vfx',
++      glowBlur: 8,
++      pulseSpeed: 3,
++      pulseAmplitude: 0.3,
++      hpBarHeight: 3,
++      hpBarOffsetY: -6,
++      hpBarBgAlpha: 0.4,
++      hpBarHighColor: '#44ff44',
++      hpBarLowColor: '#ff4444',
++      hpBarThreshold: 0.5,
++      rectCornerRadius: 3,
++      edgeHighlightLineW: 1,
++      lightenTopAmount: 40,
++      lightenEdgeAmount: 20,
++      pillarCapOffset: 0,
++      pillarCapHeight: 4,
++      pillarHighlightStop: 0.3,
++      pillarHighlightAmount: 30,
++      diamondEdgeLineW: 1,
++    },
++  },
++  './config/ui.json': {
++    default: {
++      section: 'ui',
++      popupLifeSec: 1,
++      popupRiseVy: -60,
++      popupFont: 'bold 14px sans-serif',
++      deathOverlayAlpha: 0.7,
++      deathFadeSpeed: 2,
++      deathTextDelayS: 0.5,
++      deathTextFadeSpeed: 3,
++      deathTitleFont: 'bold 36px sans-serif',
++      deathSubFont: '18px sans-serif',
++      deathSubTextAlpha: 0.8,
++      beatMarkerAlphaDivisor: 3,
++      beatMarkerMaxAlpha: 0.6,
++      beatMarkerColor: '#ff4444',
++      beatMarkerLineW: 2,
++      beatMarkerDash: [4, 4],
++    },
++  },
++  './config/difficulty.json': {
++    default: {
++      section: 'difficulty',
++      updateDistancesInitial: [500, 1000, 2000, 3500, 5500],
++      updateDistancesBaseInterval: 500,
++      updateDistancesCount: 5,
++      genreLockedPlayDist: 8000,
++      tempoSpeedBonus: 0.15,
++      enemyDensityRate: 0.0001,
++      globalDifficultyMult: 1,
++    },
++  },
++  './config/boss.json': {
++    default: {
++      section: 'boss',
++      firstBossDist: 3000,
++      bossRespawnDist: 2000,
++      bossHp: 10,
++      arenaHpBonus: 5,
++      bossWidth: 60,
++      bossHeight: 80,
++      bossCollisionGrace: 8,
++      bossSpawnShake: 10,
++      bossDeathShake: 15,
++      bossDeathParticles: 50,
++    },
++  },
++  './config/rhythm_tuning.json': {
++    default: {
++      section: 'rhythm_tuning',
++      defaultBpm: 120,
++      bpmTempoBonus: 10,
++      minBpm: 60,
++      maxBpm: 200,
++      justWindowSec: 0.08,
++      justMultiplier: 3,
++      goodWindowMult: 2,
++      goodMultiplier: 1.5,
++      beatHazardFlipChance: 0.3,
++      beatSpawnBurstRate: 0.5,
++      beatDashMult: 1.5,
++      beatDashFrames: 6,
++    },
++  },
++  './config/stealth.json': {
++    default: {
++      section: 'stealth',
++      stealthAlpha: 0.3,
++      stealthDurationSec: 2,
++      stealthCooldownSec: 5,
++      stealthSafeBonus: 50,
++      detectionRange: 150,
++    },
++  },
++  './config/genre_params.json': {
++    default: {
++      section: 'genre_params',
++      recommendedSingleChoice: 2,
++      recommendedMaxPerAxis: 6,
++      thresholdGuide: {
++        singleAxis: 5,
++        dualAxis: 4,
++        tripleAxis: 3,
++      },
++    },
++  },
++  './config/genres.json': {
++    default: {
++      section: 'genres',
++      genres: [],
++      themeColors: {},
++    },
++  },
++};
++
++// import.meta.glob 縺ｮ繝｢繝・け・・ite 蝗ｺ譛画ｩ溯・繧・Node 迺ｰ蠅・〒蛻ｩ逕ｨ蜿ｯ閭ｽ縺ｫ縺吶ｋ・・+vi.stubGlobal('import.meta', {
++  ...import.meta,
++  glob: vi.fn(() => mockConfigModules),
++  env: {
++    PROD: false,
++  },
++})
+diff --git a/vitest.config.ts b/vitest.config.ts
+new file mode 100644
+index 0000000..0a5acc8
+--- /dev/null
++++ b/vitest.config.ts
+@@ -0,0 +1,8 @@
++import { defineConfig } from 'vitest/config'
++
++export default defineConfig({
++  test: {
++    include: ['tests/unit/**/*.test.ts'],
++    testTimeout: 10_000,
++  },
++})

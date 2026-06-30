@@ -16,7 +16,7 @@
     "hack_slash": { "accent": "#ff4444", "border": "#880000", "hint": "rgba(220,50,50,0.4)",    "bg": "#100000", "glow": "rgba(200,0,0,0.25)" },
     "survival":   { "accent": "#88bb55", "border": "#445522", "hint": "rgba(100,160,60,0.4)",   "bg": "#050a05", "glow": "rgba(80,130,40,0.2)" },
     "tetris":     { "accent": "#a000f0", "border": "#a000f0", "hint": "rgba(160,0,240,0.5)",    "bg": "#0a0a0a", "glow": "rgba(160,0,240,0.25)",   "font": "'Courier New', monospace" },
-    "glitch":     { "accent": "#ff0000", "border": "#cc0000", "hint": "rgba(255,0,0,0.4)",      "bg": "#0a0000", "glow": "rgba(255,0,0,0.3)",      "font": "'Courier New', monospace" }
+    "glitch":     { "accent": "#ff0040", "border": "#ff0040", "hint": "rgba(255,0,64,0.3)",     "bg": "#0a0a0a", "glow": "rgba(255,0,64,0.15)",    "font": "'Courier New', monospace" }
   },
   "genres": [
     {
@@ -503,6 +503,26 @@
       },
       "gravity": 0,
       "endingFlavor": "あなたはブロックを積み重ねた。説明書もその塔の一部になった。"
+    },
+    {
+      "id": "glitch",
+      "label": "壊れたゲーム",
+      "thresholds": {},
+      "enableFeatures": ["movement"],
+      "disableFeatures": [],
+      "scoreFormula": "distance * 0.1 + survivedSec * 2",
+      "manualReveal": "説明書が壊れました。もう何をすべきか分かりません。",
+      "theme": "glitch",
+      "bgColor": "#0a0a0a",
+      "controls": {
+        "jump": "Space",
+        "moveLeft": "ArrowLeft",
+        "moveRight": "ArrowRight",
+        "moveUp": "ArrowUp",
+        "moveDown": "ArrowDown"
+      },
+      "gravity": 1600,
+      "endingFlavor": "あなたが選んだ矛盾が、ゲームそのものを壊しました。これは誰も予想しなかった結末です。"
     }
   ]
 }

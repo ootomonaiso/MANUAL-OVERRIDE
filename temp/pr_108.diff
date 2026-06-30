@@ -1,0 +1,88 @@
+﻿diff --git a/.editorconfig b/.editorconfig
+new file mode 100644
+index 0000000..4d761dd
+--- /dev/null
++++ b/.editorconfig
+@@ -0,0 +1,10 @@
++root = true
++
++[*]
++charset = utf-8
++end_of_line = lf
++insert_final_newline = true
++trim_trailing_whitespace = true
++
++[*.md]
++trim_trailing_whitespace = false
+diff --git a/src/genres/AquaticPlugin.ts b/src/genres/AquaticPlugin.ts
+index 1d91f46..1e7ae53 100644
+--- a/src/genres/AquaticPlugin.ts
++++ b/src/genres/AquaticPlugin.ts
+@@ -1,4 +1,4 @@
+-・ｿ/**
++/**
+  * genres/AquaticPlugin.ts
+  * 'aquatic' 繧ｸ繝｣繝ｳ繝ｫ・域ｰｴ荳ｭ繧｢繝峨・繝ｳ繝√Ε繝ｼ・峨・繝励Λ繧ｰ繧､繝ｳ縲・  *
+diff --git a/src/genres/ArenaPlugin.ts b/src/genres/ArenaPlugin.ts
+index c93784e..36b2b48 100644
+--- a/src/genres/ArenaPlugin.ts
++++ b/src/genres/ArenaPlugin.ts
+@@ -1,4 +1,4 @@
+-・ｿ/**
++/**
+  * genres/ArenaPlugin.ts
+  * 'arena' 繧ｸ繝｣繝ｳ繝ｫ・医い繝ｪ繝ｼ繝翫ヰ繝医Ν・峨・繝励Λ繧ｰ繧､繝ｳ縲・  *
+diff --git a/src/genres/BulletRunnerPlugin.ts b/src/genres/BulletRunnerPlugin.ts
+index bd7e34e..f06e8e1 100644
+--- a/src/genres/BulletRunnerPlugin.ts
++++ b/src/genres/BulletRunnerPlugin.ts
+@@ -1,4 +1,4 @@
+-・ｿ/**
++/**
+  * genres/BulletRunnerPlugin.ts
+  * 'bullet_runner' 繧ｸ繝｣繝ｳ繝ｫ・亥ｼｾ蟷輔Λ繝ｳ繝翫・・峨・繝励Λ繧ｰ繧､繝ｳ縲・  *
+diff --git a/src/genres/DungeonPlugin.ts b/src/genres/DungeonPlugin.ts
+index df36408..c86d5a8 100644
+--- a/src/genres/DungeonPlugin.ts
++++ b/src/genres/DungeonPlugin.ts
+@@ -1,4 +1,4 @@
+-・ｿ/**
++/**
+  * genres/DungeonPlugin.ts
+  * 'dungeon' 繧ｸ繝｣繝ｳ繝ｫ・医ム繝ｳ繧ｸ繝ｧ繝ｳ謗｢邏｢・峨・繝励Λ繧ｰ繧､繝ｳ縲・  *
+diff --git a/src/genres/HackSlashPlugin.ts b/src/genres/HackSlashPlugin.ts
+index ba6a7af..4c9f821 100644
+--- a/src/genres/HackSlashPlugin.ts
++++ b/src/genres/HackSlashPlugin.ts
+@@ -1,4 +1,4 @@
+-・ｿ/**
++/**
+  * genres/HackSlashPlugin.ts
+  * 'hack_slash' 繧ｸ繝｣繝ｳ繝ｫ・医ワ繝・け繧｢繝ｳ繝峨せ繝ｩ繝・す繝･・峨・繝励Λ繧ｰ繧､繝ｳ縲・  *
+diff --git a/src/genres/RacingPlugin.ts b/src/genres/RacingPlugin.ts
+index 83c695e..7f3353a 100644
+--- a/src/genres/RacingPlugin.ts
++++ b/src/genres/RacingPlugin.ts
+@@ -1,4 +1,4 @@
+-・ｿ/**
++/**
+  * genres/RacingPlugin.ts
+  * 'racing' 繧ｸ繝｣繝ｳ繝ｫ・医Ξ繝ｼ繧ｷ繝ｳ繧ｰ繧ｲ繝ｼ繝・峨・繝励Λ繧ｰ繧､繝ｳ縲・  *
+diff --git a/src/genres/RpgPlugin.ts b/src/genres/RpgPlugin.ts
+index 10854b7..a2b8c69 100644
+--- a/src/genres/RpgPlugin.ts
++++ b/src/genres/RpgPlugin.ts
+@@ -1,4 +1,4 @@
+-・ｿ/**
++/**
+  * genres/RpgPlugin.ts
+  * 'rpg' 繧ｸ繝｣繝ｳ繝ｫ・域｣ｮ/荳ｭ荳悶ヵ繧｡繝ｳ繧ｿ繧ｸ繝ｼ・峨・繝励Λ繧ｰ繧､繝ｳ縲・  */
+diff --git a/src/genres/SurvivalPlugin.ts b/src/genres/SurvivalPlugin.ts
+index 1feb6f3..4910b19 100644
+--- a/src/genres/SurvivalPlugin.ts
++++ b/src/genres/SurvivalPlugin.ts
+@@ -1,4 +1,4 @@
+-・ｿ/**
++/**
+  * genres/SurvivalPlugin.ts
+  * 'survival' 繧ｸ繝｣繝ｳ繝ｫ・医し繝舌う繝舌Ν繧ｲ繝ｼ繝・峨・繝励Λ繧ｰ繧､繝ｳ縲・  *

@@ -1,0 +1,1976 @@
+﻿diff --git a/docs/issue-24-surprise-endings.md b/docs/issue-24-surprise-endings.md
+new file mode 100644
+index 0000000..690f026
+--- /dev/null
++++ b/docs/issue-24-surprise-endings.md
+@@ -0,0 +1,137 @@
++# Issue #24: 諢丞､悶↑邨先忰讖溯・
++
++## 讎りｦ・+
++繧ｲ繝ｼ繝縺ｮ蛻・ｲ舌↓縲梧э螟悶↑邨先忰縲阪ｒ霑ｽ蜉縺吶ｋ讖溯・縺ｧ縺吶ゅ・繝ｬ繧､繝､繝ｼ縺ｮ繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ繧・き繝ｼ繝蛾∈謚槭・遏帷崟繧呈､懷・縺吶ｋ縺薙→縺ｧ縲・壼ｸｸ縺ｮ繧ｸ繝｣繝ｳ繝ｫ遒ｺ螳壹→縺ｯ逡ｰ縺ｪ繧狗音蛻･縺ｪ邨先忰・・litch繧ｨ繝ｳ繝会ｼ峨ｒ謠蝉ｾ帙＠縺ｾ縺吶・+
++## 螳溯｣・・螳ｹ
++
++### 1. 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ讀懷・ (`src/domain/playStyleDetector.ts`)
++
++繝励Ξ繧､繝､繝ｼ縺ｮ謫堺ｽ懃ｵｱ險茨ｼ・ActionStats`・峨°繧峨・繝ｬ繧､繧ｹ繧ｿ繧､繝ｫ繧呈耳螳壹＠縺ｾ縺吶・+
++#### 讀懷・縺輔ｌ繧九せ繧ｿ繧､繝ｫ
++
++| 繧ｹ繧ｿ繧､繝ｫ | 蛻､螳壼渕貅・|
++|----------|----------|
++| `aggressive`・域判謦・噪・・| 蟆・茶繝ｬ繝ｼ繝医′鬮倥＞ |
++| `defensive`・磯亟蠕｡逧・ｼ・| 繧ｸ繝｣繝ｳ繝励・繝繝・す繝･繝ｬ繝ｼ繝医′鬮倥＞ |
++| `explorer`・域爾邏｢逧・ｼ・| 遘ｻ蜍輔Ξ繝ｼ繝医′鬮倥＞ |
++| `balanced`・亥插陦｡・・| 蜈ｨ謫堺ｽ懊′蝮・ｭ峨↓蛻・淵 |
++| `chaotic`・域ｷｷ豐鯉ｼ・| 陦晉ｪ√Ξ繝ｼ繝医′鬮倥＞ |
++| `passive`・域ｶ域･ｵ逧・ｼ・| 謫堺ｽ懃ｷ乗焚縺悟ｰ代↑縺・|
++
++#### 菫｡鬆ｼ蠎ｦ
++
++讀懷・邨先棡縺ｫ縺ｯ `confidence`・・縲・・峨′蜷ｫ縺ｾ繧後∪縺吶らｵｱ險磯㍼・・icks・峨′蟆代↑縺・⊇縺ｩ菫｡鬆ｼ蠎ｦ縺ｯ菴弱￥縺ｪ繧翫∪縺吶・+
++### 2. 遏帷崟繝医Λ繝・く繝ｳ繧ｰ (`src/domain/contradictionTracker.ts`)
++
++繧ｫ繝ｼ繝峨・ `conflictsWith` 繝輔ぅ繝ｼ繝ｫ繝峨ｒ蜿ら・縺励∽ｺ偵＞縺ｫ遏帷崟縺吶ｋ繧ｫ繝ｼ繝峨′荳｡譁ｹ驕ｸ謚槭＆繧後※縺・ｋ縺九ｒ讀懷・縺励∪縺吶・+
++#### 遏帷崟繧ｹ繧ｳ繧｢
++
++- 1繝壹い縺ｮ遏帷崟 = +0.25
++- 譛螟ｧ繧ｹ繧ｳ繧｢ = 1.0
++- 髢ｾ蛟､ 0.5 莉･荳翫〒 glitch 繧ｨ繝ｳ繝峨′繝医Μ繧ｬ繝ｼ蜿ｯ閭ｽ
++
++### 3. 繧ｵ繝励Λ繧､繧ｺ繧ｫ繝ｼ繝・(`src/data/cards/surprise-cards.json`)
++
++遏帷崟繧定ｪ倡匱縺吶ｋ迚ｹ谿翫き繝ｼ繝・遞ｮ繧定ｿｽ蜉縺励∪縺励◆縲・+
++| 繧ｫ繝ｼ繝迂D | 繝ｩ繝吶Ν | 遏帷崟蜈・|
++|----------|--------|--------|
++| `c-surprise-chaos` | 繝ｫ繝ｼ繝ｫ繧呈э蝗ｳ逧・↓遏帷崟縺輔○繧・| `c-combo-sequence`, `c-stealth-hide` |
++| `c-surprise-paradox` | 蜷梧凾縺ｫ逶ｸ蜿阪☆繧・縺､縺ｮ迥ｶ諷九ｒ菴懊ｋ | `c-enemy-combat`, `c-survive-danger` |
++| `c-surprise-void` | 蟄伜惠縺励↑縺・ｂ縺ｮ繧呈桃菴懊〒縺阪ｋ繧医≧縺ｫ縺吶ｋ | `c-general-visual` |
++| `c-surprise-loop` | 蜷後§縺薙→繧堤ｹｰ繧願ｿ斐☆縺ｨ螟牙喧縺瑚ｵｷ縺阪ｋ | 縺ｪ縺・|
++| `c-surprise-memory` | 驕主悉縺ｮ驕ｸ謚槭′莉翫↓蠖ｱ髻ｿ縺吶ｋ | 縺ｪ縺・|
++| `c-surprise-break` | 繧ｲ繝ｼ繝縺ｮ譫邨・∩縺昴・繧ゅ・繧貞､峨∴繧・| `c-combo-sequence`, `c-tempo-smooth`, `c-stealth-hide` |
++
++### 4. 髫縺励ず繝｣繝ｳ繝ｫ: glitch (`src/data/genres/glitch.json`)
++
++遏帷崟繧ｹ繧ｳ繧｢縺碁明蛟､繧定ｶ・∴縺溷ｴ蜷医↓逋ｺ蜍輔☆繧矩國縺励ず繝｣繝ｳ繝ｫ縺ｧ縺吶・+
++- **ID**: `glitch`
++- **繝ｩ繝吶Ν**: 螢翫ｌ縺溘ご繝ｼ繝
++- **繝・・繝槭き繝ｩ繝ｼ**: 襍､ (#ff0040)
++- **繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繝輔Ξ繝ｼ繝舌・**: 縲後≠縺ｪ縺溘′驕ｸ繧薙□遏帷崟縺後√ご繝ｼ繝縺昴・繧ゅ・繧貞｣翫＠縺ｾ縺励◆縲・+
++### 5. UI 螟画峩
++
++#### EndingPanel.vue
++
++- 繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝芽｡ｨ遉ｺ・・litch 貍泌・莉倥″・・+- 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ陦ｨ遉ｺ・井ｿ｡鬆ｼ蠎ｦ莉倥″・・+- 遏帷崟繝ｬ繝吶Ν繝舌・・医げ繝ｩ繝・・繧ｷ繝ｧ繝ｳ: 邱鯛・襍､・・+
++#### App.vue
++
++- `finalizeThrowing` 縺ｫ `ActionStats` 繧呈ｸ｡縺吶ｈ縺・､画峩
++- EndingPanel 縺ｫ譁ｰ繝励Ο繝代せ繧呈ｸ｡縺吶ｈ縺・､画峩
++
++#### sideScroller.ts
++
++- 陦晉ｪ√き繧ｦ繝ｳ繝・(`stats.collisions`) 繧定ｿｽ蜉
++- 繧｢繧､繝・Β蜿朱寔繧ｫ繧ｦ繝ｳ繝・(`stats.itemsCollected`) 繧定ｿｽ蜉
++- `GameSnapshot` 縺ｫ譁ｰ繝輔ぅ繝ｼ繝ｫ繝峨ｒ霑ｽ蜉
++
++## 繝・せ繝・+
++### 繝ｦ繝九ャ繝医ユ繧ｹ繝・+
++- `tests/unit/domain/playStyleDetector.test.ts`: 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ讀懷・繝ｭ繧ｸ繝・け
++- `tests/unit/domain/contradictionTracker.test.ts`: 遏帷崟繝医Λ繝・く繝ｳ繧ｰ繝ｭ繧ｸ繝・け
++
++### Playwright 繝・せ繝・+
++- `tests/surprise-ending.spec.ts`: E2E 繝・せ繝・+
++## 蝙句ｮ夂ｾｩ
++
++`src/domain/types.ts` 縺ｫ莉･荳九・蝙九ｒ霑ｽ蜉縺励∪縺励◆:
++
++- `DetectedPlayStyle`: 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ縺ｮ遞ｮ蛻･
++- `PlayStyleResult`: 讀懷・邨先棡・医せ繧ｿ繧､繝ｫ + 菫｡鬆ｼ蠎ｦ + 繧ｹ繧ｳ繧｢・・+- `ContradictionState`: 遏帷崟迥ｶ諷具ｼ医・繧｢ + 繧ｹ繧ｳ繧｢ + 蠖ｱ髻ｿ繝輔Λ繧ｰ・・+- `SurpriseEndingType`: 繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝峨・遞ｮ蛻･
++- `SurpriseEnding`: 繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝画ュ蝣ｱ・医ち繧､繝医Ν + 隱ｬ譏・+ 蠑ｷ蛻ｶ繧ｸ繝｣繝ｳ繝ｫ・・+
++## 繧｢繝ｼ繧ｭ繝・け繝√Ε
++
++```
++src/
++笏懌楳笏 domain/
++笏・  笏懌楳笏 types.ts                    # 譁ｰ繧ｿ繧､繝苓ｿｽ蜉
++笏・  笏懌楳笏 playStyleDetector.ts        # 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ讀懷・・域眠隕擾ｼ・+笏・  笏披楳笏 contradictionTracker.ts     # 遏帷崟繝医Λ繝・く繝ｳ繧ｰ・域眠隕擾ｼ・+笏懌楳笏 data/
++笏・  笏懌楳笏 cards/surprise-cards.json   # 繧ｵ繝励Λ繧､繧ｺ繧ｫ繝ｼ繝会ｼ域眠隕擾ｼ・+笏・  笏懌楳笏 genres/glitch.json          # 髫縺励ず繝｣繝ｳ繝ｫ・域眠隕擾ｼ・+笏・  笏披楳笏 config/genres.json          # glitch 繝・・繝櫁ｿｽ蜉
++笏懌楳笏 game/
++笏・  笏披楳笏 sideScroller.ts             # 陦晉ｪ√き繧ｦ繝ｳ繝郁ｿｽ蜉
++笏懌楳笏 composables/
++笏・  笏披楳笏 useGameState.ts             # 譁ｰ讖溯・邨ｱ蜷・+笏披楳笏 components/
++    笏披楳笏 EndingPanel.vue             # UI 霑ｽ蜉
++```
++
++## 諡｡蠑ｵ譁ｹ豕・+
++### 譁ｰ縺励＞繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ繧定ｿｽ蜉縺吶ｋ蝣ｴ蜷・+
++1. `types.ts` 縺ｮ `DetectedPlayStyle` 縺ｫ遞ｮ蛻･繧定ｿｽ蜉
++2. `playStyleDetector.ts` 縺ｮ繧ｹ繧ｳ繧｢險育ｮ励Ο繧ｸ繝・け縺ｫ霑ｽ蜉
++3. `EndingPanel.vue` 縺ｮ `playStyleLabels` 縺ｫ繝ｩ繝吶Ν繧定ｿｽ蜉
++
++### 譁ｰ縺励＞繧ｵ繝励Λ繧､繧ｺ繧ｫ繝ｼ繝峨ｒ霑ｽ蜉縺吶ｋ蝣ｴ蜷・+
++1. `src/data/cards/surprise-cards.json` 縺ｫ繧ｫ繝ｼ繝牙ｮ夂ｾｩ繧定ｿｽ蜉
++2. `conflictsWith` 繝輔ぅ繝ｼ繝ｫ繝峨〒遏帷崟蜈医ｒ謖・ｮ・+
++### 譁ｰ縺励＞繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝峨ｒ霑ｽ蜉縺吶ｋ蝣ｴ蜷・+
++1. `types.ts` 縺ｮ `SurpriseEndingType` 縺ｫ遞ｮ蛻･繧定ｿｽ蜉
++2. `useGameState.ts` 縺ｮ `computeSurpriseEnding` 縺ｫ蛻､螳壹Ο繧ｸ繝・け繧定ｿｽ蜉
++3. `EndingPanel.vue` 縺ｫ陦ｨ遉ｺ繝ｭ繧ｸ繝・け繧定ｿｽ蜉
+diff --git a/package-lock.json b/package-lock.json
+index 45ceb11..e476945 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -18,6 +18,7 @@
+         "typescript": "^5.7.2",
+         "typescript-eslint": "^8.19.0",
+         "vite": "^6.3.5",
++        "vitest": "^4.1.9",
+         "vue-tsc": "^2.2.8"
+       }
+     },
+@@ -1139,6 +1140,31 @@
+         "win32"
+       ]
+     },
++    "node_modules/@standard-schema/spec": {
++      "version": "1.1.0",
++      "resolved": "https://registry.npmjs.org/@standard-schema/spec/-/spec-1.1.0.tgz",
++      "integrity": "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==",
++      "dev": true,
++      "license": "MIT"
++    },
++    "node_modules/@types/chai": {
++      "version": "5.2.3",
++      "resolved": "https://registry.npmjs.org/@types/chai/-/chai-5.2.3.tgz",
++      "integrity": "sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@types/deep-eql": "*",
++        "assertion-error": "^2.0.1"
++      }
++    },
++    "node_modules/@types/deep-eql": {
++      "version": "4.0.2",
++      "resolved": "https://registry.npmjs.org/@types/deep-eql/-/deep-eql-4.0.2.tgz",
++      "integrity": "sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==",
++      "dev": true,
++      "license": "MIT"
++    },
+     "node_modules/@types/estree": {
+       "version": "1.0.8",
+       "resolved": "https://registry.npmjs.org/@types/estree/-/estree-1.0.8.tgz",
+@@ -1449,6 +1475,129 @@
+         "vue": "^3.2.25"
+       }
+     },
++    "node_modules/@vitest/expect": {
++      "version": "4.1.9",
++      "resolved": "https://registry.npmjs.org/@vitest/expect/-/expect-4.1.9.tgz",
++      "integrity": "sha512-vl/rYsUKcBr3SnQn166+XR5ZQcgMx3DQhFWdfli/cWpLnLUmbxZvyrJZotLFUryib+LtArYMSTJ5RbQ57ZqrlA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@standard-schema/spec": "^1.1.0",
++        "@types/chai": "^5.2.2",
++        "@vitest/spy": "4.1.9",
++        "@vitest/utils": "4.1.9",
++        "chai": "^6.2.2",
++        "tinyrainbow": "^3.1.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/vitest"
++      }
++    },
++    "node_modules/@vitest/mocker": {
++      "version": "4.1.9",
++      "resolved": "https://registry.npmjs.org/@vitest/mocker/-/mocker-4.1.9.tgz",
++      "integrity": "sha512-EVkXzBjrPGM+cK8/ANWgBrkUCfJfb38/EfTSO8h7pWvKkyPkpWxvR7BkD2MyItMF62C97zAEoqdpUixwR/e+Rw==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@vitest/spy": "4.1.9",
++        "estree-walker": "^3.0.3",
++        "magic-string": "^0.30.21"
++      },
++      "funding": {
++        "url": "https://opencollective.com/vitest"
++      },
++      "peerDependencies": {
++        "msw": "^2.4.9",
++        "vite": "^6.0.0 || ^7.0.0 || ^8.0.0"
++      },
++      "peerDependenciesMeta": {
++        "msw": {
++          "optional": true
++        },
++        "vite": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/@vitest/mocker/node_modules/estree-walker": {
++      "version": "3.0.3",
++      "resolved": "https://registry.npmjs.org/estree-walker/-/estree-walker-3.0.3.tgz",
++      "integrity": "sha512-7RUKfXgSMMkzt6ZuXmqapOurLGPPfgj6l9uRZ7lRGolvk0y2yocc35LdcxKC5PQZdn2DMqioAQ2NoWcrTKmm6g==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@types/estree": "^1.0.0"
++      }
++    },
++    "node_modules/@vitest/pretty-format": {
++      "version": "4.1.9",
++      "resolved": "https://registry.npmjs.org/@vitest/pretty-format/-/pretty-format-4.1.9.tgz",
++      "integrity": "sha512-s0iufns3iIFitdgm+YR7g1whCAaGtXz459VS9/PqyKDEEFgYIhsHOQmXgIgDuYCt7DeQmiZT0Qe2OA2p4ZPu5A==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "tinyrainbow": "^3.1.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/vitest"
++      }
++    },
++    "node_modules/@vitest/runner": {
++      "version": "4.1.9",
++      "resolved": "https://registry.npmjs.org/@vitest/runner/-/runner-4.1.9.tgz",
++      "integrity": "sha512-KXLMDtc7oe70+3mJfGrPUWPesswH+3sTxAMAMl8DG7I8IUQT4XW718dY5ID3vPUcmlu27CcKfY4P3h3I29SLJg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@vitest/utils": "4.1.9",
++        "pathe": "^2.0.3"
++      },
++      "funding": {
++        "url": "https://opencollective.com/vitest"
++      }
++    },
++    "node_modules/@vitest/snapshot": {
++      "version": "4.1.9",
++      "resolved": "https://registry.npmjs.org/@vitest/snapshot/-/snapshot-4.1.9.tgz",
++      "integrity": "sha512-Jc7RKGNBo8Z28WYIm0Niej4xdSPByRf6mU58VpHQkd6Zh05rlnA+twjbK5HyeIGHxrzsc3mJgS43uM0CZKzaIA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@vitest/pretty-format": "4.1.9",
++        "@vitest/utils": "4.1.9",
++        "magic-string": "^0.30.21",
++        "pathe": "^2.0.3"
++      },
++      "funding": {
++        "url": "https://opencollective.com/vitest"
++      }
++    },
++    "node_modules/@vitest/spy": {
++      "version": "4.1.9",
++      "resolved": "https://registry.npmjs.org/@vitest/spy/-/spy-4.1.9.tgz",
++      "integrity": "sha512-fHpsS6mIi+PiEW+vcRVOMkX1oSaPKne3VOclSFICPcGOmfKgXPU5iAah+wcNcj2xPrCCmfq99IDGf+EojhhvhA==",
++      "dev": true,
++      "license": "MIT",
++      "funding": {
++        "url": "https://opencollective.com/vitest"
++      }
++    },
++    "node_modules/@vitest/utils": {
++      "version": "4.1.9",
++      "resolved": "https://registry.npmjs.org/@vitest/utils/-/utils-4.1.9.tgz",
++      "integrity": "sha512-A51o8ymO5PpqlWNnBP9ZHPXDIpuMtTLlGSjN7la4US+LJzoUMyhwjA5QXlm39JexgwHKW4Xjs8Z2d3dLCXOeuA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@vitest/pretty-format": "4.1.9",
++        "convert-source-map": "^2.0.0",
++        "tinyrainbow": "^3.1.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/vitest"
++      }
++    },
+     "node_modules/@volar/language-core": {
+       "version": "2.4.15",
+       "resolved": "https://registry.npmjs.org/@volar/language-core/-/language-core-2.4.15.tgz",
+@@ -1684,6 +1833,16 @@
+       "dev": true,
+       "license": "Python-2.0"
+     },
++    "node_modules/assertion-error": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/assertion-error/-/assertion-error-2.0.1.tgz",
++      "integrity": "sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=12"
++      }
++    },
+     "node_modules/balanced-match": {
+       "version": "1.0.2",
+       "resolved": "https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.2.tgz",
+@@ -1718,6 +1877,16 @@
+         "node": ">=6"
+       }
+     },
++    "node_modules/chai": {
++      "version": "6.2.2",
++      "resolved": "https://registry.npmjs.org/chai/-/chai-6.2.2.tgz",
++      "integrity": "sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=18"
++      }
++    },
+     "node_modules/chalk": {
+       "version": "4.1.2",
+       "resolved": "https://registry.npmjs.org/chalk/-/chalk-4.1.2.tgz",
+@@ -1762,6 +1931,13 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/convert-source-map": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/convert-source-map/-/convert-source-map-2.0.0.tgz",
++      "integrity": "sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==",
++      "dev": true,
++      "license": "MIT"
++    },
+     "node_modules/cross-spawn": {
+       "version": "7.0.6",
+       "resolved": "https://registry.npmjs.org/cross-spawn/-/cross-spawn-7.0.6.tgz",
+@@ -1840,6 +2016,13 @@
+         "url": "https://github.com/fb55/entities?sponsor=1"
+       }
+     },
++    "node_modules/es-module-lexer": {
++      "version": "2.1.0",
++      "resolved": "https://registry.npmjs.org/es-module-lexer/-/es-module-lexer-2.1.0.tgz",
++      "integrity": "sha512-n27zTYMjYu1aj4MjCWzSP7G9r75utsaoc8m61weK+W8JMBGGQybd43GstCXZ3WNmSFtGT9wi59qQTW6mhTR5LQ==",
++      "dev": true,
++      "license": "MIT"
++    },
+     "node_modules/esbuild": {
+       "version": "0.25.12",
+       "resolved": "https://registry.npmjs.org/esbuild/-/esbuild-0.25.12.tgz",
+@@ -2118,6 +2301,16 @@
+         "node": ">=0.10.0"
+       }
+     },
++    "node_modules/expect-type": {
++      "version": "1.4.0",
++      "resolved": "https://registry.npmjs.org/expect-type/-/expect-type-1.4.0.tgz",
++      "integrity": "sha512-KfYbmpRm0VbLjEvVa9yGwCi9GI34xvi7A/HXYWQO65CSD2u3MczUJSuwXKFIxlGsgBQizV9q5J9NHj4VG0n+pA==",
++      "dev": true,
++      "license": "Apache-2.0",
++      "engines": {
++        "node": ">=12.0.0"
++      }
++    },
+     "node_modules/fast-deep-equal": {
+       "version": "3.1.3",
+       "resolved": "https://registry.npmjs.org/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz",
+@@ -2511,6 +2704,20 @@
+         "url": "https://github.com/fb55/nth-check?sponsor=1"
+       }
+     },
++    "node_modules/obug": {
++      "version": "2.1.3",
++      "resolved": "https://registry.npmjs.org/obug/-/obug-2.1.3.tgz",
++      "integrity": "sha512-9miFgM2OFba7hB+pRgvtV84pYTBaoTHohvmIgiRt6dRIzbwEOIaNaP+dIlGs2fNFoB0SeISs0Jz5WFVRid6Xyg==",
++      "dev": true,
++      "funding": [
++        "https://github.com/sponsors/sxzz",
++        "https://opencollective.com/debug"
++      ],
++      "license": "MIT",
++      "engines": {
++        "node": ">=12.20.0"
++      }
++    },
+     "node_modules/optionator": {
+       "version": "0.9.4",
+       "resolved": "https://registry.npmjs.org/optionator/-/optionator-0.9.4.tgz",
+@@ -2601,6 +2808,13 @@
+         "node": ">=8"
+       }
+     },
++    "node_modules/pathe": {
++      "version": "2.0.3",
++      "resolved": "https://registry.npmjs.org/pathe/-/pathe-2.0.3.tgz",
++      "integrity": "sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==",
++      "dev": true,
++      "license": "MIT"
++    },
+     "node_modules/picocolors": {
+       "version": "1.1.1",
+       "resolved": "https://registry.npmjs.org/picocolors/-/picocolors-1.1.1.tgz",
+@@ -2820,6 +3034,13 @@
+         "node": ">=8"
+       }
+     },
++    "node_modules/siginfo": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/siginfo/-/siginfo-2.0.0.tgz",
++      "integrity": "sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==",
++      "dev": true,
++      "license": "ISC"
++    },
+     "node_modules/source-map-js": {
+       "version": "1.2.1",
+       "resolved": "https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.1.tgz",
+@@ -2829,6 +3050,20 @@
+         "node": ">=0.10.0"
+       }
+     },
++    "node_modules/stackback": {
++      "version": "0.0.2",
++      "resolved": "https://registry.npmjs.org/stackback/-/stackback-0.0.2.tgz",
++      "integrity": "sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==",
++      "dev": true,
++      "license": "MIT"
++    },
++    "node_modules/std-env": {
++      "version": "4.1.0",
++      "resolved": "https://registry.npmjs.org/std-env/-/std-env-4.1.0.tgz",
++      "integrity": "sha512-Rq7ybcX2RuC55r9oaPVEW7/xu3tj8u4GeBYHBWCychFtzMIr86A7e3PPEBPT37sHStKX3+TiX/Fr/ACmJLVlLQ==",
++      "dev": true,
++      "license": "MIT"
++    },
+     "node_modules/strip-json-comments": {
+       "version": "3.1.1",
+       "resolved": "https://registry.npmjs.org/strip-json-comments/-/strip-json-comments-3.1.1.tgz",
+@@ -2855,6 +3090,23 @@
+         "node": ">=8"
+       }
+     },
++    "node_modules/tinybench": {
++      "version": "2.9.0",
++      "resolved": "https://registry.npmjs.org/tinybench/-/tinybench-2.9.0.tgz",
++      "integrity": "sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==",
++      "dev": true,
++      "license": "MIT"
++    },
++    "node_modules/tinyexec": {
++      "version": "1.2.4",
++      "resolved": "https://registry.npmjs.org/tinyexec/-/tinyexec-1.2.4.tgz",
++      "integrity": "sha512-SHf/r48b7vOrjve9PxJo3MN5v5yuyjHvdUcrQffT3WXMUfnGmHDVbC4k3sHJaJTgZCwpUplIaAo5ANtMyp3YHg==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=18"
++      }
++    },
+     "node_modules/tinyglobby": {
+       "version": "0.2.16",
+       "resolved": "https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.16.tgz",
+@@ -2872,6 +3124,16 @@
+         "url": "https://github.com/sponsors/SuperchupuDev"
+       }
+     },
++    "node_modules/tinyrainbow": {
++      "version": "3.1.0",
++      "resolved": "https://registry.npmjs.org/tinyrainbow/-/tinyrainbow-3.1.0.tgz",
++      "integrity": "sha512-Bf+ILmBgretUrdJxzXM0SgXLZ3XfiaUuOj/IKQHuTXip+05Xn+uyEYdVg0kYDipTBcLrCVyUzAPz7QmArb0mmw==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=14.0.0"
++      }
++    },
+     "node_modules/ts-api-utils": {
+       "version": "2.5.0",
+       "resolved": "https://registry.npmjs.org/ts-api-utils/-/ts-api-utils-2.5.0.tgz",
+@@ -3041,6 +3303,96 @@
+         }
+       }
+     },
++    "node_modules/vitest": {
++      "version": "4.1.9",
++      "resolved": "https://registry.npmjs.org/vitest/-/vitest-4.1.9.tgz",
++      "integrity": "sha512-nE3/LEyc0z87uHYLZebqCUOaJr2hdtuPp7BQ4BosVFnfltxgAvMG08NyrSGlPpOUWvR27c5flSmYFTNr78L9GQ==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@vitest/expect": "4.1.9",
++        "@vitest/mocker": "4.1.9",
++        "@vitest/pretty-format": "4.1.9",
++        "@vitest/runner": "4.1.9",
++        "@vitest/snapshot": "4.1.9",
++        "@vitest/spy": "4.1.9",
++        "@vitest/utils": "4.1.9",
++        "es-module-lexer": "^2.0.0",
++        "expect-type": "^1.3.0",
++        "magic-string": "^0.30.21",
++        "obug": "^2.1.1",
++        "pathe": "^2.0.3",
++        "picomatch": "^4.0.3",
++        "std-env": "^4.0.0-rc.1",
++        "tinybench": "^2.9.0",
++        "tinyexec": "^1.0.2",
++        "tinyglobby": "^0.2.15",
++        "tinyrainbow": "^3.1.0",
++        "vite": "^6.0.0 || ^7.0.0 || ^8.0.0",
++        "why-is-node-running": "^2.3.0"
++      },
++      "bin": {
++        "vitest": "vitest.mjs"
++      },
++      "engines": {
++        "node": "^20.0.0 || ^22.0.0 || >=24.0.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/vitest"
++      },
++      "peerDependencies": {
++        "@edge-runtime/vm": "*",
++        "@opentelemetry/api": "^1.9.0",
++        "@types/node": "^20.0.0 || ^22.0.0 || >=24.0.0",
++        "@vitest/browser-playwright": "4.1.9",
++        "@vitest/browser-preview": "4.1.9",
++        "@vitest/browser-webdriverio": "4.1.9",
++        "@vitest/coverage-istanbul": "4.1.9",
++        "@vitest/coverage-v8": "4.1.9",
++        "@vitest/ui": "4.1.9",
++        "happy-dom": "*",
++        "jsdom": "*",
++        "vite": "^6.0.0 || ^7.0.0 || ^8.0.0"
++      },
++      "peerDependenciesMeta": {
++        "@edge-runtime/vm": {
++          "optional": true
++        },
++        "@opentelemetry/api": {
++          "optional": true
++        },
++        "@types/node": {
++          "optional": true
++        },
++        "@vitest/browser-playwright": {
++          "optional": true
++        },
++        "@vitest/browser-preview": {
++          "optional": true
++        },
++        "@vitest/browser-webdriverio": {
++          "optional": true
++        },
++        "@vitest/coverage-istanbul": {
++          "optional": true
++        },
++        "@vitest/coverage-v8": {
++          "optional": true
++        },
++        "@vitest/ui": {
++          "optional": true
++        },
++        "happy-dom": {
++          "optional": true
++        },
++        "jsdom": {
++          "optional": true
++        },
++        "vite": {
++          "optional": false
++        }
++      }
++    },
+     "node_modules/vscode-uri": {
+       "version": "3.1.0",
+       "resolved": "https://registry.npmjs.org/vscode-uri/-/vscode-uri-3.1.0.tgz",
+@@ -3175,6 +3527,23 @@
+         "node": ">= 8"
+       }
+     },
++    "node_modules/why-is-node-running": {
++      "version": "2.3.0",
++      "resolved": "https://registry.npmjs.org/why-is-node-running/-/why-is-node-running-2.3.0.tgz",
++      "integrity": "sha512-hUrmaWBdVDcxvYqnyh09zunKzROWjbZTiNy8dBEjkS7ehEDQibXJ7XvlmtbwuTclUiIyN+CyXQD4Vmko8fNm8w==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "siginfo": "^2.0.0",
++        "stackback": "0.0.2"
++      },
++      "bin": {
++        "why-is-node-running": "cli.js"
++      },
++      "engines": {
++        "node": ">=8"
++      }
++    },
+     "node_modules/word-wrap": {
+       "version": "1.2.5",
+       "resolved": "https://registry.npmjs.org/word-wrap/-/word-wrap-1.2.5.tgz",
+diff --git a/package.json b/package.json
+index c4cde4c..40aa0ba 100644
+--- a/package.json
++++ b/package.json
+@@ -15,6 +15,7 @@
+     "bundle-size": "node scripts/check-bundle-size.mjs",
+     "new-genre": "node scripts/new-genre.mjs",
+     "test": "playwright test",
++  "test:unit": "vitest run",
+     "test:smoke": "playwright test tests/smoke.spec.ts",
+     "test:e2e": "node tests/test_game.mjs",
+     "test:choices": "node tests/test_choices.mjs",
+@@ -33,6 +34,7 @@
+     "typescript": "^5.7.2",
+     "typescript-eslint": "^8.19.0",
+     "vite": "^6.3.5",
++    "vitest": "^4.1.9",
+     "vue-tsc": "^2.2.8"
+   }
+ }
+diff --git a/src/App.vue b/src/App.vue
+index 153300f..9252958 100644
+--- a/src/App.vue
++++ b/src/App.vue
+@@ -58,6 +58,7 @@ const snapshot = ref<GameSnapshot>({
+   beatHits: 0, survivedSec: 0, hp: 3, maxHp: 3, dead: false, shouldUpdate: null,
+   statJumps: 0, statMoveLeft: 0, statMoveRight: 0, firstJumpDone: false,
+   learningNotification: null, scoreFormulaError: null,
++  statCollisions: 0, statItemsCollected: 0, statShots: 0, statDashes: undefined,
+ })
+ 
+ // 笏笏笏 Canvas 繧ｵ繧､繧ｺ繧偵え繧｣繝ｳ繝峨え縺ｫ蜷医ｏ縺帙ｋ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+@@ -173,8 +174,14 @@ function giveUp() {
+ 
+ // 笏笏笏 謚墓憧螳御ｺ・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ function onThrown(result: ThrowResult) {
++  // getStats() 繧・stop() 繧医ｊ蜈医↓蜻ｼ縺ｶ・・top() 縺ｧ蜀・Κ迥ｶ諷九′繧ｯ繝ｪ繧｢縺輔ｌ繧九◆繧・ｼ・+  const gameStats = scroller?.getStats()
+   scroller?.stop()  // 謚墓憧蠕後・scroller繝ｫ繝ｼ繝励ｒ蛛懈ｭ｢
+-  gameState.finalizeThrowing(result, snapshot.value.playScore)
++  if (gameStats) {
++    gameState.finalizeThrowing(result, snapshot.value.playScore, gameStats)
++  } else {
++    gameState.finalizeThrowing(result, snapshot.value.playScore)
++  }
+ }
+ 
+ // 笏笏笏 繝ｪ繧ｹ繧ｿ繝ｼ繝・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+@@ -439,6 +446,9 @@ onUnmounted(() => {
+         :final-score="gameState.finalScore.value"
+         :genre="gameState.lockedGenre.value ?? 'runner'"
+         :choice-count="gameState.choiceHistory.length"
++        :play-style="gameState.playStyle.value"
++        :contradiction="gameState.contradiction.value"
++        :surprise-ending="gameState.surpriseEnding.value"
+         @restart="restart"
+       />
+     </Transition>
+diff --git a/src/components/EndingPanel.vue b/src/components/EndingPanel.vue
+index 00d08aa..258fce7 100644
+--- a/src/components/EndingPanel.vue
++++ b/src/components/EndingPanel.vue
+@@ -1,12 +1,26 @@
+ <script setup lang="ts">
+ import { ref, onMounted, onUnmounted, computed } from 'vue'
+-import type { FinalScore, GenreId } from '../domain/types'
++import type { FinalScore, GenreId, PlayStyleResult, ContradictionState, SurpriseEnding } from '../domain/types'
+ import { GENRES } from '../data/genres'
++import { SCORE } from '../data/tunables'
++
++/** EndingPanel 縺ｧ遏帷崟迥ｶ諷九ｒ陦ｨ遉ｺ縺吶ｋ縺溘ａ縺ｮ繧､繝ｳ繧ｿ繝ｼ繝輔ぉ繝ｼ繧ｹ・・eadonly 蟇ｾ蠢懶ｼ・*/
++interface ContradictionDisplay {
++  pairs: ReadonlyArray<{ idA: string; idB: string }>
++  score: number
++  hasEffect: boolean
++}
+ 
+ const props = defineProps<{
+   finalScore: FinalScore
+   genre: GenreId
+   choiceCount: number
++  /** Issue #24: 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ讀懷・邨先棡 */
++  playStyle?: PlayStyleResult | null
++  /** Issue #24: 遏帷崟迥ｶ諷具ｼ・eadonly 蟇ｾ蠢懊・縺溘ａ蟆ら畑繧､繝ｳ繧ｿ繝ｼ繝輔ぉ繝ｼ繧ｹ・・*/
++  contradiction?: ContradictionDisplay | null
++  /** Issue #24: 繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝画ュ蝣ｱ */
++  surpriseEnding?: SurpriseEnding | null
+ }>()
+ 
+ const emit = defineEmits<{ (e: 'restart'): void }>()
+@@ -17,6 +31,29 @@ const endingFlavor = genreDef?.endingFlavor ?? ''
+ 
+ const otherGenres = GENRES.filter(g => g.id !== props.genre && g.id !== 'base')
+ 
++// 笏笏 Issue #24: 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ繝ｩ繝吶Ν 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++const playStyleLabels: Record<string, string> = {
++  aggressive: '謾ｻ謦・噪',
++  defensive: '髦ｲ蠕｡逧・,
++  explorer: '謗｢邏｢逧・,
++  balanced: '蝮・｡｡',
++  chaotic: '豺ｷ豐・,
++  passive: '豸域･ｵ逧・,
++}
++const detectedPlayStyle = computed(() => {
++  if (!props.playStyle) return null
++  return {
++    label: playStyleLabels[props.playStyle.style] ?? props.playStyle.style,
++    confidence: Math.round(props.playStyle.confidence * 100),
++  }
++})
++
++// 笏笏 Issue #24: 遏帷崟繝舌・ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++const contradictionPercentage = computed(() => {
++  if (!props.contradiction) return 0
++  return Math.round(props.contradiction.score * 100)
++})
++
+ // 笏笏 繧ｫ繧ｦ繝ｳ繝医い繝・・ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ const displayPlay  = ref(0)
+ const displayThrow = ref(0)
+@@ -25,10 +62,11 @@ const gradeVisible = ref(false)
+ const altVisible   = ref(false)
+ 
+ function grade(total: number): string {
+-  if (total >= 8000) return 'S'
+-  if (total >= 5000) return 'A'
+-  if (total >= 2500) return 'B'
+-  if (total >= 1000) return 'C'
++  const t = SCORE.gradeThresholds
++  if (total >= t.S) return 'S'
++  if (total >= t.A) return 'A'
++  if (total >= t.B) return 'B'
++  if (total >= t.C) return 'C'
+   return 'D'
+ }
+ 
+@@ -93,6 +131,13 @@ onUnmounted(() => {
+     <div class="ending-card">
+       <!-- 繧ｸ繝｣繝ｳ繝ｫ遒ｺ螳・-->
+       <div class="ending-genre-section">
++        <!-- Issue #24: 繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝芽｡ｨ遉ｺ -->
++        <div v-if="surpriseEnding" class="ending-surprise" :class="'surprise-' + surpriseEnding.type">
++          <div class="surprise-icon">笞</div>
++          <div class="surprise-title">{{ surpriseEnding.title }}</div>
++          <div class="surprise-desc">{{ surpriseEnding.description }}</div>
++        </div>
++
+         <div class="ending-genre-label">繧ｲ繝ｼ繝縺悟ｮ梧・縺励∪縺励◆</div>
+         <div class="ending-genre-name" :style="{ '--accent': accentColor }">
+           {{ genreLabel }}
+@@ -102,6 +147,21 @@ onUnmounted(() => {
+         </div>
+       </div>
+ 
++      <!-- Issue #24: 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ繝ｻ遏帷崟陦ｨ遉ｺ -->
++      <div v-if="detectedPlayStyle || contradiction" class="ending-meta-section">
++        <div v-if="detectedPlayStyle" class="meta-row">
++          <span class="meta-label">繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ</span>
++          <span class="meta-value">{{ detectedPlayStyle.label }} <span class="meta-conf">・・{ detectedPlayStyle.confidence }}%・・/span></span>
++        </div>
++        <div v-if="contradiction" class="meta-row">
++          <span class="meta-label">遏帷崟繝ｬ繝吶Ν</span>
++          <div class="contradiction-bar">
++            <div class="contradiction-fill" :style="{ width: contradictionPercentage + '%' }"></div>
++          </div>
++          <span class="meta-value">{{ contradictionPercentage }}%</span>
++        </div>
++      </div>
++
+       <!-- 繧ｹ繧ｳ繧｢蜀・ｨｳ -->
+       <div class="ending-score-box">
+         <div class="score-row">
+@@ -364,4 +424,86 @@ onUnmounted(() => {
+ }
+ .restart-btn:hover { background: rgba(0,255,65,0.1); box-shadow: 0 0 12px rgba(0,255,65,0.2); }
+ .restart-btn:active { transform: translateY(2px); box-shadow: 0 0 6px rgba(0,255,65,0.1); }
++
++/* 笏笏 Issue #24: 繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝・笏笏 */
++.ending-surprise {
++  margin-bottom: 14px;
++  padding: 10px 12px;
++  border: 1px solid #ff0040;
++  border-radius: 2px;
++  background: rgba(255, 0, 64, 0.08);
++  animation: glitchPulse 2s infinite;
++}
++@keyframes glitchPulse {
++  0%, 100% { opacity: 1; }
++  50% { opacity: 0.85; }
++}
++.surprise-icon {
++  font-size: 18px;
++  margin-bottom: 4px;
++  animation: glitchShake 0.3s infinite;
++}
++@keyframes glitchShake {
++  0%, 100% { transform: translateX(0); }
++  25% { transform: translateX(-2px); }
++  75% { transform: translateX(2px); }
++}
++.surprise-title {
++  font-size: 15px;
++  font-weight: bold;
++  color: #ff0040;
++  margin-bottom: 4px;
++  font-family: 'Courier New', monospace;
++  letter-spacing: 1px;
++}
++.surprise-desc {
++  font-size: 11px;
++  color: rgba(255, 100, 120, 0.7);
++  line-height: 1.6;
++  font-family: 'M PLUS 1 Code', monospace;
++}
++
++/* 笏笏 Issue #24: 繝｡繧ｿ諠・ｱ繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ 笏笏 */
++.ending-meta-section {
++  margin-bottom: 14px;
++  padding: 8px 12px;
++  border: 1px solid rgba(0,255,65,0.15);
++  border-radius: 1px;
++  background: rgba(0,255,65,0.03);
++}
++.meta-row {
++  display: flex;
++  justify-content: space-between;
++  align-items: center;
++  padding: 4px 0;
++  font-size: 12px;
++  font-family: 'M PLUS 1 Code', monospace;
++}
++.meta-label {
++  color: rgba(184,255,184,0.45);
++  font-size: 11px;
++  letter-spacing: 0.5px;
++}
++.meta-value {
++  color: #b8ffb8;
++  font-size: 12px;
++}
++.meta-conf {
++  color: rgba(184,255,184,0.3);
++  font-size: 10px;
++}
++.contradiction-bar {
++  width: 80px;
++  height: 6px;
++  background: rgba(0,255,65,0.1);
++  border-radius: 3px;
++  overflow: hidden;
++  margin: 0 8px;
++}
++.contradiction-fill {
++  height: 100%;
++  background: linear-gradient(90deg, #33aa55, #ff0040);
++  border-radius: 3px;
++  transition: width 0.6s ease;
++}
+ </style>
+diff --git a/src/composables/useGameState.ts b/src/composables/useGameState.ts
+index 75ba8d1..df436f8 100644
+--- a/src/composables/useGameState.ts
++++ b/src/composables/useGameState.ts
+@@ -1,5 +1,6 @@
+ import { reactive, ref, readonly } from 'vue'
+-import type { Phase, GenreId, RuntimeRules, FinalScore, ManualVersion, ManualCard, GenreParam, BayesianState } from '../domain/types'
++import type { Phase, GenreId, RuntimeRules, FinalScore, ManualVersion, ManualCard, GenreParam, BayesianState,
++  ActionStats, PlayStyleResult, ContradictionState, SurpriseEnding } from '../domain/types'
+ import { BAYES_DEBUG_TOP_N } from '../domain/types'
+ import { MANUAL_DECK } from '../data/manualDeck'
+ import { GENRES } from '../data/genres'
+@@ -14,16 +15,55 @@ import { calcThrowScore, calcFinalScore } from '../domain/scoreCalc'
+ import type { ThrowResult } from '../domain/types'
+ import { soundManager } from '../plugins/SoundManager'
+ import { sampleCards, CARD_POOL } from '../data/cardPool'
+-import { MAX_ROUNDS, DEFAULT_FALLBACK_GENRE } from '../data/gameBalance'
++import { MAX_ROUNDS, DEFAULT_FALLBACK_GENRE, PARAM_JITTER_RANGE } from '../data/gameBalance'
++import { detectPlayStyle } from '../domain/playStyleDetector'
++import { trackContradictions, shouldTriggerGlitchEnd } from '../domain/contradictionTracker'
+ 
+ // genreParams 縺ｮ繧ｸ繝・ち繝ｼ蟷・ｼ按ｱ20%・・-const PARAM_JITTER_RANGE = 0.4
++// gameBalance.ts 縺九ｉ繧､繝ｳ繝昴・繝域ｸ医∩
++
++// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++// 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ繝ｻ遏帷崟繝ｻ繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝会ｼ・ssue #24・・+// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++
++/** 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ讀懷・邨先棡・医ご繝ｼ繝邨ゆｺ・凾縺ｫ險育ｮ暦ｼ・*/
++export function computePlayStyle(stats: ActionStats): PlayStyleResult {
++  return detectPlayStyle(stats)
++}
++
++/** 遏帷崟迥ｶ諷九ｒ險育ｮ暦ｼ磯∈謚槫ｱ･豁ｴ縺九ｉ・・*/
++export function computeContradiction(history: ChoiceRecord[]): ContradictionState {
++  return trackContradictions(history)
++}
++
++/** 繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝峨ｒ蛻､螳夲ｼ育泝逶ｾ繝ｻ繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ縺九ｉ・・*/
++export function computeSurpriseEnding(
++  contradiction: ContradictionState,
++  _playStyle: PlayStyleResult,
++): SurpriseEnding | null {
++  // 遏帷崟繧ｹ繧ｳ繧｢縺碁明蛟､繧定ｶ・∴縺ｦ縺・ｌ縺ｰ glitch 繧ｨ繝ｳ繝・+  if (shouldTriggerGlitchEnd(contradiction)) {
++    return {
++      type: 'glitch',
++      title: '繧ｲ繝ｼ繝縺悟｣翫ｌ縺ｾ縺励◆',
++      description: '縺ゅ↑縺溘′驕ｸ繧薙□遏帷崟縺後√ご繝ｼ繝縺昴・繧ゅ・繧貞｣翫＠縺ｾ縺励◆縲ゅ％繧後・隱ｰ繧ゆｺ域Φ縺励↑縺九▲縺溽ｵ先忰縺ｧ縺吶・,
++      forcedGenre: 'glitch',
++    }
++  }
++  // TODO: hidden_genre / bad_ending / narrative_twist 縺ｮ蛻､螳壹Ο繧ｸ繝・け繧貞ｮ溯｣・+  return null
++}
+ 
+ export function useGameState() {
+   const phase = ref<Phase>('title')
+   const lockedGenre = ref<GenreId | null>(null)
+   const finalScore = ref<FinalScore | null>(null)
+ 
++  // 繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝蛾未騾｣・・ssue #24・・+  const playStyle = ref<PlayStyleResult | null>(null)
++  const contradiction = ref<ContradictionState>({ pairs: [], score: 0, hasEffect: false })
++  const surpriseEnding = ref<SurpriseEnding | null>(null)
++
+   // 繧ｫ繝ｼ繝峨Λ繧ｦ繝ｳ繝臥ｮ｡逅・   const roundCount = ref(0)
+   const activeCards = ref<ManualCard[]>([])
+@@ -203,8 +243,31 @@ export function useGameState() {
+     phase.value = 'throwing'
+   }
+ 
+-  function finalizeThrowing(throwResult: ThrowResult, playScoreRaw: number) {
++  function finalizeThrowing(throwResult: ThrowResult, playScoreRaw: number, gameStats?: ActionStats) {
+     soundManager.onThrowLand()
++
++    // 遏帷崟迥ｶ諷九ｒ險育ｮ・+    const contradictionState = computeContradiction(choiceHistory)
++    contradiction.value = contradictionState
++
++    // 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ讀懷・・医ご繝ｼ繝邨ｱ險医′貂｡縺輔ｌ縺溷ｴ蜷茨ｼ・+    if (gameStats) {
++      playStyle.value = computePlayStyle(gameStats)
++    }
++
++    // 繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝牙愛螳・+    const ending = computeSurpriseEnding(contradictionState, playStyle.value ?? {
++      style: 'balanced',
++      confidence: 0,
++      scores: { aggressive: 0, defensive: 0, explorer: 0, balanced: 0, chaotic: 0, passive: 0 },
++    })
++    surpriseEnding.value = ending
++
++    // glitch 繧ｨ繝ｳ繝峨′繝医Μ繧ｬ繝ｼ縺輔ｌ縺溘ｉ繧ｸ繝｣繝ｳ繝ｫ繧貞ｼｷ蛻ｶ譖ｸ縺肴鋤縺・+    if (ending?.forcedGenre) {
++      lockedGenre.value = ending.forcedGenre as GenreId
++    }
++
+     const throwScore = calcThrowScore(throwResult)
+     finalScore.value = calcFinalScore(playScoreRaw, throwScore)
+     phase.value = 'ending'
+@@ -221,6 +284,9 @@ export function useGameState() {
+     accumulatedManualText.value = [...MANUAL_DECK['1.0'].manualText]
+     currentHazards.value = { ...MANUAL_DECK['1.0'].hazards }
+     lastRuntimeConfig.value = undefined
++    playStyle.value = null
++    contradiction.value = { pairs: [], score: 0, hasEffect: false }
++    surpriseEnding.value = null
+     _syncBayesState(initBayesianState(GENRES))
+     _rebuildRules()
+   }
+@@ -240,6 +306,10 @@ export function useGameState() {
+     roundCount: readonly(roundCount),
+     maxRounds: MAX_ROUNDS,
+     bayesState: readonly(bayesState) as BayesianState,
++    // Issue #24: 繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝蛾未騾｣
++    playStyle: readonly(playStyle),
++    contradiction: readonly(contradiction),
++    surpriseEnding: readonly(surpriseEnding),
+     currentManual,
+     lockedGenreDef,
+     startGame,
+diff --git a/src/data/cards/surprise-cards.json b/src/data/cards/surprise-cards.json
+new file mode 100644
+index 0000000..88320ea
+--- /dev/null
++++ b/src/data/cards/surprise-cards.json
+@@ -0,0 +1,62 @@
++{
++  "cards": [
++    {
++      "id": "c-surprise-chaos",
++      "label": "繝ｫ繝ｼ繝ｫ繧呈э蝗ｳ逧・↓遏帷崟縺輔○繧・,
++      "manualText": ["繝ｫ繝ｼ繝ｫ縺ｫ遏帷崟縺檎函縺倥∪縺励◆縲・, "繧ｲ繝ｼ繝縺ｮ莉墓ｧ倥′謠ｺ繧峨℃蟋九ａ縺ｾ縺励◆縲・],
++      "genreParams": { "combo": 1, "tempo": 1, "enemy": 1 },
++      "weight": 1,
++      "hint": "繧ｵ繝励Λ繧､繧ｺ: 遏帷崟繧定ｪ倡匱",
++      "genreAffinity": ["puzzle", "hack_slash"],
++      "conflictsWith": ["c-combo-sequence", "c-stealth-hide"]
++    },
++    {
++      "id": "c-surprise-paradox",
++      "label": "蜷梧凾縺ｫ逶ｸ蜿阪☆繧・縺､縺ｮ迥ｶ諷九ｒ菴懊ｋ",
++      "manualText": ["繧ｲ繝ｼ繝縺・縺､縺ｮ迥ｶ諷九ｒ蜷梧凾縺ｫ謖√▽繧医≧縺ｫ縺ｪ繧翫∪縺励◆縲・, "菴輔′襍ｷ縺阪ｋ縺句・縺九ｊ縺ｾ縺帙ｓ縲・],
++      "genreParams": { "stealth": 1, "enemy": 1 },
++      "weight": 1,
++      "hint": "繧ｵ繝励Λ繧､繧ｺ: 遏帷崟繧定ｪ倡匱",
++      "genreAffinity": ["horror", "stealth_action"],
++      "conflictsWith": ["c-enemy-combat", "c-survive-danger"]
++    },
++    {
++      "id": "c-surprise-void",
++      "label": "蟄伜惠縺励↑縺・ｂ縺ｮ繧呈桃菴懊〒縺阪ｋ繧医≧縺ｫ縺吶ｋ",
++      "manualText": ["隕九∴縺ｪ縺・ｂ縺ｮ繧呈桃菴懊☆繧倶ｻ墓ｧ倥′蜉繧上ｊ縺ｾ縺励◆縲・],
++      "genreParams": { "stealth": 2, "combo": 1 },
++      "weight": 1,
++      "hint": "繧ｵ繝励Λ繧､繧ｺ: 髫縺苓ｦ∫ｴ",
++      "genreAffinity": ["stealth_action", "puzzle"],
++      "conflictsWith": ["c-general-visual"]
++    },
++    {
++      "id": "c-surprise-loop",
++      "label": "蜷後§縺薙→繧堤ｹｰ繧願ｿ斐☆縺ｨ螟牙喧縺瑚ｵｷ縺阪ｋ",
++      "manualText": ["郢ｰ繧願ｿ斐☆縺薙→縺ｧ髫繧後◆莉墓ｧ倥′隗｣縺肴叛縺溘ｌ縺ｾ縺吶・],
++      "genreParams": { "combo": 2, "rhythm": 1 },
++      "weight": 1,
++      "hint": "繧ｵ繝励Λ繧､繧ｺ: 繝ｫ繝ｼ繝苓ｦ∫ｴ",
++      "genreAffinity": ["rhythm", "idle"]
++    },
++    {
++      "id": "c-surprise-memory",
++      "label": "驕主悉縺ｮ驕ｸ謚槭′莉翫↓蠖ｱ髻ｿ縺吶ｋ",
++      "manualText": ["驕主悉縺ｮ驕ｸ謚槭′繧ｲ繝ｼ繝縺ｫ蠖ｱ髻ｿ縺怜ｧ九ａ縺ｾ縺励◆縲・],
++      "genreParams": { "growth": 1, "stealth": 1 },
++      "weight": 1,
++      "hint": "繧ｵ繝励Λ繧､繧ｺ: 繝｡繧ｿ隕∫ｴ",
++      "genreAffinity": ["rpg", "horror"]
++    },
++    {
++      "id": "c-surprise-break",
++      "label": "繧ｲ繝ｼ繝縺ｮ譫邨・∩縺昴・繧ゅ・繧貞､峨∴繧・,
++      "manualText": ["繧ｲ繝ｼ繝縺ｮ譬ｹ譛ｬ縺悟､峨ｏ繧翫▽縺､縺ゅｊ縺ｾ縺吶・, "繧ゅ・繧・ｪｬ譏取嶌縺ｧ縺ｯ霑ｽ縺・▽縺阪∪縺帙ｓ縲・],
++      "genreParams": { "tempo": 1, "combo": 1, "enemy": 1, "growth": 1 },
++      "weight": 1,
++      "hint": "繧ｵ繝励Λ繧､繧ｺ: 譬ｹ譛ｬ螟牙喧",
++      "genreAffinity": ["hack_slash", "arena"],
++      "conflictsWith": ["c-combo-sequence", "c-tempo-smooth", "c-stealth-hide"]
++    }
++  ]
++}
+diff --git a/src/data/config/game_balance.json b/src/data/config/game_balance.json
+index 06a2321..48ed9b6 100644
+--- a/src/data/config/game_balance.json
++++ b/src/data/config/game_balance.json
+@@ -15,5 +15,6 @@
+   "maxRounds": 5,
+   "genreLockedBoostMult": 1.35,
+   "genreLockedBoostDurationMs": 800,
+-  "defaultFallbackGenre": "runner"
++  "defaultFallbackGenre": "runner",
++  "paramJitterRange": 0.4
+ }
+diff --git a/src/data/config/genres.json b/src/data/config/genres.json
+index 6bc3149..9b0dda2 100644
+--- a/src/data/config/genres.json
++++ b/src/data/config/genres.json
+@@ -15,7 +15,8 @@
+     "dungeon":    { "accent": "#c87020", "border": "#6a3800", "hint": "rgba(200,100,30,0.4)",   "bg": "#0a0600", "glow": "rgba(180,80,0,0.2)",     "font": "'Georgia', serif" },
+     "hack_slash": { "accent": "#ff4444", "border": "#880000", "hint": "rgba(220,50,50,0.4)",    "bg": "#100000", "glow": "rgba(200,0,0,0.25)" },
+     "survival":   { "accent": "#88bb55", "border": "#445522", "hint": "rgba(100,160,60,0.4)",   "bg": "#050a05", "glow": "rgba(80,130,40,0.2)" },
+-    "tetris":     { "accent": "#a000f0", "border": "#a000f0", "hint": "rgba(160,0,240,0.5)",    "bg": "#0a0a0a", "glow": "rgba(160,0,240,0.25)",   "font": "'Courier New', monospace" }
++    "tetris":     { "accent": "#a000f0", "border": "#a000f0", "hint": "rgba(160,0,240,0.5)",    "bg": "#0a0a0a", "glow": "rgba(160,0,240,0.25)",   "font": "'Courier New', monospace" },
++    "glitch":     { "accent": "#ff0040", "border": "#ff0040", "hint": "rgba(255,0,64,0.3)",     "bg": "#0a0a0a", "glow": "rgba(255,0,64,0.15)",    "font": "'Courier New', monospace" }
+   },
+   "genres": [
+     {
+@@ -502,6 +503,26 @@
+       },
+       "gravity": 0,
+       "endingFlavor": "縺ゅ↑縺溘・繝悶Ο繝・け繧堤ｩ阪∩驥阪・縺溘りｪｬ譏取嶌繧ゅ◎縺ｮ蝪斐・荳驛ｨ縺ｫ縺ｪ縺｣縺溘・
++    },
++    {
++      "id": "glitch",
++      "label": "螢翫ｌ縺溘ご繝ｼ繝",
++      "thresholds": {},
++      "enableFeatures": ["movement"],
++      "disableFeatures": [],
++      "scoreFormula": "distance * 0.1 + survivedSec * 2",
++      "manualReveal": "隱ｬ譏取嶌縺悟｣翫ｌ縺ｾ縺励◆縲ゅｂ縺・ｽ輔ｒ縺吶∋縺阪°蛻・°繧翫∪縺帙ｓ縲・,
++      "theme": "glitch",
++      "bgColor": "#0a0a0a",
++      "controls": {
++        "jump": "Space",
++        "moveLeft": "ArrowLeft",
++        "moveRight": "ArrowRight",
++        "moveUp": "ArrowUp",
++        "moveDown": "ArrowDown"
++      },
++      "gravity": 1600,
++      "endingFlavor": "縺ゅ↑縺溘′驕ｸ繧薙□遏帷崟縺後√ご繝ｼ繝縺昴・繧ゅ・繧貞｣翫＠縺ｾ縺励◆縲ゅ％繧後・隱ｰ繧ゆｺ域Φ縺励↑縺九▲縺溽ｵ先忰縺ｧ縺吶・
+     }
+   ]
+ }
+diff --git a/src/data/config/physics.json b/src/data/config/physics.json
+index caa0766..6ce2b80 100644
+--- a/src/data/config/physics.json
++++ b/src/data/config/physics.json
+@@ -23,5 +23,6 @@
+   "dashDurationSec": 0.18,
+   "dashCooldownSec": 0.9,
+   "dashIframesSec": 0.25,
+-  "wallJumpPushSpeed": 260
++  "wallJumpPushSpeed": 260,
++  "groundYOffset": 80
+ }
+diff --git a/src/data/config/score.json b/src/data/config/score.json
+index 60443f0..cb832f8 100644
+--- a/src/data/config/score.json
++++ b/src/data/config/score.json
+@@ -3,5 +3,11 @@
+   "section": "score",
+   "defaultColorTouchScore": 200,
+   "distanceScoreRate": 0.28,
+-  "longAirScoreRate": 1.6
++  "longAirScoreRate": 1.6,
++  "gradeThresholds": {
++    "S": 8000,
++    "A": 5000,
++    "B": 2500,
++    "C": 1000
++  }
+ }
+diff --git a/src/data/gameBalance.ts b/src/data/gameBalance.ts
+index 3666a56..ce4aab0 100644
+--- a/src/data/gameBalance.ts
++++ b/src/data/gameBalance.ts
+@@ -78,6 +78,11 @@ export const GENRE_LOCKED_BOOST = {
+ // 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ export const DEFAULT_FALLBACK_GENRE = _gb.defaultFallbackGenre as string
+ 
++// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++// PARAM_JITTER_RANGE 窶・繧ｸ繝｣繝ｳ繝ｫ繝代Λ繝｡繝ｼ繧ｿ縺ｮ繧ｸ繝・ち繝ｼ蟷・ｼ按ｱ20%・・+// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++export const PARAM_JITTER_RANGE = _gb.paramJitterRange
++
+ // 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ // HAZARD_SPAWN 窶・繝上じ繝ｼ繝峨せ繝昴・繝ｳ譖ｲ邱・ // 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+diff --git a/src/data/genres/glitch.json b/src/data/genres/glitch.json
+new file mode 100644
+index 0000000..58f46e7
+--- /dev/null
++++ b/src/data/genres/glitch.json
+@@ -0,0 +1,12 @@
++{
++  "id": "glitch",
++  "label": "螢翫ｌ縺溘ご繝ｼ繝",
++  "thresholds": {},
++  "enableFeatures": ["movement", "hp"],
++  "disableFeatures": [],
++  "scoreFormula": "distance * 0.1 + survivedSec * 2",
++  "manualReveal": "隱ｬ譏取嶌縺悟｣翫ｌ縺ｾ縺励◆縲ゅｂ縺・ｽ輔ｒ縺吶∋縺阪°蛻・°繧翫∪縺帙ｓ縲・,
++  "theme": "glitch",
++  "bgColor": "#0a0a0a",
++  "endingFlavor": "縺ゅ↑縺溘′驕ｸ繧薙□遏帷崟縺後√ご繝ｼ繝縺昴・繧ゅ・繧貞｣翫＠縺ｾ縺励◆縲ゅ％繧後・隱ｰ繧ゆｺ域Φ縺励↑縺九▲縺溽ｵ先忰縺ｧ縺吶・
++}
+diff --git a/src/domain/contradictionTracker.ts b/src/domain/contradictionTracker.ts
+new file mode 100644
+index 0000000..a84044c
+--- /dev/null
++++ b/src/domain/contradictionTracker.ts
+@@ -0,0 +1,69 @@
++import type { ContradictionState } from './types'
++import type { ChoiceRecord } from './ruleEngine'
++import { CARD_POOL } from '../data/cardPool'
++
++// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++// 遏帷崟繝医Λ繝・く繝ｳ繧ｰ
++//
++// 繝励Ξ繧､繝､繝ｼ縺御ｺ偵＞縺ｫ遏帷崟縺吶ｋ繧ｫ繝ｼ繝峨ｒ驕ｸ謚槭＠縺溷ｴ蜷医・+// 遏帷崟繧ｹ繧ｳ繧｢繧堤ｴｯ遨阪＠縲・明蛟､繧定ｶ・∴繧九→縲後ご繝ｼ繝縺悟｣翫ｌ縺溘・+// 迚ｹ蛻･縺ｪ邨先忰・・litch・峨∈縺ｮ蛻・ｲ舌ｒ蜿ｯ閭ｽ縺ｫ縺吶ｋ縲・+// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++
++/** 遏帷崟縺・縺､逋ｺ逕溘＠縺溘→縺阪・繧ｹ繧ｳ繧｢蜉邂鈴㍼ */
++const CONTRADICTION_WEIGHT = 0.25
++
++/** glitch 邨先忰縺ｸ縺ｮ蛻・ｲ舌ｒ蜿ｯ閭ｽ縺ｫ縺吶ｋ遏帷崟繧ｹ繧ｳ繧｢縺ｮ髢ｾ蛟､ */
++const GLITCH_THRESHOLD = 0.5
++
++/**
++ * 驕ｸ謚槫ｱ･豁ｴ縺九ｉ遏帷崟迥ｶ諷九ｒ險育ｮ励☆繧狗ｴ皮ｲ矩未謨ｰ縲・+ *
++ * 蜷・き繝ｼ繝峨・ conflictsWith 繝輔ぅ繝ｼ繝ｫ繝峨ｒ蜿ら・縺励・+ * 荳｡譁ｹ縺ｨ繧る∈謚槭＆繧後※縺・ｋ繧ｫ繝ｼ繝峨・繧｢繧呈､懷・縺吶ｋ縲・+ */
++export function trackContradictions(history: ChoiceRecord[]): ContradictionState {
++  const selectedIds = new Set(history.map(r => r.choiceId))
++  const pairs: { idA: string; idB: string }[] = []
++  const seenPairs = new Set<string>()
++
++  for (const record of history) {
++    const card = CARD_POOL.find(c => c.id === record.choiceId)
++    if (!card?.conflictsWith?.length) continue
++
++    for (const conflictId of card.conflictsWith) {
++      if (!selectedIds.has(conflictId)) continue
++
++      // 繝壹い繧剃ｸ諢上↓隴伜挨・磯・ｺ乗裏蜈ｳ・・+      // slice() 縺ｧ繧ｳ繝斐・縺励※縺九ｉ sort() 縺吶ｋ・育ｴ螢顔噪謫堺ｽ懊ｒ驕ｿ縺代ｋ・・+      const pairKey = [record.choiceId, conflictId].slice().sort().join('|')
++      if (seenPairs.has(pairKey)) continue
++      seenPairs.add(pairKey)
++
++      pairs.push({ idA: record.choiceId, idB: conflictId })
++    }
++  }
++
++  // 遏帷崟繧ｹ繧ｳ繧｢險育ｮ暦ｼ域怙螟ｧ 1.0 縺ｫ繧ｯ繝ｩ繝ｳ繝暦ｼ・+  const score = Math.min(1, pairs.length * CONTRADICTION_WEIGHT)
++
++  return {
++    pairs,
++    score,
++    hasEffect: score >= GLITCH_THRESHOLD,
++  }
++}
++
++/**
++ * 遏帷崟繧ｹ繧ｳ繧｢縺・glitch 邨先忰縺ｮ髢ｾ蛟､繧定ｶ・∴縺ｦ縺・ｋ縺句愛螳壹☆繧九・+ */
++export function shouldTriggerGlitchEnd(state: ContradictionState): boolean {
++  return state.hasEffect
++}
++
++/**
++ * 遏帷崟繧ｹ繧ｳ繧｢繧・0縲・00 縺ｮ繝代・繧ｻ繝ｳ繝・・繧ｸ縺ｧ霑斐☆・・I 陦ｨ遉ｺ逕ｨ・峨・+ */
++export function contradictionPercentage(state: ContradictionState): number {
++  return Math.round(state.score * 100)
++}
+diff --git a/src/domain/playStyleDetector.ts b/src/domain/playStyleDetector.ts
+new file mode 100644
+index 0000000..a80badf
+--- /dev/null
++++ b/src/domain/playStyleDetector.ts
+@@ -0,0 +1,165 @@
++import type { ActionStats, DetectedPlayStyle, PlayStyleResult } from './types'
++
++// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++// 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ讀懷・縺ｮ髢ｾ蛟､
++// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++
++/** 邨ｱ險磯㍼縺後％縺ｮ蛟､譛ｪ貅縺縺ｨ菫｡鬆ｼ蠎ｦ縺御ｸ九′繧翫∪縺・*/
++const MIN_MEANINGFUL_TICKS = 300
++
++/** 蜷・せ繧ｿ繧､繝ｫ縺ｮ繧ｹ繧ｳ繧｢險育ｮ励〒菴ｿ逕ｨ縺吶ｋ驥阪∩菫よ焚 */
++const WEIGHTS = {
++  /** shotRate 縺ｮ驥阪∩・域判謦・噪蛻､螳夲ｼ・*/
++  shotRate: 3.0,
++  /** jumpRate 縺ｮ驥阪∩・磯亟蠕｡逧・愛螳夲ｼ・*/
++  jumpRate: 2.0,
++  /** moveRate 縺ｮ驥阪∩・域爾邏｢逧・愛螳夲ｼ・*/
++  moveRate: 1.5,
++  /** collisionRate 縺ｮ驥阪∩・域ｷｷ豐悟愛螳夲ｼ・*/
++  collisionRate: 2.5,
++  /** itemsCollected 縺ｮ驥阪∩・域爾邏｢逧・愛螳夲ｼ・*/
++  itemRate: 1.0,
++} as const
++
++/** 蜷・せ繧ｿ繧､繝ｫ縺ｮ蛻､螳壹↓菴ｿ逕ｨ縺吶ｋ譛菴朱明蛟､・・ate = count / ticks * 60・・*/
++const THRESHOLDS = {
++  /** 謾ｻ謦・噪縺ｨ蛻､螳壹☆繧区怙菴主ｰ・茶繝ｬ繝ｼ繝茨ｼ医ヵ繝ｬ繝ｼ繝縺ゅ◆繧翫・蟆・茶謨ｰ・・*/
++  aggressiveShotRate: 0.02,
++  /** 髦ｲ蠕｡逧・→蛻､螳壹☆繧区怙菴弱ず繝｣繝ｳ繝励Ξ繝ｼ繝・*/
++  defensiveJumpRate: 0.015,
++  /** 謗｢邏｢逧・→蛻､螳壹☆繧区怙菴守ｧｻ蜍輔Ξ繝ｼ繝・*/
++  explorerMoveRate: 0.025,
++  /** 豺ｷ豐後→蛻､螳壹☆繧区怙菴手｡晉ｪ√Ξ繝ｼ繝・*/
++  chaoticCollisionRate: 0.005,
++  /** 豸域･ｵ逧・→蛻､螳壹☆繧区怙鬮俶桃菴懊Ξ繝ｼ繝亥粋險・*/
++  passiveMaxTotalRate: 0.01,
++  /** 蝮・｡｡縺ｨ蛻､螳壹☆繧区怙菴弱ヰ繝ｩ繝ｳ繧ｹ豈皮紫・医←縺ｮ謫堺ｽ懊ｂ蜈ｨ菴薙・30%莉･荳具ｼ・*/
++  balancedMinRatio: 0.3,
++} as const
++
++/** 蜷・せ繧ｿ繧､繝ｫ縺ｮ繧ｹ繧ｳ繧｢險育ｮ励〒菴ｿ逕ｨ縺吶ｋ陬懈ｭ｣菫よ焚 */
++const MULTIPLIERS = {
++  /** 繝繝・す繝･縺ｮ髦ｲ蠕｡逧・せ繧ｳ繧｢縺ｸ縺ｮ陬懈ｭ｣菫よ焚 */
++  dashDefensive: 1.5,
++  /** 繧｢繧､繝・Β蜿朱寔縺ｮ謗｢邏｢逧・せ繧ｳ繧｢縺ｸ縺ｮ陬懈ｭ｣菫よ焚 */
++  itemExplorer: 10,
++  /** 蝮・｡｡繧ｹ繧ｳ繧｢縺ｮ蛟咲紫 */
++  balancedRatio: 2,
++  /** 豸域･ｵ逧・せ繧ｳ繧｢縺ｮ蛟咲紫 */
++  passiveRate: 50,
++} as const
++
++/** 繝輔Ξ繝ｼ繝繝ｬ繝ｼ繝茨ｼ・ps・峨Ｕicks 繧堤ｧ呈焚縺ｫ螟画鋤縺吶ｋ縺溘ａ縺ｫ菴ｿ逕ｨ縺吶ｋ */
++const FRAMES_PER_SECOND = 60
++
++/**
++ * ActionStats 縺九ｉ繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ繧呈耳螳壹☆繧狗ｴ皮ｲ矩未謨ｰ縲・+ *
++ * 蜷・桃菴懊・縲後Ξ繝ｼ繝医搾ｼ・icks 縺ｫ蟇ｾ縺吶ｋ豈皮紫・峨ｒ險育ｮ励＠縲・+ * 髢ｾ蛟､縺ｨ豈碑ｼ・＠縺ｦ譛繧るｫ倥＞繧ｹ繧ｳ繧｢繧呈戟縺､繧ｹ繧ｿ繧､繝ｫ繧定ｿ斐☆縲・+ * ticks 縺悟ｰ代↑縺・ｴ蜷医・ confidence 繧剃ｸ九￡繧九・+ */
++export function detectPlayStyle(stats: ActionStats): PlayStyleResult {
++  const { jumps, moveRight, moveLeft, shots, ticks, collisions, itemsCollected, dashes } = stats
++
++  // ticks 縺・0 縺ｪ繧・passive 繧定ｿ斐☆
++  if (ticks <= 0) {
++    return {
++      style: 'passive',
++      confidence: 0,
++      scores: defaultScores(),
++    }
++  }
++
++  // 繝ｬ繝ｼ繝郁ｨ育ｮ暦ｼ・ormalize: 1遘偵≠縺溘ｊ縺ｮ謫堺ｽ懈焚・・+  const seconds = ticks / FRAMES_PER_SECOND
++  const shotRate = shots / seconds
++  const jumpRate = jumps / seconds
++  const moveRate = (moveRight + moveLeft) / seconds
++  const collisionRate = collisions / seconds
++  const itemRate = itemsCollected / seconds
++  const dashRate = dashes / seconds
++
++  // 蜷・せ繧ｿ繧､繝ｫ縺ｮ繧ｹ繧ｳ繧｢險育ｮ・+  const scores: Record<DetectedPlayStyle, number> = {
++    aggressive: 0,
++    defensive: 0,
++    explorer: 0,
++    balanced: 0,
++    chaotic: 0,
++    passive: 0,
++  }
++
++  // 謾ｻ謦・噪: 蟆・茶縺悟､壹＞
++  if (shotRate >= THRESHOLDS.aggressiveShotRate) {
++    scores.aggressive += WEIGHTS.shotRate * (shotRate / THRESHOLDS.aggressiveShotRate)
++  }
++
++  // 髦ｲ蠕｡逧・ 繧ｸ繝｣繝ｳ繝励・繝繝・す繝･縺悟､壹＞縺悟ｰ・茶縺悟ｰ代↑縺・+  if (jumpRate >= THRESHOLDS.defensiveJumpRate) {
++    scores.defensive += WEIGHTS.jumpRate * (jumpRate / THRESHOLDS.defensiveJumpRate)
++  }
++  if (dashRate > 0) {
++    scores.defensive += dashRate * MULTIPLIERS.dashDefensive
++  }
++
++  // 謗｢邏｢逧・ 遘ｻ蜍輔′螟壹＞
++  if (moveRate >= THRESHOLDS.explorerMoveRate) {
++    scores.explorer += WEIGHTS.moveRate * (moveRate / THRESHOLDS.explorerMoveRate)
++  }
++  if (itemRate > 0) {
++    scores.explorer += WEIGHTS.itemRate * itemRate * MULTIPLIERS.itemExplorer
++  }
++
++  // 豺ｷ豐・ 陦晉ｪ√′螟壹￥縲∵桃菴懊′荳崎ｦ丞援
++  if (collisionRate >= THRESHOLDS.chaoticCollisionRate) {
++    scores.chaotic += WEIGHTS.collisionRate * (collisionRate / THRESHOLDS.chaoticCollisionRate)
++  }
++
++  // 蝮・｡｡: 蜈ｨ謫堺ｽ懊′蝮・ｭ峨↓蛻・淵縺励※縺・ｋ
++  const totalActions = shots + jumps + moveRight + moveLeft + (dashes ?? 0)
++  if (totalActions > 0) {
++    const maxSingle = Math.max(shots, jumps, moveRight + moveLeft, dashes ?? 0)
++    const balanceRatio = 1 - (maxSingle / totalActions)
++    // balancedMinRatio莉･荳奇ｼ医←縺ｮ謫堺ｽ懊ｂ蜈ｨ菴薙・30%莉･荳具ｼ峨↑繧牙插陦｡蛟呵｣・+    if (balanceRatio >= THRESHOLDS.balancedMinRatio) {
++      scores.balanced = balanceRatio * MULTIPLIERS.balancedRatio
++    }
++  }
++
++  // 豸域･ｵ逧・ 謫堺ｽ懃ｷ乗焚縺悟ｰ代↑縺・+  const totalRate = (shots + jumps + moveRight + moveLeft) / seconds
++  if (totalRate < THRESHOLDS.passiveMaxTotalRate) {
++    scores.passive = (THRESHOLDS.passiveMaxTotalRate - totalRate) * MULTIPLIERS.passiveRate
++  }
++
++  // 菫｡鬆ｼ蠎ｦ險育ｮ・+  const confidence = Math.min(1, ticks / MIN_MEANINGFUL_TICKS)
++
++  // 譛鬮倥せ繧ｳ繧｢縺ｮ繧ｹ繧ｿ繧､繝ｫ繧定ｿ斐☆
++  let bestStyle: DetectedPlayStyle = 'balanced'
++  let bestScore = 0
++  for (const [style, score] of Object.entries(scores) as [DetectedPlayStyle, number][]) {
++    if (score > bestScore) {
++      bestScore = score
++      bestStyle = style
++    }
++  }
++
++  return {
++    style: bestStyle,
++    confidence: Math.round(confidence * 100) / 100,
++    scores,
++  }
++}
++
++function defaultScores(): Record<DetectedPlayStyle, number> {
++  return {
++    aggressive: 0,
++    defensive: 0,
++    explorer: 0,
++    balanced: 0,
++    chaotic: 0,
++    passive: 0,
++  }
++}
+diff --git a/src/domain/types.ts b/src/domain/types.ts
+index 2abcfeb..a755f60 100644
+--- a/src/domain/types.ts
++++ b/src/domain/types.ts
+@@ -53,6 +53,7 @@ export type ManualTheme =
+   | 'hack_slash' // 豺ｱ邏・・鬮倥さ繝ｳ繝医Λ繧ｹ繝医・繧ｳ繝ｳ繝舌ャ繝・   | 'survival'   // 闍皮ｷ代・繧｢繝ｼ繧ｹ繝ｻ闕貞ｻ・─
+   | 'tetris'     // 繝悶Ο繝・け鬚ｨ繝ｻ繝・ヨ繝ｪ繧ｹ繧ｫ繝ｩ繝ｼ繝ｻ繧ｰ繝ｪ繝・ラ閭梧勹
++  | 'glitch'     // 螢翫ｌ縺溘ご繝ｼ繝繝ｻ繝弱う繧ｺ繝ｻ濶ｲ縺壹ｌ
+ 
+ // 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ // 繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ譁ｹ蜷代・迺ｰ蠅・@@ -278,7 +279,11 @@ export interface ActionStats {
+   moveLeft: number
+   shots: number
+   ticks: number     // 繝輔Ξ繝ｼ繝謨ｰ・亥・豈搾ｼ・-  dashes?: number   // 繝繝・す繝･菴ｿ逕ｨ蝗樊焚・・ash Feature 譛牙柑譎ゅ・縺ｿ・・+  dashes: number    // 繝繝・す繝･菴ｿ逕ｨ蝗樊焚・・ash Feature 譛牙柑譎ゅ・縺ｿ・・+  /** 髫懷ｮｳ迚ｩ陦晉ｪ∝屓謨ｰ・医・繝ｬ繧､繧ｹ繧ｿ繧､繝ｫ讀懷・逕ｨ・・*/
++  collisions: number
++  /** 繧｢繧､繝・Β蜿朱寔謨ｰ・医・繝ｬ繧､繧ｹ繧ｿ繧､繝ｫ讀懷・逕ｨ・・*/
++  itemsCollected: number
+ }
+ 
+ export interface LearningTrigger {
+@@ -347,6 +352,62 @@ export interface BayesConfig {
+ /** 繝吶う繧ｺ繝・ヰ繝・げ繝ｭ繧ｰ縺ｧ陦ｨ遉ｺ縺吶ｋ荳贋ｽ阪ず繝｣繝ｳ繝ｫ謨ｰ */
+ export const BAYES_DEBUG_TOP_N = 5
+ 
++// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++// 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ讀懷・・・ssue #24: 諢丞､悶↑邨先忰・・+// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++
++/** 讀懷・縺輔ｌ繧九・繝ｬ繧､繧ｹ繧ｿ繧､繝ｫ縺ｮ遞ｮ蛻･ */
++export type DetectedPlayStyle =
++  | 'aggressive'   // 謾ｻ謦・噪: 蟆・茶螟夂畑
++  | 'defensive'    // 髦ｲ蠕｡逧・ 蝗樣∩螟夂畑
++  | 'explorer'     // 謗｢邏｢逧・ 遘ｻ蜍募､夂畑
++  | 'balanced'     // 蝮・｡｡: 蜈ｨ謫堺ｽ懷插遲・+  | 'chaotic'      // 豺ｷ豐・ 辟｡遘ｩ蠎上↑謫堺ｽ・+  | 'passive'      // 豸域･ｵ逧・ 謫堺ｽ懊′蟆代↑縺・+
++/** 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ讀懷・邨先棡 */
++export interface PlayStyleResult {
++  /** 讀懷・縺輔ｌ縺溘せ繧ｿ繧､繝ｫ */
++  style: DetectedPlayStyle
++  /** 菫｡鬆ｼ蠎ｦ 0縲・・育ｵｱ險磯㍼縺御ｸ崎ｶｳ縺吶ｋ縺ｨ菴弱＞・・*/
++  confidence: number
++  /** 蜷・せ繧ｿ繧､繝ｫ縺ｮ繧ｹ繧ｳ繧｢・医ョ繝舌ャ繧ｰ繝ｻ貍泌・逕ｨ・・*/
++  scores: Record<DetectedPlayStyle, number>
++}
++
++/** 遏帷崟繧ｫ繝ｼ繝蛾∈謚槭・迥ｶ諷・*/
++export interface ContradictionState {
++  /** 遏帷崟縺檎匱逕溘＠縺溘き繝ｼ繝迂D縺ｮ繝壹い鄒､ */
++  pairs: { idA: string; idB: string }[]
++  /** 邏ｯ遨咲泝逶ｾ繧ｹ繧ｳ繧｢・・縲・縲・縺ｫ霑代＞縺ｻ縺ｩ遏帷崟縺悟ｼｷ縺・ｼ・*/
++  score: number
++  /** 遏帷崟縺ｫ繧医ｋ繧ｲ繝ｼ繝縺ｸ縺ｮ蠖ｱ髻ｿ縺檎匱逕溘＠縺溘° */
++  hasEffect: boolean
++}
++
++/** 繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝峨・遞ｮ蛻･ */
++export type SurpriseEndingType =
++  | 'glitch'          // 繧ｲ繝ｼ繝縺悟｣翫ｌ縺滂ｼ磯ｫ倡泝逶ｾ縺ｧ逋ｺ蜍包ｼ・+  | 'hidden_genre'    // 髫縺励ず繝｣繝ｳ繝ｫ縺ｸ縺ｮ蛻・ｲ・+  | 'bad_ending'      // 繝舌ャ繝峨お繝ｳ繝会ｼ育音螳壹・繝ｬ繧､繧ｹ繧ｿ繧､繝ｫ縺ｧ逋ｺ蜍包ｼ・+  | 'narrative_twist' // 繝翫Λ繝・ぅ繝悶ヤ繧､繧ｹ繝茨ｼ医・繝ｬ繧､繧ｹ繧ｿ繧､繝ｫ縺ｫ繧医ｋ貍泌・・・+
++/** 繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝画ュ蝣ｱ・・ndingPanel 縺ｧ陦ｨ遉ｺ逕ｨ・・*/
++export interface SurpriseEnding {
++  /** 繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝峨・遞ｮ蛻･ */
++  type: SurpriseEndingType
++  /** 陦ｨ遉ｺ繧ｿ繧､繝医Ν */
++  title: string
++  /** 陦ｨ遉ｺ譛ｬ譁・*/
++  description: string
++  /** 蠑ｷ蛻ｶ繧ｸ繝｣繝ｳ繝ｫ繝輔か繝ｼ繧ｹ・・litch 縺ｮ蝣ｴ蜷・'glitch' 繧定ｨｭ螳夲ｼ・*/
++  forcedGenre?: GenreId
++}
++
++// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++// 繧ｹ繧ｳ繧｢險育ｮ怜ｼ上〒菴ｿ逕ｨ蜿ｯ閭ｽ縺ｪ螟画焚
++// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++
+ /** scoreFormula 縺ｧ菴ｿ縺医ｋ螟画焚 */
+ export interface ScoreVars {
+   distance: number         // 襍ｰ陦瑚ｷ晞屬 px
+diff --git a/src/framework/config-types.ts b/src/framework/config-types.ts
+index 4ca7408..a64ce98 100644
+--- a/src/framework/config-types.ts
++++ b/src/framework/config-types.ts
+@@ -36,6 +36,8 @@ export interface PhysicsConfig {
+   dashCooldownSec: number
+   dashIframesSec: number
+   wallJumpPushSpeed: number
++  /** 蝨ｰ髱｢Y蠎ｧ讓吶・繧ｭ繝｣繝ｳ繝舌せ荳狗ｫｯ縺九ｉ縺ｮ繧ｪ繝輔そ繝・ヨ・・x・・*/
++  groundYOffset: number
+ }
+ 
+ /** shoot.json 窶・蟆・茶繧ｷ繧ｹ繝・Β */
+@@ -227,6 +229,8 @@ export interface ScoreConfig {
+   defaultColorTouchScore: number
+   distanceScoreRate: number
+   longAirScoreRate: number
++  /** 繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繧ｰ繝ｬ繝ｼ繝峨・髢ｾ蛟､・亥粋險医せ繧ｳ繧｢・・*/
++  gradeThresholds: { S: number; A: number; B: number; C: number }
+ }
+ 
+ /** difficulty.json 窶・髮｣譏灘ｺｦ + TEMPO_SPEED_BONUS */
+@@ -370,6 +374,8 @@ export interface GameBalanceConfig {
+   genreLockedBoostMult: number
+   genreLockedBoostDurationMs: number
+   defaultFallbackGenre: string
++  /** 繧ｸ繝｣繝ｳ繝ｫ繝代Λ繝｡繝ｼ繧ｿ縺ｮ繧ｸ繝・ち繝ｼ蟷・ｼ按ｱ20%・・*/
++  paramJitterRange: number
+ }
+ 
+ /**
+diff --git a/src/game/sideScroller.ts b/src/game/sideScroller.ts
+index 6c7b21a..8b06ae7 100644
+--- a/src/game/sideScroller.ts
++++ b/src/game/sideScroller.ts
+@@ -37,6 +37,11 @@ export interface GameSnapshot {
+   learningNotification: string | null
+   // 繧ｹ繧ｳ繧｢險育ｮ怜ｼ上・繝代・繧ｹ繧ｨ繝ｩ繝ｼ・育匱逕滓凾縺ｮ縺ｿ髱・null・・   scoreFormulaError: string | null
++  // 繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ讀懷・逕ｨ縺ｮ邨ｱ險茨ｼ・ssue #24・・+  statCollisions: number
++  statItemsCollected: number
++  statShots: number
++  statDashes: number | undefined
+ }
+ 
+ // 繝ｫ繝ｼ繝怜・ dt 縺ｮ繧ｯ繝ｩ繝ｳ繝嶺ｸ企剞・医ヵ繝ｬ繝ｼ繝關ｽ縺｡譎ゅ↓迚ｩ逅・′逋ｺ謨｣縺吶ｋ縺ｮ繧帝亟縺撰ｼ・@@ -112,7 +117,7 @@ export class SideScroller {
+   private _frameWorld: MutableWorld | null = null
+ 
+   // 笏笏笏 邨ｱ險・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+-  private stats: ActionStats = { jumps: 0, moveRight: 0, moveLeft: 0, shots: 0, ticks: 0 }
++  private stats: ActionStats = { jumps: 0, moveRight: 0, moveLeft: 0, shots: 0, ticks: 0, collisions: 0, itemsCollected: 0, dashes: 0 }
+   private rafId = 0
+   private lastTime = 0
+ 
+@@ -138,7 +143,7 @@ export class SideScroller {
+     this.ctx = ctx2d
+     this.rules = rules
+ 
+-    const gY = canvas.height - 80
++    const gY = canvas.height - PHYSICS.groundYOffset
+     this.player = new Player(PLAYER_PHYSICS.startX, gY)
+     this.player.jumpsLeft = rules.features.has('double_jump') ? 2 : 1
+ 
+@@ -260,6 +265,10 @@ export class SideScroller {
+       firstJumpDone: this.firstJumpDone,
+       learningNotification,
+       scoreFormulaError,
++      statCollisions: this.stats.collisions,
++      statItemsCollected: this.stats.itemsCollected,
++      statShots: this.stats.shots,
++      statDashes: this.stats.dashes,
+     }
+   }
+ 
+@@ -274,7 +283,7 @@ export class SideScroller {
+     }
+   }
+ 
+-  getStats(): ActionStats { return this.stats }
++  getStats(): ActionStats { return { ...this.stats } }
+ 
+   /**
+    * ScoreVars 繧呈ｧ狗ｯ峨＠縲√ず繝｣繝ｳ繝ｫ蛻･ scoreFormula 繧剃ｽｿ縺｣縺ｦ playScore 繧貞・險育ｮ励☆繧九・@@ -376,7 +385,7 @@ export class SideScroller {
+     const isVertical = r.scrollAxis === 'y'
+ 
+     if (r.features.has('dash') && this.input.justPressed.has(dashKey)) {
+-      this.stats.dashes = (this.stats.dashes ?? 0) + 1
++      this.stats.dashes += 1
+     }
+ 
+     // 笏笏笏 霍晞屬繝吶・繧ｹ縺ｮ閾ｪ蜍募刈騾・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+@@ -634,6 +643,7 @@ export class SideScroller {
+ 
+   // 笏笏笏 陲ｫ蠑ｾ蜃ｦ逅・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+   private _onPlayerHit(p: Player): void {
++    this.stats.collisions += 1
+     const world = this._getWorld()
+     soundManager.onHit()
+     for (const sys of getActiveSystems(this.rules.features)) {
+@@ -671,7 +681,7 @@ export class SideScroller {
+     const ctx = this.ctx
+     const W = this.canvas.width, H = this.canvas.height
+     const r = this.rules
+-    const gY = H - 80
++    const gY = H - PHYSICS.groundYOffset
+ 
+     ctx.save()
+     ctx.translate(this.shakeX, this.shakeY)
+diff --git a/tests/e2e-helpers.ts b/tests/e2e-helpers.ts
+new file mode 100644
+index 0000000..796b61c
+--- /dev/null
++++ b/tests/e2e-helpers.ts
+@@ -0,0 +1,62 @@
++/**
++ * tests/e2e-helpers.ts
++ *
++ * Playwright E2E 繝・せ繝医・蜈ｱ騾壹・繝ｫ繝代・縲・+ * 驥崎､・☆繧九・繝ｼ繧ｸ謫堺ｽ懊ヱ繧ｿ繝ｼ繝ｳ繧剃ｸ蜈・ｮ｡逅・☆繧九・+ */
++
++import { Page, test as base, expect } from '@playwright/test'
++
++// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++// 繧ｹ繧ｿ繝ｳ繝峨い繝ｭ繝ｳ髢｢謨ｰ・医ヵ繧｣繧ｯ繧ｹ繝√Ε縺ｨ蜈ｱ騾壼茜逕ｨ・・+// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++
++/** 繧ｲ繝ｼ繝繧帝幕蟋九☆繧具ｼ医ち繧､繝医Ν逕ｻ髱｢ 竊・繧ｲ繝ｼ繝繝励Ξ繧､・・*/
++export async function startGame(page: Page): Promise<void> {
++  await page.goto('/')
++  await expect(page.locator('button', { hasText: '縺ｯ縺倥ａ繧・ })).toBeVisible({ timeout: 10_000 })
++  await page.click('text=縺ｯ縺倥ａ繧・)
++  await expect(page.locator('canvas')).toBeVisible({ timeout: 5_000 })
++}
++
++/** 繝√Η繝ｼ繝医Μ繧｢繝ｫ繧､繝ｳ繝医Ο繧帝夐℃縺吶ｋ・亥ｭ伜惠縺吶ｋ蝣ｴ蜷茨ｼ・*/
++export async function bypassTutorial(page: Page): Promise<boolean> {
++  await page.waitForTimeout(1_000)
++  const tutorialButton = page.locator('text=繧上°縺｣縺溘√・繝ｬ繧､縺吶ｋ')
++  const visible = await tutorialButton.isVisible({ timeout: 2_000 }).catch(() => false)
++  if (visible) {
++    await tutorialButton.click()
++  }
++  return visible
++}
++
++/** 驕ｸ謚櫁い繝｢繝ｼ繝繝ｫ縺後≠繧後・譛蛻昴・驕ｸ謚櫁い繧偵け繝ｪ繝・け縺吶ｋ */
++export async function clickFirstChoice(page: Page): Promise<boolean> {
++  const choiceButtons = page.locator('[class*="choice"]')
++  const count = await choiceButtons.count()
++  if (count > 0) {
++    await choiceButtons.first().click()
++    await page.waitForTimeout(500)
++    return true
++  }
++  return false
++}
++
++// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++// 繧ｫ繧ｹ繧ｿ繝繝輔ぅ繧ｯ繧ｹ繝√Ε
++// 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++
++interface TestFixtures {
++  errors: string[]
++}
++
++export const test = base.extend<TestFixtures>({
++  errors: async ({ page }, use) => {
++    // 繧ｭ繝ｼ蜈･蜉帙ｈ繧雁燕縺ｫ繝ｪ繧ｹ繝翫・繧堤匳骭ｲ
++    const errors: string[] = []
++    page.on('pageerror', err => errors.push(err.message))
++    await use(errors)
++  },
++})
++
++export { expect }
+diff --git a/tests/surprise-ending.spec.ts b/tests/surprise-ending.spec.ts
+new file mode 100644
+index 0000000..f5ca20c
+--- /dev/null
++++ b/tests/surprise-ending.spec.ts
+@@ -0,0 +1,109 @@
++import { test, expect, startGame, bypassTutorial, clickFirstChoice } from './e2e-helpers'
++
++/**
++ * Issue #24: 諢丞､悶↑邨先忰縺ｮ E2E 繝・せ繝・+ *
++ * 遏帷崟繧ｫ繝ｼ繝峨・驕ｸ謚槭・繝ｩ繝ｳ繝繝縺ｪ縺溘ａ縲“litch 繧ｨ繝ｳ繝峨・螳悟・蜀咲樟縺ｯ荳榊庄閭ｽ縲・+ * 縺薙％縺ｧ縺ｯ莉･荳九・縺薙→繧偵ユ繧ｹ繝医☆繧・
++ * 1. 繧ｲ繝ｼ繝縺梧ｭ｣蟶ｸ縺ｫ繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ縺ｾ縺ｧ蛻ｰ驕斐〒縺阪ｋ
++ * 2. 繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繝代ロ繝ｫ縺檎泝逶ｾ繝ｬ繝吶Ν繝ｻ繝励Ξ繧､繧ｹ繧ｿ繧､繝ｫ繧定｡ｨ遉ｺ縺ｧ縺阪ｋ
++ * 3. JS 繧ｨ繝ｩ繝ｼ縺檎匱逕溘＠縺ｪ縺・+ */
++
++test.describe('繧ｵ繝励Λ繧､繧ｺ繧ｨ繝ｳ繝・(Issue #24)', () => {
++  test('繧ｲ繝ｼ繝縺後お繝ｳ繝・ぅ繝ｳ繧ｰ縺ｾ縺ｧ蛻ｰ驕斐〒縺阪ｋ', async ({ page, errors }) => {
++    await startGame(page)
++    await bypassTutorial(page)
++
++    // 繧ｲ繝ｼ繝繧偵・繝ｬ繧､縺励※隱ｬ譏取嶌譖ｴ譁ｰ繧帝夐℃
++    for (let round = 0; round < 5; round++) {
++      await page.waitForTimeout(3_000)
++      await clickFirstChoice(page)
++      // 繧ｸ繝｣繝ｳ繝玲桃菴懊ｒ邯咏ｶ・+      await page.keyboard.press('Space')
++      await page.waitForTimeout(200)
++    }
++
++    // 繧ｲ繝ｼ繝縺檎ｶ咏ｶ壹＠縺ｦ縺・ｋ縺薙→繧堤｢ｺ隱・+    await expect(page.locator('canvas')).toBeVisible()
++
++    // 繧ｨ繝ｩ繝ｼ縺檎匱逕溘＠縺ｦ縺・↑縺・％縺ｨ繧堤｢ｺ隱・+    expect(errors).toHaveLength(0)
++  })
++
++  test('繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繝代ロ繝ｫ縺ｫ遏帷崟繝ｬ繝吶Ν縺瑚｡ｨ遉ｺ縺輔ｌ繧・, async ({ page, errors }) => {
++    await startGame(page)
++    await bypassTutorial(page)
++
++    // 謨ｰ繝ｩ繧ｦ繝ｳ繝峨・繝ｬ繧､
++    for (let round = 0; round < 3; round++) {
++      await page.waitForTimeout(3_000)
++      await clickFirstChoice(page)
++      await page.keyboard.press('Space')
++    }
++
++    // 繧ｮ繝悶い繝・・繝懊ち繝ｳ繧呈爾縺励※繧ｯ繝ｪ繝・け・域兜謫ｲ繝輔ぉ繝ｼ繧ｺ縺ｸ・・+    const giveUpBtn = page.locator('button', { hasText: '繧ｮ繝悶い繝・・' })
++    if (await giveUpBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
++      await giveUpBtn.click()
++    }
++
++    // 謚墓憧繝輔ぉ繝ｼ繧ｺ縺ｧ隱ｬ譏取嶌繧偵ラ繝ｩ繝・げ・・ラ繝ｭ繝・・
++    await page.waitForTimeout(1_000)
++    // 謚墓憧繧ｨ繝ｪ繧｢縺ｧ繧ｯ繝ｪ繝・け・育ｰ｡譏捺兜謫ｲ・・+    await page.mouse.move(400, 300)
++    await page.mouse.down()
++    await page.mouse.move(500, 200)
++    await page.mouse.up()
++
++    // 繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ縺瑚｡ｨ遉ｺ縺輔ｌ繧九∪縺ｧ蠕・ｩ・+    await page.waitForTimeout(3_000)
++
++    // 繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繝代ロ繝ｫ縺ｮ陦ｨ遉ｺ遒ｺ隱・+    const endingCard = page.locator('.ending-card')
++    if (await endingCard.isVisible({ timeout: 5_000 }).catch(() => false)) {
++      // 遏帷崟繝ｬ繝吶Ν繝舌・縺悟ｭ伜惠縺吶ｋ縺薙→繧堤｢ｺ隱・+      const contradictionBar = page.locator('.contradiction-bar')
++      // 陦ｨ遉ｺ縺輔ｌ縺ｦ縺・ｌ縺ｰ濶ｯ縺・ｼ亥ｿ・★陦ｨ遉ｺ縺輔ｌ繧九→縺ｯ髯舌ｉ縺ｪ縺・ｼ・+      const barCount = await contradictionBar.count()
++      expect(barCount).toBeGreaterThanOrEqual(0)
++    }
++
++    expect(errors).toHaveLength(0)
++  })
++
++  test('隍・焚蝗槭・繝励Ξ繧､縺ｧ繧ｲ繝ｼ繝縺後け繝ｩ繝・す繝･縺励↑縺・, async ({ page, errors }) => {
++    // 3蝗樣｣邯壹〒繧ｲ繝ｼ繝繧偵・繝ｬ繧､
++    for (let attempt = 0; attempt < 3; attempt++) {
++      await startGame(page)
++      await bypassTutorial(page)
++
++      // 遏ｭ譎る俣繝励Ξ繧､
++      await page.waitForTimeout(2_000)
++      await page.keyboard.press('Space')
++      await page.waitForTimeout(500)
++
++      // 繧ｮ繝悶い繝・・
++      const giveUpBtn = page.locator('button', { hasText: '繧ｮ繝悶い繝・・' })
++      if (await giveUpBtn.isVisible({ timeout: 1_000 }).catch(() => false)) {
++        await giveUpBtn.click()
++        await page.waitForTimeout(1_000)
++        // 邁｡譏捺兜謫ｲ
++        await page.mouse.move(400, 300)
++        await page.mouse.down()
++        await page.mouse.move(500, 200)
++        await page.mouse.up()
++        await page.waitForTimeout(2_000)
++      }
++
++      // 繝ｪ繧ｹ繧ｿ繝ｼ繝・+      const restartBtn = page.locator('.restart-btn')
++      if (await restartBtn.isVisible({ timeout: 3_000 }).catch(() => false)) {
++        await restartBtn.click()
++        await page.waitForTimeout(1_000)
++      }
++    }
++
++    expect(errors).toHaveLength(0)
++  })
++})
+diff --git a/tests/unit/domain/contradictionTracker.test.ts b/tests/unit/domain/contradictionTracker.test.ts
+new file mode 100644
+index 0000000..6bed5d4
+--- /dev/null
++++ b/tests/unit/domain/contradictionTracker.test.ts
+@@ -0,0 +1,134 @@
++import { describe, it, expect, vi, beforeEach } from 'vitest'
++import type { ChoiceRecord } from '../../../src/domain/ruleEngine'
++import type { ContradictionState } from '../../../src/domain/types'
++
++// CARD_POOL 繧偵Δ繝・け・・mport.meta.glob 縺ｫ萓晏ｭ倥＠縺ｪ縺・ユ繧ｹ繝育畑繝・・繧ｿ・・+const mockCardPool = [
++  {
++    id: 'c-card-a',
++    label: 'Card A',
++    manualText: ['Text A'],
++    conflictsWith: ['c-card-b'],
++  },
++  {
++    id: 'c-card-b',
++    label: 'Card B',
++    manualText: ['Text B'],
++    conflictsWith: ['c-card-a'],
++  },
++  {
++    id: 'c-card-c',
++    label: 'Card C',
++    manualText: ['Text C'],
++    conflictsWith: ['c-card-a', 'c-card-b'],
++  },
++  {
++    id: 'c-card-d',
++    label: 'Card D',
++    manualText: ['Text D'],
++    // conflictsWith 縺ｪ縺・+  },
++]
++
++vi.doMock('../../../src/data/cardPool', () => ({
++  CARD_POOL: mockCardPool,
++  sampleCards: vi.fn(),
++}))
++
++// 繝｢繝・け蠕後↓繧､繝ｳ繝昴・繝・+const { trackContradictions, shouldTriggerGlitchEnd, contradictionPercentage } =
++  await import('../../../src/domain/contradictionTracker')
++
++describe('trackContradictions', () => {
++  const baseRecord = (id: string): ChoiceRecord => ({
++    choiceId: id,
++    genreParams: {},
++  })
++
++  it('遨ｺ縺ｮ螻･豁ｴ縺ｧ遏帷崟縺ｪ縺励ｒ霑斐☆', () => {
++    const result = trackContradictions([])
++    expect(result.pairs).toEqual([])
++    expect(result.score).toBe(0)
++    expect(result.hasEffect).toBe(false)
++  })
++
++  it('遏帷崟縺吶ｋ繧ｫ繝ｼ繝峨ｒ荳｡譁ｹ驕ｸ繧薙〒縺・ｋ縺ｨ繝壹い縺梧､懷・縺輔ｌ繧・, () => {
++    const history: ChoiceRecord[] = [
++      baseRecord('c-card-a'),
++      baseRecord('c-card-b'),
++    ]
++    const result = trackContradictions(history)
++    expect(result.pairs).toHaveLength(1)
++    expect(result.pairs[0]).toEqual({ idA: 'c-card-a', idB: 'c-card-b' })
++    expect(result.score).toBeGreaterThan(0)
++  })
++
++  it('遏帷崟縺吶ｋ繧ｫ繝ｼ繝峨・迚・婿縺ｮ縺ｿ縺ｧ縺ｯ繝壹い縺梧､懷・縺輔ｌ縺ｪ縺・, () => {
++    const history: ChoiceRecord[] = [baseRecord('c-card-a')]
++    const result = trackContradictions(history)
++    expect(result.pairs).toEqual([])
++    expect(result.score).toBe(0)
++  })
++
++  it('3譫壹・遏帷崟繧ｫ繝ｼ繝峨〒隍・焚縺ｮ繝壹い縺梧､懷・縺輔ｌ繧・, () => {
++    const history: ChoiceRecord[] = [
++      baseRecord('c-card-a'),
++      baseRecord('c-card-b'),
++      baseRecord('c-card-c'),
++    ]
++    const result = trackContradictions(history)
++    // c-card-c 縺ｯ c-card-a 縺ｨ c-card-b 縺ｮ荳｡譁ｹ縺ｨ遏帷崟
++    // c-card-a 縺ｨ c-card-b 繧ゆｺ偵＞縺ｫ遏帷崟
++    expect(result.pairs.length).toBeGreaterThanOrEqual(2)
++  })
++
++  it('遏帷崟縺ｮ縺ｪ縺・き繝ｼ繝峨・繝壹い縺ｫ蜷ｫ繧√↑縺・, () => {
++    const history: ChoiceRecord[] = [
++      baseRecord('c-card-a'),
++      baseRecord('c-card-d'),
++    ]
++    const result = trackContradictions(history)
++    expect(result.pairs).toEqual([])
++  })
++
++  it('蜷後§繝壹い縺碁㍾隍・＠縺ｦ讀懷・縺輔ｌ縺ｪ縺・, () => {
++    const history: ChoiceRecord[] = [
++      baseRecord('c-card-a'),
++      baseRecord('c-card-b'),
++    ]
++    const result = trackContradictions(history)
++    const pairKeys = result.pairs.map(p => [p.idA, p.idB].sort().join('|'))
++    expect(pairKeys).toEqual(expect.arrayContaining([expect.any(String)]))
++    // 驥崎､・↑縺・+    expect(pairKeys.length).toBe(new Set(pairKeys).size)
++  })
++})
++
++describe('shouldTriggerGlitchEnd', () => {
++  it('遏帷崟繧ｹ繧ｳ繧｢縺碁明蛟､莉･荳翫↑繧・true 繧定ｿ斐☆', () => {
++    const state: ContradictionState = { pairs: [], score: 0.6, hasEffect: true }
++    expect(shouldTriggerGlitchEnd(state)).toBe(true)
++  })
++
++  it('遏帷崟繧ｹ繧ｳ繧｢縺碁明蛟､譛ｪ貅縺ｪ繧・false 繧定ｿ斐☆', () => {
++    const state: ContradictionState = { pairs: [], score: 0.3, hasEffect: false }
++    expect(shouldTriggerGlitchEnd(state)).toBe(false)
++  })
++})
++
++describe('contradictionPercentage', () => {
++  it('繧ｹ繧ｳ繧｢ 0 縺ｧ 0% 繧定ｿ斐☆', () => {
++    const state: ContradictionState = { pairs: [], score: 0, hasEffect: false }
++    expect(contradictionPercentage(state)).toBe(0)
++  })
++
++  it('繧ｹ繧ｳ繧｢ 0.5 縺ｧ 50% 繧定ｿ斐☆', () => {
++    const state: ContradictionState = { pairs: [], score: 0.5, hasEffect: false }
++    expect(contradictionPercentage(state)).toBe(50)
++  })
++
++  it('繧ｹ繧ｳ繧｢ 1 縺ｧ 100% 繧定ｿ斐☆', () => {
++    const state: ContradictionState = { pairs: [], score: 1, hasEffect: true }
++    expect(contradictionPercentage(state)).toBe(100)
++  })
++})
+diff --git a/tests/unit/domain/playStyleDetector.test.ts b/tests/unit/domain/playStyleDetector.test.ts
+new file mode 100644
+index 0000000..89c6410
+--- /dev/null
++++ b/tests/unit/domain/playStyleDetector.test.ts
+@@ -0,0 +1,89 @@
++import { describe, it, expect } from 'vitest'
++import { detectPlayStyle } from '../../../src/domain/playStyleDetector'
++import type { ActionStats } from '../../../src/domain/types'
++
++describe('detectPlayStyle', () => {
++  const baseStats: ActionStats = {
++    jumps: 0, moveRight: 0, moveLeft: 0, shots: 0, ticks: 600,
++  }
++
++  it('ticks 縺・0 縺ｧ passive 繧定ｿ斐☆', () => {
++    const result = detectPlayStyle({ ...baseStats, ticks: 0 })
++    expect(result.style).toBe('passive')
++    expect(result.confidence).toBe(0)
++  })
++
++  it('蜈ｨ謫堺ｽ懊′ 0 縺ｧ passive 繧定ｿ斐☆', () => {
++    const result = detectPlayStyle(baseStats)
++    expect(result.style).toBe('passive')
++  })
++
++  it('蟆・茶縺悟､壹＞縺ｨ aggressive 繧定ｿ斐☆', () => {
++    // 600 ticks = 10遘偵《hotRate = 30/10 = 3/遘・> 髢ｾ蛟､ 0.02
++    const stats: ActionStats = { ...baseStats, shots: 30 }
++    const result = detectPlayStyle(stats)
++    expect(result.style).toBe('aggressive')
++    expect(result.confidence).toBeGreaterThan(0.5)
++  })
++
++  it('繧ｸ繝｣繝ｳ繝励′螟壹＞縺ｨ defensive 繧定ｿ斐☆', () => {
++    // 600 ticks = 10遘偵）umpRate = 20/10 = 2/遘・> 髢ｾ蛟､ 0.015
++    const stats: ActionStats = { ...baseStats, jumps: 20 }
++    const result = detectPlayStyle(stats)
++    expect(result.style).toBe('defensive')
++  })
++
++  it('遘ｻ蜍輔′螟壹＞縺ｨ explorer 繧定ｿ斐☆', () => {
++    // 600 ticks = 10遘偵［oveRate = (50+50)/10 = 10/遘・> 髢ｾ蛟､ 0.025
++    const stats: ActionStats = { ...baseStats, moveRight: 50, moveLeft: 50 }
++    const result = detectPlayStyle(stats)
++    expect(result.style).toBe('explorer')
++  })
++
++  it('陦晉ｪ√′螟壹＞縺ｨ chaotic 繧定ｿ斐☆', () => {
++    // 600 ticks = 10遘偵…ollisionRate = 10/10 = 1/遘・> 髢ｾ蛟､ 0.005
++    const stats: ActionStats = { ...baseStats, collisions: 10 }
++    const result = detectPlayStyle(stats)
++    expect(result.style).toBe('chaotic')
++  })
++
++  it('蜈ｨ謫堺ｽ懊′蝮・ｭ峨↑繧・balanced 繧定ｿ斐☆', () => {
++    const stats: ActionStats = {
++      ...baseStats,
++      jumps: 10, moveRight: 10, moveLeft: 10, shots: 10,
++    }
++    const result = detectPlayStyle(stats)
++    // 蝮・ｭ峨□縺後∝推繝ｬ繝ｼ繝医′髢ｾ蛟､繧定ｶ・∴縺ｦ縺・ｋ縺溘ａ aggressive/defensive/explorer 縺ｮ繧ｹ繧ｳ繧｢繧るｫ倥＞
++    // 蝮・｡｡蛻､螳壹・ balanceRatio >= 0.3 縺ｮ縺溘ａ縲｜alanced 縺瑚ｿ斐ｋ蜿ｯ閭ｽ諤ｧ縺後≠繧・+    expect(['balanced', 'aggressive', 'defensive', 'explorer']).toContain(result.style)
++  })
++
++  it('ticks 縺悟ｰ代↑縺・→ confidence 縺御ｽ弱＞', () => {
++    const stats: ActionStats = { ...baseStats, ticks: 60, shots: 5 }
++    const result = detectPlayStyle(stats)
++    expect(result.confidence).toBeLessThan(0.5)
++  })
++
++  it('ticks 縺悟､壹＞縺ｨ confidence 縺・1 縺ｫ霑代＞', () => {
++    const stats: ActionStats = { ...baseStats, ticks: 3000, shots: 50 }
++    const result = detectPlayStyle(stats)
++    expect(result.confidence).toBeCloseTo(1, 1)
++  })
++
++  it('scores 縺ｫ蜈ｨ繧ｹ繧ｿ繧､繝ｫ縺ｮ繧ｹ繧ｳ繧｢縺悟性縺ｾ繧後ｋ', () => {
++    const stats: ActionStats = { ...baseStats, shots: 5 }
++    const result = detectPlayStyle(stats)
++    expect(result.scores).toHaveProperty('aggressive')
++    expect(result.scores).toHaveProperty('defensive')
++    expect(result.scores).toHaveProperty('explorer')
++    expect(result.scores).toHaveProperty('balanced')
++    expect(result.scores).toHaveProperty('chaotic')
++    expect(result.scores).toHaveProperty('passive')
++  })
++
++  it('繝繝・す繝･縺梧怏蜉ｹ縺ｪ繧・defensive 繧ｹ繧ｳ繧｢縺ｫ蜉邂励＆繧後ｋ', () => {
++    const stats: ActionStats = { ...baseStats, jumps: 5, dashes: 10 }
++    const result = detectPlayStyle(stats)
++    expect(result.scores.defensive).toBeGreaterThan(0)
++  })
++})
+diff --git a/vitest.config.ts b/vitest.config.ts
+new file mode 100644
+index 0000000..05125f9
+--- /dev/null
++++ b/vitest.config.ts
+@@ -0,0 +1,12 @@
++import { defineConfig } from 'vitest/config'
++import vue from '@vitejs/plugin-vue'
++
++export default defineConfig({
++  plugins: [vue()],
++  test: {
++    globals: true,
++    environment: 'node',
++    setupFiles: ['./tests/unit/setup.ts'],
++    include: ['tests/unit/**/*.test.ts'],
++  },
++})

@@ -1,0 +1,1097 @@
+﻿diff --git a/docs/CHANGELOG.md b/docs/CHANGELOG.md
+index 8b32a7d..54ecc8e 100644
+--- a/docs/CHANGELOG.md
++++ b/docs/CHANGELOG.md
+@@ -4,6 +4,39 @@
+ 
+ ---
+ 
++## aerial_stg縲瑚ｿ台ｻ｣驛ｽ蟶ゅ・驕･縺倶ｸ顔ｩｺ繝ｻ螟ｧ豌怜恟蜀・肴隼菫ｮ繧ｻ繝・す繝ｧ繝ｳ・・026-06-29・・+
++### 讎りｦ・+
++`aerial_stg`・育ｸｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧ｷ繝･繝ｼ繝・ぅ繝ｳ繧ｰ・峨ｒ縲瑚ｿ台ｻ｣驛ｽ蟶ゅ・驕･縺倶ｸ顔ｩｺ繝ｻ螟ｧ豌怜恟蜀・阪ユ繝ｼ繝槭∈蛻ｷ譁ｰ縲りｦ也せ繧堤悄荳翫°繧芽ｦ倶ｸ九ｍ縺吶ヨ繝・・繝薙Η繝ｼ縺ｫ邨ｱ荳縺励◆縲・+
++### 繧ｸ繝｣繝ｳ繝ｫ繝励Λ繧ｰ繧､繝ｳ蛻ｷ譁ｰ 窶・`src/genres/AerialStgPlugin.ts`
++
++- `drawPlayer`: 霑台ｻ｣謌ｦ髣俶ｩ滂ｼ井ｿｯ迸ｰ繝ｻ繧ｰ繝ｬ繝ｼ邉ｻ繝ｻ蠕碁鄙ｼ繝ｻ繧ｨ繝ｳ繧ｸ繝ｳ轤弱・繧ｭ繝｣繝弱ヴ繝ｼ・峨・+- `drawHazard` 譁ｰ隕丞ｮ溯｣・ 蠖｢迥ｶ蛻･縺ｮ謨ｵ謠冗判・・diamond`=謨ｵ謌ｦ髣俶ｩ・/ `rect`=辷・茶讖・/ `pillar`=繝溘し繧､繝ｫ・会ｼ・`enemy_hp` 譛牙柑譎ゅ・繧ｻ繧ｰ繝｡繝ｳ繝亥ｼ・HP 繝舌・縲Ａtrue` 霑泌唆縺ｧ繝・ヵ繧ｩ繝ｫ繝域緒逕ｻ繧偵せ繧ｭ繝・・縲・+- `drawFarLayer`: 繝医ャ繝励ン繝･繝ｼ縺ｮ驛ｽ蟶ょ慍髱｢・医い繧ｹ繝輔ぃ繝ｫ繝医・驕楢ｷｯ繧ｰ繝ｪ繝・ラ繝ｻ陦怜玄螻倶ｸ奇ｼ区・縺九ｊ繝ｻ蜈ｬ蝨・蟾晢ｼ峨Ａdistance` 繝吶・繧ｹ縺ｧ荳区婿蜷代↓辟｡髯舌Ν繝ｼ繝励・+- `drawMidLayer`: 逵滉ｸ翫°繧芽ｦ九◆髮ｲ縲ょ慍髱｢繧医ｊ騾溘￥繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ・・distance ﾃ・1.4`・峨ＡMath.sin` 繝吶・繧ｹ縺ｮ豎ｺ螳夂噪驟咲ｽｮ縲・+- `drawForeground` 譁ｰ隕丞ｮ溯｣・ 繝薙ロ繝・ヨ・句屁髫・HUD 繝悶Λ繧ｱ繝・ヨ縲・+- `spawnTable` 蜀崎ｨｭ險茨ｼ・diamond`/`rect`/`pillar`縲～weightStart` 菴寂・`weightEnd` 鬮倥〒霍晞屬髮｣譏灘ｺｦ荳頑・縲～safeChance` 蜈ｨ 0・峨・+- 濶ｲ縺ｪ縺ｩ縺ｮ螳壽焚縺ｯ readonly 繝輔ぅ繝ｼ繝ｫ繝峨↓髮・ｴ・ｼ医ワ繝ｼ繝峨さ繝ｼ繝牙屓驕ｿ・峨・+
++### 繧ｨ繝ｳ繧ｸ繝ｳ蛛ｴ縺ｮ驟咲ｷ・窶・`src/engine/GenrePlugin.ts` / `src/game/sideScroller.ts`
++
++- `GenrePlugin` 縺ｫ `readonly verticalBackgroundLayers?: boolean` 繧定ｿｽ蜉・育怐逡･譎・false・峨らｸｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繝｢繝ｼ繝峨〒繧・`drawFarLayer`/`drawMidLayer` 繧貞他縺ｳ縺溘＞繧ｸ繝｣繝ｳ繝ｫ縺縺・true 縺ｫ縺吶ｋ・・aerial_stg` 縺ｮ縺ｿ・峨・+- `sideScroller` 縺・`drawHazard?()`・・true` 縺ｧ繝・ヵ繧ｩ繝ｫ繝医ワ繧ｶ繝ｼ繝画緒逕ｻ繧偵せ繧ｭ繝・・・峨→ `drawForeground?()`・医・繝ｬ繧､繝､繝ｼ謠冗判蠕後・逕ｻ髱｢蝗ｺ螳壼燕譎ｯ・峨ｒ蜻ｼ縺ｳ蜃ｺ縺吶ｈ縺・・邱壹ＡverticalBackgroundLayers` 縺・true 縺ｮ繧ｸ繝｣繝ｳ繝ｫ縺ｯ邵ｦ繝｢繝ｼ繝峨〒驕譎ｯ繝ｻ荳ｭ譎ｯ繧よ緒逕ｻ縲・+- 縺・★繧後ｂ optional 繝輔ャ繧ｯ縺ｮ縺溘ａ縲∵悴螳溯｣・・譌｢蟄倥ず繝｣繝ｳ繝ｫ・・bullet_hell`繝ｻ`aquatic`繝ｻ`stg` 遲会ｼ峨・謖吝虚縺ｯ荳榊､峨・+
++### 隱ｬ譏取嶌繝・く繧ｹ繝・窶・`src/data/manuals/action-branch.json`
++
++- 繝弱・繝・`8.0-a-aerial-stg` 縺ｮ `manualText` 繧帝・蟶ゆｸ顔ｩｺ繝ｻ遨ｺ荳ｭ謌ｦ縺ｮ譁・ｨ縺ｫ譖ｴ譁ｰ・井ｸ贋ｸ句ｷｦ蜿ｳ遘ｻ蜍輔・Z 縺ｧ荳頑婿蜷大ｰ・茶繝ｻ謨ｵ讖滓茶蠅懶ｼ峨・+
++### 讀懆ｨｼ
++
++- `npm run typecheck`・・ue-tsc・峨・`npm run build`・・ite・峨・`npm run validate`・・SON・峨☆縺ｹ縺ｦ繝代せ縲・+- `npm run lint`・・slint・峨・縺薙・菴懈･ｭ迺ｰ蠅・↓ eslint 譛ｪ繧､繝ｳ繧ｹ繝医・繝ｫ縺ｮ縺溘ａ譛ｪ螳溯｡鯉ｼ域焔蜍慕｢ｺ隱阪〒縺ｯ `any` 荳堺ｽｿ逕ｨ繝ｻ`const` 蜆ｪ蜈医・`===`繝ｻPascalCase 貅匁侠・峨・+
++---
++
+ ## 豌ｸ驕繧ｷ繧ｹ繝・Β繝ｻ繝輔Ξ繝ｼ繝繝ｯ繝ｼ繧ｯ邨ｱ蜷医そ繝・す繝ｧ繝ｳ・・026-05-31・・ 
+ ### 1. 辟｡髯宣∈謚櫁い繧ｷ繧ｹ繝・Β螳溯｣・diff --git a/docs/api/engine.md b/docs/api/engine.md
+index 38d260a..c168a19 100644
+--- a/docs/api/engine.md
++++ b/docs/api/engine.md
+@@ -28,6 +28,7 @@
+ | `groundLineAlpha?: number` | 蝨ｰ髱｢繝ｩ繧､繝ｳ騾乗・蠎ｦ |
+ | `groundDashAlpha?: number` | 蝨ｰ髱｢繝繝・す繝･讓｡讒倬乗・蠎ｦ |
+ | `scrollSpeedBonus?: number` | 繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ騾溷ｺｦ繝懊・繝翫せ px/s |
++| `verticalBackgroundLayers?: boolean` | 邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繝｢繝ｼ繝峨〒繧・`drawFarLayer`/`drawMidLayer` 繧貞他縺ｶ縺具ｼ育怐逡･譎・false縲らｸｦ繝｢繝ｼ繝峨・譌｢螳壹〒遨ｺ繧ｰ繝ｩ繝・・繧ｷ繝ｧ繝ｳ・区弌縺ｮ縺ｿ謠上￥・・|
+ | `drawFarLayer(ctx, offsetX, W, gY)` | 驕譎ｯ謠冗判・亥ｿ・茨ｼ・|
+ | `drawMidLayer(ctx, offsetX, W, gY)` | 荳ｭ譎ｯ謠冗判・亥ｿ・茨ｼ・|
+ | `drawPlayer(ctx, w, h, onGround, runCycle)` | 繝励Ξ繧､繝､繝ｼ謠冗判・亥ｿ・茨ｼ・|
+diff --git a/docs/genre-plugin.md b/docs/genre-plugin.md
+index c459c27..8cac87e 100644
+--- a/docs/genre-plugin.md
++++ b/docs/genre-plugin.md
+@@ -170,6 +170,10 @@ drawHazard(ctx, hazard, sx, world): boolean {
+ }
+ ```
+ 
++### 邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繝｢繝ｼ繝峨・閭梧勹繝ｬ繧､繝､繝ｼ
++
++邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ・・scrollAxis === 'y'`・峨〒縺ｯ譌｢螳壹〒遨ｺ繧ｰ繝ｩ繝・・繧ｷ繝ｧ繝ｳ・区弌繝輔ぅ繝ｼ繝ｫ繝峨・縺ｿ縺梧緒縺九ｌ縲～drawFarLayer` / `drawMidLayer` 縺ｯ蜻ｼ縺ｰ繧後↑縺・らｸｦ繝｢繝ｼ繝峨〒繧る□譎ｯ繝ｻ荳ｭ譎ｯ繧呈緒縺阪◆縺・ず繝｣繝ｳ繝ｫ縺ｯ `readonly verticalBackgroundLayers = true` 繧貞ｮ｣險縺吶ｋ縲Ｕrue 縺ｮ縺ｨ縺阪お繝ｳ繧ｸ繝ｳ縺ｯ `distance * parallax`・・ar / mid・峨ｒ `offsetX` 縺ｨ縺励※荳｡繝ｬ繧､繝､繝ｼ縺ｫ貂｡縺吶Ａaerial_stg`・磯・蟶ゆｸ顔ｩｺ縺ｮ繝医ャ繝励ン繝･繝ｼ・峨′蛻ｩ逕ｨ萓九〒縲～offsetX` 繧呈ｨｪ縺ｧ縺ｯ縺ｪ縺・Y 譁ｹ蜷代せ繧ｯ繝ｭ繝ｼ繝ｫ驥上→縺励※菴ｿ縺・・+
+ ---
+ 
+ ## DarkThemePlugin 邯呎価
+diff --git a/docs/genre/aerial-stg.md b/docs/genre/aerial-stg.md
+new file mode 100644
+index 0000000..6e3de4b
+--- /dev/null
++++ b/docs/genre/aerial-stg.md
+@@ -0,0 +1,182 @@
++# Aerial STG繧ｸ繝｣繝ｳ繝ｫ螳溯｣・ラ繧ｭ繝･繝｡繝ｳ繝・+
++## 讎りｦ・+
++MANUAL-OVERRIDE繧ｲ繝ｼ繝縺ｫ縺翫￠繧・`aerial_stg`・育ｸｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧ｷ繝･繝ｼ繝・ぅ繝ｳ繧ｰ・峨ず繝｣繝ｳ繝ｫ縺ｮ螳溯｣・ｒ縺ｾ縺ｨ繧√ｋ縲・+讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧｢繧ｯ繧ｷ繝ｧ繝ｳ縺ｮ蜴溽せ・・base`・峨°繧峨∬ｪｬ譏取嶌縺ｮ驕ｸ謚槭ｒ遨阪∩驥阪・繧九％縺ｨ縺ｧ縲檎ｸｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｮ遨ｺ荳ｭ謌ｦ繧ｷ繝･繝ｼ繝・ぅ繝ｳ繧ｰ縲阪∈縺ｨ螟芽ｲ後☆繧九・+
++荳顔ｩｺ縺九ｉ隕倶ｸ九ｍ縺励◆隕也せ縺ｧ髮ｲ豬ｷ縺御ｸ九°繧画ｵ√ｌ縲∽ｸ翫°繧芽ｿｫ繧区雰讖溘・辷・茶讖溘・繝溘し繧､繝ｫ繧呈茶縺｡關ｽ縺ｨ縺吶・+STG縺碁㍾蜉帙ぞ繝ｭ縺ｮ讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧堤ｶｭ謖√☆繧九・縺ｫ蟇ｾ縺励※縲∥erial_stg縺ｯ繧ｹ繝・・繧ｸ繧堤ｸｦ譁ｹ蜷代↓豬√＠縲√・繝ｬ繧､繝､繝ｼ縺・譁ｹ蜷題・逕ｱ縺ｫ鬟帙・蝗槭ｋ轤ｹ縺檎音蠕ｴ縲・+
++## 繧｢繝ｼ繧ｭ繝・け繝√Ε
++
++### 繝輔ぃ繧､繝ｫ讒区・
++
++```
++src/
++笏懌楳笏 data/
++笏・  笏懌楳笏 genres/aerial_stg.json        # 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ・磯明蛟､繝ｻ繝輔ぅ繝ｼ繝√Ε繝ｼ繝ｻ謫堺ｽ懊・繧ｹ繧ｳ繧｢蠑擾ｼ・+笏・  笏懌楳笏 config/shoot.json             # 蟆・茶繧ｷ繧ｹ繝・Β縺ｮ繝√Η繝ｼ繝九Φ繧ｰ蛟､・亥ｼｾ騾溘・騾｣蟆・俣髫斐・繧ｹ繧ｳ繧｢・・+笏・  笏披楳笏 manuals/action-branch.json   # aerial_stg縺ｸ閾ｳ繧句・蟯撰ｼ・.0-a-aerial-stg 繧ｨ繝ｳ繝医Μ・・+笏懌楳笏 genres/
++笏・  笏披楳笏 AerialStgPlugin.ts           # 隕冶ｦ壹ユ繝ｼ繝橸ｼ育ｩｺ繝ｻ髮ｲ繝ｻ謌ｦ髣俶ｩ溘・謨ｵ謠冗判繝ｻ蜑肴勹HUD・・+笏懌楳笏 game/
++笏・  笏懌楳笏 systems/ShootFeature.ts      # 蟆・茶繝ｭ繧ｸ繝・け・亥ｼｾ縺ｮ逋ｺ蟆・・遘ｻ蜍輔・陦晉ｪ√・繧ｳ繝ｳ繝懶ｼ・+笏・  笏懌楳笏 systems/MovementFeature.ts   # 邵ｦ繝｢繝ｼ繝・譁ｹ蜷醍ｧｻ蜍包ｼ・ertical_scroll 繝輔ぅ繝ｼ繝√Ε繝ｼ・・+笏・  笏披楳笏 sideScroller.ts              # _updateVertical 縺ｧ邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ迚ｩ逅・・陦晉ｪ√ｒ蜃ｦ逅・+笏披楳笏 domain/types.ts                  # ManualTheme / FeatureId 蝙句ｮ夂ｾｩ
++```
++
++## 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ・・erial_stg.json・・+
++| 鬆・岼              | 蛟､                                               |
++| ----------------- | ------------------------------------------------ |
++| `id`              | `aerial_stg`                                     |
++| `label`           | 邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧ｷ繝･繝ｼ繝・ぅ繝ｳ繧ｰ                       |
++| `thresholds`      | `vertical: 4`, `range: 4`, `enemy: 4`            |
++| `enableFeatures`  | `shoot`, `vertical_scroll`, `enemy_hp`, `spread_shot` |
++| `disableFeatures` | `grid_stop`, `puzzle_solve`, `auto_run`          |
++| `scoreFormula`    | `kills * 130 + combo * 90 + survivedSec * 3`    |
++| `theme`           | `stg`                                            |
++| `bgColor`         | `#000015`                                        |
++| `environment`     | `sky`                                            |
++| `scrollDirection` | `vertical`・・scrollAxis === 'y'` 縺ｫ螟画鋤縺輔ｌ繧具ｼ・|
++| `gravity`         | `1600`・育ｸｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繝｢繝ｼ繝峨〒縺ｯ驕ｩ逕ｨ縺輔ｌ縺ｪ縺・ｼ・    |
++
++### 謫堺ｽ懈婿豕・+
++| 繧ｭ繝ｼ   | 蜍穂ｽ・                                        |
++| ------ | -------------------------------------------- |
++| 竊・竊・   | 蟾ｦ蜿ｳ遘ｻ蜍・                                    |
++| 竊・竊・   | 荳贋ｸ狗ｧｻ蜍包ｼ・譁ｹ蜷題・逕ｱ鬟幄｡鯉ｼ・                   |
++| Z      | 荳頑婿蜷代∈蟆・茶・育ｸｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ霆ｸ縺ｫ豐ｿ縺｣縺ｦ・・      |
++| Space  | 繧ｸ繝｣繝ｳ繝励く繝ｼ縺ｨ縺励※螳夂ｾｩ縺輔ｌ繧九′螳溯ｳｪ辟｡蜉ｹ       |
++
++邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繝｢繝ｼ繝峨〒縺ｯ `MovementFeature.preUpdate` 縺・`p.vx` / `p.vy` 繧・譁ｹ蜷代く繝ｼ蜈･蜉帙°繧画ｱｺ螳壹☆繧九Ａ_updateVertical` 縺ｧ驥榊鴨縺ｯ驕ｩ逕ｨ縺輔ｌ縺壹√・繝ｬ繧､繝､繝ｼ縺ｯ邏皮ｲ九↓繧ｭ繝ｼ蜈･蜉帙↓蠕薙▲縺ｦ遘ｻ蜍輔☆繧九・+
++## 繧ｸ繝｣繝ｳ繝ｫ蜿取據譚｡莉ｶ
++
++`vertical`・育ｸｦ譁ｹ蜷第ｧ・峨・`range`・亥ｰ・ｨ九・驕霍晞屬諤ｧ・峨・`enemy`・域雰蟇ｾ隕∫ｴ・峨・邏ｯ遨阪ヱ繝ｩ繝｡繝ｼ繧ｿ縺梧純縺｣縺ｦ髢ｾ蛟､繧定ｶ・∴繧九→ aerial_stg 縺ｸ蜿取據縺吶ｋ縲・+
++| 繝代Λ繝｡繝ｼ繧ｿ  | 髢ｾ蛟､  |
++| ----------- | ----- |
++| `vertical`  | 4莉･荳・|
++| `range`     | 4莉･荳・|
++| `enemy`     | 4莉･荳・|
++
++繝吶う繧ｺ蜿取據譁ｹ蠑擾ｼ井ｸｻ譁ｹ蠑擾ｼ峨〒縺ｯ縲・霆ｸ縺吶∋縺ｦ縺ｮ荵夜屬驥上°繧我ｺ句ｾ檎｢ｺ邇・ｒ險育ｮ励＠縺ｦ遒ｺ螳壹☆繧九・+
++### 蜿取據繝代せ
++
++`action-branch.json` 縺ｮ蛻・ｲ先惠縺ｧ縺ｯ莉･荳九・邨瑚ｷｯ縺ｧaerial_stg縺檎｢ｺ螳壹☆繧九・+
++```
++2.0-a  竊偵後せ繝・・繧ｸ縺ｮ繧ｭ繝｣繝ｩ繧ｯ繧ｿ繝ｼ繧偵ｂ縺｣縺ｨ豢ｻ逋ｺ縺ｫ蜍輔°縺吶・+3.0-a-fight  竊偵後せ繝・・繧ｸ繧剃ｸ贋ｸ九↓遘ｻ蜍輔〒縺阪ｋ繧医≧縺ｫ縺吶ｋ縲搾ｼ・ertical/range/enemy蜷・1・・+4.0-a-vertical  竊偵梧雰繧呈茶縺､繝｡繧ｫ繝九ぜ繝繧定ｿｽ蜉縺吶ｋ縲・+5.0-a-vertical-shot  竊偵梧雰繧呈ｬ｡縲・→謦・▽蠢ｫ諢溘ｒ蜆ｪ蜈医☆繧九搾ｼ・ertical/range/enemy蜷・1・・+6.0-a-aerial  竊偵梧雰縺ｮ豕｢繧偵☆縺ｹ縺ｦ謦・■關ｽ縺ｨ縺吶搾ｼ・ange/enemy蜷・1, vertical+1・・+7.0-a-aerial-waves  竊・ 8.0-a-aerial-stg・育｢ｺ螳夲ｼ・+```
++
++莉悶↓ `7.0-a-bullet-hell-dodge` / `7.0-a-bullet-hell-combat` / `7.0-a-bullet-hell-focus` 縺九ｉ繧・`8.0-a-aerial-stg` 縺ｸ蛻ｰ驕斐〒縺阪ｋ縲・+
++## 繧ｲ繝ｼ繝莉墓ｧ・+
++### 繝励Ξ繧､繝､繝ｼ縺ｮ遘ｻ蜍包ｼ育ｸｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繝ｻ4譁ｹ蜷題・逕ｱ鬟幄｡鯉ｼ・+
++- `scrollAxis === 'y'` 縺ｮ縺ｨ縺阪～MovementFeature.preUpdate` 縺御ｸ贋ｸ句ｷｦ蜿ｳ縺ｮ繧ｭ繝ｼ蜈･蜉帙ｒ `p.vx` / `p.vy` 縺ｫ繝槭ャ繝斐Φ繧ｰ縺吶ｋ
++- `_updateVertical` 縺ｧ `p.x += p.vx * dt`縲～p.y += p.vy * dt` 縺ｨ縺励※縺昴・縺ｾ縺ｾ驕ｩ逕ｨ・磯㍾蜉帙↑縺暦ｼ・+- 繝励Ξ繧､繝､繝ｼ縺ｯ逕ｻ髱｢螟悶↓蜃ｺ縺ｪ縺・ｈ縺・け繝ｩ繝ｳ繝励＆繧後ｋ・・0 竕､ p.x 竕､ W - p.w`縲～0 竕､ p.y 竕､ H - p.h`・・+- `vertical_scroll` 繝輔ぅ繝ｼ繝√Ε繝ｼ縺梧怏蜉ｹ縺ｪ縺ｨ縺・`MovementFeature.update` 縺ｧ繝上じ繝ｼ繝峨↓邱ｩ繧・°縺ｪX譁ｹ蜷代ラ繝ｪ繝輔ヨ縺悟刈繧上ｊ縲∵雰縺ｮ蜍輔″縺ｫ螟牙喧縺悟・繧・+
++### 謨ｵ縺ｮ蜃ｺ迴ｾ・・pawnTable・・+
++邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繝｢繝ｼ繝峨〒縺ｯ蜈ｨ繝上じ繝ｼ繝峨′逕ｻ髱｢荳顔ｫｯ縺九ｉ繝ｩ繝ｳ繝繝縺ｪX菴咲ｽｮ縺ｫ蜃ｺ迴ｾ縺励√ヵ繝ｬ繝ｼ繝縺斐→縺ｫ `h.y += speed * dt` 縺ｧ荳矩剄縺吶ｋ縲・+
++| 蠖｢迥ｶ    | placement | weightStart 竊・weightEnd | 繧ｵ繧､繧ｺ        |
++| ------- | --------- | ----------------------- | ------------- |
++| diamond | air       | 2 竊・6                   | 24-34 ﾃ・26-38 |
++| rect    | air       | 1 竊・4                   | 40-60 ﾃ・24-36 |
++| pillar  | air       | 1 竊・5                   | 12-18 ﾃ・40-64 |
++
++`placement` 縺ｯ邵ｦ繝｢繝ｼ繝峨〒縺ｯ辟｡隕悶＆繧後ｋ縲りｷ晞屬縺御ｼｸ縺ｳ繧九⊇縺ｩ `weightEnd` 縺ｮ豈秘㍾縺御ｸ翫′繧翫∝ｾ悟濠縺ｯ謨ｵ蟇・ｺｦ縺悟｢励☆縲・+
++### 蟆・茶繧ｷ繧ｹ繝・Β・・hootFeature・・+
++aerial_stg縺ｧ縺ｯ `shoot` / `spread_shot` / `enemy_hp` 縺ｮ3繝輔ぅ繝ｼ繝√Ε繝ｼ縺梧怏蜉ｹ縲・+
++- **蟆・茶譁ｹ蜷・*: `scrollAxis === 'y'` 縺ｮ縺ｨ縺堺ｸ頑婿蜷托ｼ・vy = -bulletSpeed`・峨∈逋ｺ蟆・+- **逋ｺ蟆・ｽ咲ｽｮ**: 繝励Ξ繧､繝､繝ｼ荳ｭ蠢・`(p.x + p.w / 2, p.y - bulletHeight)` 縺九ｉ逋ｺ蟆・+- **諡｡謨｣・・pread_shot・・*: `spread_shot` 縺ｾ縺溘・ `three_way` 縺梧怏蜉ｹ縺ｪ縺ｨ縺阪∵ｭ｣髱｢・句ｷｦ譁懊ａ・句承譁懊ａ縺ｮ3譁ｹ蜷代∈諡｡謨｣
++  - 譁懊ａ蠑ｾ騾・ `bulletSpeed ﾃ・threeWaySpeedRatio (0.8)`
++  - 譁懊ａY謌仙・: `bulletSpeed ﾃ・threeWayYRatio (0.6)`
++- **謨ｵHP・・nemy_hp・・*: 謨ｵ縺・`hp` 繧呈戟縺｡縲∝ｼｾ縺悟ｽ薙◆繧九◆縺ｳ縺ｫ貂帛ｰ代・縺ｧ繧ｭ繝ｫ謌千ｫ・+- **繧ｫ繝ｪ繝ｳ繧ｰ**: Y譁ｹ蜷・`< -100`縲√∪縺溘・X譁ｹ蜷代′逕ｻ髱｢螟・`(-100 縲・W+100)` 縺ｫ蜃ｺ縺溷ｼｾ繧帝勁蜴ｻ
++
++### 繧ｹ繧ｳ繧｢
++
++| 鬆・岼          | 蠑・                                            |
++| ------------- | ---------------------------------------------- |
++| 繧ｹ繧ｳ繧｢蠑・     | `kills * 130 + combo * 90 + survivedSec * 3`  |
++| 繧ｭ繝ｫ縺斐→蝓ｺ遉守せ | `baseScorePerKill(200) ﾃ・combo`               |
++| 繧ｳ繝ｳ繝懊Μ繧ｻ繝・ヨ | `comboResetTime(3.0)` 遘剃ｻ･蜀・↓谺｡縺ｮ繧ｭ繝ｫ縺後↑縺代ｌ縺ｰ0 |
++
++讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ邉ｻ・・istance萓晏ｭ假ｼ峨→逡ｰ縺ｪ繧翫∫函蟄俶凾髢薙・繧ｳ繝ｳ繝懊ｂ螟ｧ縺阪￥繧ｹ繧ｳ繧｢縺ｫ蟇・ｸ弱☆繧九・+
++### shoot.json 縺ｮ荳ｻ縺ｪ繝√Η繝ｼ繝九Φ繧ｰ蛟､
++
++| 繧ｭ繝ｼ                           | 蛟､    | 蜀・ｮｹ                 |
++| ------------------------------ | ----- | -------------------- |
++| `bulletSpeed`                  | 900   | 蠑ｾ騾・                |
++| `bulletWidth` / `bulletHeight` | 14/5  | 蠑ｾ縺ｮ陦晉ｪ∫洸蠖｢繧ｵ繧､繧ｺ   |
++| `shotCooldown`                 | 0.18  | 騾｣蟆・俣髫費ｼ育ｧ抵ｼ・      |
++| `comboResetTime`               | 3.0   | 繧ｳ繝ｳ繝懃ｶｭ謖∵凾髢難ｼ育ｧ抵ｼ・|
++| `baseScorePerKill`             | 200   | 繧ｭ繝ｫ縺ゅ◆繧雁渕遉守せ     |
++| `threeWaySpeedRatio`           | 0.8   | 諡｡謨｣蠑ｾ縺ｮ騾溷ｺｦ豈・      |
++| `threeWayYRatio`               | 0.6   | 諡｡謨｣蠑ｾ縺ｮX譁ｹ蜷第ｯ・     |
++
++## 繝薙ず繝･繧｢繝ｫ譁ｹ驥晢ｼ・erialStgPlugin・・+
++- **閭梧勹・磯□譎ｯ drawFarLayer・・*: 豺ｱ縺・､懃ｩｺ・・#0a1628`・俄・ 譏弱ｋ縺・搨・・#1a4a7a`・峨・繧ｰ繝ｩ繝・・繧ｷ繝ｧ繝ｳ + 阮・＞驕譎ｯ髮ｲ縲りｷ晞屬縺ｫ豈比ｾ九＠縺ｦY繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ・・parallax.far = 1.0`・・+- **閭梧勹・井ｸｭ譎ｯ drawMidLayer・・*: 繧医ｊ螟ｧ縺阪↑髮ｲ蝪翫ｒ `arc` 縺ｮ邨・∩蜷医ｏ縺帙〒謠冗判縲る□譎ｯ繧医ｊ1.5蛟埼溘￥繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ・・parallax.mid = 1.5`・峨ゅ％繧後↓繧医ｊ螂･陦後″縺ｮ隕門ｷｮ蜉ｹ譫懊′逕溘∪繧後ｋ
++- **閾ｪ讖滂ｼ・rawPlayer・・*: 菫ｯ迸ｰ隕也せ縺ｮ霑台ｻ｣謌ｦ髣俶ｩ溘よｩ滄ｦ悶ｒ荳翫↓蜷代￠縺溷ｽ｢迥ｶ縲ょｾ碁鄙ｼ繝ｻ蟆ｾ鄙ｼ繝ｻ蠕梧婿繧ｨ繝ｳ繧ｸ繝ｳ轤趣ｼ医Λ繝ｳ繝繝謠ｺ繧峨℃・峨・逋ｺ蜈峨く繝｣繝弱ヴ繝ｼ繧呈戟縺､驥大ｱ槫・豐｢縺ｮ繧ｷ繝ｫ繧ｨ繝・ヨ
++- **謨ｵ・・rawHazard 縺ｧ迢ｬ閾ｪ謠冗判・・*:
++  - `diamond` 竊・謨ｵ謌ｦ髣俶ｩ滂ｼ・nterceptor・・ 讖滄ｦ悶′荳句髄縺阪・襍､縺ｿ縺後°縺｣縺溘す繝ｫ繧ｨ繝・ヨ縲∵ｹｾ譖ｲ繧ｦ繧｣繝ｳ繧ｰ縲∝腰逵ｼ繧ｳ繧｢
++  - `rect` 竊・辷・茶讖滂ｼ・omber・・ 讓ｪ髟ｷ縺ｮ驥崎｣・抜繝懊ョ繧｣縲・蝓ｺ縺ｮ繧ｨ繝ｳ繧ｸ繝ｳ轤弱∝燕譁ｹ讖滄ｦ・+  - `pillar` 竊・繝溘し繧､繝ｫ・・issile・・ 邏ｰ髟ｷ縺・・遲偵・ｭ驛ｨ縺ｫ襍､縺・ｼｾ鬆ｭ縲∝ｾ梧婿縺ｫ轤・+  - `enemy_hp` 譛牙柑譎ゅ・繧ｻ繧ｰ繝｡繝ｳ繝亥ｼ秋P繝舌・繧呈雰縺ｮ荳頑婿縺ｫ陦ｨ遉ｺ
++- **蜑肴勹・・rawForeground・・*: 繝薙ロ繝・ヨ・育判髱｢蝗幃嚆繧呈囓縺上☆繧具ｼ・+ 邱題牡縺ｮ蝗幃嚆HUD繝悶Λ繧ｱ繝・ヨ
++- **蠑ｾ縺ｮ謠冗判・・hootFeature.render・・*: 邵ｦ繝｢繝ｼ繝峨〒縺ｯ `4ﾃ・` 縺ｮ邵ｦ髟ｷ遏ｩ蠖｢・磯ｻ・牡繝ｻ繧ｰ繝ｭ繝ｼ莉倥″・・+- **繧ｨ繝輔ぉ繧ｯ繝郁牡・・articleColors・・*: 繝偵ャ繝・`#ffb08a`縲∵ｭｻ莠｡縺ｯ襍､縲懈ｩ吶憺ｻ・懃區縺ｮ轤弱ヱ繝ｬ繝・ヨ
++
++### 謠冗判繝輔ャ繧ｯ縺ｮ蟋碑ｭｲ・医お繝ｳ繧ｸ繝ｳ騾｣謳ｺ・・+
++- `AerialStgPlugin.verticalBackgroundLayers = true` 縺ｫ繧医ｊ縲∫ｸｦ繝｢繝ｼ繝峨〒繧・`drawFarLayer` / `drawMidLayer` 縺悟他縺ｰ繧後ｋ・・sideScroller._drawBackground` 縺悟愛螳夲ｼ・+- `drawHazard` 縺・`true` 繧定ｿ斐☆縺ｨ繝・ヵ繧ｩ繝ｫ繝医・繝上じ繝ｼ繝画緒逕ｻ繧偵せ繧ｭ繝・・縺励、erialStgPlugin縺ｮ迢ｬ閾ｪ謠冗判繧剃ｽｿ縺・+- `drawForeground` 縺ｯ `ctx.restore()` 縺ｮ螟厄ｼ医す繧ｧ繧､繧ｯ縺ｮ蠖ｱ髻ｿ繧貞女縺代↑縺・ｼ峨〒蜻ｼ縺ｰ繧後ｋ
++
++## 螳溯｣・ｸ翫・豕ｨ諢冗せ
++
++1. `gravity` 繝輔ぅ繝ｼ繝ｫ繝峨・ aerial_stg.json 縺ｫ險ｭ螳壹＆繧後※縺・ｋ縺後～_updateVertical` 縺ｧ縺ｯ繝励Ξ繧､繝､繝ｼ縺ｸ縺ｮ驥榊鴨驕ｩ逕ｨ繧定｡後ｏ縺ｪ縺・◆繧∝ｮ溯ｳｪ辟｡蜉ｹ・・_updateHorizontal` 蟆ら畑・・+2. `spread_shot` 縺ｯ `ShootFeature.handles` 縺ｫ蜷ｫ縺ｾ繧後ｋ縺後∫ｸｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ譎ゅ・逋ｺ蟆・Ο繧ｸ繝・け・・_spawnVerticalBullets`・峨〒 `three_way` 縺ｨ蜷檎ｭ峨・3譁ｹ蜷大ｱ暮幕繧定｡後≧
++3. 譁懊ａ蠑ｾ・・pread_shot 縺ｮ蟾ｦ蜿ｳ謌仙・・峨・逕ｻ髱｢螟悶↓蜃ｺ縺溘→縺更譁ｹ蜷代き繝ｪ繝ｳ繧ｰ縺ｧ髯､蜴ｻ縺輔ｌ繧具ｼ・譁ｹ蜷代□縺代〒縺ｪ縺醜譁ｹ蜷大｢・阜繧ょ愛螳夲ｼ・+4. 蠑ｾ縺ｮ逋ｺ蟆・ｽ咲ｽｮ縺ｯ繝励Ξ繧､繝､繝ｼ縺ｮ豌ｴ蟷ｳ荳ｭ蠢・`p.x + p.w / 2` 縺九ｉ逋ｺ蟆・＆繧後ｋ
++5. `vertical_scroll` 繝輔ぅ繝ｼ繝√Ε繝ｼ縺ｮdrift蜃ｦ逅・ｼ・MovementFeature.update`・峨・繝上じ繝ｼ繝峨・ X 蠎ｧ讓吶ｒ豈弱ヵ繝ｬ繝ｼ繝蠕ｮ螟牙虚縺輔○繧九′縲∫判髱｢蟷・〒繧ｯ繝ｩ繝ｳ繝励☆繧九◆繧∫判髱｢螟悶∈縺ｯ蜃ｺ縺ｪ縺・+
++## 髢｢騾｣繧ｸ繝｣繝ｳ繝ｫ
++
++蟆・茶繧､繝ｳ繝輔Λ・・hootFeature・峨・莉･荳九・霑醍ｸ√ず繝｣繝ｳ繝ｫ縺ｧ繧ょ・譛峨＆繧後ｋ縲・+
++- `stg`: 讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ迚医す繝･繝ｼ繝・ぅ繝ｳ繧ｰ・亥ｼｾ縺ｯ蜿ｳ譁ｹ蜷托ｼ・+- `bullet_hell`: 蠑ｾ蟷募屓驕ｿ・・erial_stg縺ｮ蛻・ｲ占ｿ大ｍ縺九ｉ豢ｾ逕滂ｼ・+- `bullet_runner`: 蠑ｾ繧帝∩縺代↑縺後ｉ襍ｰ繧・+- `arena`: 隍・焚謨ｵ蜷梧凾謦・ｴ
++
++## 莉雁ｾ後・謾ｹ蝟・呵｣・+
++- 謨ｵ縺ｮ蟆・茶・井ｸ区婿蜷代∈蠑ｾ繧呈叛縺､蜿肴茶・・+- 繝輔か繝ｼ繝｡繝ｼ繧ｷ繝ｧ繝ｳ蜃ｺ迴ｾ・郁､・焚縺ｮ謨ｵ縺梧紛蛻励＠縺ｦ髯堺ｸ具ｼ・+- 繝懊せ謌ｦ縺ｮ蟆主・・・boss.json` 騾｣謳ｺ・・+- 遘ｻ蜍暮溷ｺｦ縺ｮ繧ｸ繝｣繝ｳ繝ｫ蛻･繝√Η繝ｼ繝九Φ繧ｰ・育樟蝨ｨ縺ｯ `PLAYER_PHYSICS.runSpeed` 繧呈ｵ∫畑・・+- 繧ｹ繧ｳ繧｢蠑上・ `distance` 鬆・ｿｽ蜉・育ｸｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ霍晞屬縺ｮ隧穂ｾ｡・・diff --git a/src/App.vue b/src/App.vue
+index 153300f..c156e7c 100644
+--- a/src/App.vue
++++ b/src/App.vue
+@@ -17,10 +17,15 @@ import { GENRE_LOCKED_BOOST } from './data/gameBalance'
+ import type { ThrowResult, RuntimeRules } from './domain/types'
+ import { TUTORIAL_ENABLED, TutorialScreen } from './tutorial'
+ import { soundManager } from './plugins/SoundManager'
++import { DEBUG_MODE } from './debug/const'
++import { useDebugSettings } from './debug/useDebugSettings'
++import DebugPanel from './debug/DebugPanel.vue'
++import type { DebugSettings } from './debug/types'
+ 
+ // 笏笏笏 迥ｶ諷・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ const gameState = useGameState()
+ const manualCtl = useManual(gameState.currentManual)
++const debugCtl = useDebugSettings()
+ 
+ /** readonly() 繝ｩ繝・ヱ繝ｼ繧貞翁縺後＠縺ｦ RuntimeRules 縺ｨ縺励※霑斐☆ */
+ function getRules(): RuntimeRules {
+@@ -87,9 +92,24 @@ function startGame() {
+   if (TUTORIAL_ENABLED) {
+     scroller.setPaused(true)
+   }
++
++  // 繝・ヰ繝・げ: 繧ｸ繝｣繝ｳ繝ｫ蠑ｷ蛻ｶ・・ockedGenre 縺ｮ watch 縺・scroller 縺ｸ繝ｫ繝ｼ繝ｫ繧貞渚譏縺吶ｋ・・+  if (debugCtl.debugSettings.forceGenre) {
++    gameState.debugForceGenre(debugCtl.debugSettings.forceGenre)
++    // 繝√Η繝ｼ繝医Μ繧｢繝ｫ繧偵せ繧ｭ繝・・縺励※ genreLocked 縺ｸ逶ｴ陦後☆繧九◆繧∵・遉ｺ逧・↓蜀埼幕縺吶ｋ縲・+    // phase 縺・title竊暖enreLocked 縺ｨ驕ｷ遘ｻ縺・shouldPause 縺悟､牙喧縺励↑縺・◆繧・watch 縺ｧ縺ｯ蜀埼幕縺輔ｌ縺ｪ縺・・+    scroller.setPaused(false)
++  }
++
+   beginSnapshotLoop()
+ }
+ 
++// 笏笏笏 繝・ヰ繝・げ繝代ロ繝ｫ縲薫K縲・ 險ｭ螳壹ｒ蜿肴丐縺励※騾壼ｸｸ繝輔Ο繝ｼ縺ｧ繧ｲ繝ｼ繝髢句ｧ・笏笏笏
++function onDebugApply(settings: DebugSettings) {
++  debugCtl.applyDebug(settings)
++  startGame()
++}
++
+ // 笏笏笏 繝√Η繝ｼ繝医Μ繧｢繝ｫ螳御ｺ・竊・繧ｲ繝ｼ繝繝励Ξ繧､髢句ｧ・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ function startTutorial() {
+   if (TUTORIAL_ENABLED) {
+@@ -189,6 +209,8 @@ function restart() {
+   revealActive.value = false
+   soundManager.stopBgm(600)
+   gameState.restart()
++  // 繧ｿ繧､繝医Ν縺ｸ謌ｻ繧矩圀縺ｫ繝・ヰ繝・げ險ｭ螳壹ｒ繧ｯ繝ｪ繧｢・・ebugPanel 蜀阪・繧ｦ繝ｳ繝域凾縺ｮ陦ｨ遉ｺ縺ｨ荳閾ｴ縺輔○繧具ｼ・+  debugCtl.resetDebug()
+ }
+ 
+ // 笏笏笏 迴ｾ蝨ｨ縺ｮ繧ｸ繝｣繝ｳ繝ｫ繝・・繝・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+@@ -230,7 +252,8 @@ const shouldPause = computed(() => {
+   const p = gameState.phase.value
+   if (p === 'updating') return true
+   if (p === 'tutorialIntro') return true
+-  if (manualCtl.isCentered.value) return true
++  // 隱ｬ譏取嶌髱櫁｡ｨ遉ｺ譎ゅ・繧ｻ繝ｳ繧ｿ繝ｪ繝ｳ繧ｰ貍泌・縺瑚ｦ九∴縺ｪ縺・◆繧∝●豁｢繧ゅ＠縺ｪ縺・+  if (manualCtl.isCentered.value && debugCtl.debugSettings.showManual) return true
+   return false
+ })
+ 
+@@ -333,6 +356,12 @@ onUnmounted(() => {
+       </div>
+     </Transition>
+ 
++    <!-- 笏笏笏 繝・ヰ繝・げ繝代ロ繝ｫ・・EBUG_MODE 譎ゅ・縺ｿ繝ｻ繧ｿ繧､繝医Ν逕ｻ髱｢縺ｫ驥咲糞・・笏笏笏 -->
++    <DebugPanel
++      v-if="DEBUG_MODE && gameState.phase.value === 'title'"
++      @apply="onDebugApply"
++    />
++
+     <!-- 笏笏笏 繝√Η繝ｼ繝医Μ繧｢繝ｫ逕ｻ髱｢ 笏笏笏 -->
+     <Transition name="fade">
+       <TutorialScreen
+@@ -357,7 +386,7 @@ onUnmounted(() => {
+ 
+       <!-- 隱ｬ譏取嶌繝代ロ繝ｫ・域兜謫ｲ荳ｭ縺ｯ ThrowOverlay 縺御ｻ｣譖ｿ・・-->
+       <ManualPanel
+-        v-if="gameState.phase.value !== 'throwing'"
++        v-if="gameState.phase.value !== 'throwing' && debugCtl.debugSettings.showManual"
+         :manual="gameState.currentManual()"
+         :theme="currentTheme"
+         :diff-lines="manualCtl.diffLines.value"
+@@ -371,7 +400,7 @@ onUnmounted(() => {
+ 
+       <!-- 隱ｬ譏取嶌譖ｴ譁ｰ譎ゅ・繝輔か繝ｼ繧ｫ繧ｹ繧ｪ繝ｼ繝舌・繝ｬ繧､ -->
+       <Transition name="fade">
+-        <div v-if="manualCtl.isCentered.value" class="manual-focus-overlay" />
++        <div v-if="manualCtl.isCentered.value && debugCtl.debugSettings.showManual" class="manual-focus-overlay" />
+       </Transition>
+ 
+       <!-- 繝√Η繝ｼ繝医Μ繧｢繝ｫ繝偵Φ繝茨ｼ亥ｺ冗乢縺ｮ縺ｿ陦ｨ遉ｺ・・-->
+diff --git a/src/composables/useGameState.ts b/src/composables/useGameState.ts
+index 75ba8d1..0675b89 100644
+--- a/src/composables/useGameState.ts
++++ b/src/composables/useGameState.ts
+@@ -198,6 +198,13 @@ export function useGameState() {
+     return undefined
+   }
+ 
++  // 繝・ヰ繝・げ蟆ら畑: 繧ｸ繝｣繝ｳ繝ｫ繧貞ｼｷ蛻ｶ遒ｺ螳壹☆繧具ｼ亥庶譚溷愛螳壹ｒ鬟帙・縺呻ｼ・+  function debugForceGenre(genreId: GenreId) {
++    lockedGenre.value = genreId
++    _rebuildRules()
++    phase.value = 'genreLocked'
++  }
++
+   function startThrowing() {
+     soundManager.onThrowStart()
+     phase.value = 'throwing'
+@@ -246,6 +253,7 @@ export function useGameState() {
+     startTutorial,
+     triggerUpdate,
+     choose,
++    debugForceGenre,
+     startThrowing,
+     finalizeThrowing,
+     restart,
+diff --git a/src/data/manuals/action-branch.json b/src/data/manuals/action-branch.json
+index e9a3148..1bed5bd 100644
+--- a/src/data/manuals/action-branch.json
++++ b/src/data/manuals/action-branch.json
+@@ -724,11 +724,12 @@
+       "key": "8.0-a-aerial-stg",
+       "version": "8.0",
+       "manualText": [
+-        "繧ｹ繝・・繧ｸ縺檎ｸｦ譁ｹ蜷代↓豬√ｌ縺ｦ縺・∪縺吶・,
+-        "竊・竊・繧ｭ繝ｼ縺ｧ蟾ｦ蜿ｳ縺ｫ遘ｻ蜍輔〒縺阪∪縺吶・,
+-        "Z繧ｭ繝ｼ縺ｧ荳頑婿蜷代↓蠑ｾ繧呈茶縺ｦ縺ｾ縺吶・,
+-        "荳翫°繧蛾剄縺｣縺ｦ縺上ｋ謨ｵ繧呈茶縺｣縺ｦ縺上□縺輔＞縲・,
+-        "縺薙ｌ縺ｯ邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧ｷ繝･繝ｼ繝・ぅ繝ｳ繧ｰ縺ｧ縺吶・
++        "閾ｪ讖溘・驛ｽ蟶ゆｸ顔ｩｺ繧帝｣帙・謌ｦ髣俶ｩ溘↓縺ｪ繧翫∪縺励◆縲・,
++        "竊・竊・竊・竊・繧ｭ繝ｼ縺ｧ荳贋ｸ句ｷｦ蜿ｳ縲∬・逕ｱ縺ｫ鬟帙∋縺ｾ縺吶・,
++        "Z繧ｭ繝ｼ縺ｧ蜑肴婿・井ｸ奇ｼ峨∈蠑ｾ繧呈茶縺ｦ縺ｾ縺吶・,
++        "荳翫°繧芽ｿｫ繧区雰讖溘ｒ謦・■關ｽ縺ｨ縺励※縺上□縺輔＞縲・,
++        "謨ｵ縺ｫ隗ｦ繧後ｋ縺ｨ謦・｢懊＆繧後∪縺吶・,
++        "縺薙ｌ縺ｯ邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｮ遨ｺ荳ｭ謌ｦ繧ｷ繝･繝ｼ繝・ぅ繝ｳ繧ｰ縺ｧ縺吶・
+       ],
+       "hazards": {
+         "colors": ["red"],
+diff --git a/src/debug/DebugPanel.vue b/src/debug/DebugPanel.vue
+new file mode 100644
+index 0000000..d31c1ab
+--- /dev/null
++++ b/src/debug/DebugPanel.vue
+@@ -0,0 +1,115 @@
++<script setup lang="ts">
++import { ref } from 'vue'
++import { GENRES } from '../data/genres'
++import type { GenreId } from '../domain/types'
++import type { DebugSettings } from './types'
++
++const emit = defineEmits<{
++  (e: 'apply', settings: DebugSettings): void
++}>()
++
++const forceGenre = ref<GenreId | null>(null)
++const showManual = ref(true)
++
++function onOk() {
++  emit('apply', {
++    forceGenre: forceGenre.value,
++    showManual: showManual.value,
++  })
++}
++</script>
++
++<template>
++  <div class="debug-panel">
++    <div class="debug-title">// DEBUG</div>
++
++    <label class="debug-row">
++      <span class="debug-label">force genre</span>
++      <select v-model="forceGenre" class="debug-select">
++        <option :value="null">騾壼ｸｸ・亥庶譚溘＆縺帙ｋ・・/option>
++        <option v-for="g in GENRES" :key="g.id" :value="g.id">
++          {{ g.id }} 窶・{{ g.label }}
++        </option>
++      </select>
++    </label>
++
++    <label class="debug-row debug-check">
++      <input v-model="showManual" type="checkbox" />
++      <span class="debug-label">隱ｬ譏取嶌繧定｡ｨ遉ｺ縺吶ｋ</span>
++    </label>
++
++    <button class="debug-ok" @click="onOk">OK</button>
++  </div>
++</template>
++
++<style scoped>
++.debug-panel {
++  position: fixed;
++  top: 50%;
++  left: 50%;
++  transform: translate(-50%, -50%);
++  z-index: 9999;
++  background: rgba(0, 0, 0, 0.82);
++  border: 1px solid #555;
++  border-radius: 4px;
++  padding: 16px 18px;
++  min-width: 280px;
++  font-family: 'Courier New', 'Consolas', monospace;
++  font-size: 12px;
++  color: #d0d0d0;
++  display: flex;
++  flex-direction: column;
++  gap: 12px;
++  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
++}
++
++.debug-title {
++  font-size: 11px;
++  letter-spacing: 2px;
++  color: #8a8a8a;
++}
++
++.debug-row {
++  display: flex;
++  flex-direction: column;
++  gap: 5px;
++}
++
++.debug-label {
++  color: #b0b0b0;
++}
++
++.debug-select {
++  background: #111;
++  color: #e0e0e0;
++  border: 1px solid #555;
++  border-radius: 3px;
++  padding: 5px 6px;
++  font-family: inherit;
++  font-size: 12px;
++}
++
++.debug-check {
++  flex-direction: row;
++  align-items: center;
++  gap: 8px;
++}
++
++.debug-ok {
++  align-self: flex-end;
++  background: #1a1a1a;
++  color: #e0e0e0;
++  border: 1px solid #666;
++  border-radius: 3px;
++  padding: 6px 22px;
++  font-family: inherit;
++  font-size: 12px;
++  cursor: pointer;
++  transition: background 0.15s, border-color 0.15s;
++}
++
++.debug-ok:hover {
++  background: #2a2a2a;
++  border-color: #999;
++}
++</style>
+diff --git a/src/debug/const.ts b/src/debug/const.ts
+new file mode 100644
+index 0000000..01998bc
+--- /dev/null
++++ b/src/debug/const.ts
+@@ -0,0 +1,2 @@
++/** 縺薙％繧・true 縺ｫ縺吶ｋ縺ｨ繝・ヰ繝・げUI縺梧怏蜉ｹ縺ｫ縺ｪ繧・*/
++export const DEBUG_MODE = false
+diff --git a/src/debug/types.ts b/src/debug/types.ts
+new file mode 100644
+index 0000000..64c69fd
+--- /dev/null
++++ b/src/debug/types.ts
+@@ -0,0 +1,8 @@
++import type { GenreId } from '../domain/types'
++
++export interface DebugSettings {
++  /** 蠑ｷ蛻ｶ縺吶ｋ繧ｸ繝｣繝ｳ繝ｫID縲Ｏull 縺ｪ繧蛾壼ｸｸ騾壹ｊ蜿取據縺輔○繧・*/
++  forceGenre: GenreId | null
++  /** 隱ｬ譏取嶌繝代ロ繝ｫ繧定｡ｨ遉ｺ縺吶ｋ縺・*/
++  showManual: boolean
++}
+diff --git a/src/debug/useDebugSettings.ts b/src/debug/useDebugSettings.ts
+new file mode 100644
+index 0000000..48f6f73
+--- /dev/null
++++ b/src/debug/useDebugSettings.ts
+@@ -0,0 +1,27 @@
++import { reactive, readonly } from 'vue'
++import type { DebugSettings } from './types'
++
++const DEFAULT_DEBUG_SETTINGS: DebugSettings = {
++  forceGenre: null,
++  showManual: true,
++}
++
++export function useDebugSettings() {
++  const debugSettings = reactive<DebugSettings>({ ...DEFAULT_DEBUG_SETTINGS })
++
++  /** OK繝懊ち繝ｳ謚ｼ荳区凾縺ｫ蜻ｼ縺ｰ繧後ｋ縲ゅョ繝舌ャ繧ｰ險ｭ螳壹ｒ蜿肴丐縺吶ｋ */
++  function applyDebug(settings: DebugSettings) {
++    Object.assign(debugSettings, settings)
++  }
++
++  /** 繝・ヰ繝・げ險ｭ螳壹ｒ蛻晄悄迥ｶ諷九∈謌ｻ縺・*/
++  function resetDebug() {
++    Object.assign(debugSettings, DEFAULT_DEBUG_SETTINGS)
++  }
++
++  return {
++    debugSettings: readonly(debugSettings) as DebugSettings,
++    applyDebug,
++    resetDebug,
++  }
++}
+diff --git a/src/engine/GenrePlugin.ts b/src/engine/GenrePlugin.ts
+index 27bb4c7..e134718 100644
+--- a/src/engine/GenrePlugin.ts
++++ b/src/engine/GenrePlugin.ts
+@@ -111,6 +111,13 @@ export interface GenrePlugin {
+    */
+   readonly scrollSpeedBonus?: number
+ 
++  /**
++   * 邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繝｢繝ｼ繝峨〒繧・drawFarLayer / drawMidLayer 繧貞他縺ｶ縺具ｼ育怐逡･譎・false・峨・+   * 邵ｦ繝｢繝ｼ繝峨・繝・ヵ繧ｩ繝ｫ繝医〒遨ｺ繧ｰ繝ｩ繝・・繧ｷ繝ｧ繝ｳ・区弌縺ｮ縺ｿ繧呈緒縺埼□譎ｯ繝ｻ荳ｭ譎ｯ繧堤怐逡･縺吶ｋ縺後・+   * 縺薙・繝輔Λ繧ｰ繧・true 縺ｫ縺励◆繧ｸ繝｣繝ｳ繝ｫ縺縺鷹□譎ｯ繝ｻ荳ｭ譎ｯ繝ｬ繧､繝､繝ｼ繧呈緒逕ｻ縺吶ｋ縲・+   */
++  readonly verticalBackgroundLayers?: boolean
++
+   // 笏笏笏 謠冗判繝輔ャ繧ｯ・亥ｿ・茨ｼ・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+   /**
+    * 驕譎ｯ・亥ｱｱ遞懊・螳・ｮ吝ｲｩ遉√↑縺ｩ・峨ｒ謠上￥縲・diff --git a/src/game/sideScroller.ts b/src/game/sideScroller.ts
+index 6c7b21a..e6fec25 100644
+--- a/src/game/sideScroller.ts
++++ b/src/game/sideScroller.ts
+@@ -725,6 +725,9 @@ export class SideScroller {
+ 
+     ctx.restore()  // shake 縺ｮ restore
+ 
++    // 笏笏笏 繧ｸ繝｣繝ｳ繝ｫ蜑肴勹・・UD 繝輔Ξ繝ｼ繝遲峨ゅす繧ｧ繧､繧ｯ縺ｮ蠖ｱ髻ｿ繧貞女縺代↑縺・判髱｢蝗ｺ螳壹Ξ繧､繝､繝ｼ・・笏笏
++    getGenre(r.genre).drawForeground?.(ctx, this.cameraX, W, H, gY)
++
+     // 笏笏笏 豁ｻ莠｡繧ｪ繝ｼ繝舌・繝ｬ繧､ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+     if (this.dead) {
+       const fadeIn = Math.min(1, this.deathTimer * UI.deathFadeSpeed)
+@@ -764,6 +767,13 @@ export class SideScroller {
+       if (plugin.starColor) {
+         this._drawStarField(this.distance * CAMERA.parallaxStars, W, H * 0.9, plugin)
+       }
++      // 邵ｦ繝｢繝ｼ繝峨〒繧る□譎ｯ繝ｻ荳ｭ譎ｯ繧呈緒縺阪◆縺・ず繝｣繝ｳ繝ｫ縺縺代Ξ繧､繝､繝ｼ繧貞ｧ碑ｭｲ・・Y 縺ｯ蜈ｨ逕ｻ髱｢鬮假ｼ・+      if (plugin.verticalBackgroundLayers) {
++        const parallaxFar = plugin.parallax?.far ?? CAMERA.parallaxFar
++        const parallaxMid = plugin.parallax?.mid ?? CAMERA.parallaxMid
++        plugin.drawFarLayer(ctx, this.distance * parallaxFar, W, H)
++        plugin.drawMidLayer(ctx, this.distance * parallaxMid, W, H)
++      }
+       this._drawEnvironmentOverlay(W, H)
+       return
+     }
+@@ -911,6 +921,12 @@ export class SideScroller {
+ 
+     ctx.save()
+ 
++    // 繧ｸ繝｣繝ｳ繝ｫ蝗ｺ譛峨・繝上じ繝ｼ繝画緒逕ｻ繝輔ャ繧ｯ縲Ｕrue 縺ｪ繧峨ョ繝輔か繝ｫ繝域緒逕ｻ・亥ｽ｢迥ｶ繝ｻHP繝舌・・峨ｒ繧ｹ繧ｭ繝・・
++    if (pluginH.drawHazard?.(ctx, h, sx, this._getWorld())) {
++      ctx.restore()
++      return
++    }
++
+     // 繧ｰ繝ｭ繝ｼ蜉ｹ譫・     ctx.shadowColor = glow
+     ctx.shadowBlur = glowBlur
+diff --git a/src/game/systems/ShootFeature.ts b/src/game/systems/ShootFeature.ts
+index 1d3e9ec..cf93a91 100644
+--- a/src/game/systems/ShootFeature.ts
++++ b/src/game/systems/ShootFeature.ts
+@@ -47,7 +47,11 @@ export class ShootFeature implements FeatureSystem {
+     ctx.fillStyle = '#ffff00'
+     for (const b of world.bullets) {
+       const sx = isVertical ? b.x : b.x - world.cameraX
+-      ctx.fillRect(sx - 4, b.y - 2, 8, 4)
++      if (isVertical) {
++        ctx.fillRect(sx - 2, b.y - 4, 4, 8)
++      } else {
++        ctx.fillRect(sx - 4, b.y - 2, 8, 4)
++      }
+     }
+     ctx.restore()
+   }
+@@ -80,11 +84,11 @@ export class ShootFeature implements FeatureSystem {
+ 
+   private _spawnVerticalBullets(world: MutableWorld): void {
+     const { player: p, rules } = world
+-    const bx = p.x + SHOOT.bulletWidth / 2
++    const bx = p.x + p.w / 2
+     const by = p.y - SHOOT.bulletHeight
+     const spd = SHOOT.bulletSpeed
+ 
+-    if (rules.features.has('three_way')) {
++    if (rules.features.has('three_way') || rules.features.has('spread_shot')) {
+       this.state.bullets.push(
+         new Bullet(bx, by, 0, -spd),
+         new Bullet(bx, by, -spd * SHOOT.threeWayYRatio, -spd * SHOOT.threeWaySpeedRatio),
+@@ -122,7 +126,9 @@ export class ShootFeature implements FeatureSystem {
+     for (const b of this.state.bullets) {
+       b.x += b.vx * dt
+       b.y += b.vy * dt
+-      if (isVertical ? b.y < -100 : (b.x > viewRight || b.x < viewLeft)) {
++      if (isVertical
++        ? (b.y < -100 || b.x < viewLeft || b.x > viewRight)
++        : (b.x > viewRight || b.x < viewLeft)) {
+         b.alive = false
+       }
+     }
+diff --git a/src/genres/AerialStgPlugin.ts b/src/genres/AerialStgPlugin.ts
+index c7b132c..0e609c4 100644
+--- a/src/genres/AerialStgPlugin.ts
++++ b/src/genres/AerialStgPlugin.ts
+@@ -2,161 +2,437 @@
+  * genres/AerialStgPlugin.ts
+  * 'aerial_stg' 繧ｸ繝｣繝ｳ繝ｫ・育ｸｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧ｷ繝･繝ｼ繝・ぅ繝ｳ繧ｰ・峨・繝励Λ繧ｰ繧､繝ｳ縲・  *
+- * 證励＞螳・ｮ咏ｩｺ髢薙ゆｸ翫°繧蛾剄縺｣縺ｦ縺上ｋ謨ｵ繧堤ｸｦ譁ｹ蜷代↓謦・■關ｽ縺ｨ縺吶・- * 繝励Ξ繧､繝､繝ｼ縺ｯ蟆丞梛謌ｦ髣俶ｩ溘よ弌髮ｲ縺ｨ譏溘ヵ繧｣繝ｼ繝ｫ繝峨′豬√ｌ繧九・+ * 髮ｲ縺ｮ荳翫・遨ｺ繝ｻ鬮倬ｫ伜ｺｦ縺ｮ螟ｧ豌怜恟蜀・ゆｸ顔ｩｺ縺九ｉ隕倶ｸ九ｍ縺励◆髮ｲ豬ｷ縺御ｸ翫°繧我ｸ九∈豬√ｌ繧玖レ譎ｯ縲・+ * 繝励Ξ繧､繝､繝ｼ縺ｯ鬮倬ｫ伜ｺｦ繧帝｣帙・謌ｦ髣俶ｩ溘〒縲∽ｸ翫°繧芽ｿｫ繧区雰讖溘・辷・茶讖溘・繝溘し繧､繝ｫ繧呈茶縺｡關ｽ縺ｨ縺吶・  */
+ 
+ import { GenrePluginBase } from '../engine/GenrePluginBase'
+-import type { SpawnEntry } from '../engine/types'
++import type { SpawnEntry, MutableWorld } from '../engine/types'
++import type { Hazard } from '../game/entities'
+ import type { GenreId } from '../domain/types'
+ 
+ export class AerialStgPlugin extends GenrePluginBase {
+   readonly id: GenreId = 'aerial_stg'
+ 
+-  readonly skyColors    = ['#000008', '#000418'] as const
+-  readonly groundColors = ['#000408', '#000208'] as const
+-  readonly farLayerColor  = '#050520'
+-  readonly midLayerColor  = '#050520'
+-  readonly starColor      = '#ffffff'
++  readonly skyColors    = ['#050a18', '#0d1f3c'] as const
++  readonly groundColors = ['#091520', '#091520'] as const
++  readonly farLayerColor  = '#0a1830'
++  readonly midLayerColor  = '#0c1424'
++  readonly starColor      = '#dfe8ff'
+ 
+   readonly palette = {
+-    danger: '#ff3333', dangerGlow: '#ff6666',
+-    safe:   '#00aaff', safeGlow:   '#66ccff',
++    danger: '#ff4b4b', dangerGlow: '#ff8a6a',
++    safe:   '#3fa0ff', safeGlow:   '#9fd0ff',
+   }
+ 
+-  readonly starConfig = {
+-    density: 28,
+-    sizeRange: [1, 3] as [number, number],
+-    alphaRange: [0.4, 0.9] as [number, number],
++  // engine 縺・drawFarLayer/drawMidLayer 縺ｫ distance*parallax 繧・offsetX 縺ｨ縺励※貂｡縺吶・+  // far=驕譎ｯ髮ｲ縺ｮ Y 繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ驥・=distance)縲［id=荳ｭ譎ｯ髮ｲ(=distanceﾃ・.5 縺ｧ驕譎ｯ繧医ｊ騾溘＞)縲・+  readonly parallax = {
++    stars: 0.02,
++    far:   1.0,
++    mid:   1.5,
+   }
+ 
+-  readonly parallax = {
+-    stars: 0.03,
+-    far:   0.06,
+-    mid:   0.15,
++  readonly starConfig = {
++    density: 18,
++    sizeRange: [1, 2] as [number, number],
++    alphaRange: [0.3, 0.7] as [number, number],
+   }
+ 
+   readonly hazardConfig = {
+-    glowBlur: 16,
++    glowBlur: 14,
+     pulseSpeed: 2.0,
+-    pulseAmplitude: 0.12,
++    pulseAmplitude: 0.1,
+   }
+ 
+   readonly particleColors = {
+-    hit:   '#ff6688',
+-    death: ['#ff2244', '#ff8800', '#ffff00', '#ffffff'] as readonly string[],
+-    jump:  'rgba(0,180,255,0.6)',
+-    land:  'rgba(0,100,200,0.5)',
++    hit:   '#ffb08a',
++    death: ['#ff5a3c', '#ff9a3c', '#ffd23c', '#ffffff'] as readonly string[],
++    jump:  'rgba(120,200,255,0.6)',
++    land:  'rgba(80,150,220,0.5)',
++  }
++
++  // 邵ｦ繝｢繝ｼ繝峨〒繧る□譎ｯ繝ｻ荳ｭ譎ｯ繝ｬ繧､繝､繝ｼ・育ｩｺ繝ｻ髮ｲ・峨ｒ謠冗判縺吶ｋ
++  readonly verticalBackgroundLayers = true
++
++  // 笏笏笏 謠冗判繧ｫ繝ｩ繝ｼ・医ワ繝ｼ繝峨さ繝ｼ繝牙屓驕ｿ縺ｮ縺溘ａ readonly 縺ｫ髮・ｴ・ｼ・笏笏笏笏笏笏笏笏笏笏
++  private readonly jetColors = {
++    bodyLight: '#c0c8d0', bodyDark: '#8090a0', edge: '#dfe6ee',
++    canopy: '#1b2436', canopyGlow: '#3a5fa0',
++    flameCore: '#bfe6ff', flameMid: '#ff9a3c', flameTip: 'rgba(255,180,80,0.5)',
++  }
++  private readonly enemyColors  = { fill: '#5a1414', edge: '#ff7a7a', canopy: '#2a0a0a' }
++  private readonly bomberColors = { body: '#3a2a2e', bodyEdge: '#7a4a4a', engine: '#ff7a3c' }
++  private readonly missileColors = { body: '#b0b8c0', head: '#ff5a5a', flame: '#ffce6a' }
++
++  // 驕譎ｯ: 遨ｺ繧ｰ繝ｩ繝・・繧ｷ繝ｧ繝ｳ・域ｷｱ縺・､懃ｩｺ竊呈・繧九＞髱抵ｼ・+  private readonly farSkyGrad = {
++    top: '#0a1628',
++    bot: '#1a4a7a',
++  }
++
++  // 驕譎ｯ髮ｲ・郁埋縺上・蟆上＆縺上・Math.sin 豎ｺ螳夂噪謫ｬ莨ｼ繝ｩ繝ｳ繝繝驟咲ｽｮ・・+  private readonly farCloudCfg = {
++    count:      7,
++    tileH:      320,
++    minR:       5,
++    rangeR:     12,
++    alphaBase:  0.08,
++    alphaRange: 0.10,
++    colors: ['rgba(220,235,250,', 'rgba(200,218,240,'] as readonly string[],
++  }
++
++  // 荳ｭ譎ｯ髮ｲ蝪奇ｼ・tx.arc 縺ｮ邨・∩蜷医ｏ縺帙∝・逕ｻ髱｢縺ｫ謨｣繧峨・繧具ｼ・+  private readonly midCloudCfg = {
++    count:      5,
++    tileH:      240,
++    minR:       20,
++    rangeR:     36,
++    alphaBase:  0.16,
++    alphaRange: 0.18,
++    colors: ['rgba(240,248,255,', 'rgba(160,185,210,'] as readonly string[],
++  }
++
++  private readonly hudColors = {
++    bracket:  'rgba(0,255,136,0.65)',
++    vignette: 'rgba(0,0,0,0.55)',
+   }
+ 
+-  // 邵ｦ繝｢繝ｼ繝・ 蜈ｨ縺ｦ縺ｮ繝上じ繝ｼ繝峨′逕ｻ髱｢荳顔ｫｯ縺九ｉ繧ｹ繝昴・繝ｳ縲Ｑlacement 縺ｯ辟｡隕悶＆繧後ｋ縲・+  private readonly hpBar = {
++    segGap: 2, height: 4, offsetY: 10, threshold: 0.4,
++    high: '#5ad65a', low: '#d65a5a', bg: 'rgba(0,0,0,0.5)',
++  }
++
++  // 邵ｦ繝｢繝ｼ繝・ 蜈ｨ繝上じ繝ｼ繝峨′逕ｻ髱｢荳顔ｫｯ縺九ｉ繧ｹ繝昴・繝ｳ縲Ｑlacement 縺ｯ辟｡隕悶＆繧後ｋ縲・   readonly spawnTable: readonly SpawnEntry[] = [
+-    { shape: 'rect',    placement: 'ground', weightStart: 6, weightEnd: 4, wRange: [24, 40], hRange: [22, 40], safeChance: 0.25 },
+-    { shape: 'diamond', placement: 'float',  weightStart: 3, weightEnd: 6, wRange: [26, 36], hRange: [26, 36], safeChance: 0.2 },
+-    { shape: 'pillar',  placement: 'air',    weightStart: 1, weightEnd: 4, wRange: [13, 19], hRange: [42, 68], safeChance: 0.15 },
+-    { shape: 'spike',   placement: 'ground', weightStart: 0, weightEnd: 3, wRange: [22, 35], hRange: [30, 48], safeChance: 0.15 },
++    { shape: 'diamond', placement: 'air', weightStart: 2, weightEnd: 6, wRange: [24, 34], hRange: [26, 38], safeChance: 0 },
++    { shape: 'rect',    placement: 'air', weightStart: 1, weightEnd: 4, wRange: [40, 60], hRange: [24, 36], safeChance: 0 },
++    { shape: 'pillar',  placement: 'air', weightStart: 1, weightEnd: 5, wRange: [12, 18], hRange: [40, 64], safeChance: 0 },
+   ]
+ 
++  // 笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武
++  // 閭梧勹・磯ｫ倬ｫ伜ｺｦ縺ｮ遨ｺ繝ｻ髮ｲ豬ｷ・・+  // 笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武
++
++  // 驕譎ｯ: 遨ｺ繧ｰ繝ｩ繝・・繧ｷ繝ｧ繝ｳ + 驕譎ｯ髮ｲ・郁埋縺上・蟆上＆縺擾ｼ峨ゆｸ翫°繧我ｸ九∈豬√ｌ繧九・+  // engine 縺梧ｸ｡縺・offsetX = distance * parallax.far 繧・Y 繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ驥上→縺励※菴ｿ縺・・   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
+-    // 譏滄峇・郁､・焚縺ｮ謾ｾ蟆・げ繝ｩ繝・・繧ｷ繝ｧ繝ｳ・・-    const nebulae = [
+-      { cx: 0.2, cy: 0.3, r: 180, color: '#1a0044' },
+-      { cx: 0.7, cy: 0.6, r: 220, color: '#002244' },
+-      { cx: 0.5, cy: 0.15, r: 150, color: '#220033' },
+-    ]
+-    const scroll = offsetX * 0.04
+-    for (const nb of nebulae) {
+-      const nx = (nb.cx * W - scroll) % W
+-      const ny = nb.cy * gY
+-      ctx.globalAlpha = 0.12
+-      const grad = ctx.createRadialGradient(nx, ny, 0, nx, ny, nb.r)
+-      grad.addColorStop(0, nb.color)
+-      grad.addColorStop(1, 'transparent')
+-      ctx.fillStyle = grad
+-      ctx.fillRect(0, 0, W, gY)
++    const scrollY = offsetX   // Y 譁ｹ蜷代せ繧ｯ繝ｭ繝ｼ繝ｫ驥擾ｼ・istance ﾃ・parallax.far・・+    const H  = gY
++    const sg = this.farSkyGrad
++    const c  = this.farCloudCfg
++
++    // 遨ｺ繧ｰ繝ｩ繝・・繧ｷ繝ｧ繝ｳ: 荳企Κ #0a1628・域ｷｱ縺・､懃ｩｺ・俄・ 荳矩Κ #1a4a7a・域・繧九＞髱抵ｼ・+    const grad = ctx.createLinearGradient(0, 0, 0, H)
++    grad.addColorStop(0, sg.top)
++    grad.addColorStop(1, sg.bot)
++    ctx.fillStyle = grad
++    ctx.fillRect(0, 0, W, H)
++
++    // 驕譎ｯ縺ｮ髮ｲ: 繧ｿ繧､繝ｫ蛻・牡縺励※ Y 繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縲｀ath.sin 繝吶・繧ｹ豎ｺ螳夂噪驟咲ｽｮ
++    const sector = Math.floor(scrollY / c.tileH)
++    const rows   = Math.ceil(H / c.tileH) + 2
++    for (let s = sector + 1; s >= sector - rows; s--) {
++      const baseY = scrollY - s * c.tileH
++      for (let i = 0; i < c.count; i++) {
++        const seed = s * 83.7 + i * 29.3
++        const cx   = this._rand(seed)             * W
++        const cy   = baseY + this._rand(seed + 1) * c.tileH
++        if (cy + c.minR + c.rangeR < 0 || cy - c.minR - c.rangeR > H) continue
++        const r  = c.minR + this._rand(seed + 2) * c.rangeR
++        const a  = c.alphaBase + this._rand(seed + 3) * c.alphaRange
++        const ci = Math.floor(this._rand(seed + 4) * c.colors.length)
++        ctx.fillStyle = `${c.colors[ci]}${a.toFixed(2)})`
++        this._drawCloud(ctx, cx, cy, r)
++      }
+     }
+-    ctx.globalAlpha = 1
+   }
+ 
++  // 荳ｭ譎ｯ: 髮ｲ蝪奇ｼ・tx.arc 縺ｮ邨・∩蜷医ｏ縺幢ｼ峨ｒ蜈ｨ逕ｻ髱｢縺ｫ謨｣繧峨・繧峨○繧九・+  // engine 縺梧ｸ｡縺・offsetX = distance * parallax.mid 繧・Y 繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ驥上→縺励※菴ｿ縺・ｼ磯□譎ｯ繧医ｊ騾溘＞・峨・   drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
+-    // 豬ｮ驕翫☆繧句ｰ乗ヱ譏溽ｾ､
+-    ctx.globalAlpha = 0.22
+-    ctx.fillStyle = '#0a0a1a'
+-    const sector = Math.floor(offsetX / 400)
+-    for (let s = sector - 1; s <= sector + 2; s++) {
+-      const base = s * 400 - offsetX
+-      for (let i = 0; i < 4; i++) {
+-        const h = (s * 1637 + i * 53) & 0xffff
+-        const ax = base + (h % 380)
+-        const ay = gY * 0.1 + ((h >> 4) % Math.floor(gY * 0.75))
+-        const aw = 20 + (h >> 8) % 45
+-        const ah = 10 + (h >> 10) % 22
+-        ctx.beginPath()
+-        ctx.ellipse(ax, ay, aw / 2, ah / 2, (h & 0xff) * 0.04, 0, Math.PI * 2)
+-        ctx.fill()
++    const scrollY = offsetX   // distance ﾃ・1.5・磯□譎ｯ繧医ｊ騾溘＞ Y 繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ・・+    const H       = gY
++    const c       = this.midCloudCfg
++    const sector  = Math.floor(scrollY / c.tileH)
++    const rows    = Math.ceil(H / c.tileH) + 2
++
++    for (let s = sector + 1; s >= sector - rows; s--) {
++      const baseY = scrollY - s * c.tileH
++      for (let i = 0; i < c.count; i++) {
++        const seed = s * 61.3 + i * 19.7
++        const cx   = this._rand(seed)             * W
++        const cy   = baseY + this._rand(seed + 1) * c.tileH
++        if (cy + c.minR + c.rangeR < 0 || cy - c.minR - c.rangeR > H) continue
++        const r  = c.minR + this._rand(seed + 2) * c.rangeR
++        const a  = c.alphaBase + this._rand(seed + 3) * c.alphaRange
++        const ci = Math.floor(this._rand(seed + 4) * c.colors.length)
++        ctx.fillStyle = `${c.colors[ci]}${a.toFixed(2)})`
++        this._drawCloud(ctx, cx, cy, r)
+       }
+     }
+-    // 驕譁ｹ繝阪ン繝･繝ｩ蜈会ｼ磯搨邏ｫ・・-    ctx.globalAlpha = 0.06
+-    const nx = (W * 0.5 - offsetX * 0.08) % W
+-    const grad = ctx.createRadialGradient(nx, gY * 0.3, 0, nx, gY * 0.3, 300)
+-    grad.addColorStop(0, '#4466ff')
+-    grad.addColorStop(1, 'transparent')
+-    ctx.fillStyle = grad
+-    ctx.fillRect(0, 0, W, gY)
+-    ctx.globalAlpha = 1
+   }
+ 
++  // 蜑肴勹: 繝薙ロ繝・ヨ + 蝗幃嚆 HUD 繝悶Λ繧ｱ繝・ヨ・域ｨｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ蜑肴署縺ｮ貍泌・縺ｯ蟒・ｭ｢・峨・+  drawForeground(ctx: CanvasRenderingContext2D, _offsetX: number, W: number, H: number, _gY: number): void {
++    const hc = this.hudColors
++    ctx.strokeStyle = hc.bracket
++    ctx.lineWidth = 2
++    const m = 18, len = 26
++    const corners = [
++      [m, m, 1, 1], [W - m, m, -1, 1], [m, H - m, 1, -1], [W - m, H - m, -1, -1],
++    ] as const
++    for (const [px, py, dx, dy] of corners) {
++      ctx.beginPath()
++      ctx.moveTo(px, py + dy * len)
++      ctx.lineTo(px, py)
++      ctx.lineTo(px + dx * len, py)
++      ctx.stroke()
++    }
++    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.72)
++    vg.addColorStop(0, 'rgba(0,0,0,0)')
++    vg.addColorStop(1, hc.vignette)
++    ctx.fillStyle = vg
++    ctx.fillRect(0, 0, W, H)
++  }
++
++  // 髮ｲ縺ｮ蝪奇ｼ・rc 縺ｮ邨・∩蜷医ｏ縺幢ｼ・+  private _drawCloud(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
++    const lobes = [[-r, 0.2 * r, 0.7], [0, -0.2 * r, 1.0], [r, 0.15 * r, 0.75], [r * 1.8, 0.3 * r, 0.5]] as const
++    for (const [dx, dy, rr] of lobes) {
++      ctx.beginPath()
++      ctx.arc(cx + dx, cy + dy, r * rr, 0, Math.PI * 2)
++      ctx.fill()
++    }
++  }
++
++  // Math.sin 繝吶・繧ｹ縺ｮ豎ｺ螳夂噪謫ｬ莨ｼ荵ｱ謨ｰ・・..1・・+  private _rand(n: number): number {
++    const x = Math.sin(n * 12.9898) * 43758.5453
++    return x - Math.floor(x)
++  }
++
++  // 笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武
++  // 繝励Ξ繧､繝､繝ｼ・郁ｿ台ｻ｣謌ｦ髣俶ｩ溘・菫ｯ迸ｰ隕也せ繝ｻ荳雁髄縺搾ｼ・+  // 笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武
++
+   drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, _onGround: boolean, _runCycle: number): void {
+-    const t = performance.now() / 60
+-    // 讖滉ｽ難ｼ亥ｰ丞梛荳芽ｧ呈姶髣俶ｩ溘・荳雁髄縺搾ｼ・-    ctx.fillStyle = '#aaddff'
+-    ctx.beginPath()
+-    ctx.moveTo(w / 2, 0)               // 讖滄ｦ厄ｼ井ｸ奇ｼ・-    ctx.lineTo(w * 0.05, h * 0.85)    // 蟾ｦ蠕梧婿
+-    ctx.lineTo(w * 0.3, h * 0.65)     // 蟾ｦ蜀・・
+-    ctx.lineTo(w / 2, h * 0.75)       // 蠕梧婿荳ｭ螟ｮ
+-    ctx.lineTo(w * 0.7, h * 0.65)     // 蜿ｳ蜀・・
+-    ctx.lineTo(w * 0.95, h * 0.85)    // 蜿ｳ蠕梧婿
+-    ctx.closePath()
++    const cx = w / 2
++    const jc = this.jetColors
++
++    // 蠕梧婿繧ｨ繝ｳ繧ｸ繝ｳ轤趣ｼ域ｩ滉ｽ薙ｈ繧雁・縺ｫ謠上＞縺ｦ閭碁擇縺ｸ・・+    const jitter = Math.random() * 4
++    ctx.fillStyle = jc.flameTip
++    ctx.beginPath()
++    ctx.moveTo(w * 0.38, h * 0.82); ctx.lineTo(cx, h + 22 + jitter * 2); ctx.lineTo(w * 0.62, h * 0.82)
++    ctx.closePath(); ctx.fill()
++    ctx.fillStyle = jc.flameMid
++    ctx.beginPath()
++    ctx.moveTo(w * 0.42, h * 0.82); ctx.lineTo(cx, h + 12 + jitter); ctx.lineTo(w * 0.58, h * 0.82)
++    ctx.closePath(); ctx.fill()
++    ctx.fillStyle = jc.flameCore
++    ctx.beginPath()
++    ctx.moveTo(w * 0.46, h * 0.82); ctx.lineTo(cx, h + 6 + jitter); ctx.lineTo(w * 0.54, h * 0.82)
++    ctx.closePath(); ctx.fill()
++
++    // 讖滉ｽ薙げ繝ｩ繝・・繧ｷ繝ｧ繝ｳ・井ｸｭ螟ｮ縺梧・繧九＞驥大ｱ槫・豐｢・・+    const bodyGrad = ctx.createLinearGradient(0, 0, w, 0)
++    bodyGrad.addColorStop(0, jc.bodyDark)
++    bodyGrad.addColorStop(0.5, jc.bodyLight)
++    bodyGrad.addColorStop(1, jc.bodyDark)
++
++    // 荳ｻ鄙ｼ・亥ｾ碁鄙ｼ・・+    ctx.fillStyle = bodyGrad
++    ctx.beginPath()
++    ctx.moveTo(cx, h * 0.30)
++    ctx.lineTo(w * 0.02, h * 0.72)
++    ctx.lineTo(w * 0.20, h * 0.74)
++    ctx.lineTo(cx, h * 0.64)
++    ctx.lineTo(w * 0.80, h * 0.74)
++    ctx.lineTo(w * 0.98, h * 0.72)
++    ctx.closePath(); ctx.fill()
++
++    // 蟆ｾ鄙ｼ
++    ctx.fillStyle = jc.bodyDark
++    ctx.beginPath()
++    ctx.moveTo(cx, h * 0.72)
++    ctx.lineTo(w * 0.30, h * 0.96)
++    ctx.lineTo(w * 0.42, h * 0.96)
++    ctx.lineTo(cx, h * 0.80)
++    ctx.lineTo(w * 0.58, h * 0.96)
++    ctx.lineTo(w * 0.70, h * 0.96)
++    ctx.closePath(); ctx.fill()
++
++    // 讖滉ｽ難ｼ域ｩ滄ｦ悶・荳奇ｼ・+    ctx.fillStyle = bodyGrad
++    ctx.beginPath()
++    ctx.moveTo(cx, 0)
++    ctx.lineTo(w * 0.40, h * 0.45)
++    ctx.lineTo(w * 0.42, h * 0.92)
++    ctx.lineTo(w * 0.58, h * 0.92)
++    ctx.lineTo(w * 0.60, h * 0.45)
++    ctx.closePath(); ctx.fill()
++
++    // 讖滉ｽ薙お繝・ず繝上う繝ｩ繧､繝・+    ctx.strokeStyle = jc.edge
++    ctx.lineWidth = 1
++    ctx.beginPath()
++    ctx.moveTo(cx, 0); ctx.lineTo(w * 0.40, h * 0.45)
++    ctx.moveTo(cx, 0); ctx.lineTo(w * 0.60, h * 0.45)
++    ctx.stroke()
++
++    // 繧ｭ繝｣繝弱ヴ繝ｼ
++    ctx.fillStyle = jc.canopy
++    ctx.beginPath()
++    ctx.ellipse(cx, h * 0.30, w * 0.10, h * 0.13, 0, 0, Math.PI * 2)
++    ctx.fill()
++    ctx.globalAlpha = 0.5
++    ctx.fillStyle = jc.canopyGlow
++    ctx.beginPath()
++    ctx.ellipse(cx, h * 0.27, w * 0.05, h * 0.07, 0, 0, Math.PI * 2)
+     ctx.fill()
++    ctx.globalAlpha = 1
++  }
++
++  // 笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武
++  // 繝上じ繝ｼ繝会ｼ域雰讖溘・辷・茶讖溘・繝溘し繧､繝ｫ・・+  // 笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武笊絶武
+ 
+-    // 繧ｳ繝・け繝斐ャ繝茨ｼ亥・・・-    ctx.fillStyle = '#66bbff'
++  drawHazard(ctx: CanvasRenderingContext2D, hazard: Hazard, sx: number, world: MutableWorld): boolean {
++    const x  = sx
++    const y  = hazard.y
++    const w  = hazard.w
++    const hh = hazard.h
++
++    ctx.save()
++    ctx.shadowColor = hazard.glowColor
++    ctx.shadowBlur  = this.hazardConfig.glowBlur
++
++    switch (hazard.shape) {
++      case 'rect':   this._drawBomber(ctx, x, y, w, hh, hazard.color); break
++      case 'pillar': this._drawMissile(ctx, x, y, w, hh, hazard.color); break
++      default:       this._drawEnemyFighter(ctx, x, y, w, hh, hazard.color)
++    }
++
++    ctx.shadowBlur = 0
++    if (world.rules.features.has('enemy_hp') && hazard.maxHp > 1) {
++      this._drawHpBar(ctx, x, y, w, hazard.hp, hazard.maxHp)
++    }
++    ctx.restore()
++    return true
++  }
++
++  // diamond 竊・謨ｵ謌ｦ髣俶ｩ滂ｼ域ｩ滄ｦ悶′荳九・襍､縺ｿ縺後°縺｣縺溘す繝ｫ繧ｨ繝・ヨ・・+  private _drawEnemyFighter(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string): void {
++    const cx   = x + w / 2
++    const ec   = this.enemyColors
++    const grad = ctx.createLinearGradient(x, y, x + w, y)
++    grad.addColorStop(0, ec.fill)
++    grad.addColorStop(0.5, color)
++    grad.addColorStop(1, ec.fill)
++
++    ctx.fillStyle = grad
+     ctx.beginPath()
+-    ctx.arc(w / 2, h * 0.3, h * 0.14, 0, Math.PI * 2)
++    ctx.moveTo(cx, y + h * 0.70)
++    ctx.lineTo(x + w * 0.02, y + h * 0.28)
++    ctx.lineTo(x + w * 0.20, y + h * 0.26)
++    ctx.lineTo(cx, y + h * 0.36)
++    ctx.lineTo(x + w * 0.80, y + h * 0.26)
++    ctx.lineTo(x + w * 0.98, y + h * 0.28)
++    ctx.closePath(); ctx.fill()
++
++    ctx.beginPath()
++    ctx.moveTo(cx, y + h)
++    ctx.lineTo(x + w * 0.40, y + h * 0.55)
++    ctx.lineTo(x + w * 0.42, y + h * 0.08)
++    ctx.lineTo(x + w * 0.58, y + h * 0.08)
++    ctx.lineTo(x + w * 0.60, y + h * 0.55)
++    ctx.closePath(); ctx.fill()
++
++    ctx.fillStyle = ec.canopy
++    ctx.beginPath()
++    ctx.ellipse(cx, y + h * 0.62, w * 0.09, h * 0.11, 0, 0, Math.PI * 2)
++    ctx.fill()
++  }
++
++  // rect 竊・辷・茶讖滂ｼ域ｨｪ髟ｷ繝ｻ驥崎｣・抜繝ｻ隍・焚繧ｨ繝ｳ繧ｸ繝ｳ・・+  private _drawBomber(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string): void {
++    const bc = this.bomberColors
++    const cx = x + w / 2
++
++    ctx.fillStyle = bc.body
++    this._roundRect(ctx, x, y + h * 0.40, w, h * 0.22, 3)
++    ctx.fill()
++
++    const grad = ctx.createLinearGradient(x, y, x, y + h)
++    grad.addColorStop(0, bc.bodyEdge)
++    grad.addColorStop(1, bc.body)
++    ctx.fillStyle = grad
++    this._roundRect(ctx, x + w * 0.06, y + h * 0.30, w * 0.88, h * 0.45, Math.min(6, h * 0.2))
+     ctx.fill()
+ 
+-    // 繧ｨ繝ｳ繧ｸ繝ｳ轤趣ｼ井ｸ九°繧牙匐蜃ｺ繝ｻ謠ｺ繧峨℃・・-    const flame1 = `hsl(${(t * 3) % 60}, 100%, 65%)`
+-    const flame2 = `hsl(${(t * 5 + 30) % 60 + 15}, 100%, 55%)`
++    ctx.fillStyle = color
++    ctx.beginPath()
++    ctx.moveTo(cx, y + h)
++    ctx.lineTo(cx - w * 0.10, y + h * 0.72)
++    ctx.lineTo(cx + w * 0.10, y + h * 0.72)
++    ctx.closePath(); ctx.fill()
++
++    ctx.fillStyle = bc.engine
++    for (const fx of [0.22, 0.40, 0.60, 0.78]) {
++      ctx.beginPath()
++      ctx.arc(x + w * fx, y + h * 0.62, Math.max(2, w * 0.03), 0, Math.PI * 2)
++      ctx.fill()
++    }
++  }
++
++  // pillar 竊・繝溘し繧､繝ｫ・育ｴｰ髟ｷ縺・・遲偵・蠕梧婿縺ｫ轤趣ｼ・+  private _drawMissile(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string): void {
++    const mc = this.missileColors
++    const cx = x + w / 2
++
+     const jitter = Math.random() * 5
+-    ctx.fillStyle = flame1
++    ctx.fillStyle = mc.flame
++    ctx.globalAlpha = 0.8
+     ctx.beginPath()
+-    ctx.moveTo(w * 0.3, h * 0.68)
+-    ctx.lineTo(w * 0.4, h + 10 + jitter)
+-    ctx.lineTo(w * 0.6, h + 10 + jitter)
+-    ctx.lineTo(w * 0.7, h * 0.68)
+-    ctx.closePath()
+-    ctx.fill()
+-    ctx.globalAlpha = 0.6
+-    ctx.fillStyle = flame2
++    ctx.moveTo(x + w * 0.30, y); ctx.lineTo(cx, y - 12 - jitter); ctx.lineTo(x + w * 0.70, y)
++    ctx.closePath(); ctx.fill()
++    ctx.globalAlpha = 1
++
++    const grad = ctx.createLinearGradient(x, y, x + w, y)
++    grad.addColorStop(0, color)
++    grad.addColorStop(0.5, mc.body)
++    grad.addColorStop(1, color)
++    ctx.fillStyle = grad
++    ctx.fillRect(x + w * 0.20, y + h * 0.12, w * 0.60, h * 0.72)
++
++    ctx.fillStyle = mc.body
+     ctx.beginPath()
+-    ctx.moveTo(w * 0.4, h * 0.7)
+-    ctx.lineTo(w / 2, h + 20 + jitter * 2)
+-    ctx.lineTo(w * 0.6, h * 0.7)
+-    ctx.closePath()
++    ctx.moveTo(x + w * 0.20, y + h * 0.20); ctx.lineTo(x, y + h * 0.05); ctx.lineTo(x + w * 0.20, y + h * 0.05); ctx.closePath()
++    ctx.moveTo(x + w * 0.80, y + h * 0.20); ctx.lineTo(x + w, y + h * 0.05); ctx.lineTo(x + w * 0.80, y + h * 0.05); ctx.closePath()
+     ctx.fill()
+-    ctx.globalAlpha = 1
+ 
+-    // 繧ｦ繧｣繝ｳ繧ｰ繧ｨ繝・ず・医ワ繧､繝ｩ繧､繝茨ｼ・-    ctx.strokeStyle = '#88ccff'
+-    ctx.lineWidth = 1.5
++    ctx.fillStyle = mc.head
+     ctx.beginPath()
+-    ctx.moveTo(w * 0.05, h * 0.85)
+-    ctx.lineTo(w / 2, 0)
+-    ctx.lineTo(w * 0.95, h * 0.85)
+-    ctx.stroke()
++    ctx.moveTo(cx, y + h); ctx.lineTo(x + w * 0.20, y + h * 0.84); ctx.lineTo(x + w * 0.80, y + h * 0.84)
++    ctx.closePath(); ctx.fill()
++  }
++
++  // enemy_hp 逕ｨ繧ｻ繧ｰ繝｡繝ｳ繝亥ｼ・HP 繝舌・
++  private _drawHpBar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, hp: number, maxHp: number): void {
++    const b    = this.hpBar
++    const segW = (w - b.segGap * (maxHp - 1)) / maxHp
++    const barY = y - b.offsetY
++    const color = hp / maxHp > b.threshold ? b.high : b.low
++    for (let i = 0; i < maxHp; i++) {
++      const segX = x + i * (segW + b.segGap)
++      ctx.fillStyle = b.bg
++      ctx.fillRect(segX, barY, segW, b.height)
++      if (i < hp) {
++        ctx.fillStyle = color
++        ctx.fillRect(segX, barY, segW, b.height)
++      }
++    }
+   }
+ }
+ 

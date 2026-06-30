@@ -1,15 +1,12 @@
 {
-  "$schema": "../../../schemas/genre.schema.json",
   "id": "glitch",
   "label": "壊れたゲーム",
   "thresholds": {},
-  "enableFeatures": [],
-  "disableFeatures": ["auto_run", "movement", "shoot", "hp", "exp"],
-  "scoreFormula": "distance * 0.1",
-  "manualReveal": "説明書が矛盾して読めなくなりました。",
-  "theme": "horror",
-  "bgColor": "#0a0000",
-  "gravity": 1600,
-  "endingFlavor": "説明書は矛盾に満ち、文字が滲み、行が崩れた。しかし、その壊れた状態自体が一つの完成形だったのかもしれな",
-  "environment": "ground"
+  "enableFeatures": ["movement", "hp"],
+  "disableFeatures": [],
+  "scoreFormula": "distance * 0.1 + survivedSec * 2",
+  "manualReveal": "説明書が壊れました。もう何をすべきか分かりません。",
+  "theme": "glitch",
+  "bgColor": "#0a0a0a",
+  "endingFlavor": "あなたが選んだ矛盾が、ゲームそのものを壊しました。これは誰も予想しなかった結末です。"
 }

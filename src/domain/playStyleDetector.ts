@@ -1,214 +1,165 @@
-import type { ActionStats, DetectedPlayStyle, PlayStyleResult, GenreParams, GenreParam } from './types'
+import type { ActionStats, DetectedPlayStyle, PlayStyleResult } from './types'
 
 // ─────────────────────────────────────────────────────────────
 // プレイスタイル検出の閾値
-// これらの値は実測データに基づいて調整する
 // ─────────────────────────────────────────────────────────────
 
-/** ジャンプレートの閾値 */
-const JUMP_RATE_LOW = 0.015     // これ未満: low_jumper
-const JUMP_RATE_HIGH = 0.07     // これ超過: jump_spammer
+/** 統計量がこの値未満だと信頼度が下がります */
+const MIN_MEANINGFUL_TICKS = 300
 
-/** 左右移動比率の閾値 */
-const LEFT_DOMINANCE_RATIO = 1.3  // left/right がこれ以上: left_runner
+/** 各スタイルのスコア計算で使用する重み係数 */
+const WEIGHTS = {
+  /** shotRate の重み（攻撃的判定） */
+  shotRate: 3.0,
+  /** jumpRate の重み（防御的判定） */
+  jumpRate: 2.0,
+  /** moveRate の重み（探索的判定） */
+  moveRate: 1.5,
+  /** collisionRate の重み（混沌判定） */
+  collisionRate: 2.5,
+  /** itemsCollected の重み（探索的判定） */
+  itemRate: 1.0,
+} as const
 
-/** 衝突回数の閾値（ticks 1000あたり） */
-const COLLISION_RATE_HIGH = 0.005  // これ超過: collision_prone
+/** 各スタイルの判定に使用する最低閾値（rate = count / ticks * 60） */
+const THRESHOLDS = {
+  /** 攻撃的と判定する最低射撃レート（フレームあたりの射撃数） */
+  aggressiveShotRate: 0.02,
+  /** 防御的と判定する最低ジャンプレート */
+  defensiveJumpRate: 0.015,
+  /** 探索的と判定する最低移動レート */
+  explorerMoveRate: 0.025,
+  /** 混沌と判定する最低衝突レート */
+  chaoticCollisionRate: 0.005,
+  /** 消極的と判定する最高操作レート合計 */
+  passiveMaxTotalRate: 0.01,
+  /** 均衡と判定する最低バランス比率（どの操作も全体の30%以下） */
+  balancedMinRatio: 0.3,
+} as const
 
-/** 右移動レートの閾値（高速移動判定） */
-const SPEED_DEMON_RATE = 0.06  // これ超過: speed_demon
+/** 各スタイルのスコア計算で使用する補正係数 */
+const MULTIPLIERS = {
+  /** ダッシュの防御的スコアへの補正係数 */
+  dashDefensive: 1.5,
+  /** アイテム収集の探索的スコアへの補正係数 */
+  itemExplorer: 10,
+  /** 均衡スコアの倍率 */
+  balancedRatio: 2,
+  /** 消極的スコアの倍率 */
+  passiveRate: 50,
+} as const
 
-/** 射撃精度の閾値（sniper 判定） */
-const SHOT_RATE_LOW = 0.02     // 慎重な射撃
-const SHOT_RATE_MIN = 0.005    // 射撃がこれ以上ないと sniper 判定しない
-
-/** 隠しジャンルボーナスの係数 */
-const HIDDEN_GENRE_BONUS_MULTIPLIER = 1.5
-
-/** プレイスタイル検出の最小ticks数（ゲーム開始直後は検出しない） */
-const MIN_TICKS_FOR_DETECTION = 300
-
-/** ナラティブ表示の最小強度（これ未満はナラティブを表示しない） */
-const MIN_NARRATIVE_STRENGTH = 0.3
+/** フレームレート（fps）。ticks を秒数に変換するために使用する */
+const FRAMES_PER_SECOND = 60
 
 /**
- * Object.entries から取得したキーが GenreParam 型であるか検証する。
- * STYLE_GENRE_BONUS のキーはすべて GenreParam であることが保証されているため、
- * 実際には常に true を返す。ただし、TypeScript の型システムで安全な変換を行うために必要。
- */
-function isGenreParam(key: string): key is GenreParam {
-  return ['tempo', 'range', 'enemy', 'combo', 'growth', 'rhythm',
-          'stealth', 'vertical', 'aerial', 'survive', 'craft', 'speed'].includes(key)
-}
-
-// 各プレイスタイルが誘導するジャンルパラメータ
-const STYLE_GENRE_BONUS: Record<DetectedPlayStyle, GenreParams> = {
-  low_jumper:      { stealth: HIDDEN_GENRE_BONUS_MULTIPLIER, survive: 1 },
-  jump_spammer:    { aerial: HIDDEN_GENRE_BONUS_MULTIPLIER, combo: 1 },
-  left_runner:     { craft: HIDDEN_GENRE_BONUS_MULTIPLIER, growth: 0.5 },
-  collision_prone: { survive: HIDDEN_GENRE_BONUS_MULTIPLIER, enemy: 1 },
-  speed_demon:     { speed: HIDDEN_GENRE_BONUS_MULTIPLIER, tempo: 1 },
-  sniper:          { range: HIDDEN_GENRE_BONUS_MULTIPLIER, enemy: 0.5 },
-}
-
-/**
- * ActionStats からプレイスタイルを検出する。
+ * ActionStats からプレイスタイルを推定する純粋関数。
  *
- * 各スタイルは独立して評価され、複数のスタイルが同時に検出される可能性がある。
- * strength は 0〜1 の値で、1に近いほどそのスタイルの傾向が強い。
- *
- * 閾値は実測データに基づいて調整する。初期値は経験値に基づく概算。
+ * 各操作の「レート」（ticks に対する比率）を計算し、
+ * 閾値と比較して最も高いスコアを持つスタイルを返す。
+ * ticks が少ない場合は confidence を下げる。
  */
 export function detectPlayStyle(stats: ActionStats): PlayStyleResult {
-  // ticks が少ない（ゲーム開始直後）場合は検出しない
-  if (stats.ticks < MIN_TICKS_FOR_DETECTION) {
-    return { styles: [], dominant: null, genreBonus: {} }
-  }
+  const { jumps, moveRight, moveLeft, shots, ticks, collisions, itemsCollected, dashes } = stats
 
-  const styles: { style: DetectedPlayStyle; strength: number }[] = []
-
-  // ── ジャンプレート分析 ─────────────────────────────────────
-  const jumpRate = stats.jumps / stats.ticks
-  if (jumpRate < JUMP_RATE_LOW && stats.jumps > 0) {
-    // ジャンプをほとんどしない（ただし0回ではない）
-    const strength = Math.max(0, 1 - jumpRate / JUMP_RATE_LOW)
-    styles.push({ style: 'low_jumper', strength: Math.min(1, strength) })
-  } else if (jumpRate > JUMP_RATE_HIGH) {
-    // ジャンプ連打
-    const strength = Math.min(1, (jumpRate - JUMP_RATE_HIGH) / JUMP_RATE_HIGH)
-    styles.push({ style: 'jump_spammer', strength })
-  }
-
-  // ── 左右移動分析 ──────────────────────────────────────────
-  const totalMove = stats.moveLeft + stats.moveRight
-  if (totalMove > 0) {
-    const leftRatio = stats.moveLeft / Math.max(1, stats.moveRight)
-    if (leftRatio > LEFT_DOMINANCE_RATIO) {
-      // 左に走り続けている
-      const strength = Math.min(1, (leftRatio - LEFT_DOMINANCE_RATIO) / LEFT_DOMINANCE_RATIO)
-      styles.push({ style: 'left_runner', strength })
-    }
-
-    // 右移動レート（高速移動判定）
-    const rightRate = stats.moveRight / stats.ticks
-    if (rightRate > SPEED_DEMON_RATE) {
-      const strength = Math.min(1, (rightRate - SPEED_DEMON_RATE) / SPEED_DEMON_RATE)
-      styles.push({ style: 'speed_demon', strength })
+  // ticks が 0 なら passive を返す
+  if (ticks <= 0) {
+    return {
+      style: 'passive',
+      confidence: 0,
+      scores: defaultScores(),
     }
   }
 
-  // ── 衝突分析 ──────────────────────────────────────────────
-  const collisions = stats.collisions ?? 0
-  if (collisions > 0) {
-    const collisionRate = collisions / stats.ticks
-    if (collisionRate > COLLISION_RATE_HIGH) {
-      const strength = Math.min(1, collisionRate / (COLLISION_RATE_HIGH * 3))
-      styles.push({ style: 'collision_prone', strength })
+  // レート計算（normalize: 1秒あたりの操作数）
+  const seconds = ticks / FRAMES_PER_SECOND
+  const shotRate = shots / seconds
+  const jumpRate = jumps / seconds
+  const moveRate = (moveRight + moveLeft) / seconds
+  const collisionRate = collisions / seconds
+  const itemRate = itemsCollected / seconds
+  const dashRate = dashes / seconds
+
+  // 各スタイルのスコア計算
+  const scores: Record<DetectedPlayStyle, number> = {
+    aggressive: 0,
+    defensive: 0,
+    explorer: 0,
+    balanced: 0,
+    chaotic: 0,
+    passive: 0,
+  }
+
+  // 攻撃的: 射撃が多い
+  if (shotRate >= THRESHOLDS.aggressiveShotRate) {
+    scores.aggressive += WEIGHTS.shotRate * (shotRate / THRESHOLDS.aggressiveShotRate)
+  }
+
+  // 防御的: ジャンプ・ダッシュが多いが射撃が少ない
+  if (jumpRate >= THRESHOLDS.defensiveJumpRate) {
+    scores.defensive += WEIGHTS.jumpRate * (jumpRate / THRESHOLDS.defensiveJumpRate)
+  }
+  if (dashRate > 0) {
+    scores.defensive += dashRate * MULTIPLIERS.dashDefensive
+  }
+
+  // 探索的: 移動が多い
+  if (moveRate >= THRESHOLDS.explorerMoveRate) {
+    scores.explorer += WEIGHTS.moveRate * (moveRate / THRESHOLDS.explorerMoveRate)
+  }
+  if (itemRate > 0) {
+    scores.explorer += WEIGHTS.itemRate * itemRate * MULTIPLIERS.itemExplorer
+  }
+
+  // 混沌: 衝突が多く、操作が不規則
+  if (collisionRate >= THRESHOLDS.chaoticCollisionRate) {
+    scores.chaotic += WEIGHTS.collisionRate * (collisionRate / THRESHOLDS.chaoticCollisionRate)
+  }
+
+  // 均衡: 全操作が均等に分散している
+  const totalActions = shots + jumps + moveRight + moveLeft + (dashes ?? 0)
+  if (totalActions > 0) {
+    const maxSingle = Math.max(shots, jumps, moveRight + moveLeft, dashes ?? 0)
+    const balanceRatio = 1 - (maxSingle / totalActions)
+    // balancedMinRatio以上（どの操作も全体の30%以下）なら均衡候補
+    if (balanceRatio >= THRESHOLDS.balancedMinRatio) {
+      scores.balanced = balanceRatio * MULTIPLIERS.balancedRatio
     }
   }
 
-  // ── 射撃分析 ──────────────────────────────────────────────
-  if (stats.shots > 0) {
-    const shotRate = stats.shots / stats.ticks
-    if (shotRate >= SHOT_RATE_MIN && shotRate < SHOT_RATE_LOW) {
-      // 慎重に射撃している（sniper）
-      const strength = Math.min(1, (SHOT_RATE_LOW - shotRate) / SHOT_RATE_LOW)
-      styles.push({ style: 'sniper', strength })
+  // 消極的: 操作総数が少ない
+  const totalRate = (shots + jumps + moveRight + moveLeft) / seconds
+  if (totalRate < THRESHOLDS.passiveMaxTotalRate) {
+    scores.passive = (THRESHOLDS.passiveMaxTotalRate - totalRate) * MULTIPLIERS.passiveRate
+  }
+
+  // 信頼度計算
+  const confidence = Math.min(1, ticks / MIN_MEANINGFUL_TICKS)
+
+  // 最高スコアのスタイルを返す
+  let bestStyle: DetectedPlayStyle = 'balanced'
+  let bestScore = 0
+  for (const [style, score] of Object.entries(scores) as [DetectedPlayStyle, number][]) {
+    if (score > bestScore) {
+      bestScore = score
+      bestStyle = style
     }
   }
 
-  // 強度でソート
-  styles.sort((a, b) => b.strength - a.strength)
-
-  // 最も強いスタイル
-  const dominant = styles.length > 0 ? styles[0].style : null
-
-  // ジャンルボーナスを計算（上位2つのスタイルを考慮）
-  const genreBonus = computeGenreBonus(styles.slice(0, 2))
-
-  return { styles, dominant, genreBonus }
+  return {
+    style: bestStyle,
+    confidence: Math.round(confidence * 100) / 100,
+    scores,
+  }
 }
 
-/**
- * 検出されたプレイスタイルからジャンルボーナスパラメータを計算する。
- * 上位2つのスタイルのボーナスを合成する。
- */
-function computeGenreBonus(styles: { style: DetectedPlayStyle; strength: number }[]): GenreParams {
-  const bonus: GenreParams = {}
-
-  for (const { style, strength } of styles) {
-    const styleBonus = STYLE_GENRE_BONUS[style]
-    for (const [key, value] of Object.entries(styleBonus)) {
-      // 強度に比例してボーナスを付与
-      if (isGenreParam(key)) {
-        bonus[key] = (bonus[key] ?? 0) + value * strength
-      }
-    }
+function defaultScores(): Record<DetectedPlayStyle, number> {
+  return {
+    aggressive: 0,
+    defensive: 0,
+    explorer: 0,
+    balanced: 0,
+    chaotic: 0,
+    passive: 0,
   }
-
-  return bonus
-}
-
-/**
- * プレイスタイルを人間可读の文字列に変換する（デバッグ・UI表示用）。
- */
-export function describePlayStyle(style: DetectedPlayStyle): string {
-  const descriptions: Record<DetectedPlayStyle, string> = {
-    low_jumper: '慎重に地面を走るスタイル',
-    jump_spammer: '空中時間を好むスタイル',
-    left_runner: '後退を繰り返すスタイル',
-    collision_prone: '挑戦的に衝突するスタイル',
-    speed_demon: '高速で駆け抜けるスタイル',
-    sniper: '慎重に狙いを定めるスタイル',
-  }
-  return descriptions[style]
-}
-
-/**
- * プレイスタイルベースの隠し誘導メッセージを生成する。
- * EndingPanel で「あなたのプレイスタイルは〜」として表示される。
- */
-export function generatePlayStyleNarrative(result: PlayStyleResult): string | null {
-  if (!result.dominant || result.styles[0].strength < MIN_NARRATIVE_STRENGTH) {
-    return null
-  }
-
-  const { style, strength } = result.styles[0]
-  const narrativeMap: Record<DetectedPlayStyle, string[]> = {
-    low_jumper: [
-      'あなたはほとんどジャンプしなかった…',
-      '地面に這うようなプレイだった。',
-      'その慎重さが、別の世界を呼んだのかもしれな',
-    ],
-    jump_spammer: [
-      'あなたは空中を好んだようだ…',
-      '跳び続けるその姿は、まるで翼があるかのようだった。',
-      '空中があなたの本当の舞台だったのかもしれな',
-    ],
-    left_runner: [
-      'あなたは進まなかった…',
-      '後退を繰り返すその姿は、まるで時間を止めたようだった。',
-      '動かないことを選んだ結果、世界があなたを包み込んだのかもしれな',
-    ],
-    collision_prone: [
-      'あなたは何度も倒れた…',
-      'しかしその都度、立ち上がった。',
-      'その執念が、より過酷な世界を呼んだのかもしれな',
-    ],
-    speed_demon: [
-      'あなたは速かった…',
-      '風を切り裂くような速度で。',
-      'その速さが、レースの世界を呼んだのかもしれな',
-    ],
-    sniper: [
-      'あなたは慎重だった…',
-      '無駄な動きを排し、一撃を待った。',
-      'その集中力が、シューティングの世界を呼んだのかもしれな',
-    ],
-  }
-
-  const lines = narrativeMap[style]
-  // 強度に応じて表示行数を変える
-  const lineCount = strength > 0.7 ? 3 : strength > 0.4 ? 2 : 1
-  return lines.slice(0, lineCount).join('\n')
 }

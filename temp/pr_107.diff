@@ -1,0 +1,1028 @@
+﻿diff --git a/docs/genre-plugin.md b/docs/genre-plugin.md
+index c459c27..d5e2889 100644
+--- a/docs/genre-plugin.md
++++ b/docs/genre-plugin.md
+@@ -148,7 +148,7 @@ readonly scrollSpeedBonus = 50
+ | `onGenreLocked(world)` | 繧ｸ繝｣繝ｳ繝ｫ遒ｺ螳夂峩蠕後↓1蝗・| BGM螟画峩繝ｻ蛻晄悄繧ｨ繝輔ぉ繧ｯ繝・|
+ | `onUpdate(world, dt)` | 豈弱ヵ繝ｬ繝ｼ繝 | 繧ｸ繝｣繝ｳ繝ｫ蜈ｨ菴薙・邯咏ｶ壼・逅・|
+ | `drawHazard(ctx, hazard, sx, world)` | 繝上じ繝ｼ繝画緒逕ｻ蜑・| 繧ｫ繧ｹ繧ｿ繝繝上じ繝ｼ繝牙､冶ｦ具ｼ・true` 霑泌唆縺ｧ繝・ヵ繧ｩ繝ｫ繝域緒逕ｻ繧偵せ繧ｭ繝・・・・|
+-| `drawForeground(ctx, offsetX, W, H, gY)` | 繝代・繝・ぅ繧ｯ繝ｫ縺ｮ蠕・| 蜑肴勹繝ｬ繧､繝､繝ｼ・域ｳ｢繝ｻ髴ｧ縺ｪ縺ｩ・・|
++| `drawForeground(ctx, offsetX, W, H, gY)` | 繝励Ξ繧､繝､繝ｼ謠冗判縺ｮ蠕鯉ｼ・hake螟画鋤蜀・ｼ・| 蜑肴勹繝ｬ繧､繝､繝ｼ・域ｳ｢繝ｻ髴ｧ繝ｻ襍ｰ譟ｻ邱壹・HUD譫縺ｪ縺ｩ・・|
+ | `drawGenreHUD(ctx, world, W, H)` | 繝輔Ξ繝ｼ繝謠冗判縺ｮ譛蠕・| 繝懊せHP繝舌・繝ｻ繧ｿ繝ｯ繝ｼ谿区焚縺ｪ縺ｩ |
+ | `onPlayerJump(world)` | 繧ｸ繝｣繝ｳ繝励・迸ｬ髢・| 繧ｸ繝｣繝ｳ繝祐E繧ｭ繝･繝ｼ繝ｻ繧ｨ繝輔ぉ繧ｯ繝・|
+ | `onPlayerLand(world)` | 逹蝨ｰ縺ｮ迸ｬ髢・| 繝ｩ繝ｳ繝・ぅ繝ｳ繧ｰ繧ｨ繝輔ぉ繧ｯ繝・|
+diff --git a/docs/genre/README.md b/docs/genre/README.md
+new file mode 100644
+index 0000000..fb613ad
+--- /dev/null
++++ b/docs/genre/README.md
+@@ -0,0 +1,24 @@
++# 繧ｸ繝｣繝ｳ繝ｫ蛻･繝峨く繝･繝｡繝ｳ繝・+
++蜷・ず繝｣繝ｳ繝ｫ縺ｮ螳溯｣・ｩｳ邏ｰ繧偵∪縺ｨ繧√◆繝峨く繝･繝｡繝ｳ繝医ｒ邨ｱ諡ｬ縺吶ｋ繝・ぅ繝ｬ繧ｯ繝医Μ縲・+繧ｸ繝｣繝ｳ繝ｫ讓ｪ譁ｭ縺ｮ蜿取據繧ｷ繧ｹ繝・Β繝ｻ繝輔ぅ繝ｼ繝√Ε繝ｼ繧ｷ繧ｹ繝・Β縺ｮ隗｣隱ｬ縺ｯ隕ｪ繝・ぅ繝ｬ繧ｯ繝医Μ縺ｮ
++[genre-system.md](../genre-system.md) / [feature-system.md](../feature-system.md) 繧貞盾辣ｧ縲・+
++## 繝峨く繝･繝｡繝ｳ繝井ｸ隕ｧ
++
++| 繧ｸ繝｣繝ｳ繝ｫID | 繝峨く繝･繝｡繝ｳ繝・| 讎りｦ・|
++|-----------|-------------|------|
++| `stg` | [stg-genre.md](./stg-genre.md) | 讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧ｷ繝･繝ｼ繝・ぅ繝ｳ繧ｰ・磯㍾蜉帙↑縺苓・逕ｱ遘ｻ蜍包ｼ句ｰ・茶・・|
++| `tetris` | [tetris-genre.md](./tetris-genre.md) | 關ｽ縺｡迚ｩ繝代ぜ繝ｫ・・0ﾃ・0繧ｰ繝ｪ繝・ラ繝ｻ7-bag繝ｻ繝ｩ繧､繝ｳ豸亥悉・・|
++
++## 險倩ｼ画婿驥・+
++蜷・ず繝｣繝ｳ繝ｫ繝峨く繝･繝｡繝ｳ繝医・莉･荳九ｒ蜷ｫ繧縺薙→繧呈耳螂ｨ縺吶ｋ縲・+
++- **讎りｦ・*: 縺昴・繧ｸ繝｣繝ｳ繝ｫ縺御ｽ輔〒縺ゅｋ縺九・讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ蜴溽せ縺九ｉ縺ｩ縺・､牙ｮｹ縺吶ｋ縺・+- **繧｢繝ｼ繧ｭ繝・け繝√Ε**: 髢｢騾｣繝輔ぃ繧､繝ｫ讒区・
++- **繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ**: `src/data/genres/<id>.json` 縺ｮ荳ｻ隕・・岼
++- **蜿取據譚｡莉ｶ**: 蜿取據縺ｫ蠢・ｦ√↑繝代Λ繝｡繝ｼ繧ｿ縺ｨ髢ｾ蛟､繝ｻ蛻・ｲ舌ヱ繧ｹ
++- **繧ｲ繝ｼ繝莉墓ｧ・*: 謫堺ｽ懊・繧ｹ繧ｳ繧｢繝ｻ蝗ｺ譛峨Γ繧ｫ繝九け繧ｹ
++- **繝薙ず繝･繧｢繝ｫ譁ｹ驥・*: 繝励Λ繧ｰ繧､繝ｳ縺ｮ謠冗判譁ｹ驥・+- **螳溯｣・ｸ翫・豕ｨ諢冗せ**
+diff --git a/docs/genre/stg-genre.md b/docs/genre/stg-genre.md
+new file mode 100644
+index 0000000..f93837c
+--- /dev/null
++++ b/docs/genre/stg-genre.md
+@@ -0,0 +1,170 @@
++# STG繧ｸ繝｣繝ｳ繝ｫ螳溯｣・ラ繧ｭ繝･繝｡繝ｳ繝・+
++## 讎りｦ・+
++MANUAL-OVERRIDE繧ｲ繝ｼ繝縺ｫ縺翫￠繧・`stg`・医す繝･繝ｼ繝・ぅ繝ｳ繧ｰ繧ｲ繝ｼ繝・峨ず繝｣繝ｳ繝ｫ縺ｮ螳溯｣・ｒ縺ｾ縺ｨ繧√ｋ縲・+讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧｢繧ｯ繧ｷ繝ｧ繝ｳ縺ｮ蜴溽せ・・base`・峨°繧峨∬ｪｬ譏取嶌縺ｮ驕ｸ謚槭ｒ遨阪∩驥阪・繧九％縺ｨ縺ｧ縲梧ｨｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｮ豬√ｌ繧剃ｿ昴▲縺溘∪縺ｾ謨ｵ繧呈茶縺｡關ｽ縺ｨ縺呎ｨｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧ｷ繝･繝ｼ繝・ぅ繝ｳ繧ｰ縲阪∈縺ｨ螟芽ｲ後☆繧九・+
++讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｮ髱｢蠖ｱ・亥承縺九ｉ霑ｫ繧矩囿螳ｳ迚ｩ繝ｻ閾ｪ蜍輔せ繧ｯ繝ｭ繝ｼ繝ｫ・峨ｒ谿九＠縺､縺､縲・㍾蜉帙ｒ縺ｪ縺上＠縺ｦ閾ｪ讖溘ｒ荳贋ｸ句ｷｦ蜿ｳ縺ｫ閾ｪ逕ｱ遘ｻ蜍輔＆縺帙∝ｰ・茶縺ｧ謨ｵ繧堤ｴ螢翫☆繧狗せ縺檎音蠕ｴ縲・+
++## 繧｢繝ｼ繧ｭ繝・け繝√Ε
++
++### 繝輔ぃ繧､繝ｫ讒区・
++
++```
++src/
++笏懌楳笏 data/
++笏・  笏懌楳笏 genres/stg.json              # 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ・磯明蛟､繝ｻ繝輔ぅ繝ｼ繝√Ε繝ｼ繝ｻ謫堺ｽ懊・繧ｹ繧ｳ繧｢蠑擾ｼ・+笏・  笏懌楳笏 config/shoot.json            # 蟆・茶繧ｷ繧ｹ繝・Β縺ｮ繝√Η繝ｼ繝九Φ繧ｰ蛟､・亥ｼｾ騾溘・騾｣蟆・俣髫斐・繧ｹ繧ｳ繧｢・・+笏・  笏披楳笏 manuals/action-branch.json   # STG縺ｸ閾ｳ繧句・蟯撰ｼ・.0-a-stg 繧ｨ繝ｳ繝医Μ・・+笏懌楳笏 genres/
++笏・  笏披楳笏 StgPlugin.ts                 # 隕冶ｦ壹ユ繝ｼ繝橸ｼ亥ｮ・ｮ呵レ譎ｯ繝ｻ螳・ｮ呵飴繝ｻ謨ｵ謠冗判繝ｻ蜑肴勹陬・｣ｾ繝ｻ謨ｵ驟咲ｽｮ繝・・繝悶Ν・・+笏懌楳笏 game/
++笏・  笏懌楳笏 systems/ShootFeature.ts      # 蟆・茶繝ｭ繧ｸ繝・け・亥ｼｾ縺ｮ逋ｺ蟆・・遘ｻ蜍輔・陦晉ｪ√・繧ｳ繝ｳ繝懶ｼ・+笏・  笏披楳笏 sideScroller.ts              # _updateHorizontal 縺ｧ gravity===0 譎ゅ・荳贋ｸ狗ｧｻ蜍輔ｒ蜃ｦ逅・+笏披楳笏 domain/types.ts                  # ManualTheme / FeatureId 蝙句ｮ夂ｾｩ
++```
++
++## 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ・・tg.json・・+
++| 鬆・岼              | 蛟､                                          |
++| ----------------- | ------------------------------------------- |
++| `id`              | `stg`                                       |
++| `label`           | 繧ｷ繝･繝ｼ繝・ぅ繝ｳ繧ｰ繧ｲ繝ｼ繝                        |
++| `thresholds`      | `range: 5`, `enemy: 5`                      |
++| `enableFeatures`  | `shoot`, `three_way`, `enemy_hp`            |
++| `disableFeatures` | `grid_stop`, `puzzle_solve`                 |
++| `scoreFormula`    | `kills * 120 + distance * 0.5 + combo * 80` |
++| `theme`           | `stg`                                       |
++| `bgColor`         | `#0d0d1a`                                   |
++| `environment`     | `space`                                     |
++| `gravity`         | `0`・磯㍾蜉帙↑縺暦ｼ・                            |
++
++### 謫堺ｽ懈婿豕・+
++| 繧ｭ繝ｼ  | 蜍穂ｽ・                                      |
++| ----- | ------------------------------------------ |
++| 竊・竊・  | 蟾ｦ蜿ｳ遘ｻ蜍・                                  |
++| 竊・竊・  | 荳贋ｸ狗ｧｻ蜍包ｼ磯㍾蜉帙↑縺励・縺溘ａ閾ｪ逕ｱ遘ｻ蜍包ｼ・        |
++| Z     | 蜑肴婿・亥承・峨∈蟆・茶                           |
++| Space | 繧ｸ繝｣繝ｳ繝暦ｼ・gravity === 0` 縺ｮ縺溘ａ螳溯ｳｪ辟｡蜉ｹ・・|
++
++## 繧ｸ繝｣繝ｳ繝ｫ蜿取據譚｡莉ｶ
++
++`range`・亥ｰ・ｨ九・驕霍晞屬諤ｧ・峨→ `enemy`・域雰蟇ｾ隕∫ｴ・峨・邏ｯ遨阪ヱ繝ｩ繝｡繝ｼ繧ｿ縺御ｸ｡譁ｹ縺ｨ繧る明蛟､繧定ｶ・∴繧九→STG縺ｸ蜿取據縺吶ｋ縲・+
++| 繝代Λ繝｡繝ｼ繧ｿ | 髢ｾ蛟､  |
++| ---------- | ----- |
++| `range`    | 5莉･荳・|
++| `enemy`    | 5莉･荳・|
++
++繝吶う繧ｺ蜿取據譁ｹ蠑擾ｼ井ｸｻ譁ｹ蠑擾ｼ峨〒縺ｯ縲∝推霆ｸ縺ｮ髢ｾ蛟､縺ｨ縺ｮ荵夜屬驥上°繧牙ｰ､蠎ｦ繧定ｨ育ｮ励＠莠句ｾ檎｢ｺ邇・〒遒ｺ螳壹☆繧九・+`range` 縺ｨ `enemy` 縺ｮ荳｡霆ｸ繧帝ｫ倥ａ縺ｫ謚ｼ縺嶺ｸ翫￡繧矩∈謚橸ｼ医碁囿螳ｳ迚ｩ繧呈茶縺｣縺ｦ蛟偵○繧九ｈ縺・↓縺吶ｋ縲阪↑縺ｩ驕霍晞屬繝ｻ謨ｵ蟇ｾ譁ｹ蜷代・繧ｫ繝ｼ繝会ｼ峨ｒ驥阪・繧九％縺ｨ縺ｧSTG縺ｫ蛻ｰ驕斐☆繧九・+
++### 蜿取據繝代せ
++
++`action-branch.json` 縺ｮ蛻・ｲ先惠縺九ｉ `8.0-a-stg` 繧ｨ繝ｳ繝医Μ縺ｧSTG縺檎｢ｺ螳壹☆繧九・+豢ｾ逕溘→縺励※縲∫ｸｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ迚医・ `aerial_stg`繝ｻ蠑ｾ蟷輔・ `bullet_hell` 縺ｪ縺ｩ霑醍ｸ√ず繝｣繝ｳ繝ｫ繧ょ酔縺伜・蟯占ｿ大ｍ縺九ｉ蛻・ｲ舌☆繧九・+
++## 繧ｲ繝ｼ繝莉墓ｧ・+
++### 閾ｪ讖溘・遘ｻ蜍包ｼ磯㍾蜉帙↑縺玲ｨｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ・・+
++- `gravity === 0` 縺ｮ縺ｨ縺阪～sideScroller.ts` 縺ｮ `_updateHorizontal` 縺後ず繝｣繝ｳ繝励・驥榊鴨蜃ｦ逅・ｒ螳悟・縺ｫ繧ｹ繧ｭ繝・・縺吶ｋ
++- `moveUp` / `moveDown` 繧ｭ繝ｼ蜈･蜉帙〒 `y` 蠎ｧ讓吶ｒ逶ｴ謗･蜍輔°縺呻ｼ磯溷ｺｦ縺ｯ `PLAYER_PHYSICS.runSpeed` 繧呈ｵ∫畑・・+- 繝励Ξ繧､繝､繝ｼ縺ｯ逕ｻ髱｢螟悶↓蜃ｺ縺ｪ縺・ｈ縺・け繝ｩ繝ｳ繝励＆繧後ｋ・・0 竕､ p.y 竕､ gY - p.h`・・+- 讓ｪ譁ｹ蜷代・騾壼ｸｸ縺ｮ讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ謖吝虚・郁・蜍輔せ繧ｯ繝ｭ繝ｼ繝ｫ繝ｻ蟾ｦ蜿ｳ遘ｻ蜍包ｼ峨ｒ邯ｭ謖・+
++### 謨ｵ縺ｮ蜃ｺ迴ｾ・・pawnTable・・+
++`StgPlugin` 縺ｮ `spawnTable` 縺ｯ蝨ｰ髱｢・・round・峨ｒ謖√◆縺壹∫ｩｺ荳ｭ・・ir・峨・豬ｮ驕奇ｼ・loat・我ｸｭ蠢・〒讒区・縺輔ｌ繧九・+
++| 蠖｢迥ｶ    | 驟咲ｽｮ  | weightStart 竊・weightEnd | 蛯呵・                  |
++| ------- | ----- | ----------------------- | ---------------------- |
++| diamond | float | 3 竊・6                   | 荳贋ｸ区険蟷・60縲・30       |
++| rect    | air   | 2 竊・5                   |                        |
++| diamond | float | 1 竊・5                   | 謖ｯ蟷・90縲・70繝ｻ閼亥虚騾溘ａ |
++| rect    | float | 0 竊・4                   | 謖ｯ蟷・40縲・10           |
++
++`weightStart` 菴弱ａ繝ｻ`weightEnd` 鬮倥ａ縺ｫ縺吶ｋ縺薙→縺ｧ縲∬ｷ晞屬縺碁ｲ繧縺ｻ縺ｩ謨ｵ縺ｮ蟇・ｺｦ縺悟｢励☆髮｣譏灘ｺｦ譖ｲ邱壹ｒ蠖｢謌舌☆繧九・+float 繧ｨ繝ｳ繝医Μ縺ｯ `floatAmpRange` 繧貞ｺ・ａ縺ｫ蜿悶ｊ縲∵雰縺御ｸ贋ｸ九↓謠ｺ繧後↑縺後ｉ霑ｫ繧九・+
++### 蟆・茶繧ｷ繧ｹ繝・Β・・hootFeature・・+
++`ShootFeature` 縺ｯ `shoot` / `three_way` / `enemy_hp` 縺ｪ縺ｩ縺ｮ繝輔ぅ繝ｼ繝√Ε繝ｼ繧呈球蠖薙☆繧九４TG縺ｧ縺ｯ3縺､縺吶∋縺ｦ縺梧怏蜉ｹ縲・+
++- **蟆・茶**: Z繧ｭ繝ｼ・・rules.controls.shoot`縲∵里螳・`z`・峨〒蜑肴婿縺ｸ蠑ｾ繧堤匱蟆・る｣蟆・俣髫斐・ `shoot.json` 縺ｮ `shotCooldown`・・.18遘抵ｼ・+- **3-way・・hree_way・・*: 蠑ｾ縺悟燕譁ｹ・区万繧∽ｸ贋ｸ九・3譁ｹ蜷代↓諡｡謨｣・・threeWaySpeedRatio` / `threeWayYRatio` 縺ｧ隗貞ｺｦ隱ｿ謨ｴ・・+- **謨ｵHP・・nemy_hp・・*: 謨ｵ縺・`hp` 繧呈戟縺｡縲∝ｼｾ縺悟ｽ薙◆繧九◆縺ｳ縺ｫ貂帛ｰ代・縺ｧ繧ｭ繝ｫ謌千ｫ・+- **1蠑ｾ1繝偵ャ繝・*: 雋ｫ騾壹↑縺励・逋ｺ縺ｮ蠑ｾ縺ｯ譛蛻昴↓蠖薙◆縺｣縺滓雰1菴薙・縺ｿ縺ｫ菴懃畑
++- **逕ｻ髱｢螟悶き繝ｪ繝ｳ繧ｰ**: 繝薙Η繝ｼ繝昴・繝亥､厄ｼ域ｨｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ譎ゅ・蟾ｦ蜿ｳ ﾂｱ100px・峨↓蜃ｺ縺溷ｼｾ縺ｯ髯､蜴ｻ
++
++### 繧ｹ繧ｳ繧｢繝ｻ繧ｳ繝ｳ繝・+
++- 1繧ｭ繝ｫ縺ゅ◆繧・`baseScorePerKill(200) ﾃ・combo` 繧貞刈邂励る｣邯壹く繝ｫ縺ｧ繧ｳ繝ｳ繝懷咲紫縺御ｼｸ縺ｳ繧・+- `comboTimer`・・comboResetTime` = 3.0遘抵ｼ我ｻ･蜀・↓谺｡縺ｮ繧ｭ繝ｫ縺後↑縺・→繧ｳ繝ｳ繝懊・0縺ｫ繝ｪ繧ｻ繝・ヨ
++- 繧ｹ繧ｳ繧｢繝昴ャ繝励い繝・・繧定・讖溷承荳翫↓陦ｨ遉ｺ
++- 譛邨ゅせ繧ｳ繧｢蠑擾ｼ・scoreFormula`・・ `kills * 120 + distance * 0.5 + combo * 80`
++
++### shoot.json 縺ｮ荳ｻ縺ｪ繝√Η繝ｼ繝九Φ繧ｰ蛟､
++
++| 繧ｭ繝ｼ                           | 蛟､     | 蜀・ｮｹ                 |
++| ------------------------------ | ------ | -------------------- |
++| `bulletSpeed`                  | 900    | 蠑ｾ騾・                |
++| `bulletWidth` / `bulletHeight` | 14 / 5 | 蠑ｾ繧ｵ繧､繧ｺ             |
++| `shotCooldown`                 | 0.18   | 騾｣蟆・俣髫費ｼ育ｧ抵ｼ・      |
++| `comboResetTime`               | 3.0    | 繧ｳ繝ｳ繝懃ｶｭ謖∵凾髢難ｼ育ｧ抵ｼ・|
++| `baseScorePerKill`             | 200    | 繧ｭ繝ｫ縺ゅ◆繧雁渕遉守せ     |
++| `threeWaySpeedRatio`           | 0.8    | 3-way諡｡謨｣蠑ｾ縺ｮ騾溷ｺｦ豈・ |
++| `threeWayYRatio`               | 0.6    | 3-way諡｡謨｣蠑ｾ縺ｮY譁ｹ蜷第ｯ・|
++
++## 繝薙ず繝･繧｢繝ｫ譁ｹ驥晢ｼ・tgPlugin・・+
++- **閭梧勹**: 螳・ｮ咏ｩｺ髢薙る□譎ｯ繝ｬ繧､繝､繝ｼ縺ｫ諱呈弌・亥ｷｨ螟ｧ繧ｰ繝ｭ繝ｼ・区悽菴難ｼ峨・譏滄峇・郁､・焚濶ｲ繧偵ｆ縺｣縺上ｊ豬√☆・峨・譏取ｻ・☆繧区・繧九＞譏溘∽ｸｭ譎ｯ繝ｬ繧､繝､繝ｼ縺ｫ諠第弌・医そ繧ｯ繧ｿ繝ｼ縺斐→縺ｫ豎ｺ螳夂噪驟咲ｽｮ繝ｻ荳驛ｨ縺ｯ繝ｪ繝ｳ繧ｰ莉倥″・峨ｒ謠冗判
++- **閾ｪ讖・*: 讓ｪ蜷代″縺ｮ螳・ｮ呎姶髣倩援縲ょ燕譁ｹ縺ｫ蟆悶▲縺滓･泌ｽ｢縺ｮ讖滉ｽ薙∝ｾ碁Κ繧ｦ繧｣繝ｳ繧ｰ縲∫匱蜈峨さ繝・け繝斐ャ繝医∽ｸ贋ｸ・蝓ｺ縺ｮ繧ｨ繝ｳ繧ｸ繝ｳ轤趣ｼ医Λ繝ｳ繝繝謠ｺ繧峨℃・・+- **謨ｵ・・drawHazard` 縺ｧ迢ｬ閾ｪ謠冗判・・*: 繝・ヵ繧ｩ繝ｫ繝医・蜊倡ｴ泌峙蠖｢繧剃ｸ頑嶌縺阪＠縲√Γ繧ｫ繝九き繝ｫ縺ｪ繝ｦ繝九ャ繝医→縺励※謠上″蛻・￠繧・+  - `diamond` 蠖｢迥ｶ 竊・**繧ｨ繧､繝ｪ繧｢繝ｳ謌ｦ髣俶ｩ滂ｼ・nterceptor・・*: 蟾ｦ縺ｫ蟆悶▲縺溷・隗偵ワ繝ｫ縲∵ｹｾ譖ｲ縺励◆荳贋ｸ九え繧｣繝ｳ繧ｰ縲√ヱ繝阪Ν繝ｩ繧､繝ｳ縲∬ц蜍輔☆繧狗匱蜈峨さ繧｢・亥腰逵ｼ・峨∝ｾ梧婿繧ｨ繝ｳ繧ｸ繝ｳ轤・+  - `rect` 蠖｢迥ｶ 竊・**陬・抜遐ｲ濶ｦ・・unship・・*: 隗剃ｸｸ縺ｮ陬・抜繝懊ョ繧｣縲∝ｷｦ蜑肴婿縺ｫ遯√″蜃ｺ縺吩ｸｻ遐ｲ繝舌Ξ繝ｫ・育ｲ蜿｣逋ｺ蜈会ｼ峨∵ｨｪ繝代ロ繝ｫ繝ｩ繧､繝ｳ縲∵・貊・☆繧九そ繝ｳ繧ｵ繝ｼ繝ｩ繧､繝・蝓ｺ縲∽ｸｭ螟ｮ繧ｻ繝ｳ繧ｵ繝ｼ繧｢繧､縲∝ｾ梧婿繧ｹ繝ｩ繧ｹ繧ｿ繝ｼ轤・蝓ｺ
++  - `enemy_hp` 譛牙柑譎ゅ・ HP 繧偵そ繧ｰ繝｡繝ｳ繝亥ｼ上・蟆丞梛繝舌・縺ｧ陦ｨ遉ｺ・域ｮ矩㍼縺ｧ邱鯛・讖吶↓螟牙喧・・+  - 濶ｲ縺ｯ `hazard.color` / `hazard.glowColor` 繧呈ｵ∫畑縺吶ｋ縺溘ａ縲《afe・磯搨・・ danger・域ｩ呻ｼ峨・隴伜挨諤ｧ縺ｯ菫晄戟
++- **蜑肴勹陬・｣ｾ・・drawForeground`・・*: 繝ｯ繝ｼ繝ｫ繝画緒逕ｻ縺ｮ謇句燕・医・繝ｬ繧､繝､繝ｼ縺ｮ蠕後・shake 螟画鋤蜀・ｼ峨↓ SF 陬・｣ｾ繧帝㍾縺ｭ繧・+  - 繧ｳ繝・け繝斐ャ繝磯｢ｨ HUD: 蝗幃嚆縺ｮ繝悶Λ繧ｱ繝・ヨ・倶ｸ顔ｫｯ縺ｮ繧ｹ繧ｭ繝｣繝翫・逶ｮ逶帙ｊ・医す繧｢繝ｳ・・+  - CRT 鬚ｨ縺ｮ阮・＞襍ｰ譟ｻ邱・+  - 逕ｻ髱｢蝗幃嚆繧定誠縺ｨ縺吶ン繝阪ャ繝・+  - 謇句燕繧帝ｫ倬溘〒豬√ｌ繧句・譚｡・医せ繝壹・繧ｹ繝繧ｹ繝医～offsetX` 繝代Λ繝ｩ繝・け繧ｹ・・+- **繧ｨ繝輔ぉ繧ｯ繝郁牡・・articleColors・・*: 繝偵ャ繝・`#88ffff`縲∵ｭｻ莠｡縺ｯ髱偵懃區縲懃ｴｫ邉ｻ縺ｮSF繝代Ξ繝・ヨ
++- **繝・・繝・*: 證苓牡閭梧勹・・bgColor: #0d0d1a`・会ｼ九す繧｢繝ｳ邉ｻ縺ｮ逋ｺ蜈峨〒邨ｱ荳
++
++### 謠冗判繝輔ャ繧ｯ縺ｮ蟋碑ｭｲ・医お繝ｳ繧ｸ繝ｳ騾｣謳ｺ・・+
++`sideScroller.ts` 縺ｮ繝ｬ繝ｳ繝繝ｩ縺後ず繝｣繝ｳ繝ｫ繝励Λ繧ｰ繧､繝ｳ縺ｮ謠冗判繝輔ャ繧ｯ縺ｫ蟋碑ｭｲ縺吶ｋ:
++
++- `_drawHazard` 縺ｯ謠冗判髢句ｧ区凾縺ｫ `plugin.drawHazard(ctx, hazard, sx, world)` 繧貞他縺ｳ縲～true` 縺瑚ｿ斐ｋ縺ｨ繝・ヵ繧ｩ繝ｫ繝医・繝上じ繝ｼ繝画緒逕ｻ繧偵せ繧ｭ繝・・縺吶ｋ・・tgPlugin 縺ｯ縺薙％縺ｧ迢ｬ閾ｪ縺ｮ謨ｵ繧呈緒縺擾ｼ・+- `_render` 縺ｯ繝励Ξ繧､繝､繝ｼ謠冗判縺ｮ逶ｴ蠕後↓ `plugin.drawForeground(ctx, cameraX, W, H, gY)` 繧貞他縺ｳ縲∫判髱｢陬・｣ｾ繧帝㍾縺ｭ繧・+
++## 螳溯｣・ｸ翫・豕ｨ諢冗せ
++
++1. 驥榊鴨繧ｼ繝ｭ謖吝虚縺ｯ `sideScroller.ts` 縺ｮ `_updateHorizontal` 蜀・↓髢峨§縺ｦ縺翫ｊ縲・壼ｸｸ縺ｮ讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繝ｻ邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ謖吝虚縺ｫ縺ｯ蠖ｱ髻ｿ縺励↑縺・+2. `ShootFeature` 縺ｯ蠑ｾ縺ｮ迥ｶ諷九ｒ蜀・Κ縺ｫ菫晄戟縺励～onInit` / `onManualUpdated` 縺ｧ繝ｪ繧ｻ繝・ヨ縺吶ｋ
++3. 蟆・茶譁ｹ蜷代・繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ霆ｸ・・scrollAxis`・峨〒蛻・ｲ舌＠縲∵ｨｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ譎ゅ・蜿ｳ譁ｹ蜷代∫ｸｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ譎ゅ・荳頑婿蜷代∈逋ｺ蟆・☆繧具ｼ・aerial_stg` 遲峨→蜈ｱ譛会ｼ・+4. 謨ｵ縺ｫ隗ｦ繧後ｋ縺ｨ蜊ｳ豁ｻ・域里蟄倥・ `_onPlayerHit` 竊・`_die` 繝輔Ο繝ｼ繧偵◎縺ｮ縺ｾ縺ｾ菴ｿ逕ｨ・・+5. `world.bullets` 縺ｯ FeatureSystem 髢灘・譛峨・縺溘ａ `_syncWorldStats` 縺ｧ豈弱ヵ繝ｬ繝ｼ繝蜷梧悄縺輔ｌ繧・+
++## 髢｢騾｣繧ｸ繝｣繝ｳ繝ｫ
++
++`ShootFeature` 縺ｨ蟆・茶繧､繝ｳ繝輔Λ縺ｯ莉･荳九・霑醍ｸ√ず繝｣繝ｳ繝ｫ縺ｧ繧ょ・譛峨＆繧後ｋ縲・+
++- `aerial_stg`: 邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ迚医す繝･繝ｼ繝・ぅ繝ｳ繧ｰ・亥ｼｾ縺ｯ荳頑婿蜷托ｼ・+- `bullet_hell`: 蠑ｾ蟷募屓驕ｿ
++- `bullet_runner`: 蠑ｾ繧帝∩縺代↑縺後ｉ襍ｰ繧・+- `arena`: 隍・焚謨ｵ蜷梧凾謦・ｴ
++
++## 莉雁ｾ後・謾ｹ蝟・呵｣・+
++- 遘ｻ蜍暮溷ｺｦ縺ｮ螟画峩
++  - 迴ｾ蝨ｨ縲√さ繝ｼ繝我ｸ翫↓繝輔ャ繧ｯ縺檎┌縺・ｉ縺励＞繧薙〒譁ｭ蠢ｵ縺励∪縺励◆縲りｿ代＞縺・■縺ｫ繧・ｋ縺九ｂ・・+- 繧｢繧､繝・Β縺ｮ霑ｽ蜉
++- 繝√Ε繝ｼ繧ｸ繧ｷ繝ｧ繝・ヨ・・charge_shot`・峨・諡｡謨｣繧ｷ繝ｧ繝・ヨ・・spread_shot`・峨・繝懊Β・・bomb`・峨・譛ｬ譬ｼ驕狗畑
++- 繝懊せ謌ｦ縺ｮ蟆主・・・boss.json` 騾｣謳ｺ・・+- 蠑ｾ縺ｮ雋ｫ騾壹・騾｣骼悶↑縺ｩ縺ｮ荳贋ｽ阪ヵ繧｣繝ｼ繝√Ε繝ｼ
++- 繧ｹ繧ｳ繧｢蠑上・ `distance` 鬆・・驥阪∩隱ｿ謨ｴ・域ｨｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ邯咏ｶ壹↓繧医ｋ遞ｼ縺手ｦ∫ｴ・・diff --git a/docs/tetris-genre.md b/docs/genre/tetris-genre.md
+similarity index 100%
+rename from docs/tetris-genre.md
+rename to docs/genre/tetris-genre.md
+diff --git a/src/App.vue b/src/App.vue
+index 153300f..c156e7c 100644
+--- a/src/App.vue
++++ b/src/App.vue
+@@ -17,10 +17,15 @@ import { GENRE_LOCKED_BOOST } from './data/gameBalance'
+ import type { ThrowResult, RuntimeRules } from './domain/types'
+ import { TUTORIAL_ENABLED, TutorialScreen } from './tutorial'
+ import { soundManager } from './plugins/SoundManager'
++import { DEBUG_MODE } from './debug/const'
++import { useDebugSettings } from './debug/useDebugSettings'
++import DebugPanel from './debug/DebugPanel.vue'
++import type { DebugSettings } from './debug/types'
+ 
+ // 笏笏笏 迥ｶ諷・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ const gameState = useGameState()
+ const manualCtl = useManual(gameState.currentManual)
++const debugCtl = useDebugSettings()
+ 
+ /** readonly() 繝ｩ繝・ヱ繝ｼ繧貞翁縺後＠縺ｦ RuntimeRules 縺ｨ縺励※霑斐☆ */
+ function getRules(): RuntimeRules {
+@@ -87,9 +92,24 @@ function startGame() {
+   if (TUTORIAL_ENABLED) {
+     scroller.setPaused(true)
+   }
++
++  // 繝・ヰ繝・げ: 繧ｸ繝｣繝ｳ繝ｫ蠑ｷ蛻ｶ・・ockedGenre 縺ｮ watch 縺・scroller 縺ｸ繝ｫ繝ｼ繝ｫ繧貞渚譏縺吶ｋ・・+  if (debugCtl.debugSettings.forceGenre) {
++    gameState.debugForceGenre(debugCtl.debugSettings.forceGenre)
++    // 繝√Η繝ｼ繝医Μ繧｢繝ｫ繧偵せ繧ｭ繝・・縺励※ genreLocked 縺ｸ逶ｴ陦後☆繧九◆繧∵・遉ｺ逧・↓蜀埼幕縺吶ｋ縲・+    // phase 縺・title竊暖enreLocked 縺ｨ驕ｷ遘ｻ縺・shouldPause 縺悟､牙喧縺励↑縺・◆繧・watch 縺ｧ縺ｯ蜀埼幕縺輔ｌ縺ｪ縺・・+    scroller.setPaused(false)
++  }
++
+   beginSnapshotLoop()
+ }
+ 
++// 笏笏笏 繝・ヰ繝・げ繝代ロ繝ｫ縲薫K縲・ 險ｭ螳壹ｒ蜿肴丐縺励※騾壼ｸｸ繝輔Ο繝ｼ縺ｧ繧ｲ繝ｼ繝髢句ｧ・笏笏笏
++function onDebugApply(settings: DebugSettings) {
++  debugCtl.applyDebug(settings)
++  startGame()
++}
++
+ // 笏笏笏 繝√Η繝ｼ繝医Μ繧｢繝ｫ螳御ｺ・竊・繧ｲ繝ｼ繝繝励Ξ繧､髢句ｧ・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ function startTutorial() {
+   if (TUTORIAL_ENABLED) {
+@@ -189,6 +209,8 @@ function restart() {
+   revealActive.value = false
+   soundManager.stopBgm(600)
+   gameState.restart()
++  // 繧ｿ繧､繝医Ν縺ｸ謌ｻ繧矩圀縺ｫ繝・ヰ繝・げ險ｭ螳壹ｒ繧ｯ繝ｪ繧｢・・ebugPanel 蜀阪・繧ｦ繝ｳ繝域凾縺ｮ陦ｨ遉ｺ縺ｨ荳閾ｴ縺輔○繧具ｼ・+  debugCtl.resetDebug()
+ }
+ 
+ // 笏笏笏 迴ｾ蝨ｨ縺ｮ繧ｸ繝｣繝ｳ繝ｫ繝・・繝・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+@@ -230,7 +252,8 @@ const shouldPause = computed(() => {
+   const p = gameState.phase.value
+   if (p === 'updating') return true
+   if (p === 'tutorialIntro') return true
+-  if (manualCtl.isCentered.value) return true
++  // 隱ｬ譏取嶌髱櫁｡ｨ遉ｺ譎ゅ・繧ｻ繝ｳ繧ｿ繝ｪ繝ｳ繧ｰ貍泌・縺瑚ｦ九∴縺ｪ縺・◆繧∝●豁｢繧ゅ＠縺ｪ縺・+  if (manualCtl.isCentered.value && debugCtl.debugSettings.showManual) return true
+   return false
+ })
+ 
+@@ -333,6 +356,12 @@ onUnmounted(() => {
+       </div>
+     </Transition>
+ 
++    <!-- 笏笏笏 繝・ヰ繝・げ繝代ロ繝ｫ・・EBUG_MODE 譎ゅ・縺ｿ繝ｻ繧ｿ繧､繝医Ν逕ｻ髱｢縺ｫ驥咲糞・・笏笏笏 -->
++    <DebugPanel
++      v-if="DEBUG_MODE && gameState.phase.value === 'title'"
++      @apply="onDebugApply"
++    />
++
+     <!-- 笏笏笏 繝√Η繝ｼ繝医Μ繧｢繝ｫ逕ｻ髱｢ 笏笏笏 -->
+     <Transition name="fade">
+       <TutorialScreen
+@@ -357,7 +386,7 @@ onUnmounted(() => {
+ 
+       <!-- 隱ｬ譏取嶌繝代ロ繝ｫ・域兜謫ｲ荳ｭ縺ｯ ThrowOverlay 縺御ｻ｣譖ｿ・・-->
+       <ManualPanel
+-        v-if="gameState.phase.value !== 'throwing'"
++        v-if="gameState.phase.value !== 'throwing' && debugCtl.debugSettings.showManual"
+         :manual="gameState.currentManual()"
+         :theme="currentTheme"
+         :diff-lines="manualCtl.diffLines.value"
+@@ -371,7 +400,7 @@ onUnmounted(() => {
+ 
+       <!-- 隱ｬ譏取嶌譖ｴ譁ｰ譎ゅ・繝輔か繝ｼ繧ｫ繧ｹ繧ｪ繝ｼ繝舌・繝ｬ繧､ -->
+       <Transition name="fade">
+-        <div v-if="manualCtl.isCentered.value" class="manual-focus-overlay" />
++        <div v-if="manualCtl.isCentered.value && debugCtl.debugSettings.showManual" class="manual-focus-overlay" />
+       </Transition>
+ 
+       <!-- 繝√Η繝ｼ繝医Μ繧｢繝ｫ繝偵Φ繝茨ｼ亥ｺ冗乢縺ｮ縺ｿ陦ｨ遉ｺ・・-->
+diff --git a/src/composables/useGameState.ts b/src/composables/useGameState.ts
+index 75ba8d1..0675b89 100644
+--- a/src/composables/useGameState.ts
++++ b/src/composables/useGameState.ts
+@@ -198,6 +198,13 @@ export function useGameState() {
+     return undefined
+   }
+ 
++  // 繝・ヰ繝・げ蟆ら畑: 繧ｸ繝｣繝ｳ繝ｫ繧貞ｼｷ蛻ｶ遒ｺ螳壹☆繧具ｼ亥庶譚溷愛螳壹ｒ鬟帙・縺呻ｼ・+  function debugForceGenre(genreId: GenreId) {
++    lockedGenre.value = genreId
++    _rebuildRules()
++    phase.value = 'genreLocked'
++  }
++
+   function startThrowing() {
+     soundManager.onThrowStart()
+     phase.value = 'throwing'
+@@ -246,6 +253,7 @@ export function useGameState() {
+     startTutorial,
+     triggerUpdate,
+     choose,
++    debugForceGenre,
+     startThrowing,
+     finalizeThrowing,
+     restart,
+diff --git a/src/data/genres/stg.json b/src/data/genres/stg.json
+index d99bab8..6fee04d 100644
+--- a/src/data/genres/stg.json
++++ b/src/data/genres/stg.json
+@@ -18,6 +18,6 @@
+     "moveDown": "ArrowDown",
+     "shoot": "z"
+   },
+-  "gravity": 1600,
++  "gravity": 0,
+   "endingFlavor": "縺ゅ↑縺溘・縺吶∋縺ｦ繧呈茶縺｡謚懊＞縺溘りｪｬ譏取嶌縺ｯ蠑ｾ髯､縺代↓縺ｧ繧ゆｽｿ縺医・繧医°縺｣縺溘・
+ }
+diff --git a/src/data/manuals/action-branch.json b/src/data/manuals/action-branch.json
+index e9a3148..e14189f 100644
+--- a/src/data/manuals/action-branch.json
++++ b/src/data/manuals/action-branch.json
+@@ -707,11 +707,12 @@
+       "key": "8.0-a-stg",
+       "version": "8.0",
+       "manualText": [
+-        "Z繧ｭ繝ｼ縺ｧ謨ｵ繧呈茶縺ｦ縺ｾ縺吶・,
+-        "竊・竊・繧ｭ繝ｼ縺ｧ蟾ｦ蜿ｳ縺ｫ遘ｻ蜍輔〒縺阪∪縺吶・,
+-        "Space繧ｭ繝ｼ縺ｧ繧ｸ繝｣繝ｳ繝励＠縺ｾ縺吶・,
+-        "謨ｵ繧貞偵☆縺薙→縺悟髪荳縺ｮ逶ｮ逧・〒縺吶・,
+-        "縺薙ｌ縺ｯ螳悟・縺ｪ繧ｷ繝･繝ｼ繝・ぅ繝ｳ繧ｰ繧ｲ繝ｼ繝縺ｧ縺吶・
++        "閾ｪ讖溘・螳・ｮ吶ｒ貍ゅ≧謌ｦ髣倩援縺ｫ縺ｪ繧翫∪縺励◆縲・,
++        "竊・竊・竊・竊・繧ｭ繝ｼ縺ｧ荳贋ｸ句ｷｦ蜿ｳ縲∬・逕ｱ縺ｫ蜍輔￠縺ｾ縺吶・,
++        "Z繧ｭ繝ｼ縺ｧ蜑肴婿・亥承・峨∈蠑ｾ繧呈茶縺ｦ縺ｾ縺吶・,
++        "蜿ｳ縺九ｉ霑ｫ繧区雰繧呈茶縺｡關ｽ縺ｨ縺励※縺上□縺輔＞縲・,
++        "謨ｵ縺ｫ隗ｦ繧後ｋ縺ｨ蜊ｳ繧・ｉ繧後∪縺吶る∩縺代※縲∵茶縺､縲・,
++        "縺薙ｌ縺ｯ讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｮ繧ｷ繝･繝ｼ繝・ぅ繝ｳ繧ｰ繧ｲ繝ｼ繝縺ｧ縺吶・
+       ],
+       "hazards": {
+         "colors": ["red"],
+diff --git a/src/debug/DebugPanel.vue b/src/debug/DebugPanel.vue
+new file mode 100644
+index 0000000..d31c1ab
+--- /dev/null
++++ b/src/debug/DebugPanel.vue
+@@ -0,0 +1,115 @@
++<script setup lang="ts">
++import { ref } from 'vue'
++import { GENRES } from '../data/genres'
++import type { GenreId } from '../domain/types'
++import type { DebugSettings } from './types'
++
++const emit = defineEmits<{
++  (e: 'apply', settings: DebugSettings): void
++}>()
++
++const forceGenre = ref<GenreId | null>(null)
++const showManual = ref(true)
++
++function onOk() {
++  emit('apply', {
++    forceGenre: forceGenre.value,
++    showManual: showManual.value,
++  })
++}
++</script>
++
++<template>
++  <div class="debug-panel">
++    <div class="debug-title">// DEBUG</div>
++
++    <label class="debug-row">
++      <span class="debug-label">force genre</span>
++      <select v-model="forceGenre" class="debug-select">
++        <option :value="null">騾壼ｸｸ・亥庶譚溘＆縺帙ｋ・・/option>
++        <option v-for="g in GENRES" :key="g.id" :value="g.id">
++          {{ g.id }} 窶・{{ g.label }}
++        </option>
++      </select>
++    </label>
++
++    <label class="debug-row debug-check">
++      <input v-model="showManual" type="checkbox" />
++      <span class="debug-label">隱ｬ譏取嶌繧定｡ｨ遉ｺ縺吶ｋ</span>
++    </label>
++
++    <button class="debug-ok" @click="onOk">OK</button>
++  </div>
++</template>
++
++<style scoped>
++.debug-panel {
++  position: fixed;
++  top: 50%;
++  left: 50%;
++  transform: translate(-50%, -50%);
++  z-index: 9999;
++  background: rgba(0, 0, 0, 0.82);
++  border: 1px solid #555;
++  border-radius: 4px;
++  padding: 16px 18px;
++  min-width: 280px;
++  font-family: 'Courier New', 'Consolas', monospace;
++  font-size: 12px;
++  color: #d0d0d0;
++  display: flex;
++  flex-direction: column;
++  gap: 12px;
++  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
++}
++
++.debug-title {
++  font-size: 11px;
++  letter-spacing: 2px;
++  color: #8a8a8a;
++}
++
++.debug-row {
++  display: flex;
++  flex-direction: column;
++  gap: 5px;
++}
++
++.debug-label {
++  color: #b0b0b0;
++}
++
++.debug-select {
++  background: #111;
++  color: #e0e0e0;
++  border: 1px solid #555;
++  border-radius: 3px;
++  padding: 5px 6px;
++  font-family: inherit;
++  font-size: 12px;
++}
++
++.debug-check {
++  flex-direction: row;
++  align-items: center;
++  gap: 8px;
++}
++
++.debug-ok {
++  align-self: flex-end;
++  background: #1a1a1a;
++  color: #e0e0e0;
++  border: 1px solid #666;
++  border-radius: 3px;
++  padding: 6px 22px;
++  font-family: inherit;
++  font-size: 12px;
++  cursor: pointer;
++  transition: background 0.15s, border-color 0.15s;
++}
++
++.debug-ok:hover {
++  background: #2a2a2a;
++  border-color: #999;
++}
++</style>
+diff --git a/src/debug/const.ts b/src/debug/const.ts
+new file mode 100644
+index 0000000..01998bc
+--- /dev/null
++++ b/src/debug/const.ts
+@@ -0,0 +1,2 @@
++/** 縺薙％繧・true 縺ｫ縺吶ｋ縺ｨ繝・ヰ繝・げUI縺梧怏蜉ｹ縺ｫ縺ｪ繧・*/
++export const DEBUG_MODE = false
+diff --git a/src/debug/types.ts b/src/debug/types.ts
+new file mode 100644
+index 0000000..64c69fd
+--- /dev/null
++++ b/src/debug/types.ts
+@@ -0,0 +1,8 @@
++import type { GenreId } from '../domain/types'
++
++export interface DebugSettings {
++  /** 蠑ｷ蛻ｶ縺吶ｋ繧ｸ繝｣繝ｳ繝ｫID縲Ｏull 縺ｪ繧蛾壼ｸｸ騾壹ｊ蜿取據縺輔○繧・*/
++  forceGenre: GenreId | null
++  /** 隱ｬ譏取嶌繝代ロ繝ｫ繧定｡ｨ遉ｺ縺吶ｋ縺・*/
++  showManual: boolean
++}
+diff --git a/src/debug/useDebugSettings.ts b/src/debug/useDebugSettings.ts
+new file mode 100644
+index 0000000..48f6f73
+--- /dev/null
++++ b/src/debug/useDebugSettings.ts
+@@ -0,0 +1,27 @@
++import { reactive, readonly } from 'vue'
++import type { DebugSettings } from './types'
++
++const DEFAULT_DEBUG_SETTINGS: DebugSettings = {
++  forceGenre: null,
++  showManual: true,
++}
++
++export function useDebugSettings() {
++  const debugSettings = reactive<DebugSettings>({ ...DEFAULT_DEBUG_SETTINGS })
++
++  /** OK繝懊ち繝ｳ謚ｼ荳区凾縺ｫ蜻ｼ縺ｰ繧後ｋ縲ゅョ繝舌ャ繧ｰ險ｭ螳壹ｒ蜿肴丐縺吶ｋ */
++  function applyDebug(settings: DebugSettings) {
++    Object.assign(debugSettings, settings)
++  }
++
++  /** 繝・ヰ繝・げ險ｭ螳壹ｒ蛻晄悄迥ｶ諷九∈謌ｻ縺・*/
++  function resetDebug() {
++    Object.assign(debugSettings, DEFAULT_DEBUG_SETTINGS)
++  }
++
++  return {
++    debugSettings: readonly(debugSettings) as DebugSettings,
++    applyDebug,
++    resetDebug,
++  }
++}
+diff --git a/src/engine/GenrePlugin.ts b/src/engine/GenrePlugin.ts
+index 27bb4c7..900fb7b 100644
+--- a/src/engine/GenrePlugin.ts
++++ b/src/engine/GenrePlugin.ts
+@@ -180,8 +180,9 @@ export interface GenrePlugin {
+   ): boolean | void
+ 
+   /**
+-   * 蝨ｰ髱｢繧医ｊ謇句燕縺ｫ霑ｽ蜉縺ｮ蜑肴勹繝ｬ繧､繝､繝ｼ繧呈緒縺上ヵ繝・け縲・-   * 繝代・繝・ぅ繧ｯ繝ｫ繧医ｊ蜑阪√・繝ｬ繧､繝､繝ｼ繧医ｊ蠕後↓謠冗判縺輔ｌ繧九・+   * 縺吶∋縺ｦ縺ｮ繝ｯ繝ｼ繝ｫ繝芽ｦ∫ｴ繧医ｊ謇句燕縺ｫ霑ｽ蜉縺ｮ蜑肴勹繝ｬ繧､繝､繝ｼ繧呈緒縺上ヵ繝・け縲・+   * 繝励Ξ繧､繝､繝ｼ謠冗判縺ｮ蠕後・shake 螟画鋤蜀・〒蜻ｼ縺ｰ繧後ｋ・郁ｵｰ譟ｻ邱壹・繝薙ロ繝・ヨ繝ｻHUD譫縺ｪ縺ｩ縺ｮ逕ｻ髱｢陬・｣ｾ縺ｫ菴ｿ縺・ｼ峨・+   * @param offsetX 迴ｾ蝨ｨ縺ｮ繧ｫ繝｡繝ｩX・亥燕譎ｯ繝代Λ繝ｩ繝・け繧ｹ縺ｫ菴ｿ逕ｨ・・    * 逵∫払蜿ｯ縲・    */
+   drawForeground?(
+diff --git a/src/game/sideScroller.ts b/src/game/sideScroller.ts
+index 6c7b21a..c775f1b 100644
+--- a/src/game/sideScroller.ts
++++ b/src/game/sideScroller.ts
+@@ -510,6 +510,18 @@ export class SideScroller {
+       this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
+     }
+ 
++    // gravity === 0: 荳贋ｸ句ｷｦ蜿ｳ縺ｫ閾ｪ逕ｱ遘ｻ蜍輔☆繧・STG 繝｢繝ｼ繝峨ゅず繝｣繝ｳ繝励・驥榊鴨繝ｻ逹蝨ｰ縺ｯ陦後ｏ縺ｪ縺・+    if (r.gravity === 0) {
++      const upKey   = r.controls.moveUp
++      const downKey = r.controls.moveDown
++      if (upKey   && this.input.keys.has(upKey))   p.y -= PLAYER_PHYSICS.runSpeed * dt
++      if (downKey && this.input.keys.has(downKey)) p.y += PLAYER_PHYSICS.runSpeed * dt
++      p.y = Math.max(0, Math.min(gY - p.h, p.y))
++      p.vy = 0
++      p.onGround = false
++      p.airTime += dt
++    } else {
++
+     const isDouble         = r.features.has('double_jump')
+     const jumpDisabled     = this._isActionDisabled('jump')
+     // tetris_mode: jump key is repurposed for hard drop; skip jump detection entirely
+@@ -588,6 +600,7 @@ export class SideScroller {
+       p.airTime += dt
+     }
+     if (p.landSquash > 0) p.landSquash *= PHYSICS.landSquashDecay
++    }
+ 
+     if (!r.features.has('auto_run') && !r.features.has('tetris_mode')) p.x += p.vx * dt
+     p.x = Math.max(PHYSICS.playerMinX, Math.min(W * PHYSICS.playerMaxXRatio, p.x))
+@@ -723,6 +736,9 @@ export class SideScroller {
+     // 笏笏笏 繝励Ξ繧､繝､繝ｼ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+     if (!this.dead) this._drawPlayer()
+ 
++    // 笏笏笏 蜑肴勹繝ｬ繧､繝､繝ｼ・医ず繝｣繝ｳ繝ｫ陬・｣ｾ: 襍ｰ譟ｻ邱壹・繝薙ロ繝・ヨ繝ｻHUD譫縺ｪ縺ｩ・・笏笏
++    getGenre(this.rules.genre).drawForeground?.(ctx, this.cameraX, W, H, gY)
++
+     ctx.restore()  // shake 縺ｮ restore
+ 
+     // 笏笏笏 豁ｻ莠｡繧ｪ繝ｼ繝舌・繝ｬ繧､ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+@@ -891,6 +907,11 @@ export class SideScroller {
+   // 笏笏笏 繝上じ繝ｼ繝画緒逕ｻ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+   private _drawHazard(h: Hazard, sx: number, r: RuntimeRules): void {
+     const ctx = this.ctx
++    const pluginH = getGenre(this.rules.genre)
++
++    // 繧ｸ繝｣繝ｳ繝ｫ繝励Λ繧ｰ繧､繝ｳ縺檎峡閾ｪ縺ｮ繝上じ繝ｼ繝画緒逕ｻ繧呈署萓帙☆繧句ｴ蜷医・蟋碑ｭｲ・・rue 縺ｧ繝・ヵ繧ｩ繝ｫ繝域緒逕ｻ繧偵せ繧ｭ繝・・・・+    if (pluginH.drawHazard?.(ctx, h, sx, this._getWorld()) === true) return
++
+     const floatY = h.floatAmp > 0 ? Math.sin(h.pulse) * h.floatAmp : 0
+ 
+     // 繝薙・繝医Μ繧ｺ繝蜿崎ｻ｢濶ｲ
+@@ -902,7 +923,6 @@ export class SideScroller {
+     }
+ 
+     const y = h.y + floatY
+-    const pluginH = getGenre(this.rules.genre)
+     const hCfg = pluginH.hazardConfig
+     const pulseSpd = hCfg?.pulseSpeed    ?? HAZARD_VFX.pulseSpeed
+     const pulseAmp = hCfg?.pulseAmplitude ?? HAZARD_VFX.pulseAmplitude
+diff --git a/src/genres/StgPlugin.ts b/src/genres/StgPlugin.ts
+index 9a71db7..168e13a 100644
+--- a/src/genres/StgPlugin.ts
++++ b/src/genres/StgPlugin.ts
+@@ -1,10 +1,15 @@
+ /**
+  * genres/StgPlugin.ts
+  * 'stg' 繧ｸ繝｣繝ｳ繝ｫ・亥ｮ・ｮ吶す繝･繝ｼ繝・ぅ繝ｳ繧ｰ・峨・繝励Λ繧ｰ繧､繝ｳ縲・+ *
++ * 謨ｵ縺ｯ蜊倡ｴ斐↑蝗ｳ蠖｢縺ｧ縺ｯ縺ｪ縺上√お繧､繝ｪ繧｢繝ｳ謌ｦ髣俶ｩ滂ｼ・iamond・峨→陬・抜遐ｲ濶ｦ・・ect・峨→縺励※
++ * 謠上″蛻・￠繧九ら判髱｢蜑肴勹縺ｫ縺ｯ襍ｰ譟ｻ邱壹・繝薙ロ繝・ヨ繝ｻ繧ｳ繝・け繝斐ャ繝・UD譫繝ｻ豬√ｌ繧句・譚｡縺ｪ縺ｩ縺ｮ
++ * SF 陬・｣ｾ繧帝㍾縺ｭ縺ｦ蟇・ｺｦ繧剃ｸ翫￡繧九・  */
+ 
+ import { GenrePluginBase } from '../engine/GenrePluginBase'
+-import type { SpawnEntry } from '../engine/types'
++import type { SpawnEntry, MutableWorld } from '../engine/types'
++import type { Hazard } from '../game/entities'
+ 
+ export class StgPlugin extends GenrePluginBase {
+   readonly id = 'stg' as const
+@@ -18,78 +23,448 @@ export class StgPlugin extends GenrePluginBase {
+     safe:   '#0984e3', safeGlow:   '#74b9ff',
+   }
+ 
+-  // 謨ｵ繝ｻ蠑ｾ蟷輔▲縺ｽ縺・・鄂ｮ・育ｩｺ荳ｭ螟壹ａ縲√ム繧､繝､繝｢繝ｳ繝牙､壹ａ・・+  // SF 繧峨＠縺・ヲ繝・ヨ繝ｻ豁ｻ莠｡繧ｨ繝輔ぉ繧ｯ繝郁牡
++  readonly particleColors = {
++    hit:   '#88ffff',
++    death: ['#88ffff', '#4488ff', '#ffffff', '#aa66ff'] as readonly string[],
++    jump:  'rgba(120,200,255,0.6)',
++    land:  'rgba(80,140,255,0.5)',
++  }
++
++  // 荳贋ｸ句ｷｦ蜿ｳ縺ｫ蜍輔￠繧句ｮ・ｮ呎姶縺ｮ謨ｵ驟咲ｽｮ縲ょ慍髱｢繧呈戟縺溘★遨ｺ荳ｭ繝ｻ豬ｮ驕翫〒讒区・縺励・+  // 霍晞屬蠕悟濠縺ｻ縺ｩ蟇・ｺｦ縺悟｢励☆・・eightStart 菴弱ａ 竊・weightEnd 鬮倥ａ・峨・   readonly spawnTable: readonly SpawnEntry[] = [
+-    { shape: 'rect',    placement: 'ground', weightStart: 5,  weightEnd: 4,  wRange: [22, 40], hRange: [30, 55] },
+-    { shape: 'rect',    placement: 'air',    weightStart: 3,  weightEnd: 5,  wRange: [25, 42], hRange: [25, 42] },
+-    { shape: 'diamond', placement: 'float',  weightStart: 2,  weightEnd: 5,  wRange: [28, 38], hRange: [28, 38] },
+-    { shape: 'pillar',  placement: 'air',    weightStart: 0,  weightEnd: 3,  wRange: [15, 22], hRange: [45, 75] },
++    { shape: 'diamond', placement: 'float', weightStart: 3, weightEnd: 6, wRange: [26, 40], hRange: [26, 40], floatAmpRange: [60, 130] },
++    { shape: 'rect',    placement: 'air',   weightStart: 2, weightEnd: 5, wRange: [24, 42], hRange: [24, 40] },
++    { shape: 'diamond', placement: 'float', weightStart: 1, weightEnd: 5, wRange: [20, 30], hRange: [20, 30], floatAmpRange: [90, 170], pulseSpeed: 3.0 },
++    { shape: 'rect',    placement: 'float', weightStart: 0, weightEnd: 4, wRange: [18, 30], hRange: [18, 30], floatAmpRange: [40, 110] },
+   ]
+ 
+   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
+-    // 繝阪ン繝･繝ｩ蜈・-    ctx.globalAlpha = 0.06
+-    const nx = (-offsetX * 0.3) % W
+-    const grad = ctx.createRadialGradient(nx, gY * 0.4, 0, nx, gY * 0.4, 200)
+-    grad.addColorStop(0, '#4444ff')
+-    grad.addColorStop(1, 'transparent')
+-    ctx.fillStyle = grad
++    // 驕譁ｹ縺ｮ諱呈弌・亥ｷｨ螟ｧ縺ｪ繧ｰ繝ｭ繝ｼ・峨ゅそ繧ｯ繧ｿ繝ｼ遘ｻ蜍輔〒繧・▲縺上ｊ讓ｪ蛻・ｋ
++    const sunX = ((-offsetX * 0.08) % (W * 2.2) + W * 2.2) % (W * 2.2) - W * 0.4
++    const sunY = gY * 0.26
++    const sunGrad = ctx.createRadialGradient(sunX, sunY, 0, sunX, sunY, 200)
++    sunGrad.addColorStop(0, 'rgba(180,210,255,0.55)')
++    sunGrad.addColorStop(0.25, 'rgba(90,130,255,0.20)')
++    sunGrad.addColorStop(1, 'transparent')
++    ctx.fillStyle = sunGrad
+     ctx.fillRect(0, 0, W, gY)
++    ctx.fillStyle = 'rgba(230,240,255,0.85)'
++    ctx.beginPath()
++    ctx.arc(sunX, sunY, 12, 0, Math.PI * 2)
++    ctx.fill()
++
++    // 驕譎ｯ縺ｮ譏滄峇・郁､・焚濶ｲ繧偵ｆ縺｣縺上ｊ豬√☆・・+    const nebulae: readonly [number, string][] = [
++      [0.30, '#3344ff'],
++      [0.62, '#aa33cc'],
++    ]
++    for (const [phase, color] of nebulae) {
++      ctx.globalAlpha = 0.07
++      const nx = (((-offsetX * 0.15 + phase * W * 3) % (W * 1.5)) + W * 1.5) % (W * 1.5) - W * 0.25
++      const grad = ctx.createRadialGradient(nx, gY * 0.4, 0, nx, gY * 0.4, 240)
++      grad.addColorStop(0, color)
++      grad.addColorStop(1, 'transparent')
++      ctx.fillStyle = grad
++      ctx.fillRect(0, 0, W, gY)
++    }
++    ctx.globalAlpha = 1
++
++    // 譏弱ｋ縺・椪縺乗弌・域ｱｺ螳夂噪驟咲ｽｮ + 譎る俣縺ｧ譏取ｻ・ｼ・+    const t = performance.now() / 1000
++    const sector = Math.floor(offsetX / 360)
++    for (let s = sector - 1; s <= sector + 2; s++) {
++      for (let i = 0; i < 4; i++) {
++        const hsh = ((s * 73856093) ^ (i * 19349663)) >>> 0
++        const bx = s * 360 - offsetX * 0.12 + (hsh % 360)
++        const by = (hsh >>> 9) % Math.floor(gY * 0.7)
++        if (bx < 0 || bx > W) continue
++        const twinkle = 0.4 + 0.6 * Math.abs(Math.sin(t * 1.5 + (hsh % 100)))
++        ctx.globalAlpha = twinkle * 0.9
++        ctx.fillStyle = '#cfe6ff'
++        ctx.beginPath()
++        ctx.arc(bx, by, 1.6, 0, Math.PI * 2)
++        ctx.fill()
++      }
++    }
+     ctx.globalAlpha = 1
+   }
+ 
+   drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
+-    // 豬ｮ驕雁ｲｩ遏ｳ・亥ｮ・ｮ呎─・・-    ctx.globalAlpha = 0.3
+-    ctx.fillStyle = this.midLayerColor
+-    const sector = Math.floor(offsetX / 500)
++    // 驕縺上ｒ讓ｪ蛻・ｋ諠第弌・医そ繧ｯ繧ｿ繝ｼ縺斐→縺ｫ豎ｺ螳夂噪縺ｫ驟咲ｽｮ・・+    const sector = Math.floor(offsetX / 900)
+     for (let s = sector - 1; s <= sector + 2; s++) {
+-      const baseX = s * 500 - offsetX
+-      for (let i = 0; i < 3; i++) {
+-        const h = (s * 1301 + i * 47) & 0xffff
+-        const rx = baseX + (h % 500)
+-        const ry = gY * 0.2 + ((h >> 4) % Math.floor(gY * 0.5))
+-        const rw = 30 + (h >> 8) % 60
+-        const rh = 15 + (h >> 10) % 25
+-        ctx.fillRect(rx, ry, rw, rh)
++      const h = (s * 2654435761) >>> 0
++      const px = s * 900 - offsetX * 0.5 + (h % 400)
++      const py = gY * 0.18 + ((h >>> 6) % Math.floor(gY * 0.45))
++      const pr = 28 + (h >>> 12) % 46
++      if (px < -pr * 2 || px > W + pr * 2) continue
++      const hue = (h >>> 18) % 360
++      const grad = ctx.createRadialGradient(px - pr * 0.3, py - pr * 0.3, pr * 0.2, px, py, pr)
++      grad.addColorStop(0, `hsla(${hue}, 60%, 55%, 0.5)`)
++      grad.addColorStop(1, `hsla(${hue}, 70%, 18%, 0.5)`)
++      ctx.fillStyle = grad
++      ctx.beginPath()
++      ctx.arc(px, py, pr, 0, Math.PI * 2)
++      ctx.fill()
++      // 繝ｪ繝ｳ繧ｰ・井ｸ驛ｨ縺ｮ諠第弌縺ｮ縺ｿ・・+      if ((h & 3) === 0) {
++        ctx.strokeStyle = `hsla(${hue}, 50%, 70%, 0.3)`
++        ctx.lineWidth = 2
++        ctx.beginPath()
++        ctx.ellipse(px, py, pr * 1.6, pr * 0.4, -0.4, 0, Math.PI * 2)
++        ctx.stroke()
+       }
+     }
+-    // 繝阪ン繝･繝ｩ蜈・-    ctx.globalAlpha = 0.04
++    // 霑代ａ縺ｮ譏滄峇蜈・+    ctx.globalAlpha = 0.05
+     const nx = (-offsetX * 0.3) % W
+-    const grad = ctx.createRadialGradient(nx, gY * 0.4, 0, nx, gY * 0.4, 220)
+-    grad.addColorStop(0, '#4444ff')
++    const grad = ctx.createRadialGradient(nx, gY * 0.55, 0, nx, gY * 0.55, 220)
++    grad.addColorStop(0, '#5566ff')
+     grad.addColorStop(1, 'transparent')
+     ctx.fillStyle = grad
+-    ctx.fillRect(0, 0, W, gY)
++    ctx.fillRect(0, gY * 0.55 - 220, W, 440)
+     ctx.globalAlpha = 1
+   }
+ 
+   drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, _onGround: boolean, _runCycle: number): void {
+-    // 螳・ｮ呵飴
+-    ctx.fillStyle = '#88ccff'
++    const cy = h / 2
++
++    // 繧ｨ繝ｳ繧ｸ繝ｳ轤趣ｼ医Λ繝ｳ繝繝謠ｺ繧峨℃繝ｻ荳贋ｸ・蝓ｺ・・+    const flame = w * 0.25 + Math.random() * w * 0.25
++    for (const ny of [h * 0.32, h * 0.68]) {
++      const fg = ctx.createLinearGradient(w * 0.05, ny, -flame, ny)
++      fg.addColorStop(0, '#ffffff')
++      fg.addColorStop(0.4, '#66ddff')
++      fg.addColorStop(1, 'transparent')
++      ctx.fillStyle = fg
++      ctx.beginPath()
++      ctx.moveTo(w * 0.05, ny - h * 0.06)
++      ctx.lineTo(-flame, ny)
++      ctx.lineTo(w * 0.05, ny + h * 0.06)
++      ctx.closePath()
++      ctx.fill()
++    }
++
++    // 蠕碁Κ繧ｦ繧｣繝ｳ繧ｰ
++    ctx.fillStyle = '#3a6ea5'
++    ctx.beginPath()
++    ctx.moveTo(w * 0.05, cy)
++    ctx.lineTo(w * 0.35, h * 0.02)
++    ctx.lineTo(w * 0.5, cy)
++    ctx.lineTo(w * 0.35, h * 0.98)
++    ctx.closePath()
++    ctx.fill()
++
++    // 讖滉ｽ捺悽菴難ｼ亥燕譁ｹ縺ｫ蟆悶▲縺滓･泌ｽ｢・・+    const body = ctx.createLinearGradient(0, h * 0.1, 0, h * 0.9)
++    body.addColorStop(0, '#cfeaff')
++    body.addColorStop(0.5, '#88ccff')
++    body.addColorStop(1, '#4a90c8')
++    ctx.fillStyle = body
+     ctx.beginPath()
+-    ctx.moveTo(w, h / 2)
+-    ctx.lineTo(w * 0.1, h * 0.1)
+-    ctx.lineTo(w * 0.1, h * 0.9)
++    ctx.moveTo(w, cy)
++    ctx.lineTo(w * 0.45, h * 0.2)
++    ctx.lineTo(w * 0.1, h * 0.42)
++    ctx.lineTo(w * 0.1, h * 0.58)
++    ctx.lineTo(w * 0.45, h * 0.8)
+     ctx.closePath()
+     ctx.fill()
+ 
+-    // 繧ｨ繝ｳ繧ｸ繝ｳ轤趣ｼ医Λ繝ｳ繝繝謠ｺ繧峨℃・・-    const t = performance.now() / 80
+-    ctx.fillStyle = `hsl(${t % 360}, 100%, 60%)`
++    // 讖滉ｽ薙ワ繧､繝ｩ繧､繝・+    ctx.strokeStyle = 'rgba(255,255,255,0.6)'
++    ctx.lineWidth = 1
++    ctx.beginPath()
++    ctx.moveTo(w * 0.95, cy)
++    ctx.lineTo(w * 0.3, cy)
++    ctx.stroke()
++
++    // 繧ｳ繝・け繝斐ャ繝茨ｼ育匱蜈会ｼ・+    ctx.shadowColor = '#aef0ff'
++    ctx.shadowBlur = 10
++    ctx.fillStyle = '#eaffff'
++    ctx.beginPath()
++    ctx.arc(w * 0.62, cy, h * 0.13, 0, Math.PI * 2)
++    ctx.fill()
++    ctx.shadowBlur = 0
++    ctx.fillStyle = '#2a7fd0'
++    ctx.beginPath()
++    ctx.arc(w * 0.64, cy, h * 0.07, 0, Math.PI * 2)
++    ctx.fill()
++  }
++
++  // 笏笏笏 謨ｵ謠冗判・医ョ繝輔か繝ｫ繝亥峙蠖｢繧剃ｸ頑嶌縺阪＠縺ｦ繝｡繧ｫ繝九き繝ｫ縺ｪ隕九◆逶ｮ縺ｫ縺吶ｋ・・笏笏笏笏笏
++  drawHazard(ctx: CanvasRenderingContext2D, h: Hazard, sx: number, world: MutableWorld): boolean {
++    const floatY = h.floatAmp > 0 ? Math.sin(h.pulse) * h.floatAmp : 0
++    const x = sx
++    const y = h.y + floatY
++    const pulse = Math.sin(h.pulse * 3) * 0.5 + 0.5  // 0縲・
++    const t = performance.now() / 1000
++
++    ctx.save()
++    if (h.shape === 'diamond') {
++      this._drawInterceptor(ctx, x, y, h.w, h.h, h.color, h.glowColor, pulse, t)
++    } else {
++      this._drawGunship(ctx, x, y, h.w, h.h, h.color, h.glowColor, pulse, t)
++    }
++    ctx.restore()
++
++    // enemy_hp 譛牙柑譎ゅ・繧ｻ繧ｰ繝｡繝ｳ繝亥ｼ秋P繝舌・繧呈緒縺・+    if (world.rules.features.has('enemy_hp') && h.maxHp > 1) {
++      this._drawHpBar(ctx, x, y - 9, h.w, h.hp, h.maxHp)
++    }
++    return true
++  }
++
++  // diamond 竊・繧ｨ繧､繝ｪ繧｢繝ｳ謌ｦ髣俶ｩ滂ｼ亥ｷｦ繧貞髄縺・※遯・ｲ縺励※縺上ｋ・・+  private _drawInterceptor(
++    ctx: CanvasRenderingContext2D,
++    x: number, y: number, w: number, hgt: number,
++    color: string, glow: string, pulse: number, t: number,
++  ): void {
++    const cx = x + w / 2
++    const cy = y + hgt / 2
++    const dark  = this._shade(color, -55)
++    const light = this._shade(color, 65)
++
++    // 蠕梧婿繧ｨ繝ｳ繧ｸ繝ｳ轤趣ｼ亥承蛛ｴ・晞ｲ陦梧婿蜷代・騾・ｼ・+    const ef = (0.6 + Math.abs(Math.sin(t * 18)) * 0.4)
++    const fg = ctx.createLinearGradient(x + w, cy, x + w + w * 0.5 * ef, cy)
++    fg.addColorStop(0, '#ffffff')
++    fg.addColorStop(0.4, glow)
++    fg.addColorStop(1, 'transparent')
++    ctx.fillStyle = fg
+     ctx.beginPath()
+-    ctx.moveTo(w * 0.1, h * 0.35)
+-    ctx.lineTo(-w * 0.2 - Math.random() * 8, h * 0.5)
+-    ctx.lineTo(w * 0.1, h * 0.65)
++    ctx.moveTo(x + w * 0.82, cy - hgt * 0.14)
++    ctx.lineTo(x + w + w * 0.5 * ef, cy)
++    ctx.lineTo(x + w * 0.82, cy + hgt * 0.14)
+     ctx.closePath()
+     ctx.fill()
+ 
+-    // 繧ｳ繝・け繝斐ャ繝・-    ctx.fillStyle = '#3399ff'
++    // 荳贋ｸ九↓蠑ｵ繧雁・縺励◆貉ｾ譖ｲ繧ｦ繧｣繝ｳ繧ｰ
++    ctx.fillStyle = dark
++    for (const dir of [-1, 1]) {
++      ctx.beginPath()
++      ctx.moveTo(cx + w * 0.10, cy + dir * hgt * 0.10)
++      ctx.quadraticCurveTo(x + w * 0.30, cy + dir * hgt * 0.62, x + w * 0.86, cy + dir * hgt * 0.50)
++      ctx.lineTo(x + w * 0.70, cy + dir * hgt * 0.16)
++      ctx.closePath()
++      ctx.fill()
++    }
++
++    // 讖滉ｽ捺悽菴難ｼ亥ｷｦ縺ｫ蟆悶▲縺溷・隗貞ｽ｢・・+    const body = ctx.createLinearGradient(0, y, 0, y + hgt)
++    body.addColorStop(0, light)
++    body.addColorStop(0.5, color)
++    body.addColorStop(1, dark)
++    ctx.fillStyle = body
+     ctx.beginPath()
+-    ctx.arc(w * 0.65, h * 0.5, h * 0.15, 0, Math.PI * 2)
++    ctx.moveTo(x, cy)                       // 讖滄ｦ厄ｼ亥ｷｦ・・+    ctx.lineTo(x + w * 0.34, y + hgt * 0.22)
++    ctx.lineTo(x + w * 0.84, y + hgt * 0.34)
++    ctx.lineTo(x + w * 0.84, y + hgt * 0.66)
++    ctx.lineTo(x + w * 0.34, y + hgt * 0.78)
++    ctx.closePath()
+     ctx.fill()
++    ctx.strokeStyle = light
++    ctx.lineWidth = 1
++    ctx.stroke()
++
++    // 陬・抜縺ｮ繝代ロ繝ｫ繝ｩ繧､繝ｳ
++    ctx.strokeStyle = this._shade(color, -25)
++    ctx.lineWidth = 1
++    ctx.beginPath()
++    ctx.moveTo(x + w * 0.20, cy)
++    ctx.lineTo(x + w * 0.80, cy)
++    ctx.stroke()
++
++    // 荳ｭ螟ｮ縺ｮ逋ｺ蜈峨さ繧｢・郁ц蜍輔☆繧句腰逵ｼ・・+    const r = hgt * (0.14 + pulse * 0.05)
++    ctx.shadowColor = glow
++    ctx.shadowBlur = 12
++    const core = ctx.createRadialGradient(cx + w * 0.18, cy, 0, cx + w * 0.18, cy, r)
++    core.addColorStop(0, '#ffffff')
++    core.addColorStop(0.5, glow)
++    core.addColorStop(1, this._shade(color, -40))
++    ctx.fillStyle = core
++    ctx.beginPath()
++    ctx.arc(cx + w * 0.18, cy, r, 0, Math.PI * 2)
++    ctx.fill()
++    ctx.shadowBlur = 0
++  }
++
++  // rect 竊・陬・抜遐ｲ濶ｦ・亥ｷｦ蜑肴婿縺ｫ荳ｻ遐ｲ縲∝ｾ梧婿縺ｫ繧ｹ繝ｩ繧ｹ繧ｿ繝ｼ・・+  private _drawGunship(
++    ctx: CanvasRenderingContext2D,
++    x: number, y: number, w: number, hgt: number,
++    color: string, glow: string, pulse: number, t: number,
++  ): void {
++    const cy = y + hgt / 2
++    const dark  = this._shade(color, -55)
++    const light = this._shade(color, 60)
++
++    // 蠕梧婿繧ｹ繝ｩ繧ｹ繧ｿ繝ｼ轤・+    const ef = 0.5 + Math.abs(Math.sin(t * 22)) * 0.5
++    const fg = ctx.createLinearGradient(x + w, cy, x + w + w * 0.4 * ef, cy)
++    fg.addColorStop(0, '#ffffff')
++    fg.addColorStop(0.45, glow)
++    fg.addColorStop(1, 'transparent')
++    ctx.fillStyle = fg
++    for (const ny of [y + hgt * 0.3, y + hgt * 0.7]) {
++      ctx.beginPath()
++      ctx.moveTo(x + w * 0.96, ny - hgt * 0.08)
++      ctx.lineTo(x + w + w * 0.4 * ef, ny)
++      ctx.lineTo(x + w * 0.96, ny + hgt * 0.08)
++      ctx.closePath()
++      ctx.fill()
++    }
++
++    // 蜑肴婿縺ｮ荳ｻ遐ｲ繝舌Ξ繝ｫ・亥ｷｦ縺ｸ遯√″蜃ｺ縺呻ｼ・+    ctx.fillStyle = dark
++    this._roundRect(ctx, x - w * 0.18, cy - hgt * 0.1, w * 0.3, hgt * 0.2, 2)
++    ctx.fill()
++    ctx.fillStyle = glow
++    ctx.fillRect(x - w * 0.18, cy - hgt * 0.03, w * 0.06, hgt * 0.06)  // 遐ｲ蜿｣縺ｮ逋ｺ蜈・+
++    // 陬・抜繝懊ョ繧｣・郁ｧ剃ｸｸ + 邵ｦ繧ｰ繝ｩ繝・ｼ・+    const body = ctx.createLinearGradient(0, y, 0, y + hgt)
++    body.addColorStop(0, light)
++    body.addColorStop(0.5, color)
++    body.addColorStop(1, dark)
++    ctx.fillStyle = body
++    this._roundRect(ctx, x + w * 0.08, y + hgt * 0.06, w * 0.82, hgt * 0.88, 4)
++    ctx.fill()
++    ctx.strokeStyle = light
++    ctx.lineWidth = 1
++    ctx.stroke()
++
++    // 繝代ロ繝ｫ繝ｩ繧､繝ｳ・域ｨｪ譁ｹ蜷托ｼ・+    ctx.strokeStyle = this._shade(color, -30)
++    ctx.lineWidth = 1
++    for (const fy of [0.36, 0.64]) {
++      ctx.beginPath()
++      ctx.moveTo(x + w * 0.12, y + hgt * fy)
++      ctx.lineTo(x + w * 0.86, y + hgt * fy)
++      ctx.stroke()
++    }
++
++    // 荳企擇縺ｮ繧ｻ繝ｳ繧ｵ繝ｼ繝ｩ繧､繝茨ｼ域・貊・ｼ・+    for (let i = 0; i < 3; i++) {
++      const lx = x + w * (0.30 + i * 0.20)
++      const blink = (Math.sin(t * 6 + i * 1.7) + 1) * 0.5
++      ctx.globalAlpha = 0.4 + blink * 0.6
++      ctx.fillStyle = i === 1 ? '#ffffff' : glow
++      ctx.beginPath()
++      ctx.arc(lx, y + hgt * 0.18, 1.8, 0, Math.PI * 2)
++      ctx.fill()
++    }
++    ctx.globalAlpha = 1
++
++    // 荳ｭ螟ｮ縺ｮ逋ｺ蜈峨そ繝ｳ繧ｵ繝ｼ繧｢繧､・郁ц蜍包ｼ・+    const r = hgt * (0.12 + pulse * 0.04)
++    ctx.shadowColor = glow
++    ctx.shadowBlur = 10
++    const core = ctx.createRadialGradient(x + w * 0.45, cy, 0, x + w * 0.45, cy, r)
++    core.addColorStop(0, '#ffffff')
++    core.addColorStop(0.55, glow)
++    core.addColorStop(1, dark)
++    ctx.fillStyle = core
++    ctx.beginPath()
++    ctx.arc(x + w * 0.45, cy, r, 0, Math.PI * 2)
++    ctx.fill()
++    ctx.shadowBlur = 0
++  }
++
++  // 繧ｻ繧ｰ繝｡繝ｳ繝亥ｼ上・蟆丞梛HP繝舌・
++  private _drawHpBar(
++    ctx: CanvasRenderingContext2D,
++    x: number, y: number, w: number, hp: number, maxHp: number,
++  ): void {
++    const segGap = 1
++    const segW = (w - segGap * (maxHp - 1)) / maxHp
++    for (let i = 0; i < maxHp; i++) {
++      const sxi = x + i * (segW + segGap)
++      const filled = i < hp
++      ctx.fillStyle = filled
++        ? (hp / maxHp > 0.4 ? '#7CFC8A' : '#ff7043')
++        : 'rgba(255,255,255,0.15)'
++      ctx.fillRect(sxi, y, segW, 3)
++    }
++  }
++
++  // 笏笏笏 蜑肴勹陬・｣ｾ・医さ繝・け繝斐ャ繝・UD繝ｻ襍ｰ譟ｻ邱壹・繝薙ロ繝・ヨ繝ｻ豬√ｌ繧句・譚｡・・笏笏笏笏笏笏笏笏笏
++  drawForeground(ctx: CanvasRenderingContext2D, offsetX: number, W: number, H: number, _gY: number): void {
++    ctx.save()
++
++    // 鬮倬溘〒豬√ｌ繧句燕譎ｯ縺ｮ蜈画擅・域焔蜑阪・繧ｹ繝壹・繧ｹ繝繧ｹ繝茨ｼ・+    const sector = Math.floor(offsetX / 220)
++    ctx.lineWidth = 2
++    for (let s = sector - 1; s <= sector + 2; s++) {
++      for (let i = 0; i < 2; i++) {
++        const hsh = ((s * 40503) ^ (i * 12289)) >>> 0
++        const lx = s * 220 - offsetX * 1.4 + (hsh % 220)
++        if (lx < -40 || lx > W) continue
++        const ly = (hsh >>> 8) % H
++        const len = 22 + (hsh >>> 4) % 30
++        ctx.strokeStyle = 'rgba(150,210,255,0.16)'
++        ctx.beginPath()
++        ctx.moveTo(lx, ly)
++        ctx.lineTo(lx + len, ly)
++        ctx.stroke()
++      }
++    }
++
++    // 襍ｰ譟ｻ邱夲ｼ・RT 鬚ｨ縺ｮ阮・＞讓ｪ邵橸ｼ・+    ctx.fillStyle = 'rgba(0,0,0,0.05)'
++    for (let yy = 0; yy < H; yy += 3) {
++      ctx.fillRect(0, yy, W, 1)
++    }
++
++    // 繝薙ロ繝・ヨ・育判髱｢蝗幃嚆繧呈囓縺剰誠縺ｨ縺呻ｼ・+    const vig = ctx.createRadialGradient(W / 2, H / 2, H * 0.38, W / 2, H / 2, W * 0.72)
++    vig.addColorStop(0, 'transparent')
++    vig.addColorStop(1, 'rgba(0,0,12,0.55)')
++    ctx.fillStyle = vig
++    ctx.fillRect(0, 0, W, H)
++
++    // 繧ｳ繝・け繝斐ャ繝・UD・壼屁髫・・繝悶Λ繧ｱ繝・ヨ縺ｨ荳顔ｫｯ縺ｮ逶ｮ逶帙ｊ
++    ctx.strokeStyle = 'rgba(120,230,255,0.5)'
++    ctx.lineWidth = 2
++    const m = 14, b = 22
++    const corners: readonly [number, number, number, number][] = [
++      [m, m, 1, 1], [W - m, m, -1, 1], [m, H - m, 1, -1], [W - m, H - m, -1, -1],
++    ]
++    for (const [cxp, cyp, dx, dy] of corners) {
++      ctx.beginPath()
++      ctx.moveTo(cxp + dx * b, cyp)
++      ctx.lineTo(cxp, cyp)
++      ctx.lineTo(cxp, cyp + dy * b)
++      ctx.stroke()
++    }
++    // 荳顔ｫｯ縺ｮ繧ｹ繧ｭ繝｣繝翫・逶ｮ逶帙ｊ
++    ctx.strokeStyle = 'rgba(120,230,255,0.25)'
++    ctx.lineWidth = 1
++    for (let tx = W * 0.18; tx < W * 0.82; tx += 26) {
++      const tall = (Math.round(tx) % 78 === 0)
++      ctx.beginPath()
++      ctx.moveTo(tx, m)
++      ctx.lineTo(tx, m + (tall ? 8 : 4))
++      ctx.stroke()
++    }
++
++    ctx.restore()
++  }
++
++  // hex 濶ｲ繧・amount 縺縺大｢玲ｸ帙＠縺・rgb 譁・ｭ怜・繧定ｿ斐☆・磯撼 hex 縺ｯ縺昴・縺ｾ縺ｾ霑斐☆・・+  private _shade(hex: string, amount: number): string {
++    if (!hex.startsWith('#') || hex.length < 7) return hex
++    const r = parseInt(hex.slice(1, 3), 16)
++    const g = parseInt(hex.slice(3, 5), 16)
++    const b = parseInt(hex.slice(5, 7), 16)
++    if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return hex
++    const cl = (v: number): number => Math.max(0, Math.min(255, v + amount))
++    return `rgb(${cl(r)},${cl(g)},${cl(b)})`
+   }
+ }
+ 

@@ -1,0 +1,1127 @@
+﻿diff --git a/docs/README.md b/docs/README.md
+index 53b6108..e1d065b 100644
+--- a/docs/README.md
++++ b/docs/README.md
+@@ -31,7 +31,7 @@
+ 
+ | 繝輔ぃ繧､繝ｫ | 蟇ｾ雎｡ | 蜀・ｮｹ |
+ |---|---|---|
+-| [genre-system.md](genre-system.md) | 繧ｸ繝｣繝ｳ繝ｫ | 21繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ繝ｻ繧ｸ繝｣繝ｳ繝ｫ蜿取據繧｢繝ｫ繧ｴ繝ｪ繧ｺ繝 |
++| [genre-system.md](genre-system.md) | 繧ｸ繝｣繝ｳ繝ｫ | 22繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ繝ｻ繧ｸ繝｣繝ｳ繝ｫ蜿取據繧｢繝ｫ繧ｴ繝ｪ繧ｺ繝 |
+ | [genre-plugin.md](genre-plugin.md) | 繧ｸ繝｣繝ｳ繝ｫ諡｡蠑ｵ | GenrePlugin 螳溯｣・ぎ繧､繝峨・蜈ｨ繝輔ャ繧ｯ荳隕ｧ |
+ | [feature-ids.md](feature-ids.md) | 繝輔ぅ繝ｼ繝√Ε繝ｼ | 蜈ｨFeatureId 繝ｪ繝輔ぃ繝ｬ繝ｳ繧ｹ・亥・鬘槫挨・・|
+ | [feature-system.md](feature-system.md) | 繝輔ぅ繝ｼ繝√Ε繝ｼ諡｡蠑ｵ | FeatureSystem 螳溯｣・ぎ繧､繝峨・蜈ｨ繝輔ャ繧ｯ荳隕ｧ |
+@@ -45,10 +45,10 @@
+ | [api/domain.md](api/domain.md) | `src/domain/` | 蝙句ｮ夂ｾｩ繝ｻ繧ｸ繝｣繝ｳ繝ｫ蜿取據繝ｻ繝ｫ繝ｼ繝ｫ蜷域・繝ｻ繧ｹ繧ｳ繧｢險育ｮ励・蟄ｦ鄙偵す繧ｹ繝・Β |
+ | [api/engine.md](api/engine.md) | `src/engine/` | GenrePlugin/FeatureSystem 繧､繝ｳ繧ｿ繝ｼ繝輔ぉ繝ｼ繧ｹ繝ｻGameRegistry |
+ | [api/game.md](api/game.md) | `src/game/` | SideScroller 繧ｨ繝ｳ繧ｸ繝ｳ繝ｻ繧ｨ繝ｳ繝・ぅ繝・ぅ繝ｻFeatureSystem 螳溯｣・|
+-| [api/genres.md](api/genres.md) | `src/genres/` | 蜈ｨ繧ｸ繝｣繝ｳ繝ｫ繝励Λ繧ｰ繧､繝ｳ・・0遞ｮ・峨・繝・・繝槭・繧ｹ繝昴・繝ｳ繝ｻ謠冗判 |
++| [api/genres.md](api/genres.md) | `src/genres/` | 蜈ｨ繧ｸ繝｣繝ｳ繝ｫ繝励Λ繧ｰ繧､繝ｳ・・6遞ｮ + JSON繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ・峨・繝・・繝槭・繧ｹ繝昴・繝ｳ繝ｻ謠冗判 |
+ | [api/framework.md](api/framework.md) | `src/framework/` | ManualLoader/Builder/Validator繝ｻConfigLoader/Validator |
+ | [api/data.md](api/data.md) | `src/data/` | GAME_CONFIG / MANUAL_DECK 繧ｨ繝ｳ繝医Μ繝昴う繝ｳ繝・|
+-| [api/composables_plugins.md](api/composables_plugins.md) | `src/tutorial/`繝ｻ`src/composables/`繝ｻ`src/plugins/` | 繝√Η繝ｼ繝医Μ繧｢繝ｫ繝ｻuseGameState/useManual/useThrow composable繝ｻVite 讀懆ｨｼ繝励Λ繧ｰ繧､繝ｳ |
++| [api/composables_plugins.md](api/composables_plugins.md) | `src/tutorial/`繝ｻ`src/composables/`繝ｻ`src/plugins/` | 繝√Η繝ｼ繝医Μ繧｢繝ｫ繝ｻuseGameState/useManual/useScoreAnimation composable繝ｻPluginManager/SoundManager |
+ 
+ ### 繝励Ο繧ｸ繧ｧ繧ｯ繝育ｮ｡逅・ 
+@@ -112,51 +112,50 @@
+ 
+ ### 譁ｰ繧ｸ繝｣繝ｳ繝ｫ繧定ｿｽ蜉縺吶ｋ
+ 
+-**蠢・ｦ√↑繧ｹ繝・ャ繝・** 5 繝輔ぃ繧､繝ｫ菫ｮ豁｣
++**蠢・ｦ√↑繧ｹ繝・ャ繝・** JSON 1繝輔ぃ繧､繝ｫ・・ 莉ｻ諢上〒 TS 繝励Λ繧ｰ繧､繝ｳ繝ｻ隱ｬ譏取嶌繝ｫ繝ｼ繝茨ｼ・ 
+-```typescript
+-// 1. src/domain/types.ts 窶・GenreId 霑ｽ蜉
+-export type GenreId = 'base' | 'runner' | 'stg' | 'rpg' | ... | 'my_new_genre'
+-
+-// 2. src/data/genres.ts 窶・螳夂ｾｩ霑ｽ蜉
+-const GENRES: GenreDef[] = [
+-  // ...
+-  { id: 'my_new_genre', label: 'My Genre', thresholds: { ... }, ... }
+-]
++```jsonc
++// 1. src/data/genres/my_new_genre.json 窶・繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ・育ｽｮ縺上□縺代〒閾ｪ蜍慕匳骭ｲ・・+{
++  "id": "my_new_genre",
++  "label": "My Genre",
++  "thresholds": { "tempo": 3 },
++  "enableFeatures": ["auto_run"],
++  "disableFeatures": [],
++  "scoreFormula": "distance * 1.5 + combo * 60",
++  "manualReveal": "縺薙ｌ縺ｯ My Genre 縺ｫ縺ｪ繧翫∪縺励◆縲・,
++  "theme": "plain",
++  "bgColor": "#0a1020"
++}
++```
+ 
+-// 3. src/genres/MyNewGenrePlugin.ts 窶・螳溯｣・ｼ・enrePluginBase 邯呎価・・+```typescript
++// 2.・井ｻｻ諢擾ｼ鋭rc/genres/MyNewGenrePlugin.ts 窶・迢ｬ閾ｪ繝薙ず繝･繧｢繝ｫ繧剃ｻ倥￠繧句ｴ蜷医・縺ｿ
+ export class MyNewGenrePlugin extends GenrePluginBase {
+-  readonly id = 'my_new_genre'
+-  readonly skyColors = ['#000080', '#001a99']
+-  readonly groundColors = ['#8b4513', '#a0522d']
+-  readonly spawnTable = [ /* ... */ ]
+-  // 莉･荳九〒謠冗判繝｡繧ｽ繝・ラ繧偵が繝ｼ繝舌・繝ｩ繧､繝・+  readonly id: GenreId = 'my_new_genre'
++  readonly skyColors    = ['#000080', '#001a99'] as const
++  readonly groundColors = ['#8b4513', '#a0522d'] as const
++  readonly spawnTable   = [ /* ... */ ]
+ }
++export default new MyNewGenrePlugin()   // index.ts 縺・import.meta.glob 縺ｧ閾ｪ蜍募庶髮・+```
+ 
+-// 4. src/genres/index.ts 窶・逋ｻ骭ｲ
+-registerGenre(new MyNewGenrePlugin())
+-
+-// 5. src/data/manuals/*.json 窶・繝ｫ繝ｼ繝郁ｿｽ蜉
+-{
+-  "id": "X.Y",
+-  "genre": "my_new_genre",
+-  // ...
+-}
++```jsonc
++// 3. src/data/manuals/*.json 窶・縺薙・繧ｸ繝｣繝ｳ繝ｫ縺ｸ蜿取據縺吶ｋ驕ｸ謚櫁い繝ｫ繝ｼ繝医ｒ霑ｽ蜉
+ ```
+ 
++> `GenreId` 縺ｯ `string` 蝙九↑縺ｮ縺ｧ `types.ts` 縺ｮ邱ｨ髮・・荳崎ｦ√５S繝励Λ繧ｰ繧､繝ｳ繧堤怐逡･縺吶ｋ縺ｨ `JSONGenrePlugin` 縺瑚・蜍輔〒繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ謠冗判縺吶ｋ縲・+
+  隧ｳ邏ｰ: [genre-plugin.md](genre-plugin.md) / [adding-content.md](adding-content.md)
+ 
+ ---
+ 
+ ### 譁ｰ繝輔ぅ繝ｼ繝√Ε繝ｼ繧定ｿｽ蜉縺吶ｋ
+ 
+-**蠢・ｦ√↑繧ｹ繝・ャ繝・** 3 繝輔ぃ繧､繝ｫ菫ｮ豁｣
++**蠢・ｦ√↑繧ｹ繝・ャ繝・** 2 繝輔ぃ繧､繝ｫ菫ｮ豁｣・・FeatureId` 縺ｯ `string` 蝙九↑縺ｮ縺ｧ `types.ts` 縺ｮ邱ｨ髮・・荳崎ｦ・ｼ・ 
+ ```typescript
+-// 1. src/domain/types.ts 窶・FeatureId 霑ｽ蜉
+-export type FeatureId = 'shoot' | 'hp' | 'auto_run' | ... | 'my_feature'
+-
+-// 2. src/game/systems/MyFeature.ts 窶・螳溯｣・ｼ・eatureSystem・・+// 1. src/game/systems/MyFeature.ts 窶・螳溯｣・ｼ・eatureSystem・・ export class MyFeature implements FeatureSystem {
+   readonly handles = 'my_feature'
+   
+@@ -167,8 +166,7 @@ export class MyFeature implements FeatureSystem {
+   // 縺昴・莉悶・繝輔ャ繧ｯ...
+ }
+ 
+-// 3. src/game/systems/index.ts 窶・逋ｻ骭ｲ
+-registerFeature(new MyFeature())
++// 2. src/game/systems/index.ts 窶・import & registerFeature(new MyFeature()) 繧定ｿｽ蜉
+ ```
+ 
+  隧ｳ邏ｰ: [feature-system.md](feature-system.md) / [adding-content.md](adding-content.md)
+@@ -282,8 +280,8 @@ MutableWorld.cameraX 繧剃ｽｿ縺・∝ｺｧ讓吝､画鋤繧堤ｵｱ荳・・ ### 繧ｳ繧｢螳溯｣・ 
+ -  Canvas 迚ｩ逅・お繝ｳ繧ｸ繝ｳ・郁｡晉ｪ√・謠冗判繝ｻ繝代・繝・ぅ繧ｯ繝ｫ繝ｻ繧ｷ繧ｧ繧､繧ｯ・・--  GenrePlugin ﾃ・15 遞ｮ・・ase, Runner, STG, RPG, Rhythm, Puzzle, Aerial STG, Survival, Bullet Runner, Platformer, Racing, Arena, Aquatic, Dungeon, Hack & Slash・・ JSON 繝励Λ繧ｰ繧､繝ｳ蟇ｾ蠢・--  FeatureSystem ﾃ・7 遞ｮ・・hoot, Rhythm, Movement, RPG, Extra Movement, Puzzle, Special・・+-  GenrePlugin ﾃ・16 遞ｮ・・ase, Runner, STG, RPG, Rhythm, Puzzle, Aerial STG, Survival, Bullet Runner, Platformer, Racing, Arena, Aquatic, Dungeon, Hack & Slash, Tetris・・ JSON 繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ繝励Λ繧ｰ繧､繝ｳ蟇ｾ蠢・+-  FeatureSystem ﾃ・7 遞ｮ・・hoot, Rhythm, Movement, RPG, Puzzle, Special, Tetris・俄ｻ遘ｻ蜍墓僑蠑ｵ・・ash / wall_jump / vertical_scroll・峨・ Movement 縺ｫ邨ｱ蜷・ -  縺吶∋縺ｦ縺ｮ繧､繝吶Φ繝医ヵ繝・け螳瑚｣・ｙ
+ -  ManualLoader / Builder / Validator / genreResolver 螳悟・螳溯｣・ 
+diff --git a/docs/TASKS.md b/docs/TASKS.md
+index 6251d0a..4d32a46 100644
+--- a/docs/TASKS.md
++++ b/docs/TASKS.md
+@@ -1,7 +1,7 @@
+ # 譛ｪ螳溯｣・・謾ｹ蝟・ち繧ｹ繧ｯ荳隕ｧ
+ 
+ 縺薙・繝峨く繝･繝｡繝ｳ繝医・縲∫樟蝨ｨ縺ｮ螳溯｣・憾豕√°繧芽ｦ九◆縲後ｄ繧九∋縺阪％縺ｨ縲阪ｒ蜆ｪ蜈亥ｺｦ鬆・↓縺ｾ縺ｨ繧√※縺・∪縺吶・ 
+-**譛邨よ峩譁ｰ:** 2026-06-09 | **邱上ち繧ｹ繧ｯ謨ｰ:** 61 莉ｶ
++**譛邨よ峩譁ｰ:** 2026-06-29 | **邱上ち繧ｹ繧ｯ謨ｰ:** 62 莉ｶ
+ 
+ ---
+ 
+@@ -150,9 +150,9 @@
+ 
+ | 繝輔ぃ繧､繝ｫ | 譛ｪ螳溯｣・ヵ繧｣繝ｼ繝√Ε繝ｼ |
+ |---|---|
+-| `src/game/systems/ExtraMovementFeature.ts:19` | `dash`, `wall_jump`, `slide`, `gravity_flip` |
+-| `src/game/systems/PuzzleFeature.ts:19` | `grid_stop`, `puzzle_solve` |
+-| `src/game/systems/SpecialFeature.ts:41` | `stealth_mode`, `time_bonus`, `tower`, `boss` |
++| `src/game/systems/MovementFeature.ts`・域立 ExtraMovementFeature 繧堤ｵｱ蜷茨ｼ・| `dash`, `wall_jump`, `slide`, `gravity_flip` |
++| `src/game/systems/PuzzleFeature.ts` | `grid_stop`, `puzzle_solve` |
++| `src/game/systems/SpecialFeature.ts` | `stealth_mode`, `time_bonus`, `tower`, `boss` |
+ 
+ **繧ｿ繧ｹ繧ｯ:**
+ - [x] 蜷・ヵ繧｣繝ｼ繝√Ε繝ｼ縺ｫ縺､縺・※縲悟ｮ溯｣・☆繧九阪°縲繰SON 縺九ｉ蜑企勁縺励※菴ｿ繧上↑縺・阪°繧呈ｱｺ螳壹☆繧具ｼ・ommit f0112b3・・@@ -161,7 +161,7 @@
+ - [x] `boss` 繝輔ぅ繝ｼ繝√Ε繝ｼ: HP 繝舌・繝ｻ謦・ｴ繧ｹ繧ｳ繧｢繝ｻ辷・匱貍泌・繝ｻ繧ｹ繝昴・繝ｳ蛻ｶ蠕｡繧貞ｮ溯｣・ｸ医∩
+ 
+ **謗ｨ螳壻ｽ懈･ｭ譎る俣:** 4・・ 譎る俣・亥ｮ溯｣・☆繧区焚縺ｫ繧医ｋ・・ 
+-**蟇ｾ雎｡繝輔ぃ繧､繝ｫ:** `src/game/systems/ExtraMovementFeature.ts` 縲～src/game/systems/PuzzleFeature.ts` 縲～src/game/systems/SpecialFeature.ts` 縲～src/data/manuals/*.json`
++**蟇ｾ雎｡繝輔ぃ繧､繝ｫ:** `src/game/systems/MovementFeature.ts`・域立 ExtraMovementFeature 繧堤ｵｱ蜷茨ｼ峨～src/game/systems/PuzzleFeature.ts` 縲～src/game/systems/SpecialFeature.ts` 縲～src/data/manuals/*.json`
+ 
+ ---
+ 
+@@ -338,9 +338,9 @@
+ **迴ｾ迥ｶ:** 蜷御ｸ讎ょｿｵ縺瑚､・焚縺ｮ蠖｢蠑上・繝輔ぃ繧､繝ｫ縺ｧ邂｡逅・＆繧後※縺翫ｊ縲√←縺薙ｒ隕九ｌ縺ｰ繧医＞縺九ｏ縺九ｊ縺ｫ縺上＞
+ 
+ **蝠城｡檎ｮ・園:**
+-- `ShootFeature.ts` 縺ｨ `shootSystem.ts` 窶・髢｢菫ゅ′荳肴・遒ｺ縲ゅ←縺｡繧峨′縺ｩ縺ｮ雋ｬ蜍吶ｒ謖√▽縺・-- `RhythmFeature.ts` 縺ｨ `rhythmSystem.ts` 窶・蜷御ｸ・-- 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ縺・4 邂・園縺ｫ蛻・淵: `src/data/config/genres.json` / `src/data/genres.ts` / `src/engine/GenrePlugin.ts` / `src/plugins/JSONGenrePlugin.ts`
++- ~~`ShootFeature.ts` 縺ｨ `shootSystem.ts`~~ 窶・隗｣豸域ｸ医∩: 蟆・茶繝ｭ繧ｸ繝・け縺ｯ `ShootFeature.ts` 縺ｫ邨ｱ蜷医＆繧後∫峡遶九＠縺・`shootSystem.ts` 縺ｯ蟄伜惠縺励↑縺・+- ~~`RhythmFeature.ts` 縺ｨ `rhythmSystem.ts`~~ 窶・隗｣豸域ｸ医∩: 蜷御ｸ奇ｼ・rhythmSystem.ts` 縺ｯ蟄伜惠縺励↑縺・ｼ・+- 繧ｸ繝｣繝ｳ繝ｫ髢｢騾｣縺瑚､・焚邂・園縺ｫ蛻・淵: `src/data/genres/*.json`・亥ｮ夂ｾｩ譛ｬ菴難ｼ・ `src/data/genres.ts`・・AME_CONFIG 縺九ｉ縺ｮ蜀阪お繧ｯ繧ｹ繝昴・繝茨ｼ・ `src/engine/GenrePlugin.ts`・医う繝ｳ繧ｿ繝ｼ繝輔ぉ繝ｼ繧ｹ・・ `src/plugins/JSONGenrePlugin.ts`・・SON繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ逕滓・・・ - `src/engine/` 縺ｨ `src/framework/` 縺ｮ蠖ｹ蜑ｲ縺ｮ蟾ｮ縺御ｸ肴・遒ｺ
+ 
+ **繧ｿ繧ｹ繧ｯ:**
+@@ -492,6 +492,29 @@
+ 
+ ---
+ 
++### B-13. 繝峨く繝･繝｡繝ｳ繝医→繧ｳ繝ｼ繝牙ｮ滓・縺ｮ荵夜屬・・026-06-29 繝峨く繝･繝｡繝ｳ繝亥・縺ｯ隗｣豸域ｸ医∩・・+
++**迴ｾ迥ｶ:** `docs/` 驟堺ｸ九・險倩ｿｰ縺後》etris 霑ｽ蜉繝ｻFeatureSystem 邨ｱ蜷医・JSON鬧・虚蛹悶↑縺ｩ縺ｮ繧ｳ繝ｼ繝牙､画峩縺ｫ霑ｽ蠕薙〒縺阪※縺翫ｉ縺壹∬､・焚邂・園縺悟ｮ滓・縺ｨ繧ｺ繝ｬ縺ｦ縺・◆縲・ 
++**蝠城｡・** 繝ｪ繝輔ぃ繝ｬ繝ｳ繧ｹ繝ｻ蜈･髢繧ｬ繧､繝峨′蜿､縺・ｧ区・繧呈｡亥・縺励∵眠隕丞盾蜉閠・ｒ隱､隱伜ｰ弱☆繧九・ 
++**蠖ｱ髻ｿ:** 繝峨く繝･繝｡繝ｳ繝亥・闊ｬ縺ｮ菫｡鬆ｼ諤ｧ縲ゅ↑縺贋ｸ玖ｨ倥・縺・■譛ｫ蟆ｾ縺ｮ縲後さ繝ｼ繝牙・縲埼・岼縺ｯ螳溯｣・・隧ｱ縺ｧ縺ゅｊ譛ｪ蟇ｾ蠢懊〒谿九ｋ縲・+
++**讀懷・縺励◆荵夜屬縺ｨ蟇ｾ蠢・**
++- [x] 繧ｸ繝｣繝ｳ繝ｫ謨ｰ 21 竊・**22**・・etris 霑ｽ蜉・峨ｒ蜈ｨ繝峨く繝･繝｡繝ｳ繝医↓蜿肴丐
++- [x] TS繝励Λ繧ｰ繧､繝ｳ 10遞ｮ・・5遞ｮ 竊・**16遞ｮ + JSON繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ6遞ｮ**・・bullet_hell` / `stealth_action` / `tower_def` / `sports` / `idle` / `horror`・・+- [x] `ExtraMovementFeature` 蟒・ｭ｢ 竊・**`MovementFeature` 縺ｫ邨ｱ蜷・*・・ash / wall_jump / vertical_scroll・峨・eatureSystem 縺ｯ7遞ｮ・・ `TetrisFeature`・・+- [x] `PuzzleFeature` / `SpecialFeature` 繧偵梧悴螳溯｣・阪→隱､險・竊・**螳溯｣・ｸ医∩**縺ｫ菫ｮ豁｣
++- [x] 螳溷惠縺励↑縺・ヵ繧｡繧､繝ｫ險倩ｿｰ繧貞炎髯､・丞ｷｮ譖ｿ: `shootSystem.ts` / `rhythmSystem.ts`・亥推 Feature 縺ｫ邨ｱ蜷茨ｼ峨～useThrow.ts` 竊・`useScoreAnimation.ts`縲～validateConfigs.ts` 竊・`PluginManager` / `JSONGenrePlugin` / `SoundManager`
++- [x] config JSON 17・・9蛟・竊・**21蛟・*縲｀anualTheme 7遞ｮ 竊・**15遞ｮ**縲√・繧､繧ｺ蜿取據髢｢謨ｰ鄒､繧・`api/domain.md` 縺ｫ霑ｽ險・+- [x] `LearningSystem` 繧偵梧悴邨ｱ蜷医阪→隱､險・竊・**sideScroller 縺ｮ繝ｫ繝ｼ繝励↓邨ｱ蜷域ｸ医∩**縺ｫ菫ｮ豁｣
++- [x] 繧ｸ繝｣繝ｳ繝ｫ/繝輔ぅ繝ｼ繝√Ε繝ｼ霑ｽ蜉謇矩・ｒ螳滓・縺ｫ菫ｮ豁｣: `GenreId`/`FeatureId` 縺ｯ `string` 蝙九〒 `types.ts` 邱ｨ髮・ｸ崎ｦ√√ず繝｣繝ｳ繝ｫ縺ｯ `src/data/genres/<id>.json` 繧堤ｽｮ縺上□縺代√・繝ｩ繧ｰ繧､繝ｳ縺ｯ `export default` 縺ｧ `import.meta.glob` 閾ｪ蜍募庶髮・+- [ ]・医さ繝ｼ繝牙・繝ｻ隕∫｢ｺ隱搾ｼ荏slide` / `gravity_flip` / `shield` 縺ｯ譛ｪ螳溯｣・・縺ｾ縺ｾ・域怏蜉ｹ蛹匁凾 console.warn・峨・-1 縺ｨ驥崎､・+- [ ]・医さ繝ｼ繝牙・繝ｻ隕∫｢ｺ隱搾ｼ荏src/data/config/genres.json` 縺ｫ譌ｧ genres 驟榊・縺梧ｮ句ｭ假ｼ亥ｮ溷柑蛟､縺ｯ `src/data/genres/*.json` 蛛ｴ・峨よｷｷ荵ｱ蝗樣∩縺ｮ縺溘ａ謨ｴ逅・ｒ讀懆ｨ弱・-8 縺ｨ髢｢騾｣
++
++**謗ｨ螳壻ｽ懈･ｭ譎る俣:** 螳御ｺ・ｼ医ラ繧ｭ繝･繝｡繝ｳ繝茨ｼ会ｼ・繧ｳ繝ｼ繝牙・鬆・岼縺ｯ B-1繝ｻB-8 縺ｫ髮・ｴ・ 
++**蟇ｾ雎｡繝輔ぃ繧､繝ｫ:** `docs/`・・EADME繝ｻarchitecture繝ｻgenre-system繝ｻfeature-ids繝ｻframework繝ｻdesign繝ｻadding-content繝ｻgenre-plugin繝ｻTASKS繝ｻapi/* 繝ｻguide/* 遲会ｼ・+
++---
++
+ ### 10. 繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ譛驕ｩ蛹・ 
+ **繧ｿ繧ｹ繧ｯ:**
+diff --git a/docs/adding-content.md b/docs/adding-content.md
+index 3e90f6d..d75e4a7 100644
+--- a/docs/adding-content.md
++++ b/docs/adding-content.md
+@@ -34,7 +34,7 @@
+ ```
+ 
+ **驕ｸ謚櫁い繧定ｿｽ蜉縺吶ｋ = JSON 繝輔ぃ繧､繝ｫ繧堤ｷｨ髮・☆繧九□縺・*
+-**繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繧定ｿｽ蜉縺吶ｋ = JSON + TypeScript 縺ｮ4邂・園繧堤ｷｨ髮・☆繧・*
++**繧ｸ繝｣繝ｳ繝ｫ繝ｻ繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繧定ｿｽ蜉縺吶ｋ = `src/data/genres/<id>.json` 繧堤ｽｮ縺上□縺托ｼ郁ｦ九◆逶ｮ繧剃ｽ懊ｊ霎ｼ繧縺ｪ繧・TS 繝励Λ繧ｰ繧､繝ｳ繧ゑｼ・*
+ 
+ ---
+ 
+@@ -171,74 +171,55 @@ cp src/data/manuals/TEMPLATE.json src/data/manuals/my-branch.json
+ 
+ ## 譁ｰ縺励＞繧ｸ繝｣繝ｳ繝ｫ繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繧定ｿｽ蜉縺吶ｋ
+ 
+-繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繧定ｿｽ蜉縺吶ｋ縺ｫ縺ｯ **4邂・園** 繧貞､画峩縺励∪縺吶・+繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繧定ｿｽ蜉縺吶ｋ縺ｫ縺ｯ **譛蟆・邂・園・・SON・峨∬ｦ九◆逶ｮ繧剃ｽ懊ｊ霎ｼ繧縺ｪ繧・邂・園** 繧貞､画峩縺励∪縺吶・ 
+-### 繧ｹ繝・ャ繝・1: GenreId 繧定ｿｽ蜉縺吶ｋ
++> `GenreId` / `FeatureId` 縺ｯ `string` 蝙九・縺溘ａ縲～src/domain/types.ts` 縺ｮ邱ｨ髮・・荳崎ｦ√〒縺吶・ 
+-[src/domain/types.ts](../src/domain/types.ts) 縺ｮ `GenreId` 蝙九↓譁ｰ縺励＞ ID 繧定ｿｽ蜉縺励∪縺吶・+### 繧ｹ繝・ャ繝・1: GenreDef・医ず繝｣繝ｳ繝ｫ螳夂ｾｩ・峨ｒ JSON 縺ｧ霑ｽ蜉縺吶ｋ
+ 
+-```typescript
+-export type GenreId =
+-  | 'base'
+-  | 'runner'
+-  // ... 譌｢蟄・...
+-  | 'my_genre'   // 竊・霑ｽ蜉
+-```
+-
+-### 繧ｹ繝・ャ繝・2: GenreDef・医ず繝｣繝ｳ繝ｫ螳夂ｾｩ・峨ｒ霑ｽ蜉縺吶ｋ
+-
+-[src/data/genres.ts](../src/data/genres.ts) 縺ｫ1繧ｨ繝ｳ繝医Μ霑ｽ蜉縺励∪縺吶・+`src/data/genres/my_genre.json` 繧呈眠隕丈ｽ懈・縺励∪縺吶Ａsrc/data/genres/*.json` 縺ｯ `import.meta.glob` 縺ｧ閾ｪ蜍募庶髮・＆繧後ｋ縺溘ａ縲・*繝輔ぃ繧､繝ｫ繧堤ｽｮ縺上□縺・*縺ｧ逋ｻ骭ｲ縺輔ｌ縺ｾ縺呻ｼ・src/data/genres.ts` 縺ｯ `GAME_CONFIG` 縺九ｉ縺ｮ蜀阪お繧ｯ繧ｹ繝昴・繝医↑縺ｮ縺ｧ邱ｨ髮・ｸ崎ｦ・ｼ峨・ 
+-```typescript
++```jsonc
+ {
+-  id: 'my_genre',
+-  label: '繝槭う繧ｸ繝｣繝ｳ繝ｫ',
++  "id": "my_genre",
++  "label": "繝槭う繧ｸ繝｣繝ｳ繝ｫ",
+ 
+-  // 笏笏笏 蜿取據譚｡莉ｶ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+-  // 縺薙・繧ｸ繝｣繝ｳ繝ｫ縺ｫ遒ｺ螳壹☆繧九◆繧√↓蠢・ｦ√↑譛菴弱ヱ繝ｩ繝｡繝ｼ繧ｿ蛟､縲・-  // 隍・焚謖・ｮ壹＠縺溷ｴ蜷医・縺吶∋縺ｦ縺ｮ譚｡莉ｶ繧呈ｺ縺溘☆蠢・ｦ√′縺ゅｋ縲・-  thresholds: { tempo: 3, aerial: 3 },
++  // 笏笏笏 蜿取據譚｡莉ｶ・郁ｻｸ繝代Λ繝｡繝ｼ繧ｿ髢ｾ蛟､・峨り､・焚謖・ｮ壽凾縺ｯ縺吶∋縺ｦ貅縺溘☆蠢・ｦ√′縺ゅｋ 笏笏笏
++  "thresholds": { "tempo": 3, "aerial": 3 },
+ 
+-  // 笏笏笏 繝輔ぅ繝ｼ繝√Ε繝ｼ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+-  // 繧ｸ繝｣繝ｳ繝ｫ遒ｺ螳壽凾縺ｫ譛牙柑縺ｫ縺ｪ繧九Γ繧ｫ繝九け繧ｹ縲・-  enableFeatures: ['double_jump', 'dash'],
+-  // 繧ｸ繝｣繝ｳ繝ｫ遒ｺ螳壽凾縺ｫ辟｡蜉ｹ蛹悶☆繧九Γ繧ｫ繝九け繧ｹ縲・-  disableFeatures: ['grid_stop'],
++  // 笏笏笏 繝輔ぅ繝ｼ繝√Ε繝ｼ・夂｢ｺ螳壽凾縺ｫ譛牙柑/辟｡蜉ｹ縺ｫ縺ｪ繧九Γ繧ｫ繝九け繧ｹ 笏笏笏
++  "enableFeatures": ["double_jump", "dash"],
++  "disableFeatures": ["grid_stop"],
+ 
+-  // 笏笏笏 繧ｹ繧ｳ繧｢險育ｮ怜ｼ・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
++  // 笏笏笏 繧ｹ繧ｳ繧｢險育ｮ怜ｼ・笏笏笏
+   // 螟画焚: distance, kills, combo, exp, beatHits, survivedSec,
+   //        accuracy, maxCombo, deaths, itemsCollected, bossKills,
+   //        stealthBonus, colorTouches
+-  scoreFormula: 'distance * 1.5 + combo * 60 + kills * 80',
+-
+-  // 笏笏笏 繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繝・く繧ｹ繝・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+-  // 繧ｸ繝｣繝ｳ繝ｫ遒ｺ螳壽凾縺ｫ隱ｬ譏取嶌縺ｫ譖ｸ縺崎ｾｼ縺ｾ繧後ｋ螳｣險譁・・-  manualReveal: '縺薙ｌ縺ｯ繝槭う繧ｸ繝｣繝ｳ繝ｫ縺ｫ縺ｪ繧翫∪縺励◆縲・,
+-  // 謚墓憧蠕後・繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ逕ｻ髱｢縺ｫ陦ｨ遉ｺ縺輔ｌ繧狗ｷ繧√￥縺上ｊ縺ｮ荳譁・・-  endingFlavor: '縺ゅ↑縺溘・迢ｬ閾ｪ縺ｮ繧ｲ繝ｼ繝繧剃ｽ懊ｊ荳翫￡縺溘・,
++  "scoreFormula": "distance * 1.5 + combo * 60 + kills * 80",
+ 
+-  // 笏笏笏 UI 繝・・繝・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+-  // 'plain' | 'stg' | 'rpg' | 'puzzle' | 'rhythm' | 'horror' | 'aquatic'
+-  theme: 'plain',
++  // 笏笏笏 繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繝・く繧ｹ繝・笏笏笏
++  "manualReveal": "縺薙ｌ縺ｯ繝槭う繧ｸ繝｣繝ｳ繝ｫ縺ｫ縺ｪ繧翫∪縺励◆縲・,
++  "endingFlavor": "縺ゅ↑縺溘・迢ｬ閾ｪ縺ｮ繧ｲ繝ｼ繝繧剃ｽ懊ｊ荳翫￡縺溘・,
+ 
+-  // 笏笏笏 Canvas 閭梧勹濶ｲ 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+-  bgColor: '#0a1020',
++  // 笏笏笏 UI 繝・・繝橸ｼ・anualTheme 縺ｮ縺・★繧後°縲ゆｾ・ plain / stg / rpg / puzzle / rhythm / tetris 窶ｦ・俄楳笏笏
++  "theme": "plain",
+ 
+-  // 笏笏笏 迺ｰ蠅・ｼ井ｻｻ諢擾ｼ・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+-  // 'ground' | 'sky' | 'space' | 'ocean' | 'dungeon' | 'forest' | 'city'
+-  environment: 'sky',
++  // 笏笏笏 Canvas 閭梧勹濶ｲ 笏笏笏
++  "bgColor": "#0a1020",
+ 
+-  // 笏笏笏 驥榊鴨・井ｻｻ諢擾ｼ・笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+-  // 驥榊鴨蜉騾溷ｺｦ px/sﾂｲ縲ら怐逡･譎ゅ・ 1600縲・ 縺ｫ縺吶ｋ縺ｨ辟｡驥榊鴨縺ｫ縺ｪ繧九・-  gravity: 1600,
+-},
++  // 笏笏笏 莉ｻ諢・笏笏笏
++  // environment: 'ground' | 'sky' | 'space' | 'ocean' | 'dungeon' | 'forest' | 'city'
++  "environment": "sky",
++  // 驥榊鴨蜉騾溷ｺｦ px/sﾂｲ縲ら怐逡･譎ゅ・ 1600縲・ 縺ｧ辟｡驥榊鴨縲・+  "gravity": 1600
++}
+ ```
+ 
+-### 繧ｹ繝・ャ繝・3: GenrePlugin・郁ｦ九◆逶ｮ・峨ｒ螳溯｣・☆繧・+### 繧ｹ繝・ャ繝・2: GenrePlugin・郁ｦ九◆逶ｮ・峨ｒ螳溯｣・☆繧具ｼ井ｻｻ諢擾ｼ・ 
+-[谺｡遽](#繧ｸ繝｣繝ｳ繝ｫ縺ｮ隕九◆逶ｮgenreplugin繧貞ｮ溯｣・☆繧・ 繧貞盾辣ｧ縺励※縺上□縺輔＞縲・+蟆ら畑繝薙ず繝･繧｢繝ｫ縺悟ｿ・ｦ√↑蝣ｴ蜷医・縺ｿ螳溯｣・＠縺ｾ縺吶ら怐逡･縺吶ｋ縺ｨ `JSONGenrePlugin` 縺・`theme` 縺九ｉ繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ謠冗判縺励∪縺吶・谺｡遽](#繧ｸ繝｣繝ｳ繝ｫ縺ｮ隕九◆逶ｮgenreplugin繧貞ｮ溯｣・☆繧・ 繧貞盾辣ｧ縺励※縺上□縺輔＞縲・ 
+-### 繧ｹ繝・ャ繝・4: 驕ｸ謚櫁い縺悟庶譚溘☆繧九ｈ縺・↓繝代Λ繝｡繝ｼ繧ｿ繧定ｨｭ險医☆繧・+### 繧ｹ繝・ャ繝・3: 驕ｸ謚櫁い縺悟庶譚溘☆繧九ｈ縺・↓繝代Λ繝｡繝ｼ繧ｿ繧定ｨｭ險医☆繧・ 
+ 繝槭ル繝･繧｢繝ｫ縺ｮ JSON 繝輔ぃ繧､繝ｫ縺ｮ `genreParams` 繧定ｪｿ謨ｴ縺励※縲・ 繝励Ξ繧､繝､繝ｼ縺檎音螳壹・驕ｸ謚槭ｒ邯壹￠繧九→ `thresholds` 縺ｫ蛻ｰ驕斐☆繧九ｈ縺・↓縺励∪縺吶・@@ -313,11 +294,10 @@ export class MyGenrePlugin extends DarkThemePlugin {
+ 
+ ### 逋ｻ骭ｲ縺吶ｋ
+ 
+-[src/genres/index.ts](../src/genres/index.ts) 縺ｫ2陦瑚ｿｽ蜉縺励∪縺吶・+繝輔ぃ繧､繝ｫ譛ｫ蟆ｾ縺ｧ `default export` 縺吶ｋ縺縺代〒縺吶Ａsrc/genres/index.ts` 縺・`import.meta.glob` 縺ｧ閾ｪ蜍募庶髮・☆繧九◆繧√～index.ts` 縺ｮ邱ｨ髮・・荳崎ｦ√〒縺吶・ 
+ ```typescript
+-import { MyGenrePlugin } from './MyGenrePlugin'   // 竊・霑ｽ蜉
+-registerGenre(new MyGenrePlugin())                  // 竊・霑ｽ蜉
++export default new MyGenrePlugin()   // 竊・縺薙ｌ縺縺・ ```
+ 
+ ### spawnTable 縺ｮ譖ｸ縺肴婿
+@@ -439,9 +419,9 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
+ |---|---|
+ | 驕ｸ謚櫁い繧帝∈繧薙〒繧ゆｽ輔ｂ襍ｷ縺阪↑縺・| `next` 縺ｮ繧ｭ繝ｼ縺悟ｭ伜惠縺励↑縺・or 繧ｿ繧､繝励Α繧ｹ |
+ | 縺・▽縺ｾ縺ｧ繧ゅず繝｣繝ｳ繝ｫ縺檎｢ｺ螳壹＠縺ｪ縺・| `thresholds` 縺ｮ蛟､縺碁∈謚櫁い縺ｮ蜷郁ｨ医ｒ雜・∴縺ｦ縺・ｋ |
+-| 繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繝・く繧ｹ繝医′陦ｨ遉ｺ縺輔ｌ縺ｪ縺・| `endingFlavor` 縺・`genres.ts` 縺ｫ譛ｪ險倩ｼ・|
+-| 隕九◆逶ｮ縺悟､峨ｏ繧峨↑縺・| `genres/index.ts` 縺ｸ縺ｮ逋ｻ骭ｲ貍上ｌ |
+-| 繧ｲ繝ｼ繝縺瑚ｵｷ蜍輔＠縺ｪ縺・| `domain/types.ts` 縺ｮ `GenreId` 縺ｸ縺ｮ霑ｽ蜉貍上ｌ |
++| 繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繝・く繧ｹ繝医′陦ｨ遉ｺ縺輔ｌ縺ｪ縺・| `endingFlavor` 縺・`src/data/genres/<id>.json` 縺ｫ譛ｪ險倩ｼ・|
++| 隕九◆逶ｮ縺悟､峨ｏ繧峨↑縺・| TS繝励Λ繧ｰ繧､繝ｳ縺ｮ `export default` 蠢倥ｌ縲√∪縺溘・ `id` 縺ｮ荳堺ｸ閾ｴ |
++| 繧ｸ繝｣繝ｳ繝ｫ縺瑚ｪ崎ｭ倥＆繧後↑縺・| `src/data/genres/<id>.json` 縺ｮ `id` 驥崎､・・JSON 讒区枚繧ｨ繝ｩ繝ｼ・郁ｵｷ蜍墓凾縺ｮ validation 繧堤｢ｺ隱搾ｼ・|
+ 
+ ---
+ 
+@@ -456,16 +436,15 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
+ 
+ ### 譁ｰ縺励＞繧ｸ繝｣繝ｳ繝ｫ繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ繧定ｿｽ蜉縺吶ｋ
+ 
+-- [ ] `src/domain/types.ts` 縺ｮ `GenreId` 縺ｫ ID 繧定ｿｽ蜉
+-- [ ] `src/data/genres.ts` 縺ｫ `GenreDef` 繧定ｿｽ蜉・・hresholds, enableFeatures, scoreFormula, manualReveal, endingFlavor・・-- [ ] `src/genres/MyGenrePlugin.ts` 繧剃ｽ懈・・郁ｦ冶ｦ壹ユ繝ｼ繝・+ spawnTable・・-- [ ] `src/genres/index.ts` 縺ｫ import 縺ｨ `registerGenre()` 繧定ｿｽ蜉
++- [ ] `src/data/genres/<id>.json` 繧剃ｽ懈・・・hresholds, enableFeatures, scoreFormula, manualReveal, endingFlavor, theme, bgColor・・+- [ ]・井ｻｻ諢擾ｼ荏src/genres/MyGenrePlugin.ts` 繧剃ｽ懈・縺玲忰蟆ｾ縺ｧ `export default new MyGenrePlugin()`・郁ｦ冶ｦ壹ユ繝ｼ繝・+ spawnTable・・+- [ ] 窶ｻ `src/domain/types.ts` 繧・`src/genres/index.ts` 縺ｮ邱ｨ髮・・荳崎ｦ・ｼ・enreId 縺ｯ string繝ｻ繝励Λ繧ｰ繧､繝ｳ縺ｯ閾ｪ蜍募庶髮・ｼ・ - [ ] `src/data/manuals/` 縺ｮ JSON 縺ｧ genreParams 繧定ｪｿ謨ｴ縺励∵眠繧ｸ繝｣繝ｳ繝ｫ縺ｮ thresholds 縺ｸ蜿取據縺吶ｋ繝ｫ繝ｼ繝医′蟄伜惠縺吶ｋ縺薙→繧堤｢ｺ隱・ - [ ] 繝悶Λ繧ｦ繧ｶ縺ｧ螳滄圀縺ｫ縺昴・繧ｸ繝｣繝ｳ繝ｫ縺ｸ蜿取據縺吶ｋ縺句虚菴懃｢ｺ隱・ 
+ ### 繝・せ繝域凾縺ｮ繧ｷ繝ｧ繝ｼ繝医き繝・ヨ
+ 
+-`genreParams` 縺ｮ蛻晄悄蛟､繧・`genres.ts` 縺ｮ thresholds 縺｡繧・≧縺ｩ縺ｫ險ｭ螳壹＠縺・URL 繝代Λ繝｡繝ｼ繧ｿ繧・+`genreParams` 縺ｮ蛻晄悄蛟､繧・`src/data/genres/<id>.json` 縺ｮ thresholds 縺｡繧・≧縺ｩ縺ｫ險ｭ螳壹＠縺・URL 繝代Λ繝｡繝ｼ繧ｿ繧・ 繝悶Λ繧ｦ繧ｶ繧ｳ繝ｳ繧ｽ繝ｼ繝ｫ縺九ｉ縺ｮ逶ｴ謗･蜻ｼ縺ｳ蜃ｺ縺励〒縲√お繝ｳ繝・ぅ繝ｳ繧ｰ逕ｻ髱｢繧堤ｴ譌ｩ縺冗｢ｺ隱阪〒縺阪∪縺吶・ ・亥ｮ溯｣・婿豕輔・ `composables/useGameState.ts` 縺ｮ `debugForceGenre()` 繧貞盾辣ｧ・・ 
+diff --git a/docs/api/composables_plugins.md b/docs/api/composables_plugins.md
+index de145ae..ca26c61 100644
+--- a/docs/api/composables_plugins.md
++++ b/docs/api/composables_plugins.md
+@@ -84,29 +84,62 @@
+ 
+ ---
+ 
+-## `src/composables/useThrow.ts`
++## `src/composables/useScoreAnimation.ts`
+ 
+-謚墓憧繝輔ぉ繝ｼ繧ｺ迥ｶ諷狗ｮ｡逅・composable縲・+繧ｹ繧ｳ繧｢陦ｨ遉ｺ縺ｮ繧ｫ繧ｦ繝ｳ繝医い繝・・繧｢繝九Γ繝ｼ繧ｷ繝ｧ繝ｳ composable縲・ 
+-### `useThrow()`
++### `useScoreAnimation(source: Ref<number>)`
+ 
+-| 謌ｻ繧雁､繝励Ο繝代ユ繧｣ | 蝙・| 讎りｦ・|
+-|---|---|---|
+-| `state` | `ref<ThrowState>` | 謚墓憧繧ｨ繝ｳ繧ｸ繝ｳ迥ｶ諷・|
+-| `onDragStart(x, y): void` | 窶・| 繝峨Λ繝・げ髢句ｧ・|
+-| `onDragMove(x, y): void` | 窶・| 繝峨Λ繝・げ荳ｭ譖ｴ譁ｰ |
+-| `onRelease(): void` | 窶・| 謾ｾ謚・|
+-| `update(dt, canvasHeight): void` | 窶・| 迚ｩ逅・峩譁ｰ |
+-| `reset(): void` | 窶・| 迥ｶ諷九Μ繧ｻ繝・ヨ |
++| 鬆・岼 | 讎りｦ・|
++|---|---|
++| 蠑墓焚 `source` | 逶｣隕門ｯｾ雎｡縺ｮ繧ｹ繧ｳ繧｢ `Ref<number>` |
++| 謌ｻ繧雁､ | `displayScore`・・Ref<number>`・峨り｡ｨ遉ｺ逕ｨ縺ｫ繧｢繝九Γ繝ｼ繧ｷ繝ｧ繝ｳ縺輔ｌ縺溷､ |
++
++`source` 縺ｮ螟牙喧繧・watch 縺励∝ｷｮ蛻・′蟆上＆縺・ｴ蜷医・蜊ｳ譎ょ渚譏縲∝､ｧ縺阪＞蝣ｴ蜷医・ `requestAnimationFrame` 縺ｧ `ANIMATION_DURATION_MS` 縺九￠縺ｦ陬憺俣縺吶ｋ縲ゅい繝ｳ繝槭え繝ｳ繝域凾縺ｫ rAF 繧定ｧ｣謾ｾ縲・+
++> 謚墓憧繝輔ぉ繝ｼ繧ｺ縺ｮ迥ｶ諷九・蟆ら畑 composable 縺ｧ縺ｯ縺ｪ縺上～App.vue` 縺・`game/throwEngine.ts` 繧堤峩謗･鬧・虚縺励※邂｡逅・☆繧九・ 
+ ---
+ 
+-## `src/plugins/validateConfigs.ts`
++## `src/plugins/PluginManager.ts`
+ 
+-Vite 繝励Λ繧ｰ繧､繝ｳ縲る幕逋ｺ譎ゅ↓ MANUAL_DECK 縺ｨ GAME_CONFIG 縺ｮ謨ｴ蜷域ｧ繧定・蜍墓､懆ｨｼ縲・+繝ｦ繝ｼ繧ｶ繝ｼ縺後う繝ｳ繧ｹ繝医・繝ｫ縺励◆繝励Λ繧ｰ繧､繝ｳ・医ず繝｣繝ｳ繝ｫ / 繝・ャ繧ｭ諡｡蠑ｵ・峨ｒ邂｡逅・☆繧九ＭocalStorage 豌ｸ邯壼喧・亥茜逕ｨ荳榊庄譎ゅ・繝｡繝｢繝ｪ縺ｫ繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ・峨・ 
+-### 繧ｨ繧ｯ繧ｹ繝昴・繝磯未謨ｰ
++### 繧ｯ繝ｩ繧ｹ `PluginManager`・医す繝ｳ繧ｰ繝ｫ繝医Φ `pluginManager`・・ 
+-| 髢｢謨ｰ | 讎りｦ・|
++| 繝｡繧ｽ繝・ラ | 讎りｦ・|
+ |---|---|
+-| `validateConfigs(): Plugin` | Vite 繝励Λ繧ｰ繧､繝ｳ繝輔ぃ繧ｯ繝医Μ・・ev 繝｢繝ｼ繝峨〒縺ｮ縺ｿ `buildStart` 縺ｧ讀懆ｨｼ螳溯｡鯉ｼ・|
++| `loadAll(): UserPlugin[]` | 菫晏ｭ俶ｸ医∩繝励Λ繧ｰ繧､繝ｳ繧貞・莉ｶ隱ｭ縺ｿ霎ｼ縺ｿ |
++| `install(json): { success, error? }` | JSON 繧呈､懆ｨｼ縺励※繧､繝ｳ繧ｹ繝医・繝ｫ |
++| `uninstall(id): boolean` | 謖・ｮ唔D繧偵い繝ｳ繧､繝ｳ繧ｹ繝医・繝ｫ |
++| `listInstalled(): UserPlugin[]` | 繧､繝ｳ繧ｹ繝医・繝ｫ貂医∩荳隕ｧ |
++
++`GenrePlugin` / `DeckExtensionPlugin` 繧､繝ｳ繧ｿ繝ｼ繝輔ぉ繝ｼ繧ｹ繧ょｮ夂ｾｩ縺吶ｋ縲・+
++---
++
++## `src/plugins/JSONGenrePlugin.ts`
++
++JSON 螳夂ｾｩ縺九ｉ繧ｸ繝｣繝ｳ繝ｫ縺ｮ隕冶ｦ壹ユ繝ｼ繝槭ｒ逕滓・縺吶ｋ繝励Λ繧ｰ繧､繝ｳ縲５S繝励Λ繧ｰ繧､繝ｳ繧呈戟縺溘↑縺・JSON 繧ｸ繝｣繝ｳ繝ｫ縺ｮ繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ縺ｨ縺励※ `genres/index.ts` 縺悟茜逕ｨ縺吶ｋ縲・+
++| 繧ｨ繧ｯ繧ｹ繝昴・繝・| 讎りｦ・|
++|---|---|
++| `class JSONGenrePlugin` | `GenreJsonDef`・・d / theme / visual・峨°繧・`GenrePlugin` 逶ｸ蠖薙ｒ讒狗ｯ・|
++| `interface GenreJsonDef` | JSON 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ縺ｮ繧ｹ繧ｭ繝ｼ繝・|
++
++---
++
++## `src/plugins/SoundManager.ts`
++
++BGM 繝輔ぉ繝ｼ繝峨う繝ｳ/繧｢繧ｦ繝医→蜉ｹ譫憺浹繝輔ャ繧ｯ繧堤ｮ｡逅・☆繧九・+
++### 繧ｯ繝ｩ繧ｹ `SoundManager`・医す繝ｳ繧ｰ繝ｫ繝医Φ `soundManager`・・+
++| 繝｡繧ｽ繝・ラ | 讎りｦ・|
++|---|---|
++| `playBgm(config: BgmConfig)` | BGM 蜀咲函・医ヵ繧ｧ繝ｼ繝峨う繝ｳ・・|
++| `stopBgm(fadeOutMs?)` | BGM 蛛懈ｭ｢・医ヵ繧ｧ繝ｼ繝峨い繧ｦ繝茨ｼ・|
++| `register(impl: Partial<SoundHooks>)` | 蜉ｹ譫憺浹繝輔ャ繧ｯ螳溯｣・ｒ逋ｻ骭ｲ |
++| `onJump / onShoot / onHit / onGenreLock / onBeat 窶ｦ` | `SoundHooks` 縺ｮ蜷・う繝吶Φ繝医ヵ繝・け |
++
++> 髻ｳ螢ｰ繝輔ぃ繧､繝ｫ縺悟ｭ伜惠縺励↑縺・ｴ蜷医∝・逕溘・繧ｹ繧ｭ繝・・縺輔ｌ繧具ｼ医が繝輔Λ繧､繝ｳ蜍穂ｽ懊ｒ髦ｻ螳ｳ縺励↑縺・ｼ峨・diff --git a/docs/api/data.md b/docs/api/data.md
+index c05ea43..afae7fa 100644
+--- a/docs/api/data.md
++++ b/docs/api/data.md
+@@ -16,8 +16,10 @@ JSON 險ｭ螳壹ヵ繧｡繧､繝ｫ縺ｮ繧､繝ｳ繝昴・繝医→ GameConfigMap 縺ｮ讒狗ｯ峨・ 
+ ### 蜀・Κ繧､繝ｳ繝昴・繝・ 
+-蜷・そ繧ｯ繧ｷ繝ｧ繝ｳ縺ｯ `src/data/config/*.json` 縺九ｉ繧､繝ｳ繝昴・繝医＆繧後ｋ:
+-- `physics`, `shoot`, `throw`, `spawn`, `vfx`, `camera`, `background`, `hazard_vfx`, `ui`, `score`, `difficulty`, `boss`, `rhythm_tuning`, `stealth`, `genre_params`, `game_balance`, `genres`
++`src/data/config/*.json`・・1繝輔ぃ繧､繝ｫ・峨ｒ `import.meta.glob` 縺ｧ閾ｪ蜍募庶髮・＠縺ｦ讒狗ｯ峨☆繧・
++- `background`, `bayes`, `boss`, `camera`, `difficulty`, `extra_movement`, `game_balance`, `genre_params`, `genres`, `hazard_vfx`, `physics`, `puzzle`, `rhythm_tuning`, `score`, `shoot`, `spawn`, `special`, `stealth`, `throw`, `ui`, `vfx`
++
++蜉縺医※縲√ず繝｣繝ｳ繝ｫ螳夂ｾｩ縺ｯ `src/data/genres/*.json`・・2繝輔ぃ繧､繝ｫ・峨ｒ蛻･騾・glob 縺ｧ蜿朱寔縺励～genres` 繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ縺ｸ蜷域・縺励※豕ｨ蜈･縺吶ｋ縲よ眠縺励＞ config / 繧ｸ繝｣繝ｳ繝ｫ JSON 繧定ｿｽ蜉縺吶ｋ縺縺代〒閾ｪ蜍戊ｪ崎ｭ倥＆繧後～config.ts` 縺ｮ邱ｨ髮・・荳崎ｦ√・ 
+ ---
+ 
+@@ -33,5 +35,7 @@ JSON 險ｭ螳壹ヵ繧｡繧､繝ｫ縺ｮ繧､繝ｳ繝昴・繝医→ GameConfigMap 縺ｮ讒狗ｯ峨・ 
+ ### 蜀・Κ繧､繝ｳ繝昴・繝・ 
+-蜷・ョ繝・く繝輔ぃ繧､繝ｫ縺ｯ `src/data/manuals/*.json` 縺九ｉ繧､繝ｳ繝昴・繝医＆繧後ｋ:
+-- `main_deck.json`, `stg_deck.json`, `rpg_deck.json`, `puzzle_deck.json`, `rhythm_deck.json`, `horror_deck.json`, `aquatic_deck.json`
++`src/data/manuals/*.json` 繧・`import.meta.glob` 縺ｧ閾ｪ蜍募庶髮・＠縺ｦ讒狗ｯ峨☆繧具ｼ・TEMPLATE.json` 縺ｯ繧ｵ繝ｳ繝励Ν縺ｮ縺溘ａ髯､螟厄ｼ・
++- `base.json`, `action-branch.json`, `advanced-branch.json`, `flow-branch.json`, `tetris-branch.json`
++
++譁ｰ縺励＞繝・ャ繧ｭ JSON 繧定ｿｽ蜉縺吶ｋ縺縺代〒閾ｪ蜍慕噪縺ｫ `MANUAL_DECK` 縺ｸ邨・∩霎ｼ縺ｾ繧後ｋ・・manualDeck.ts` 縺ｮ邱ｨ髮・・荳崎ｦ・ｼ峨・diff --git a/docs/api/domain.md b/docs/api/domain.md
+index bd8d8bf..e7cd0de 100644
+--- a/docs/api/domain.md
++++ b/docs/api/domain.md
+@@ -14,12 +14,12 @@
+ |---|---|
+ | `GenreParam` | 繧ｸ繝｣繝ｳ繝ｫ蛻・ｲ舌・霆ｸ繝代Λ繝｡繝ｼ繧ｿ (12遞ｮ: tempo, range, enemy, combo, growth, rhythm, stealth, vertical, aerial, survive, craft, speed) |
+ | `GenreParams` | `Partial<Record<GenreParam, number>>` 窶・霆ｸ繝代Λ繝｡繝ｼ繧ｿ縺ｮ繝槭ャ繝・|
+-| `GenreId` | 繧ｸ繝｣繝ｳ繝ｫID (20遞ｮ + base: runner, stg, rpg, puzzle, rhythm, aerial_stg, bullet_hell, survival, stealth_action, racing, platformer, dungeon, tower_def, sports, idle, bullet_runner, arena, aquatic, horror, hack_slash) |
++| `GenreId` | 繧ｸ繝｣繝ｳ繝ｫID縲ょｮ滉ｽ薙・ `string` 蝙具ｼ・nion 縺ｧ縺ｯ縺ｪ縺・ｼ峨ょｮ夂ｾｩ縺ｯ 22遞ｮ・・ase 蜷ｫ繧・・ base, runner, stg, rpg, puzzle, rhythm, aerial_stg, bullet_hell, survival, stealth_action, racing, platformer, dungeon, tower_def, sports, idle, bullet_runner, arena, aquatic, horror, hack_slash, tetris |
+ | `Phase` | 繧ｲ繝ｼ繝繝輔ぉ繝ｼ繧ｺ (`title`, `tutorialIntro`, `tutorial`, `updating`, `playing`, `genreLocked`, `throwing`, `ending`) |
+-| `ManualTheme` | 隱ｬ譏取嶌繝・・繝・(`plain`, `stg`, `rpg`, `puzzle`, `rhythm`, `horror`, `aquatic`) |
++| `ManualTheme` | 隱ｬ譏取嶌繝・・繝・(15遞ｮ: `plain`, `stg`, `rpg`, `puzzle`, `rhythm`, `horror`, `aquatic`, `runner`, `stealth`, `racing`, `platformer`, `dungeon`, `hack_slash`, `survival`, `tetris`) |
+ | `ScrollDirection` | 繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ譁ｹ蜷・(`horizontal`, `vertical`, `none`) |
+ | `EnvironmentId` | 迺ｰ蠅・ｨｭ螳・(`ground`, `sky`, `space`, `ocean`, `dungeon`, `forest`, `city`) |
+-| `FeatureId` | Feature 繝輔Λ繧ｰ (30遞ｮ: shoot, three_way, charge_shot, spread_shot, bomb, enemy_hp, boss, auto_run, slow_precise, double_jump, long_air, dash, wall_jump, slide, gravity_flip, vertical_scroll, hp, exp, item_pickup, shield, grid_stop, puzzle_solve, beat_hazard, just_input, beat_dash, stealth_mode, time_bonus, tower, color_touch) |
++| `FeatureId` | Feature 繝輔Λ繧ｰ縲ょｮ滉ｽ薙・ `string` 蝙具ｼ・nion 縺ｧ縺ｯ縺ｪ縺・ｼ峨よ里遏･縺ｮ ID: shoot, three_way, charge_shot, spread_shot, bomb, enemy_hp, boss, movement, auto_run, slow_precise, double_jump, long_air, dash, wall_jump, slide, gravity_flip, vertical_scroll, hp, exp, item_pickup, shield, grid_stop, puzzle_solve, beat_hazard, just_input, beat_dash, stealth_mode, time_bonus, tower, color_touch, tetris_mode |
+ | `Controls` | 繧ｭ繝ｼ險ｭ螳・(`jump`, `moveLeft`, `moveRight`, `moveUp`, `moveDown`, `shoot?`, `dash?`, `slide?`) |
+ | `Choice` | 隱ｬ譏取嶌驕ｸ謚櫁い (`id`, `label`, `hint?`, `next`, `genreParams`, `paramMultiplier?`) |
+ | `ManualRuntimeConfig` | 繝舌・繧ｸ繝ｧ繝ｳ蝗ｺ譛峨・runtime荳頑嶌縺・(`scrollSpeed?`, `gravity?`, `bpm?`, `scrollDirection?`, `environment?`, `playerMaxHp?`, `timescale?`, `colorTouchScore?`, `forceGenreId?`) |
+@@ -48,8 +48,23 @@
+ | `resolveGenre(accumulated: GenreParams, genres: GenreDef[]): GenreId` | 邏ｯ遨阪ヱ繝ｩ繝｡繝ｼ繧ｿ縺九ｉ繧ｸ繝｣繝ｳ繝ｫ繧呈ｱｺ螳夲ｼ郁ｶ・℃驥乗怙螟ｧ縺ｮ繧ゅ・繧帝∈謚橸ｼ・|
+ | `resolveFeaturesForGenre(genreId, genres): { enable: Set<FeatureId>, disable: Set<FeatureId> }` | 繧ｸ繝｣繝ｳ繝ｫ縺ｮ enable/disable features 繧貞叙蠕・|
+ | `resolveGenreProgress(accumulated, genres): { closestGenre: GenreId, progress: number }` | 蜿取據縺ｮ霑代＆繧・0縲・ 縺ｧ霑斐☆・・I 貍泌・逕ｨ・・|
++| `resolveAllGenreProgress(accumulated, genres)` | 蜈ｨ繧ｸ繝｣繝ｳ繝ｫ縺ｮ騾ｲ謐励ｒ霑斐☆ |
+ | `resolveAllMetGenres(accumulated, genres): GenreId[]` | 蜿取據貂医∩縺ｮ蜈ｨ繧ｸ繝｣繝ｳ繝ｫ繧定ｿ斐☆・医娯留笳ｯ縺ｫ繧ゅ〒縺阪◆縲崎｡ｨ遉ｺ逕ｨ・・|
+ 
++### 繝吶う繧ｺ蜿取據・井ｸｻ譁ｹ蠑擾ｼ・+
++迴ｾ蝨ｨ縺ｮ荳ｻ縺溘ｋ蜿取據蛻､螳壹・繝吶う繧ｺ莠句ｾ檎｢ｺ邇・婿蠑上ょ推霆ｸ縺ｮ髢ｾ蛟､縺ｨ縺ｮ荵夜屬驥上°繧牙ｰ､蠎ｦ `L = exp(-decayRate ﾃ・deviation)` 繧呈ｱゅａ縲∽ｺ句ｾ檎｢ｺ邇・〒蜿取據繧貞愛螳壹☆繧具ｼ医ワ繧､繝代・繝代Λ繝｡繝ｼ繧ｿ縺ｯ `config/bayes.json`・峨・+
++| 髢｢謨ｰ | 讎りｦ・|
++|---|---|
++| `accumulateGenrePoints(history)` | 驕ｸ謚槫ｱ･豁ｴ縺九ｉ genrePoints・医ず繝｣繝ｳ繝ｫ逶ｴ謗･繝昴う繝ｳ繝茨ｼ峨ｒ蜷育ｮ・|
++| `computeBayesianPosteriors(accumulated, genres, config)` | 蜷・ず繝｣繝ｳ繝ｫ縺ｮ莠句ｾ檎｢ｺ邇・ｒ險育ｮ・|
++| `initBayesianState(genres): BayesianState` | 繝吶う繧ｺ迥ｶ諷具ｼ井ｺ句ｾ悟・蟶・ｼ峨ｒ蛻晄悄蛹・|
++| `updateBayesianState(state, accumulated, genres, config): BayesianState` | 1驕ｸ謚槫・縺ｮ莠句ｾ悟・蟶・ｒ譖ｴ譁ｰ縺怜庶譚溷愛螳・|
++| `resolveHighestProbGenre(accumulated, genres, config): GenreId` | 譛蟆､繧ｸ繝｣繝ｳ繝ｫ繧定ｿ斐☆ |
++| `getGenreDistribution(accumulated, genres, config)` | 繝・ヰ繝・げ逕ｨ縺ｫ荳贋ｽ阪ず繝｣繝ｳ繝ｫ縺ｮ遒ｺ邇・・蟶・ｒ霑斐☆ |
++| `DEFAULT_BAYES_CONFIG` | `bayes.json` 荳榊惠譎ゅ・繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ險ｭ螳・|
++
+ ---
+ 
+ ## `ruleEngine.ts`
+diff --git a/docs/api/game.md b/docs/api/game.md
+index fa475e0..3d3edeb 100644
+--- a/docs/api/game.md
++++ b/docs/api/game.md
+@@ -102,11 +102,15 @@ Canvas 繧ｲ繝ｼ繝繧ｨ繝ｳ繧ｸ繝ｳ譛ｬ菴薙よｨｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｨ邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｮ
+ 
+ ### `MovementFeature.ts`
+ 
+-**handles:** `auto_run`, `slow_precise`, `double_jump`, `long_air`
++**handles:** `movement`, `auto_run`, `slow_precise`, `double_jump`, `long_air`, `dash`, `wall_jump`, `vertical_scroll`
+ 
+-- `preUpdate()`: 蜈･蜉帚・騾溷ｺｦ繝槭ャ繝斐Φ繧ｰ・域ｨｪ/邵ｦ繝｢繝ｼ繝我ｸ｡蟇ｾ蠢懶ｼ・-- `update()`: long_air 荳ｭ縺ｮ繧ｹ繧ｳ繧｢繝懊・繝翫せ
++> 譌ｧ `ExtraMovementFeature`・・ash / wall_jump / vertical_scroll・峨・譛ｬ繧ｯ繝ｩ繧ｹ縺ｫ邨ｱ蜷医＆繧後◆縲・+
++- `preUpdate()`: 蜈･蜉帚・騾溷ｺｦ繝槭ャ繝斐Φ繧ｰ・域ｨｪ/邵ｦ繝｢繝ｼ繝我ｸ｡蟇ｾ蠢懶ｼ峨‥ash繝ｻwall_jump 蜃ｦ逅・+- `update()`: long_air 荳ｭ縺ｮ繧ｹ繧ｳ繧｢繝懊・繝翫せ縲」ertical_scroll 縺ｮ繝上じ繝ｼ繝芽寐陦後ラ繝ｪ繝輔ヨ
++- `render()`: dash 繝医Ξ繧､繝ｫ謠冗判
+ - `onInit()`: double_jump 譛牙柑譎ゅ↓ jumpsLeft 繧・縺ｫ險ｭ螳・+- `slide` / `gravity_flip` 縺ｯ譛ｪ螳溯｣・ｼ域怏蜉ｹ蛹匁凾縺ｫ console.warn・・ 
+ ### `ShootFeature.ts`
+ 
+@@ -131,61 +135,26 @@ Canvas 繧ｲ繝ｼ繝繧ｨ繝ｳ繧ｸ繝ｳ譛ｬ菴薙よｨｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｨ邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｮ
+ - `render()`: 繝薙・繝医・繝ｼ繧ｫ繝ｼ謠冗判
+ - `onManualUpdated()`: BPM 螟画峩縺ｧ迥ｶ諷九Μ繧ｻ繝・ヨ
+ 
+-### `ExtraMovementFeature.ts`
+-
+-**handles:** `dash`, `wall_jump`, `slide`, `gravity_flip`, `vertical_scroll`
+-
+-- **譛ｪ螳溯｣・*縲よ怏蜉ｹ蛹匁凾縺ｯ console.warn 縺ｧ隴ｦ蜻翫・-
+ ### `PuzzleFeature.ts`
+ 
+ **handles:** `grid_stop`, `puzzle_solve`
+ 
+-- **譛ｪ螳溯｣・*縲よ怏蜉ｹ蛹匁凾縺ｯ console.warn 縺ｧ隴ｦ蜻翫・+- `update()`: move/solve 繝輔ぉ繝ｼ繧ｺ縺ｮ莠､莠貞・譖ｿ縲Ｔolve 荳ｭ縺ｯ `scrollSpeed=0` 縺ｧ蛛懈ｭ｢縺励√ち繝ｼ繧ｲ繝・ヨ繧ｻ繝ｫ蛻､螳壹〒繧ｳ繝ｳ繝懊・繧ｹ繧ｳ繧｢繧貞刈邂暦ｼ井ｸ肴ｭ｣隗｣縺ｧ繝ｪ繧ｻ繝・ヨ・・ 
+ ### `SpecialFeature.ts`
+ 
+ **handles:** `stealth_mode`, `time_bonus`, `tower`, `color_touch`, `boss`
+ 
++- `update()`: stealth_mode・磯撕豁｢邯咏ｶ壹〒髫繧後・辟｡謨ｵ繝ｻ繝懊・繝翫せ・峨》ime_bonus・井ｸ螳壽凾髢薙＃縺ｨ蜉轤ｹ・峨》ower・域怙蟇・ｊ繝上じ繝ｼ繝芽・蜍墓茶遐ｴ・峨｜oss・亥ｼｷ蛹蓬P繝ｻHP繝舌・繝ｻ謦・ｴ貍泌・・・ - `onSafeHazardTouch()`: color_touch 螳溯｣・ｼ医せ繧ｳ繧｢繝ｻ豸域ｻ・・繝代・繝・ぅ繧ｯ繝ｫ・・-- `stealth_mode`, `time_bonus`, `tower`, `boss`: **譛ｪ螳溯｣・*縲よ怏蜉ｹ蛹匁凾縺ｯ console.warn 縺ｧ隴ｦ蜻翫・-
+----
+-
+-## `game/systems/shootSystem.ts`
+-
+-蟆・茶繧ｷ繧ｹ繝・Β縺ｮ邏皮ｲ矩未謨ｰ螳溯｣・・-
+-### 繧ｨ繧ｯ繧ｹ繝昴・繝磯未謨ｰ
+-
+-| 髢｢謨ｰ | 讎りｦ・|
+-|---|---|
+-| `createShootState(): ShootState` | 蟆・茶迥ｶ諷九ｒ蛻晄悄蛹・|
+-| `updateShoot(state, hazards, shootPressed, playerX, playerY, playerH, rules, dt, viewportLeft?, viewportRight?, viewportTop?): ShootResult` | 蠑ｾ逋ｺ蟆・・遘ｻ蜍輔・陦晉ｪ∝愛螳壹・繧ｹ繧ｳ繧｢險育ｮ・|
+ 
+-### 繧､繝ｳ繧ｿ繝ｼ繝輔ぉ繝ｼ繧ｹ
++### `TetrisFeature.ts`
+ 
+-| 蝙・| 讎りｦ・|
+-|---|---|
+-| `ShootState` | (`bullets[]`, `kills`, `combo`, `comboTimer`, `shotCooldown`) |
+-| `ShootResult` | (`scoreGain`, `destroyedHazards[]`, `shotFired`) |
+-
+----
++**handles:** `tetris_mode`
+ 
+-## `game/systems/rhythmSystem.ts`
+-
+-繝ｪ繧ｺ繝繧ｷ繧ｹ繝・Β縺ｮ邏皮ｲ矩未謨ｰ螳溯｣・・-
+-### 繧ｨ繧ｯ繧ｹ繝昴・繝磯未謨ｰ
++- `preUpdate()`: 繝励Ξ繧､繝､繝ｼ遘ｻ蜍輔ｒ辟｡蜉ｹ蛹厄ｼ・vx=0, vy=0`・・+- `update()`: 繝・ヨ繝ｪ繝溘ヮ關ｽ荳九・謫堺ｽ懊・繝ｩ繧､繝ｳ豸亥悉繝ｻ繧ｹ繧ｳ繧｢繝ｻ繧ｳ繝ｳ繝懶ｼ・0ﾃ・0 繧ｰ繝ｪ繝・ラ縲・-Bag縲√ざ繝ｼ繧ｹ繝医√Ο繝・け繝・ぅ繝ｬ繧､縲√え繧ｩ繝ｼ繝ｫ繧ｭ繝・け・・+- `render()`: 繧ｰ繝ｪ繝・ラ繝ｻ繝悶Ο繝・け繝ｻ繧ｴ繝ｼ繧ｹ繝医ヴ繝ｼ繧ｹ謠冗判
++- `onInit()` / `onDisable()`: `scrollDirection`繝ｻ`scrollSpeed` 縺ｮ菫晏ｭ倥→蠕ｩ蜈・ 
+-| 髢｢謨ｰ | 讎りｦ・|
+-|---|---|
+-| `createRhythmState(bpm: number): RhythmState` | 繝ｪ繧ｺ繝迥ｶ諷九ｒ蛻晄悄蛹・|
+-| `updateRhythm(state, dt, rules, hazardColors, safeColors): void` | 繝薙・繝亥酔譛溘・濶ｲ蜿崎ｻ｢繝輔Λ繧ｰ譖ｴ譁ｰ |
+-| `evaluateTiming(state, currentMs): number` | 蜈･蜉帙・繝薙・繝井ｸ閾ｴ蠎ｦ繧・0縲・ 縺ｧ霑斐☆ |
+-
+-### 繧､繝ｳ繧ｿ繝ｼ繝輔ぉ繝ｼ繧ｹ
+-
+-| 蝙・| 讎りｦ・|
+-|---|---|
+-| `RhythmState` | (`beatInterval`, `nextBeat`, `beatCount`, `beatMarkers[]`, `beatHazardInverted`, `beatHits`, `justWindowMs`, `lastJustMs`) |
++> 蟆・茶繝ｻ繝ｪ繧ｺ繝縺ｮ繝ｭ繧ｸ繝・け縺ｯ蜷・`ShootFeature` / `RhythmFeature` 蜀・↓螳溯｣・＆繧後※縺・ｋ・育峡遶九＠縺・`shootSystem.ts` / `rhythmSystem.ts` 縺ｯ蟄伜惠縺励↑縺・ｼ峨・diff --git a/docs/api/genres.md b/docs/api/genres.md
+index bc74206..f47ed57 100644
+--- a/docs/api/genres.md
++++ b/docs/api/genres.md
+@@ -6,7 +6,7 @@
+ 
+ ## `index.ts`
+ 
+-蜈ｨ繧ｸ繝｣繝ｳ繝ｫ繝励Λ繧ｰ繧､繝ｳ繧・GameRegistry 縺ｫ荳諡ｬ逋ｻ骭ｲ縲よ眠縺励＞繧ｸ繝｣繝ｳ繝ｫ繧定ｿｽ蜉縺吶ｋ縺ｫ縺ｯ縺薙・繝輔ぃ繧､繝ｫ縺ｫ2陦瑚ｿｽ蜉縺吶ｋ縺縺代・+`src/genres/*.ts` 縺ｮ default export 繧・`import.meta.glob` 縺ｧ閾ｪ蜍募庶髮・＠縺ｦ GameRegistry 縺ｫ逋ｻ骭ｲ縺吶ｋ縲よ眠縺励＞ TS繝励Λ繧ｰ繧､繝ｳ繧定ｿｽ蜉縺励※繧ゅ％縺ｮ繝輔ぃ繧､繝ｫ縺ｮ邱ｨ髮・・荳崎ｦ・ｼ医ヵ繧｡繧､繝ｫ譛ｫ蟆ｾ縺ｧ `export default new MyGenrePlugin()` 縺吶ｋ縺縺托ｼ峨りｩｳ邏ｰ縺ｯ譛ｫ蟆ｾ縺ｮ[逋ｻ骭ｲ縺ｮ莉慕ｵ・∩](#indexts--逋ｻ骭ｲ縺ｮ莉慕ｵ・∩)繧貞盾辣ｧ縲・ 
+ ---
+ 
+@@ -172,19 +172,103 @@
+ 
+ ---
+ 
+-## `index.ts` 窶・逋ｻ骭ｲ荳隕ｧ
++## `RacingPlugin.ts`
+ 
+-| 鬆・| 繧ｯ繝ｩ繧ｹ | 繧ｸ繝｣繝ｳ繝ｫID |
+-|---|---|---|
+-| 1 | `BasePlugin` | `base` |
+-| 2 | `RunnerPlugin` | `runner` |
+-| 3 | `StgPlugin` | `stg` |
+-| 4 | `RpgPlugin` | `rpg` |
+-| 5 | `RhythmPlugin` | `rhythm` |
+-| 6 | `PuzzlePlugin` | `puzzle` |
+-| 7 | `AerialStgPlugin` | `aerial_stg` |
+-| 8 | `SurvivalPlugin` | `survival` |
+-| 9 | `BulletRunnerPlugin` | `bullet_runner` |
+-| 10 | `PlatformerPlugin` | `platformer` |
++**id:** `racing` 窶・繝ｬ繝ｼ繧ｷ繝ｳ繧ｰ縲ＡGenrePluginBase` 繧堤ｶ呎価縲・ 
+-窶ｻ `bullet_hell`, `stealth_action`, `racing`, `dungeon`, `tower_def`, `sports`, `idle`, `arena`, `aquatic`, `horror`, `hack_slash` 縺ｯ縺ｾ縺繝励Λ繧ｰ繧､繝ｳ譛ｪ螳溯｣・・+| 迚ｹ諤ｧ | 蛟､ |
++|---|---|
++| 閭梧勹 | 證苓牡・・#08060a` 竊・`#100c14`・・|
++| 譏・| 鮟・(`#ffee88`) |
++| 繝上じ繝ｼ繝・| 讖・(`#ff8800`) / 豌ｴ濶ｲ (`#44ddff`) |
++
++---
++
++## `ArenaPlugin.ts`
++
++**id:** `arena` 窶・繧｢繝ｪ繝ｼ繝翫ヰ繝医Ν縲ＡGenrePluginBase` 繧堤ｶ呎価縲・+
++| 迚ｹ諤ｧ | 蛟､ |
++|---|---|
++| 閭梧勹 | 證苓ｵ､・・#0a0000` 竊・`#180000`・・|
++| 譏・| 襍､ (`#ff4422`) |
++| 繝上じ繝ｼ繝・| 襍､ (`#cc0000`) / 讖・(`#ffaa00`) |
++
++---
++
++## `AquaticPlugin.ts`
++
++**id:** `aquatic` 窶・豌ｴ荳ｭ繧｢繝峨・繝ｳ繝√Ε繝ｼ縲ＡGenrePluginBase` 繧堤ｶ呎価縲・+
++| 迚ｹ諤ｧ | 蛟､ |
++|---|---|
++| 閭梧勹 | 豺ｱ豬ｷ髱抵ｼ・#000a1a` 竊・`#001428`・・|
++| 譏・| 髱堤ｷ・(`#44ffdd`) |
++| 繝上じ繝ｼ繝・| 繝斐Φ繧ｯ (`#ff3366`) / 髱堤ｷ・(`#00ffcc`) |
++
++---
++
++## `DungeonPlugin.ts`
++
++**id:** `dungeon` 窶・繝繝ｳ繧ｸ繝ｧ繝ｳ謗｢邏｢縲ＡGenrePluginBase` 繧堤ｶ呎価縲・+
++| 迚ｹ諤ｧ | 蛟､ |
++|---|---|
++| 閭梧勹 | 證苓､撰ｼ・#060500` 竊・`#0e0900`・・|
++| 譏・| 縺ｪ縺暦ｼ亥慍荳具ｼ・|
++| 繝上じ繝ｼ繝・| 讖呵､・(`#bb5500`) / 鮟・(`#ddcc44`) |
++
++---
++
++## `HackSlashPlugin.ts`
++
++**id:** `hack_slash` 窶・繝上ャ繧ｯ繧｢繝ｳ繝峨せ繝ｩ繝・す繝･縲ＡGenrePluginBase` 繧堤ｶ呎価縲・+
++| 迚ｹ諤ｧ | 蛟､ |
++|---|---|
++| 閭梧勹 | 證苓ｵ､・・#0a0000` 竊・`#150000`・・|
++| 譏・| 襍､ (`#ff6644`) |
++| 繝上じ繝ｼ繝・| 襍､ (`#dd0000`) / 讖・(`#ffaa00`) |
++
++---
++
++## `TetrisPlugin.ts`
++
++**id:** `tetris` 窶・繝・ヨ繝ｪ繧ｹ・域囓濶ｲ邉ｻ繝ｻ繧ｰ繝ｪ繝・ラ邱夲ｼ峨ＡGenrePluginBase` 繧堤ｶ呎価縲・+
++| 迚ｹ諤ｧ | 蛟､ |
++|---|---|
++| 閭梧勹 | 證礼・・・#0a0a0a` 竊・`#111111`・・|
++| 譏・| 縺ｪ縺・|
++| 繝上じ繝ｼ繝・| 襍､ (`#e74c3c`) / 髱・(`#3498db`) |
++
++> 螳滄圀縺ｮ繧ｲ繝ｼ繝繝ｭ繧ｸ繝・け・医げ繝ｪ繝・ラ繝ｻ繝・ヨ繝ｪ繝溘ヮ繝ｻ繝ｩ繧､繝ｳ豸亥悉・峨・ `TetrisFeature`・・tetris_mode`・峨′諡・ｽ薙☆繧九ゅ・繝ｩ繧ｰ繧､繝ｳ縺ｯ隕冶ｦ壹ユ繝ｼ繝槭ｒ謠蝉ｾ帙☆繧九りｩｳ邏ｰ縺ｯ [tetris-genre.md](../tetris-genre.md) 繧貞盾辣ｧ縲・+
++---
++
++## `index.ts` 窶・逋ｻ骭ｲ縺ｮ莉慕ｵ・∩
++
++`index.ts` 縺ｯ `import.meta.glob('./*.ts')` 縺ｧ蜷・・繝ｩ繧ｰ繧､繝ｳ縺ｮ default export 繧定・蜍募庶髮・＠縺ｦ逋ｻ骭ｲ縺吶ｋ・域焔蜍輔・逋ｻ骭ｲ繝ｪ繧ｹ繝医・謖√◆縺ｪ縺・ｼ峨ＡBasePlugin.ts` 縺ｮ繧医≧縺ｫ隍・焚繧ｯ繝ｩ繧ｹ繧帝・蛻励〒 default export 縺吶ｋ縺薙→繧ゅ〒縺阪ｋ縲ゅ＆繧峨↓縲ゝS繝励Λ繧ｰ繧､繝ｳ縺悟ｭ伜惠縺励↑縺・JSON 螳夂ｾｩ繧ｸ繝｣繝ｳ繝ｫ縺ｫ縺ｯ `JSONGenrePlugin` 縺ｮ繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ縺瑚・蜍慕函謌舌＆繧後ｋ縲・+
++### TS繝励Λ繧ｰ繧､繝ｳ縺ｧ螳溯｣・ｸ医∩縺ｮ繧ｸ繝｣繝ｳ繝ｫ・・6 繧ｯ繝ｩ繧ｹ・・+
++| 繧ｯ繝ｩ繧ｹ | 繧ｸ繝｣繝ｳ繝ｫID |
++|---|---|
++| `BasePlugin` | `base` |
++| `RunnerPlugin` | `runner` |
++| `StgPlugin` | `stg` |
++| `RpgPlugin` | `rpg` |
++| `RhythmPlugin` | `rhythm` |
++| `PuzzlePlugin` | `puzzle` |
++| `AerialStgPlugin` | `aerial_stg` |
++| `SurvivalPlugin` | `survival` |
++| `BulletRunnerPlugin` | `bullet_runner` |
++| `PlatformerPlugin` | `platformer` |
++| `RacingPlugin` | `racing` |
++| `ArenaPlugin` | `arena` |
++| `AquaticPlugin` | `aquatic` |
++| `DungeonPlugin` | `dungeon` |
++| `HackSlashPlugin` | `hack_slash` |
++| `TetrisPlugin` | `tetris` |
++
++窶ｻ `bullet_hell`, `stealth_action`, `tower_def`, `sports`, `idle`, `horror` 縺ｯ蟆ら畑 TS繝励Λ繧ｰ繧､繝ｳ繧呈戟縺溘★縲～JSONGenrePlugin` 繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ縺ｧ謠冗判縺輔ｌ繧九・diff --git a/docs/architecture.md b/docs/architecture.md
+index 19d5edc..a95c166 100644
+--- a/docs/architecture.md
++++ b/docs/architecture.md
+@@ -111,16 +111,14 @@ src/
+     笏・      笏懌楳笏 index.ts               蜈ｨ FeatureSystem 繧剃ｸ諡ｬ逋ｻ骭ｲ・・邉ｻ邨ｱ・・     笏・      笏懌楳笏 ShootFeature.ts        shoot 邉ｻ Feature 螳溯｣・     笏・      笏懌楳笏 RhythmFeature.ts       rhythm 邉ｻ Feature 螳溯｣・-    笏・      笏懌楳笏 MovementFeature.ts     movement 邉ｻ Feature 螳溯｣・+    笏・      笏懌楳笏 MovementFeature.ts     movement 邉ｻ Feature 螳溯｣・ｼ・ash/wall_jump/vertical_scroll 繧らｵｱ蜷茨ｼ・     笏・      笏懌楳笏 RpgFeature.ts          hp/exp/item_pickup 螳溯｣・-    笏・      笏懌楳笏 ExtraMovementFeature.ts dash/wall_jump/vertical_scroll 螳溯｣・     笏・      笏懌楳笏 PuzzleFeature.ts       grid_stop/puzzle_solve 螳溯｣・     笏・      笏懌楳笏 SpecialFeature.ts      stealth_mode/time_bonus/tower/boss/color_touch 螳溯｣・-    笏・      笏懌楳笏 shootSystem.ts         蠑ｾ迚ｩ逅・お繝ｳ繧ｸ繝ｳ・育ｴ皮ｲ矩未謨ｰ・・-    笏・      笏披楳笏 rhythmSystem.ts        BPM繝ｻ繧ｿ繧､繝溘Φ繧ｰ蛻､螳夲ｼ育ｴ皮ｲ矩未謨ｰ・・+    笏・      笏披楳笏 TetrisFeature.ts       tetris_mode 螳溯｣・ 笏・ 笏懌楳笏 genres/
+-    笏・  笏懌楳笏 index.ts           蜈ｨ GenrePlugin 繧剃ｸ諡ｬ逋ｻ骭ｲ・・5遞ｮ+JSON繝励Λ繧ｰ繧､繝ｳ・・+    笏・  笏懌楳笏 index.ts           蜈ｨ GenrePlugin 繧定・蜍募庶髮・・逋ｻ骭ｲ・・6遞ｮ + JSON繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ繝励Λ繧ｰ繧､繝ｳ・・     笏・  笏懌楳笏 BasePlugin.ts      base / runner
+     笏・  笏懌楳笏 StgPlugin.ts       stg
+     笏・  笏懌楳笏 RpgPlugin.ts       rpg
+@@ -134,12 +132,13 @@ src/
+     笏・  笏懌楳笏 ArenaPlugin.ts       arena
+     笏・  笏懌楳笏 AquaticPlugin.ts     aquatic
+     笏・  笏懌楳笏 DungeonPlugin.ts     dungeon
+-    笏・  笏披楳笏 HackSlashPlugin.ts   hack_slash
++    笏・  笏懌楳笏 HackSlashPlugin.ts   hack_slash
++    笏・  笏披楳笏 TetrisPlugin.ts      tetris
+ 笏・ 笏懌楳笏 data/
+     笏・  笏懌楳笏 config.ts          GAME_CONFIG 繧ｨ繝ｳ繝医Μ繝昴う繝ｳ繝・-    笏・  笏懌楳笏 config/            JSON險ｭ螳壹ヵ繧｡繧､繝ｫ鄒､・・9蛟具ｼ・-    笏・  笏・  笏懌楳笏 genres.json    21 遞ｮ縺ｮ GenreDef
++    笏・  笏懌楳笏 config/            JSON險ｭ螳壹ヵ繧｡繧､繝ｫ鄒､・・1蛟具ｼ・+    笏・  笏・  笏懌楳笏 genres.json    22 遞ｮ縺ｮ GenreDef
+     笏・  笏・  笏懌楳笏 game_balance.json   繧ｹ繧ｳ繧｢豈皮紫/謚墓憧驥阪∩/蝓ｺ譛ｬ騾溷ｺｦ
+     笏・  笏・  笏懌楳笏 difficulty.json     髮｣譏灘ｺｦ繧ｫ繝ｼ繝・繧｢繝・・繝・・繝郁ｷ晞屬
+     笏・  笏・  笏懌楳笏 physics.json        繝励Ξ繧､繝､繝ｼ迚ｩ逅・ｮ壽焚
+@@ -177,8 +176,8 @@ src/
+ | `MutableWorld` | engine/types.ts | FeatureSystem/GenrePlugin 縺後ヵ繝ｬ繝ｼ繝縺斐→縺ｫ蜿励￠蜿悶ｋ繧ｳ繝ｳ繝・く繧ｹ繝・|
+ | `GameStats` | engine/types.ts | kills / combo / beatHits 縺ｪ縺ｩ FeatureSystem 縺梧嶌縺崎ｾｼ繧邨ｱ險・|
+ | `GenreDef` | domain/types.ts | 繧ｸ繝｣繝ｳ繝ｫ縺ｮ髢ｾ蛟､繝ｻFeature繝ｻ繧ｹ繧ｳ繧｢蠑上・繝・・繝槭ｒ險倩ｿｰ縺吶ｋ繝・・繧ｿ |
+-| `GenreId` | domain/types.ts | `string` 蝙具ｼ・nion 蝙九〒縺ｯ縺ｪ縺・ｼ峨Ｄonfig/genres.json 縺ｧ螳夂ｾｩ |
+-| `FeatureId` | domain/types.ts | `string` 蝙具ｼ・nion 蝙九〒縺ｯ縺ｪ縺・ｼ峨Ｄonfig/genres.json 縺ｮ enableFeatures 縺ｧ螳夂ｾｩ |
++| `GenreId` | domain/types.ts | `string` 蝙具ｼ・nion 蝙九〒縺ｯ縺ｪ縺・ｼ峨ょ､縺ｯ src/data/genres/*.json 縺ｧ螳夂ｾｩ |
++| `FeatureId` | domain/types.ts | `string` 蝙具ｼ・nion 蝙九〒縺ｯ縺ｪ縺・ｼ峨Ｔrc/data/genres/*.json 縺ｮ enableFeatures 縺ｧ蜿ら・ |
+ | `SpawnEntry` | engine/types.ts | 繧ｸ繝｣繝ｳ繝ｫ繝励Λ繧ｰ繧､繝ｳ縺悟ｮ｣險縺吶ｋ繝上じ繝ｼ繝牙・迴ｾ繝・・繝悶Ν縺ｮ1陦・|
+ | `ManualVersion` | domain/types.ts | 1繝舌・繧ｸ繝ｧ繝ｳ蛻・・隱ｬ譏取嶌繝・・繧ｿ・・ontrols, hazards, choices窶ｦ・・|
+ | `Choice` | domain/types.ts | 驕ｸ謚櫁い縺ｮ螳夂ｾｩ・・enreParams, genrePoints, paramMultiplier 遲会ｼ・|
+diff --git a/docs/design.md b/docs/design.md
+index 3b46246..9792d13 100644
+--- a/docs/design.md
++++ b/docs/design.md
+@@ -74,8 +74,8 @@ src/
+     gameBalance.ts            # 霍晞屬/繧ｹ繧ｳ繧｢豈皮紫/謚墓憧驥阪∩/髮｣譏灘ｺｦ繧ｫ繝ｼ繝厄ｼ・onfig 縺九ｉ蜀阪お繧ｯ繧ｹ繝昴・繝茨ｼ・     tunables.ts               # VFX繝ｻ繧ｫ繝｡繝ｩ繝ｻ繧ｹ繧ｳ繧｢縺ｮ隱ｿ謨ｴ蛟､・・onfig 縺九ｉ蜀阪お繧ｯ繧ｹ繝昴・繝茨ｼ・     config.ts                 # GAME_CONFIG 繧ｨ繝ｳ繝医Μ繝昴う繝ｳ繝・-    config/                   # JSON險ｭ螳壹ヵ繧｡繧､繝ｫ鄒､・・9蛟具ｼ・-      genres.json             # 蜷・ず繝｣繝ｳ繝ｫ螳夂ｾｩ・磯明蛟､繝ｻ譛牙柑讖溯・繝ｻ繧ｹ繧ｳ繧｢蠑上・21遞ｮ+base・・+    config/                   # JSON險ｭ螳壹ヵ繧｡繧､繝ｫ鄒､・・1蛟具ｼ・+      genres.json             # 繝・・繝槭き繝ｩ繝ｼ遲峨ゅず繝｣繝ｳ繝ｫ螳夂ｾｩ譛ｬ菴薙・ genres/*.json・・2遞ｮ縲｜ase 蜷ｫ繧・・       game_balance.json       # 繧ｹ繧ｳ繧｢豈皮紫/謚墓憧驥阪∩/蝓ｺ譛ｬ騾溷ｺｦ
+       difficulty.json         # 髮｣譏灘ｺｦ繧ｫ繝ｼ繝・繧｢繝・・繝・・繝郁ｷ晞屬
+       physics.json            # 繝励Ξ繧､繝､繝ｼ迚ｩ逅・ｮ壽焚
+@@ -108,11 +108,11 @@ src/
+     systems/                  # 繧ｸ繝｣繝ｳ繝ｫ讖溯・縺ｮ繧ｷ繧ｹ繝・Β・・eature蜊倅ｽ搾ｼ・       ShootFeature.ts
+       RhythmFeature.ts
+-      MovementFeature.ts
++      MovementFeature.ts       # dash/wall_jump/vertical_scroll 繧らｵｱ蜷茨ｼ域立 ExtraMovementFeature・・       RpgFeature.ts
+-      ExtraMovementFeature.ts
+       PuzzleFeature.ts
+       SpecialFeature.ts
++      TetrisFeature.ts
+     throwEngine.ts            # 謚墓憧繝輔ぉ繝ｼ繧ｺ縺ｮ迚ｩ逅・+ 謚墓憧繧ｹ繧ｳ繧｢
+ 
+   composables/
+@@ -127,7 +127,7 @@ src/
+     EndingPanel.vue           # 繧ｸ繝｣繝ｳ繝ｫ蛻･繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ
+     TutorialHints.vue         # 蛻晏ｿ・・髄縺代ヲ繝ｳ繝・ 
+-  genres/                     # 繧ｸ繝｣繝ｳ繝ｫ繝励Λ繧ｰ繧､繝ｳ・・5遞ｮ + JSON繝励Λ繧ｰ繧､繝ｳ蟇ｾ蠢懶ｼ・+  genres/                     # 繧ｸ繝｣繝ｳ繝ｫ繝励Λ繧ｰ繧､繝ｳ・・6遞ｮ + JSON繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ繝励Λ繧ｰ繧､繝ｳ蟇ｾ蠢懶ｼ・     BasePlugin.ts
+     StgPlugin.ts
+     RpgPlugin.ts
+@@ -172,9 +172,9 @@ src/
+ | `craft` | 菴懈・繝ｻ險ｭ鄂ｮ繝ｻ遨阪∩荳翫￡ | tower_def / idle |
+ | `speed` | 邏皮ｲ矩溷ｺｦ繝ｻ繝繝・す繝･驥・| racing / sports |
+ 
+-### 3.2 繧ｸ繝｣繝ｳ繝ｫ荳隕ｧ・・1遞ｮ + base・・+### 3.2 繧ｸ繝｣繝ｳ繝ｫ荳隕ｧ・・2遞ｮ + base・・ 
+-> 髢ｾ蛟､縺ｯ `src/data/config/genres.json` 縺ｫ螳夂ｾｩ縲ょ､画峩譎ゅ・縺薙・繝輔ぃ繧､繝ｫ縺ｨ蜷梧悄縺吶ｋ縺薙→縲・+> 髢ｾ蛟､縺ｯ `src/data/genres/<id>.json`・・繧ｸ繝｣繝ｳ繝ｫ1繝輔ぃ繧､繝ｫ・峨↓螳夂ｾｩ縲ょ､画峩譎ゅ・縺薙・繝輔ぃ繧､繝ｫ縺ｨ蜷梧悄縺吶ｋ縺薙→縲・ 
+ | ID | 繝ｩ繝吶Ν | 髢ｾ蛟､ |
+ |---|---|---|
+@@ -198,6 +198,7 @@ src/
+ | `aquatic` | 豌ｴ荳ｭ繧｢繝峨・繝ｳ繝√Ε繝ｼ | vertical:3 + aerial:3 + survive:4 |
+ | `horror` | 繧ｵ繝舌う繝舌Ν繝帙Λ繝ｼ | survive:6 + stealth:4 |
+ | `hack_slash` | 繝上ャ繧ｯ繧｢繝ｳ繝峨せ繝ｩ繝・す繝･ | enemy:5 + combo:6 |
++| `tetris` | 繝・ヨ繝ｪ繧ｹ | combo:4 + craft:4 |
+ 
+ ### 3.3 荳ｻ隕∝梛縺ｮ繝ｪ繝輔ぃ繝ｬ繝ｳ繧ｹ
+ 
+@@ -211,7 +212,7 @@ export type GenreId = string
+ export type Phase = 'title' | 'tutorialIntro' | 'tutorial' | 'updating' | 'playing' | 'genreLocked' | 'throwing' | 'ending';
+ 
+ // 讖溯・繝輔Λ繧ｰ・医ず繝｣繝ｳ繝ｫ縺梧怏蜉ｹ/辟｡蜉ｹ蛹悶☆繧区嫌蜍輔・蜊倅ｽ搾ｼ・-// 螳滄圀縺ｯ string 蝙具ｼ・nion 蝙九〒縺ｯ縺ｪ縺・ｼ峨ょｮ夂ｾｩ縺ｯ config/genres.json 縺ｮ enableFeatures 縺ｫ險倩ｼ峨・+// 螳滄圀縺ｯ string 蝙具ｼ・nion 蝙九〒縺ｯ縺ｪ縺・ｼ峨ＦnableFeatures 縺ｯ src/data/genres/<id>.json 縺ｫ險倩ｼ峨・ export type FeatureId = string
+ // 譌｢遏･縺ｮ FeatureId: shoot / three_way / charge_shot / spread_shot / bomb / enemy_hp / boss
+ //   auto_run / slow_precise / double_jump / long_air / dash / wall_jump / slide / gravity_flip / vertical_scroll
+@@ -219,6 +220,7 @@ export type FeatureId = string
+ //   grid_stop / puzzle_solve
+ //   beat_hazard / just_input / beat_dash
+ //   stealth_mode / time_bonus / tower / color_touch
++//   tetris_mode
+ 
+ export interface ManualVersion {
+   version: string;                 // "1.0" 遲・@@ -272,9 +274,9 @@ export interface FinalScore { play: number; throw: number; total: number; }
+ - 蜷・`Choice.genreParams` 縺悟・蟯舌・譬ｸ縲ゅ・繝ｬ繧､繝､繝ｼ縺ｫ縺ｯ譁ｹ蜷第ｧ繧定ｦ九○縺ｪ縺・・ - 譛ｫ遶ｯ繝舌・繧ｸ繝ｧ繝ｳ・・choices` 縺檎ｩｺ・峨↓蛻ｰ驕・竊・Phase C 蜿取據蛻､螳壹∈縲・ 
+-### 4.2 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ・・data/config/genres.json`・・-- 21繧ｸ繝｣繝ｳ繝ｫ + base 繧貞ｮ夂ｾｩ縲・-- `runner` / `stg` 縺悟ｮ悟・螳溯｣・∽ｻ悶・谿ｵ髫守噪縺ｫ譛牙柑蛹悶・+### 4.2 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ・・data/genres/*.json`・・+- 22繧ｸ繝｣繝ｳ繝ｫ + base 繧貞ｮ夂ｾｩ縲・+- 16繧ｸ繝｣繝ｳ繝ｫ縺・TS繝励Λ繧ｰ繧､繝ｳ螳溯｣・∵ｮ九ｊ6繧ｸ繝｣繝ｳ繝ｫ縺ｯ JSON繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ縺ｧ謠冗判縲・ 
+ ### 4.3 繧ｹ繧ｳ繧｢蠑・DSL・・scoreFormula`・・ 繧ｸ繝｣繝ｳ繝ｫ縺斐→縺ｮ繝励Ξ繧､繧ｹ繧ｳ繧｢蠑上ｒ譁・ｭ怜・縺ｧ謖√■縲∝ｮ牙・縺ｪ隧穂ｾ｡蝎ｨ・・evalScoreFormula`・峨〒險育ｮ励☆繧九・@@ -364,13 +366,13 @@ featuresFor(genreId, genres): { enable: Set, disable: Set }
+ ### 6.4 `game/systems/`・・eature 蜊倅ｽ阪・蟾ｮ縺苓ｾｼ縺ｿ・・ | system | 諡・ｽ・feature | 蜉ｹ譫・|
+ |---|---|---|
+-| ShootFeature | shoot, three_way, enemy_hp | 蠑ｾ逋ｺ蟆・・謨ｵHP繝ｻ謦・ｴ繧ｳ繝ｳ繝・|
+-| MovementFeature | auto_run, slow_precise | 閾ｪ蜍募燕騾ｲ / 菴朱溽ｲｾ蟇・|
++| ShootFeature | shoot, three_way, charge_shot, spread_shot, bomb, enemy_hp | 蠑ｾ逋ｺ蟆・・謨ｵHP繝ｻ謦・ｴ繧ｳ繝ｳ繝・|
++| MovementFeature | auto_run, slow_precise, double_jump, long_air, dash, wall_jump, vertical_scroll | 遘ｻ蜍募・闊ｬ繝ｻ繝繝・す繝･繝ｻ螢√ず繝｣繝ｳ繝励・邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ・域立 ExtraMovementFeature 邨ｱ蜷茨ｼ・|
+ | RhythmFeature | beat_hazard, just_input, beat_dash | BPM蜷梧悄縺ｮ蜊ｱ髯ｺ濶ｲ蜿崎ｻ｢繝ｻ繧ｸ繝｣繧ｹ繝亥・蜉帛刈轤ｹ |
+ | RpgFeature | hp, exp, item_pickup | HP繝ｻ邨碁ｨ灘､繝ｻ繧｢繧､繝・Β蜿朱寔 |
+-| ExtraMovementFeature | dash, wall_jump, vertical_scroll | 繝繝・す繝･繝ｻ螢√ず繝｣繝ｳ繝励・邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ |
+ | PuzzleFeature | grid_stop, puzzle_solve | 繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ蛛懈ｭ｢繝ｻ驟咲ｽｮ繝代ぜ繝ｫ |
+ | SpecialFeature | color_touch, stealth_mode, time_bonus, tower, boss | 螳牙・濶ｲ謗･隗ｦ繝ｻ繧ｹ繝・Ν繧ｹ繝ｻ譎る俣繝懊・繝翫せ繝ｻ繧ｿ繝ｯ繝ｼ繝ｻ繝懊せ |
++| TetrisFeature | tetris_mode | 繝・ヨ繝ｪ繧ｹ・医げ繝ｪ繝・ラ繝ｻ繝・ヨ繝ｪ繝溘ヮ繝ｻ繝ｩ繧､繝ｳ豸亥悉・・|
+ 
+ ### 6.5 `game/throwEngine.ts`
+ - 蜈･蜉幢ｼ壹ラ繝ｩ繝・げ譁ｹ蜷托ｼ郁ｧ貞ｺｦ・・ 繝代Ρ繝ｼ繧ｲ繝ｼ繧ｸ・医Μ繝ｪ繝ｼ繧ｹ譎ゅ・蛟､・峨・@@ -414,8 +416,8 @@ featuresFor(genreId, genres): { enable: Set, disable: Set }
+ | **M2: 隱ｬ譏取嶌・・謚・* | ManualPanel/ChoicePanel縲・谿ｵ髫取峩譁ｰ縲…ontrols/hazards 蜍慕噪蛻・崛・句ｷｮ蛻・ｼ泌・ | 笨・螳御ｺ・|
+ | **M3: 繧ｸ繝｣繝ｳ繝ｫ蜿取據 + RUNNER/STG** | genreResolver縲《hoot/autorun 繝輔ぅ繝ｼ繝√Ε繝ｼ縲∬ｪｬ譏取嶌繝・・繝槫・譖ｿ縲《coreFormula 隧穂ｾ｡ | 笨・螳御ｺ・(MVP) |
+ | **M4: 謚墓憧・九お繝ｳ繝・ぅ繝ｳ繧ｰ** | throwEngine縲ゝhrowOverlay縲《coreCalc 蜷育ｮ励・ndingPanel | 笨・螳御ｺ・|
+-| **M5: 谿九ｊ繧ｸ繝｣繝ｳ繝ｫ** | 15 繧ｸ繝｣繝ｳ繝ｫ繝励Λ繧ｰ繧､繝ｳ + JSON 繝励Λ繧ｰ繧､繝ｳ蟇ｾ蠢懊〉hythm/rpg/puzzle/survival 遲峨・繝輔ぅ繝ｼ繝√Ε繝ｼ | 笨・螳御ｺ・|
+-| **M6: 蟄ｦ鄙偵Ν繝ｼ繝ｫ + 莉穂ｸ翫￡** | LearningSystem 邨ｱ蜷医・屮譏灘ｺｦ隱ｿ謨ｴ縲∫┌髯宣∈謚櫁い縲｛ffline 繝薙Ν繝画､懆ｨｼ | 笞・・荳驛ｨ螳御ｺ・ｼ・earningEffect 譛ｪ螳溯｣・ｼ・|
++| **M5: 谿九ｊ繧ｸ繝｣繝ｳ繝ｫ** | 16 繧ｸ繝｣繝ｳ繝ｫ繝励Λ繧ｰ繧､繝ｳ + JSON 繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ蟇ｾ蠢懊〉hythm/rpg/puzzle/survival/tetris 遲峨・繝輔ぅ繝ｼ繝√Ε繝ｼ | 笨・螳御ｺ・|
++| **M6: 蟄ｦ鄙偵Ν繝ｼ繝ｫ + 莉穂ｸ翫￡** | LearningSystem 邨ｱ蜷茨ｼ・evaluateLearningRules` 繧・sideScroller 縺ｫ謗･邯夲ｼ峨・屮譏灘ｺｦ隱ｿ謨ｴ縲∫┌髯宣∈謚櫁い縲｛ffline 繝薙Ν繝画､懆ｨｼ | 笨・螳御ｺ・|
+ 
+ ---
+ 
+@@ -431,6 +433,6 @@ featuresFor(genreId, genres): { enable: Set, disable: Set }
+ | 鬆・岼 | 迥ｶ諷・|
+ |---|---|
+ | 隱ｬ譏取嶌縺ｮ蟾ｮ蛻・ｼ泌・縺ｯ CSS 繧｢繝九Γ縺ｧ雜ｳ繧翫ｋ縺・| 笨・豎ｺ螳・ ManualPanel.vue 縺ｧ蟾ｮ蛻・ｼｷ隱ｿ繝ｻ蜿悶ｊ豸医＠邱壹・謇区嶌縺埼｢ｨ繝輔ぉ繝ｼ繝峨う繝ｳ繧貞ｮ溯｣・ｸ医∩ |
+-| PUZZLE 縺ｮ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ蛛懈ｭ｢譎ゅ∵ｨｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｮ縲碁擇蠖ｱ縲阪ｒ縺ｩ縺・ｮ九☆縺・| 笞・・譛ｪ隗｣豎ｺ: PuzzleFeature 縺ｮ螳溯｣・ｶ咏ｶ壻ｸｭ |
++| PUZZLE 縺ｮ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ蛛懈ｭ｢譎ゅ∵ｨｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ縺ｮ縲碁擇蠖ｱ縲阪ｒ縺ｩ縺・ｮ九☆縺・| 笨・螳溯｣・ｸ医∩: PuzzleFeature 縺・move/solve 繝輔ぉ繝ｼ繧ｺ繧剃ｺ､莠偵↓蛻・崛・・olve 荳ｭ縺ｮ縺ｿ蛛懈ｭ｢・・|
+ | 蟄ｦ鄙偵Ν繝ｼ繝ｫ縺ｨ2謚槫・蟯舌′遶ｶ蜷医＠縺滓凾縺ｮ蜆ｪ蜈磯・ｽ・| 笨・豎ｺ螳・ 蟄ｦ鄙偵Ν繝ｼ繝ｫ縺悟ｾ悟享縺｡縺ｧ荳頑嶌縺・|
+ | BGM/SE 繧貞・繧後ｋ縺・| 笞・・驛ｨ蛻・ｮ溯｣・ SoundManager.ts 縺ｯ螳溯｣・ｸ医∩縲∝ｮ滄圀縺ｮ髻ｳ螢ｰ繝輔ぃ繧､繝ｫ縺ｯ譛ｪ驟咲ｽｮ |
+diff --git a/docs/feature-ids.md b/docs/feature-ids.md
+index 48f2865..00fe1e7 100644
+--- a/docs/feature-ids.md
++++ b/docs/feature-ids.md
+@@ -27,11 +27,11 @@
+ | `slow_precise` | 菴朱溽ｲｾ蟇・ｧｻ蜍包ｼ磯溷ｺｦ ﾃ・slowPreciseRatio・・| MovementFeature 笨・|
+ | `double_jump` | 遨ｺ荳ｭ縺ｧ繧ゅ≧荳蠎ｦ繧ｸ繝｣繝ｳ繝怜庄閭ｽ | MovementFeature 笨・|
+ | `long_air` | 遨ｺ荳ｭ縺ｧ繧ｹ繧ｳ繧｢繝懊・繝翫せ・・.8pt/sec・・| MovementFeature 笨・|
+-| `dash` | 遏ｭ霍晞屬繝繝・す繝･・・hift 縺ｪ縺ｩ・・ 辟｡謨ｵ繝輔Ξ繝ｼ繝 + 繝医Ξ繧､繝ｫ貍泌・ | ExtraMovementFeature 笨・|
+-| `wall_jump` | 逕ｻ髱｢遶ｯ・亥｣∵桶縺・ｼ牙芦驕疲凾縺ｫ繧ｸ繝｣繝ｳ繝玲ｨｩ蝗槫ｾｩ + 騾・婿蜷第款縺怜・縺・| ExtraMovementFeature 笨・|
+-| `slide` | 縺励ｃ縺後∩繧ｹ繝ｩ繧､繝会ｼ磯囿螳ｳ迚ｩ縺上＄繧奇ｼ・| ExtraMovementFeature (笞・乗悴螳溯｣・・console.warn) |
+-| `gravity_flip` | 驥榊鴨蜿崎ｻ｢・亥､ｩ莠輔ｒ蠎翫→縺励※襍ｰ繧具ｼ・| ExtraMovementFeature (笞・乗悴螳溯｣・・console.warn) |
+-| `vertical_scroll` | 邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繝｢繝ｼ繝・+ 繝上じ繝ｼ繝芽寐陦後ラ繝ｪ繝輔ヨ貍泌・ | ExtraMovementFeature 笨・|
++| `dash` | 遏ｭ霍晞屬繝繝・す繝･・・hift 縺ｪ縺ｩ・・ 辟｡謨ｵ繝輔Ξ繝ｼ繝 + 繝医Ξ繧､繝ｫ貍泌・ | MovementFeature 笨・|
++| `wall_jump` | 逕ｻ髱｢遶ｯ・亥｣∵桶縺・ｼ牙芦驕疲凾縺ｫ繧ｸ繝｣繝ｳ繝玲ｨｩ蝗槫ｾｩ + 騾・婿蜷第款縺怜・縺・| MovementFeature 笨・|
++| `slide` | 縺励ｃ縺後∩繧ｹ繝ｩ繧､繝会ｼ磯囿螳ｳ迚ｩ縺上＄繧奇ｼ・| MovementFeature (笞・乗悴螳溯｣・・console.warn) |
++| `gravity_flip` | 驥榊鴨蜿崎ｻ｢・亥､ｩ莠輔ｒ蠎翫→縺励※襍ｰ繧具ｼ・| MovementFeature (笞・乗悴螳溯｣・・console.warn) |
++| `vertical_scroll` | 邵ｦ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繝｢繝ｼ繝・+ 繝上じ繝ｼ繝芽寐陦後ラ繝ｪ繝輔ヨ貍泌・ | MovementFeature 笨・|
+ 
+ ---
+ 
+@@ -77,6 +77,14 @@
+ 
+ ---
+ 
++## 繝・ヨ繝ｪ繧ｹ邉ｻ
++
++| FeatureId | 隱ｬ譏・| 蟇ｾ蠢・FeatureSystem |
++|---|---|---|
++| `tetris_mode` | 讓ｪ繧ｹ繧ｯ繝ｭ繝ｼ繝ｫ繧貞●豁｢縺・10ﾃ・0 繧ｰ繝ｪ繝・ラ縺ｮ繝・ヨ繝ｪ繧ｹ繧定ｵｷ蜍包ｼ・-Bag繝ｻ繧ｴ繝ｼ繧ｹ繝医ヴ繝ｼ繧ｹ繝ｻ繝ｭ繝・け繝・ぅ繝ｬ繧､繝ｻ繧ｦ繧ｩ繝ｼ繝ｫ繧ｭ繝・け・・| TetrisFeature 笨・|
++
++---
++
+ ## 螳溯｣・せ繝・・繧ｿ繧ｹ
+ 
+ | 繧ｹ繝・・繧ｿ繧ｹ | 諢丞袖 |
+@@ -89,17 +97,17 @@
+ |---|---|---|
+ | ShootFeature | shoot / three_way / charge_shot / spread_shot / bomb / enemy_hp | 笨・|
+ | RhythmFeature | beat_hazard / just_input / beat_dash | 笨・|
+-| MovementFeature | auto_run / slow_precise / double_jump / long_air | 笨・|
++| MovementFeature | auto_run / slow_precise / double_jump / long_air / dash / wall_jump / vertical_scroll | 笨・ｼ・lide / gravity_flip 縺ｯ 笞・・譛ｪ螳溯｣・・console.warn・・|
+ | RpgFeature | hp / exp / item_pickup / shield | 笨・ｼ・p: onPlayerHit縲（tem_pickup: update縲Ｔhield 縺ｯ譛ｪ螳溯｣・ｼ・|
+-| ExtraMovementFeature | dash / wall_jump / vertical_scroll | 笨・ｼ・lide / gravity_flip 縺ｯ 笞・・譛ｪ螳溯｣・ｼ・|
+ | PuzzleFeature | grid_stop / puzzle_solve | 笨・|
+ | SpecialFeature | stealth_mode / time_bonus / tower / color_touch / boss | 笨・|
++| TetrisFeature | tetris_mode | 笨・|
+ 
+ ---
+ 
+ ## FeatureId 繧呈眠隕剰ｿｽ蜉縺吶ｋ縺ｫ縺ｯ
+ 
+-1. `src/data/config/genres.json` 縺ｮ隧ｲ蠖薙ず繝｣繝ｳ繝ｫ縺ｮ `enableFeatures` 縺ｫ霑ｽ蜉
++1. `src/data/genres/<繧ｸ繝｣繝ｳ繝ｫID>.json` 縺ｮ隧ｲ蠖薙ず繝｣繝ｳ繝ｫ縺ｮ `enableFeatures` 縺ｫ霑ｽ蜉
+ 2. `src/game/systems/` 縺ｫ `XxxFeature.ts` 繧剃ｽ懈・・・feature-system.md](feature-system.md) 蜿ら・・・ 3. `src/game/systems/index.ts` 縺ｫ `registerFeature(new XxxFeature())` 繧定ｿｽ蜉
+ 
+diff --git a/docs/framework.md b/docs/framework.md
+index 7df923f..4dc3473 100644
+--- a/docs/framework.md
++++ b/docs/framework.md
+@@ -374,11 +374,13 @@ debugPrint(): void
+ |---|---|---|---|---|---|---|
+ | ShootFeature | shoot / three_way / charge_shot / spread_shot / bomb / enemy_hp | 笏 | 笨・| 笨・| onManualUpdated | 笨・|
+ | RhythmFeature | beat_hazard / just_input / beat_dash | 笏 | 笨・| 笨・| onManualUpdated | 笨・|
+-| MovementFeature | auto_run / slow_precise / double_jump / long_air | 笨・| 笨・| 笏 | onInit | 笨・|
++| MovementFeature | auto_run / slow_precise / double_jump / long_air / dash / wall_jump / vertical_scroll | 笨・| 笨・| 笨・| onInit | 笨・ｼ・lide / gravity_flip 縺ｮ縺ｿ譛ｪ螳溯｣・・warn・・|
+ | RpgFeature | hp / exp / item_pickup / shield | 笏 | 笨・| 笏 | onPlayerHit | 笨・ｼ・hield 縺ｮ縺ｿ繧ｹ繧ｿ繝厄ｼ・|
+-| SpecialFeature | stealth_mode / time_bonus / tower / color_touch / boss | 笏 | stub | 笏 | onSafeHazardTouch (color_touch 縺ｮ縺ｿ) | 笞・・|
+-| ExtraMovementFeature | dash / wall_jump / slide / gravity_flip / vertical_scroll | 笏 | stub | 笏 | 笏 | 笶・|
+-| PuzzleFeature | grid_stop / puzzle_solve | 笏 | stub | 笏 | 笏 | 笶・|
++| SpecialFeature | stealth_mode / time_bonus / tower / color_touch / boss | 笏 | 笨・| 笏 | onSafeHazardTouch | 笨・|
++| PuzzleFeature | grid_stop / puzzle_solve | 笏 | 笨・| 笏 | 笏 | 笨・|
++| TetrisFeature | tetris_mode | 笨・| 笨・| 笨・| onInit | 笨・|
++
++> 譌ｧ `ExtraMovementFeature`・・ash / wall_jump / vertical_scroll・峨・ `MovementFeature` 縺ｫ邨ｱ蜷医＆繧後◆縲・ 
+ ### GenrePlugin
+ 
+@@ -393,7 +395,13 @@ debugPrint(): void
+ | SurvivalPlugin | survival | 笨・| 笨・| 笏 | 笨・|
+ | BulletRunnerPlugin | bullet_runner | 笨・| 笨・| 笏 | 笨・|
+ | PlatformerPlugin | platformer | 笨・| 笨・| 笏 | 笨・|
+-| 譛ｪ螳溯｣・| stealth_action / racing / dungeon / tower_def / sports / idle / arena / aquatic / horror / hack_slash | 笏 | 笏 | 笏 | 笶・|
++| RacingPlugin | racing | 笨・| 笨・| 笏 | 笨・|
++| ArenaPlugin | arena | 笨・| 笨・| 笏 | 笨・|
++| AquaticPlugin | aquatic | 笨・| 笨・| 笏 | 笨・|
++| DungeonPlugin | dungeon | 笨・| 笨・| 笏 | 笨・|
++| HackSlashPlugin | hack_slash | 笨・| 笨・| 笏 | 笨・|
++| TetrisPlugin | tetris | 笨・| 笨・| 笨・TetrisFeature) | 笨・|
++| JSON繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ | bullet_hell / stealth_action / tower_def / sports / idle / horror | 笨・| 笨・| 笏 | 笨・ｼ・SONGenrePlugin 縺ｧ謠冗判・・|
+ 
+ ### 繝峨Γ繧､繝ｳ繝ｻ繝ｦ繝ｼ繝・ぅ繝ｪ繝・ぅ
+ 
+@@ -402,8 +410,8 @@ debugPrint(): void
+ | domain/ruleEngine.ts | buildRuntimeRules 窶・驕ｸ謚槫ｱ･豁ｴ 竊・RuntimeRules 蜷域・ | 笨・|
+ | domain/genreResolver.ts | resolveGenre 窶・genreParams 竊・繧ｸ繝｣繝ｳ繝ｫ蜿取據 | 笨・|
+ | domain/scoreCalc.ts | 譛邨ゅせ繧ｳ繧｢險育ｮ暦ｼ・lay ﾃ・0.7 + throw ﾃ・0.3・・| 笨・|
+-| domain/learning.ts | 陦悟虚邨ｱ險遺・繝ｫ繝ｼ繝ｫ螟画峩 | 笶・譛ｪ螳溯｣・|
+-| framework/ | ManualLoader / ManualValidator | 笶・繝・ぅ繝ｬ繧ｯ繝医Μ閾ｪ菴薙′蟄伜惠縺励↑縺・|
++| domain/LearningSystem.ts | 陦悟虚邨ｱ險遺・繝ｫ繝ｼ繝ｫ螟画峩・・evaluateLearningRules`・峨ＴideScroller 縺ｮ繝ｫ繝ｼ繝励↓邨ｱ蜷域ｸ医∩ | 笨・|
++| framework/ | ManualLoader / ManualBuilder / ManualValidator / ConfigLoader / ConfigValidator | 笨・|
+ 
+ ---
+ 
+@@ -510,33 +518,31 @@ game/
+ 
+ ### E. 譛ｪ螳溯｣・Feature 縺ｮ遨ｺ繧ｹ繧ｿ繝厄ｼ亥━蜈亥ｺｦ: 荳ｭ 竊・笨・螳溯｣・ｸ医∩・・ 
+-莉･荳九・ FeatureId 縺ｯ逋ｻ骭ｲ貂医∩縺縺・`update()` 縺檎ｩｺ縺ｮ迥ｶ諷具ｼ・+縺九▽縺ｦ繧ｹ繧ｿ繝悶□縺｣縺・Feature 縺ｯ鬆・ｬ｡螳溯｣・＆繧後∫樟蝨ｨ縺ｯ莉･荳九・蟆第焚縺ｮ縺ｿ縺梧悴螳溯｣・〒谿九ｋ・・ 
+ ```
+-ExtraMovementFeature: dash / wall_jump / slide / gravity_flip / vertical_scroll
+-PuzzleFeature:        grid_stop / puzzle_solve
+-SpecialFeature:       stealth_mode / time_bonus / tower / boss (窶ｻcolor_touch 縺ｯ螳溯｣・ｸ医∩)
+-RpgFeature:           shield
++MovementFeature: slide / gravity_flip   ・域怏蜉ｹ蛹匁凾縺ｫ console.warn・・+RpgFeature:      shield                  ・・nPlayerHit 縺ｮ繧ｹ繧ｿ繝悶・縺ｿ・・ ```
+ 
+-**螳溯｣・せ繝・・繧ｿ繧ｹ・・026-05-31 譖ｴ譁ｰ・・**
++**螳溯｣・せ繝・・繧ｿ繧ｹ・育樟迥ｶ・・**
+ 
+-- 笨・**ExtraMovementFeature**: update() 蜀・〒譛ｪ螳溯｣・feature 譛牙柑蛹匁凾縺ｫ console.warn 繧貞・蜉・-- 笨・**PuzzleFeature**: update() 蜀・〒譛ｪ螳溯｣・feature 譛牙柑蛹匁凾縺ｫ console.warn 繧貞・蜉・-- 笨・**SpecialFeature**: update() 蜀・〒譛ｪ螳溯｣・feature・・tealth_mode/time_bonus/tower/boss・画怏蜉ｹ蛹匁凾縺ｫ console.warn 繧貞・蜉・+- 笨・**MovementFeature**: 譌ｧ ExtraMovementFeature 繧堤ｵｱ蜷医Ｅash / wall_jump / vertical_scroll 縺ｯ螳溯｣・ｸ医∩縲Ｔlide / gravity_flip 縺ｮ縺ｿ譛ｪ螳溯｣・ｼ・onsole.warn・・+- 笨・**PuzzleFeature**: grid_stop / puzzle_solve 繧貞ｮ溯｣・+- 笨・**SpecialFeature**: stealth_mode / time_bonus / tower / boss / color_touch 繧貞ｮ溯｣・+- 笨・**TetrisFeature**: tetris_mode 繧貞ｮ溯｣・ - 笞・・**RpgFeature**: shield 縺ｯ譛ｪ螳溯｣・・縺ｾ縺ｾ・・nPlayerHit 縺ｮ繧ｹ繧ｿ繝門ｮ溯｣・ｸ医∩・・ 
+-縺薙ｌ縺ｫ繧医ｊ縲∵怏蜉ｹ蛹悶＆繧後◆縺悟ｮ溯｣・＆繧後※縺・↑縺・feature 縺ｯ髢狗匱繧ｳ繝ｳ繧ｽ繝ｼ繝ｫ縺ｧ蜊ｳ蠎ｧ縺ｫ逋ｺ隕句庄閭ｽ縺ｫ縺ｪ繧九・+譛ｪ螳溯｣・feature 縺梧怏蜉ｹ蛹悶＆繧後◆蝣ｴ蜷医・髢狗匱繧ｳ繝ｳ繧ｽ繝ｼ繝ｫ縺ｫ console.warn 繧貞・蜉帙☆繧九◆繧√∝叉蠎ｧ縺ｫ逋ｺ隕句庄閭ｽ縲・ 
+ ---
+ 
+-### F. Learning System 縺ｮ譛ｪ邨ｱ蜷茨ｼ亥━蜈亥ｺｦ: 菴趣ｼ・-
+-`domain/types.ts` 縺ｫ `LearningTrigger` / `LearningEffect` / `LearningRule` 蝙九′螳夂ｾｩ縺輔ｌ縺ｦ縺・ｋ縺後・ 
+-繧ｲ繝ｼ繝繝ｫ繝ｼ繝励→謗･邯壹＆繧後※縺・↑縺・ＡActionStats` 繧りｨ倬鹸縺輔ｌ繧九′蜿ら・縺輔ｌ縺ｪ縺・・+### F. Learning System・亥ｮ溯｣・ｮ御ｺ・笨・ｼ・ 
+-DESIGN.md 縺ｮ M6 縺ｫ縲悟ｭｦ鄙偵Ν繝ｼ繝ｫ + 莉穂ｸ翫￡縲阪→縺励※險育判縺輔ｌ縺ｦ縺・ｋ讖溯・縲・ 
+-迴ｾ迥ｶ縺ｯ縲悟ｮ夂ｾｩ縺縺代≠繧区悴螳溯｣・ｩ溯・縲阪〒縺ゅｊ縲∵ｷｷ荵ｱ繧帝∩縺代ｋ縺溘ａ迥ｶ諷九ｒ譏手ｨ倥＠縺ｦ縺翫￥縲・+`domain/LearningSystem.ts` 縺ｮ `evaluateLearningRules` 縺・`sideScroller.ts` 縺ｮ繝ｫ繝ｼ繝励↓邨ｱ蜷域ｸ医∩縲・ 
++`ActionStats`・・umps / moveRight / shots 遲会ｼ峨ｒ荳螳夐俣髫斐〒隧穂ｾ｡縺励～LearningRule` 縺ｮ繝医Μ繧ｬ繝ｼ謌千ｫ区凾縺ｫ  
++蜊ｱ髯ｺ濶ｲ蜿崎ｻ｢繝ｻ繧｢繧ｯ繧ｷ繝ｧ繝ｳ辟｡蜉ｹ蛹悶↑縺ｩ縺ｮ `LearningEffect` 繧堤匱蜍輔☆繧具ｼ育匱蜍墓凾縺ｯ `learningNotification` 縺ｧ騾夂衍・峨・ 
++繝ｫ繝ｼ繝ｫ縺ｯ `ManualVersion.learningRules`・・SON・峨〒螳夂ｾｩ縺吶ｋ縲・ 
+ ---
+ 
+@@ -606,7 +612,7 @@ abstract class GenrePluginBase implements GenrePlugin {
+ |---|---|---|
+ | A | 繝輔ャ繧ｯ蜻ｼ縺ｳ蜃ｺ縺怜ｮ溯｣・| 縺吶∋縺ｦ縺ｮ繝輔ャ繧ｯ・・nPlayerDeath, onComboChange, onItemPickup 遲会ｼ峨′螳溯｣・＆繧後・←蛻・↓蜻ｼ縺ｳ蜃ｺ縺輔ｌ縺ｦ縺・ｋ |
+ | C | 蠎ｧ讓咏ｳｻ縺ｮ荳咲ｵｱ荳 | MutableWorld 縺ｫ getHazardScreenX / getPlayerWorldX 繝倥Ν繝代・繝｡繧ｽ繝・ラ螳溯｣・|
+-| E | 遨ｺ繧ｹ繧ｿ繝冶ｭｦ蜻・| ExtraMovementFeature / PuzzleFeature / SpecialFeature 縺ｫ warning 蜃ｺ蜉帛ｮ溯｣・|
++| E | 遨ｺ繧ｹ繧ｿ繝悶・螳溯｣・| 譌ｧ ExtraMovementFeature 繧・Movement 縺ｫ邨ｱ蜷医１uzzle / Special / Tetris 縺ｯ螳溯｣・ｸ医∩縲よｮ九ｋ譛ｪ螳溯｣・・ slide / gravity_flip / shield 縺ｮ縺ｿ・・arning 蜃ｺ蜉幢ｼ・|
+ | G | setTimescale 螳溯｣・| 繧ｿ繧､繝繧ｹ繧ｱ繝ｼ繝ｫ讖滓ｧ九′螳悟・螳溯｣・３hythmFeature 縺ｪ縺ｩ縺ｧ豢ｻ逕ｨ蜿ｯ閭ｽ |
+ | H | framework/ 螳溯｣・| ManualLoader, ManualBuilder, ManualValidator 縺悟ｮ悟・螳溯｣・|
+ | I | GenrePluginBase 螳溯｣・| 謚ｽ雎｡蝓ｺ蠎輔け繝ｩ繧ｹ縺悟ｮ溯｣・＆繧後☆縺ｹ縺ｦ縺ｮ繝励Λ繧ｰ繧､繝ｳ縺檎ｶ呎価 |
+@@ -631,4 +637,4 @@ const vy = player.vy + gravity * fallMult * dt
+ |---|---|---|---|
+ | B | buildWorld 螟夐㍾繧ｳ繝ｼ繝ｫ | 荳ｭ | 繝輔Ξ繝ｼ繝蜀・〒隍・焚蝗槭さ繝ｼ繝ｫ縺輔ｌ縺ｦ縺・ｋ縲Ｎutable world 縺ｮ蜀榊茜逕ｨ縺ｧ GC 雋闕ｷ蜑頑ｸ帛庄閭ｽ |
+ | D | sideScroller 閧･螟ｧ | 菴・| 髢｢蠢・・蛻・屬・育黄逅・・陦晉ｪ√・謠冗判縺ｮ蛻・牡・峨〒菫晏ｮ域ｧ蜷台ｸ・|
+-| F | Learning System | 菴・| 螳溯｣・＆繧後※縺・ｋ縺梧悴邨ｱ蜷医・ESIGN.md M6 蜿ら・ |
++| F | Learning System | 螳御ｺ・笨・| `evaluateLearningRules` 縺・sideScroller 縺ｮ繝ｫ繝ｼ繝励↓邨ｱ蜷域ｸ医∩ |
+diff --git a/docs/genre-plugin.md b/docs/genre-plugin.md
+index c459c27..dd6b71d 100644
+--- a/docs/genre-plugin.md
++++ b/docs/genre-plugin.md
+@@ -56,11 +56,13 @@ export class MyGenrePlugin implements GenrePlugin {
+ ### 逋ｻ骭ｲ
+ 
+ ```typescript
+-// src/genres/index.ts 縺ｫ1陦瑚ｿｽ蜉縺吶ｋ縺縺・-import { MyGenrePlugin } from './MyGenrePlugin'
+-registerGenre(new MyGenrePlugin())
++// 繝輔ぃ繧､繝ｫ譛ｫ蟆ｾ縺ｧ default export 縺吶ｋ縺縺代・+// src/genres/index.ts 縺・import.meta.glob 縺ｧ閾ｪ蜍募庶髮・☆繧九◆繧・index.ts 縺ｮ邱ｨ髮・・荳崎ｦ√・+export default new MyGenrePlugin()
+ ```
+ 
++> `BasePlugin.ts` 縺ｮ繧医≧縺ｫ隍・焚繧ｯ繝ｩ繧ｹ繧・`export default [new A(), new B()]` 縺ｮ驟榊・縺ｧ霑斐☆縺薙→繧ゅ〒縺阪ｋ縲・+
+ ---
+ 
+ ## SpawnEntry 隧ｳ邏ｰ
+diff --git a/docs/genre-system.md b/docs/genre-system.md
+index f21ae63..a0891f3 100644
+--- a/docs/genre-system.md
++++ b/docs/genre-system.md
+@@ -56,7 +56,7 @@ function resolveGenre(params: GenreParams, genres: GenreDef[]): GenreId {
+ 
+ ---
+ 
+-## 蜈ｨ繧ｸ繝｣繝ｳ繝ｫ荳隕ｧ・・1 遞ｮ・・+## 蜈ｨ繧ｸ繝｣繝ｳ繝ｫ荳隕ｧ・・2 遞ｮ・・ 
+ ### 繧ｳ繧｢繧ｸ繝｣繝ｳ繝ｫ・医・繝ｩ繧ｰ繧､繝ｳ螳溯｣・ｸ医∩・・ 
+@@ -88,6 +88,7 @@ function resolveGenre(params: GenreParams, genres: GenreDef[]): GenreId {
+ | `aquatic` | 豌ｴ荳ｭ繧｢繝峨・繝ｳ繝√Ε繝ｼ | vertical竕･3, aerial竕･3, survive竕･4 | distance + itemsCollected + survivedSec |
+ | `horror` | 繧ｵ繝舌う繝舌Ν繝帙Λ繝ｼ | survive竕･6, stealth竕･4 | survivedSec + stealthBonus 竏・deaths |
+ | `hack_slash` | 繝上ャ繧ｯ繧｢繝ｳ繝峨せ繝ｩ繝・す繝･ | enemy竕･5, combo竕･6 | kills + maxCombo + exp + bossKills |
++| `tetris` | 繝・ヨ繝ｪ繧ｹ | combo竕･4, craft竕･4 | combo + survivedSec・・scrollSpeed=0` 縺ｮ縺溘ａ distance 縺ｯ蜉邂励＆繧後↑縺・ｼ・|
+ 
+ ---
+ 
+@@ -111,10 +112,12 @@ function resolveGenre(params: GenreParams, genres: GenreDef[]): GenreId {
+ 
+ ---
+ 
+-## 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ縺ｮ譖ｸ縺肴婿・・onfig/genres.json・・+## 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ縺ｮ譖ｸ縺肴婿・・rc/data/genres/&lt;id&gt;.json・・+
++繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ縺ｯ1繧ｸ繝｣繝ｳ繝ｫ1繝輔ぃ繧､繝ｫ縺ｧ `src/data/genres/<id>.json` 縺ｫ鄂ｮ縺上Ａimport.meta.glob` 縺ｧ閾ｪ蜍募庶髮・＆繧後ｋ縺溘ａ縲√ヵ繧｡繧､繝ｫ繧定ｿｽ蜉縺吶ｋ縺縺代〒逋ｻ骭ｲ縺輔ｌ繧具ｼ・src/data/config/genres.json` 縺ｯ繝・・繝槭き繝ｩ繝ｼ遲峨・陬懷勧險ｭ螳壹〒縲∝ｮ夂ｾｩ譛ｬ菴薙〒縺ｯ縺ｪ縺・ｼ峨・ 
+ ```json
+-// src/data/config/genres.json 縺ｮ驟榊・縺ｫ霑ｽ蜉
++// 萓・ src/data/genres/my_genre.json
+ {
+   "id": "my_genre",
+   "label": "遘√・繧ｸ繝｣繝ｳ繝ｫ",
+diff --git a/docs/getting-started.md b/docs/getting-started.md
+index 8e017c5..a38c18f 100644
+--- a/docs/getting-started.md
++++ b/docs/getting-started.md
+@@ -145,7 +145,7 @@ src/
+     笏懌楳笏 gameBalance.ts            繧ｲ繝ｼ繝繝舌Λ繝ｳ繧ｹ蛟､
+     笏懌楳笏 tunables.ts               隱ｿ謨ｴ蜿ｯ閭ｽ縺ｪ繝代Λ繝｡繝ｼ繧ｿ
+     笏懌楳笏 manualDeck.ts             隱ｬ譏取嶌繝・・繧ｿ繝吶・繧ｹ
+-    笏懌楳笏 config/                   竊・JSON 險ｭ螳壹ヵ繧｡繧､繝ｫ鄒､・・7蛟具ｼ・+    笏懌楳笏 config/                   竊・JSON 險ｭ螳壹ヵ繧｡繧､繝ｫ鄒､・・1蛟具ｼ・     笏・  笏懌楳笏 genres.json           繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ・・0+ 繧ｸ繝｣繝ｳ繝ｫ・・     笏・  笏懌楳笏 game_balance.json     謨ｵ縺ｮ蟇・ｺｦ繝ｻ繧ｹ繝昴・繝ｳ繝ｻ髮｣譏灘ｺｦ
+     笏・  笏懌楳笏 score.json            繧ｹ繧ｳ繧｢險育ｮ励・驥阪∩
+@@ -314,7 +314,7 @@ getRegistry().registerFeature(new JumpHeightFeature())
+ #### Step 3: JSON 縺ｧ譛牙柑蛹・ 
+ ```json
+-// src/data/config/genres.json 縺ｮ隧ｲ蠖薙ず繝｣繝ｳ繝ｫ縺ｧ:
++// src/data/genres/my_genre.json 縺ｮ隧ｲ蠖薙ず繝｣繝ｳ繝ｫ縺ｧ:
+ {
+   "id": "my_genre",
+   "enableFeatures": ["show_jump_height"],
+@@ -370,12 +370,12 @@ dist/
+ 
+ ### Q: 隱ｬ譏取嶌縺ｮ繝・・繝槭ｒ螟峨∴縺溘＞
+ 
+-`src/data/config/genres.json` 縺ｧ・・+`src/data/genres/my_genre.json` 縺ｧ・・ 
+ ```json
+ {
+   "id": "my_genre",
+-  "theme": "stg"  // plain, stg, rpg, puzzle, rhythm 縺ｪ縺ｩ
++  "theme": "stg"  // plain, stg, rpg, puzzle, rhythm, tetris 縺ｪ縺ｩ
+ }
+ ```
+ 
+diff --git a/docs/guide/00-overview.md b/docs/guide/00-overview.md
+index 9b097a4..9b5d715 100644
+--- a/docs/guide/00-overview.md
++++ b/docs/guide/00-overview.md
+@@ -25,7 +25,7 @@
+ 驕ｸ謚櫁い繧帝∈縺ｶ縺溘・縺ｫ闢・ｩ阪＆繧後ｋ謨ｰ蛟､縲Ａtempo` 繧・`enemy` 縺ｪ縺ｩ12霆ｸ縺ゅｊ縺ｾ縺吶ゅ・繝ｬ繧､繝､繝ｼ縺碁∈繧薙□譁ｹ蜷第ｧ縺梧焚蛟､縺ｨ縺励※遨阪∩荳翫′縺｣縺ｦ縺・″縺ｾ縺吶・ 
+ **繧ｸ繝｣繝ｳ繝ｫ・・enre・・*
+-繝代Λ繝｡繝ｼ繧ｿ縺御ｸ螳壹・髢ｾ蛟､縺ｫ驕斐＠縺溘→縺咲｢ｺ螳壹☆繧九後ご繝ｼ繝縺ｮ遞ｮ鬘槭阪４TG繝ｻRPG繝ｻ繝ｪ繧ｺ繝繧ｲ繝ｼ繝縺ｪ縺ｩ21遞ｮ縺悟ｮ夂ｾｩ縺輔ｌ縺ｦ縺・∪縺吶ゅず繝｣繝ｳ繝ｫ縺檎｢ｺ螳壹☆繧九→縲∬ｦ九◆逶ｮ繝ｻ謫堺ｽ懈─繝ｻ繧ｹ繧ｳ繧｢險育ｮ励′縺ｾ縺ｨ繧√※蛻・ｊ譖ｿ繧上ｊ縺ｾ縺吶・+繝代Λ繝｡繝ｼ繧ｿ縺御ｸ螳壹・髢ｾ蛟､縺ｫ驕斐＠縺溘→縺咲｢ｺ螳壹☆繧九後ご繝ｼ繝縺ｮ遞ｮ鬘槭阪４TG繝ｻRPG繝ｻ繝ｪ繧ｺ繝繧ｲ繝ｼ繝縺ｪ縺ｩ22遞ｮ縺悟ｮ夂ｾｩ縺輔ｌ縺ｦ縺・∪縺吶ゅず繝｣繝ｳ繝ｫ縺檎｢ｺ螳壹☆繧九→縲∬ｦ九◆逶ｮ繝ｻ謫堺ｽ懈─繝ｻ繧ｹ繧ｳ繧｢險育ｮ励′縺ｾ縺ｨ繧√※蛻・ｊ譖ｿ繧上ｊ縺ｾ縺吶・ 
+ **繝輔ぅ繝ｼ繝√Ε繝ｼ・・eature・・*
+ 繧ｸ繝｣繝ｳ繝ｫ縺檎｢ｺ螳壹＠縺溘→縺阪↓譛牙柑繝ｻ辟｡蜉ｹ縺ｫ縺ｪ繧句句挨縺ｮ讖溯・縲Ａshoot`・亥ｼｾ繧呈茶縺ｦ繧具ｼ峨ｄ `hp`・・P縺後≠繧具ｼ峨・繧医≧縺ｪ蜊倅ｽ阪〒縺吶ゅず繝｣繝ｳ繝ｫ縺ｯ縲後←縺ｮ繝輔ぅ繝ｼ繝√Ε繝ｼ繧剃ｽｿ縺・°縲阪・邨・∩蜷医ｏ縺帙〒螳夂ｾｩ縺輔ｌ縺ｦ縺・∪縺吶・@@ -83,7 +83,7 @@ ending・医お繝ｳ繝・ぅ繝ｳ繧ｰ・・ 
+ | 蠖ｹ蜑ｲ | 蝣ｴ謇 |
+ |---|---|
+-| 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ・磯明蛟､繝ｻ繝輔ぅ繝ｼ繝√Ε繝ｼ繝ｻ繧ｹ繧ｳ繧｢蠑擾ｼ・| `src/data/config/genres.json` |
++| 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ・磯明蛟､繝ｻ繝輔ぅ繝ｼ繝√Ε繝ｼ繝ｻ繧ｹ繧ｳ繧｢蠑擾ｼ・| `src/data/genres/*.json`・・繧ｸ繝｣繝ｳ繝ｫ1繝輔ぃ繧､繝ｫ・・|
+ | 隱ｬ譏取嶌縺ｮ驕ｸ謚櫁い繝ｻ譛ｬ譁・| `src/data/manuals/*.json` |
+ | 繧ｸ繝｣繝ｳ繝ｫ縺ｮ隕九◆逶ｮ・郁レ譎ｯ繝ｻ繝励Ξ繧､繝､繝ｼ謠冗判・・| `src/genres/` |
+ | 繝輔ぅ繝ｼ繝√Ε繝ｼ縺ｮ蜍穂ｽ懊Ο繧ｸ繝・け | `src/game/systems/` |
+diff --git a/docs/guide/01-genre-system.md b/docs/guide/01-genre-system.md
+index 0c3b1cd..1118dd4 100644
+--- a/docs/guide/01-genre-system.md
++++ b/docs/guide/01-genre-system.md
+@@ -23,7 +23,7 @@
+ | `craft` | 險ｭ鄂ｮ繝ｻ遨阪∩荳翫￡繝ｻ謾ｾ鄂ｮ |
+ | `speed` | 繝繝・す繝･繝ｻ邏皮ｲ九せ繝斐・繝・|
+ 
+-縺ｪ縺・2霆ｸ縺ｪ縺ｮ縺銀披斐◎繧後・21遞ｮ縺ｮ繧ｸ繝｣繝ｳ繝ｫ繧定・辟ｶ縺ｫ蛻・ｲ舌＆縺帙ｋ縺溘ａ縺ｧ縺吶ゅ郡TG譁ｹ蜷代阪→縲後Λ繝ｳ繝翫・譁ｹ蜷代阪→縲軍PG譁ｹ蜷代阪′縺昴ｌ縺槭ｌ逡ｰ縺ｪ繧九ヱ繝ｩ繝｡繝ｼ繧ｿ縺ｧ蠑輔″蟇・○繧峨ｌ繧九ｈ縺・↓險ｭ險医＆繧後※縺・∪縺吶・+縺ｪ縺・2霆ｸ縺ｪ縺ｮ縺銀披斐◎繧後・22遞ｮ縺ｮ繧ｸ繝｣繝ｳ繝ｫ繧定・辟ｶ縺ｫ蛻・ｲ舌＆縺帙ｋ縺溘ａ縺ｧ縺吶ゅ郡TG譁ｹ蜷代阪→縲後Λ繝ｳ繝翫・譁ｹ蜷代阪→縲軍PG譁ｹ蜷代阪′縺昴ｌ縺槭ｌ逡ｰ縺ｪ繧九ヱ繝ｩ繝｡繝ｼ繧ｿ縺ｧ蠑輔″蟇・○繧峨ｌ繧九ｈ縺・↓險ｭ險医＆繧後※縺・∪縺吶・ 
+ ---
+ 
+@@ -131,7 +131,7 @@ thresholds 繧呈ｺ縺溘☆繧ｸ繝｣繝ｳ繝ｫ縺檎｢ｺ螳・ 
+ | 蜀・ｮｹ | 蝣ｴ謇 |
+ |---|---|
+-| 蜈ｨ繧ｸ繝｣繝ｳ繝ｫ縺ｮ髢ｾ蛟､繝ｻ繝輔ぅ繝ｼ繝√Ε繝ｼ繝ｻ繧ｹ繧ｳ繧｢蠑・| `src/data/config/genres.json` |
++| 蜈ｨ繧ｸ繝｣繝ｳ繝ｫ縺ｮ髢ｾ蛟､繝ｻ繝輔ぅ繝ｼ繝√Ε繝ｼ繝ｻ繧ｹ繧ｳ繧｢蠑・| `src/data/genres/*.json`・・繧ｸ繝｣繝ｳ繝ｫ1繝輔ぃ繧､繝ｫ・・|
+ | 蜿取據繧｢繝ｫ繧ｴ繝ｪ繧ｺ繝縺ｮ螳溯｣・| `src/domain/genreResolver.ts` |
+ | 繧ｸ繝｣繝ｳ繝ｫ縺ｮ隕冶ｦ壹ユ繝ｼ繝槫ｮ溯｣・| `src/genres/` |
+ | 繝輔ぅ繝ｼ繝√Ε繝ｼ縺ｮ蜍穂ｽ懊Ο繧ｸ繝・け | `src/game/systems/` |
+diff --git a/docs/guide/03-adding-content.md b/docs/guide/03-adding-content.md
+index 5511cc5..a482305 100644
+--- a/docs/guide/03-adding-content.md
++++ b/docs/guide/03-adding-content.md
+@@ -11,32 +11,18 @@
+ | 繧・ｊ縺溘＞縺薙→ | 蠢・ｦ√↑菴懈･ｭ | 繧ｳ繝ｼ繝牙､画峩 |
+ |---|---|---|
+ | 隱ｬ譏取嶌縺ｮ驕ｸ謚櫁い繧定ｿｽ蜉 | `src/data/manuals/*.json` 繧堤ｷｨ髮・| 荳崎ｦ・|
+-| 譁ｰ縺励＞繧ｸ繝｣繝ｳ繝ｫ繧定ｿｽ蜉 | JSON 1邂・園 + TypeScript 3邂・園 | 蠢・ｦ・|
+-| 譁ｰ縺励＞繝輔ぅ繝ｼ繝√Ε繝ｼ繧定ｿｽ蜉 | TypeScript 3邂・園 | 蠢・ｦ・|
++| 譁ｰ縺励＞繧ｸ繝｣繝ｳ繝ｫ繧定ｿｽ蜉 | `src/data/genres/<id>.json`・・ 莉ｻ諢上〒 TS 繝励Λ繧ｰ繧､繝ｳ・・| 莉ｻ諢・|
++| 譁ｰ縺励＞繝輔ぅ繝ｼ繝√Ε繝ｼ繧定ｿｽ蜉 | TypeScript 2邂・園 | 蠢・ｦ・|
+ 
+ ---
+ 
+ ## 譁ｰ繧ｸ繝｣繝ｳ繝ｫ繧定ｿｽ蜉縺吶ｋ豬√ｌ
+ 
+-4縺､縺ｮ繧ｹ繝・ャ繝励′縺ゅｊ縺ｾ縺吶・+3縺､縺ｮ繧ｹ繝・ャ繝励′縺ゅｊ縺ｾ縺呻ｼ亥梛螳夂ｾｩ縺ｮ邱ｨ髮・・荳崎ｦ・窶・`GenreId` 縺ｯ `string` 蝙九〒縺呻ｼ峨・ 
+-### 繧ｹ繝・ャ繝・1: 蝙九↓ID繧定ｿｽ蜉縺吶ｋ
++### 繧ｹ繝・ャ繝・1: 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ繧谷SON縺ｫ霑ｽ蜉縺吶ｋ
+ 
+-`src/domain/types.ts` 縺ｮ `GenreId` union 縺ｫ譁ｰ縺励＞ID繧定ｿｽ蜉縺励∪縺吶・-
+-```typescript
+-export type GenreId =
+-  | 'base'
+-  | 'runner'
+-  // ... 譌｢蟄・...
+-  | 'my_genre'   // 竊・霑ｽ蜉
+-```
+-
+-縺薙ｌ繧偵＠縺ｪ縺・→TypeScript縺ｮ蝙九お繝ｩ繝ｼ縺ｫ縺ｪ繧翫∪縺吶・-
+-### 繧ｹ繝・ャ繝・2: 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ繧谷SON縺ｫ霑ｽ蜉縺吶ｋ
+-
+-`src/data/config/genres.json` 縺ｮ `genres` 驟榊・縺ｫ繧ｨ繝ｳ繝医Μ繧定ｿｽ蜉縺励∪縺吶・+`src/data/genres/my_genre.json` 繧呈眠隕丈ｽ懈・縺励∪縺吶Ａsrc/data/genres/*.json` 縺ｯ `import.meta.glob` 縺ｧ閾ｪ蜍募庶髮・＆繧後ｋ縺溘ａ縲√ヵ繧｡繧､繝ｫ繧堤ｽｮ縺上□縺代〒逋ｻ骭ｲ縺輔ｌ縺ｾ縺呻ｼ・src/data/config/genres.json` 縺ｯ繝・・繝槭き繝ｩ繝ｼ遲峨・陬懷勧險ｭ螳壹〒縲∝ｮ夂ｾｩ譛ｬ菴薙〒縺ｯ縺ゅｊ縺ｾ縺帙ｓ・峨・ 
+ ```json
+ {
+@@ -63,13 +49,13 @@ export type GenreId =
+ | `scoreFormula` | 譛邨ゅせ繧ｳ繧｢縺ｮ險育ｮ怜ｼ擾ｼ井ｽｿ縺医ｋ螟画焚縺ｯ蠕瑚ｿｰ・・|
+ | `manualReveal` | 遒ｺ螳壽凾縺ｫ隱ｬ譏取嶌縺ｫ譖ｸ縺崎ｾｼ縺ｾ繧後ｋ螳｣險譁・|
+ | `endingFlavor` | 謚墓憧蠕後・繧ｨ繝ｳ繝・ぅ繝ｳ繧ｰ逕ｻ髱｢縺ｫ陦ｨ遉ｺ縺輔ｌ繧倶ｸ譁・|
+-| `theme` | 隱ｬ譏取嶌UI縺ｮ隕九◆逶ｮ縲Ａplain` / `stg` / `rpg` / `puzzle` / `rhythm` / `horror` / `aquatic` |
++| `theme` | 隱ｬ譏取嶌UI縺ｮ隕九◆逶ｮ・・ManualTheme`・峨Ａplain` / `stg` / `rpg` / `puzzle` / `rhythm` / `horror` / `aquatic` / `tetris` 縺ｪ縺ｩ蜈ｨ15遞ｮ |
+ 
+ scoreFormula 縺ｧ菴ｿ縺医ｋ螟画焚: `distance` / `kills` / `combo` / `maxCombo` / `exp` / `beatHits` / `survivedSec` / `accuracy` / `deaths` / `itemsCollected` / `bossKills` / `stealthBonus` / `colorTouches`
+ 
+-### 繧ｹ繝・ャ繝・3: 隕冶ｦ壹ユ繝ｼ繝槭ｒ螳溯｣・☆繧・+### 繧ｹ繝・ャ繝・2: 隕冶ｦ壹ユ繝ｼ繝槭ｒ螳溯｣・☆繧具ｼ井ｻｻ諢擾ｼ・ 
+-`src/genres/MyGenrePlugin.ts` 繧呈眠隕丈ｽ懈・縺励∪縺吶ＡGenrePluginBase` 繧堤ｶ呎価縺励※縲∬レ譎ｯ繝ｻ繝励Ξ繧､繝､繝ｼ縺ｮ隕九◆逶ｮ繧貞ｮ溯｣・＠縺ｾ縺吶・+蟆ら畑繝薙ず繝･繧｢繝ｫ縺悟ｿ・ｦ√↑蝣ｴ蜷医・縺ｿ螳溯｣・＠縺ｾ縺吶ら怐逡･縺吶ｋ縺ｨ `theme` 縺九ｉ `JSONGenrePlugin` 縺瑚・蜍輔〒繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ謠冗判縺励∪縺吶Ａsrc/genres/MyGenrePlugin.ts` 繧呈眠隕丈ｽ懈・縺励～GenrePluginBase` 繧堤ｶ呎価縺励※閭梧勹繝ｻ繝励Ξ繧､繝､繝ｼ縺ｮ隕九◆逶ｮ繧貞ｮ溯｣・＠縺ｾ縺吶・ 
+ ```typescript
+ import { GenrePluginBase } from '../engine/GenrePluginBase'
+@@ -109,30 +95,21 @@ export class MyGenrePlugin extends GenrePluginBase {
+ }
+ ```
+ 
+-### 繧ｹ繝・ャ繝・4: 逋ｻ骭ｲ縺吶ｋ
++### 繧ｹ繝・ャ繝・3: 逋ｻ骭ｲ縺吶ｋ
+ 
+-`src/genres/index.ts` 縺ｫ2陦瑚ｿｽ蜉縺励∪縺吶・+繝輔ぃ繧､繝ｫ譛ｫ蟆ｾ縺ｧ `default export` 縺吶ｋ縺縺代〒縺吶Ａsrc/genres/index.ts` 縺・`import.meta.glob` 縺ｧ閾ｪ蜍募庶髮・☆繧九◆繧√～index.ts` 縺ｮ邱ｨ髮・・荳崎ｦ√〒縺吶・ 
+ ```typescript
+-import { MyGenrePlugin } from './MyGenrePlugin'   // 竊・霑ｽ蜉
+-registerGenre(new MyGenrePlugin())                  // 竊・霑ｽ蜉
++export default new MyGenrePlugin()   // 竊・縺薙ｌ縺縺・ ```
+ 
+ ---
+ 
+ ## 譁ｰ繝輔ぅ繝ｼ繝√Ε繝ｼ繧定ｿｽ蜉縺吶ｋ豬√ｌ
+ 
+-3縺､縺ｮ繧ｹ繝・ャ繝励′縺ゅｊ縺ｾ縺吶・+2縺､縺ｮ繧ｹ繝・ャ繝励′縺ゅｊ縺ｾ縺呻ｼ・FeatureId` 縺ｯ `string` 蝙九↑縺ｮ縺ｧ蝙句ｮ夂ｾｩ縺ｮ邱ｨ髮・・荳崎ｦ√〒縺呻ｼ峨・ 
+-### 繧ｹ繝・ャ繝・1: 蝙九↓ID繧定ｿｽ蜉縺吶ｋ
+-
+-`src/domain/types.ts` 縺ｮ `FeatureId` union 縺ｫ霑ｽ蜉縺励∪縺吶・-
+-```typescript
+-export type FeatureId = 'shoot' | 'hp' | ... | 'my_feature'
+-```
+-
+-### 繧ｹ繝・ャ繝・2: FeatureSystem 繧ｯ繝ｩ繧ｹ繧貞ｮ溯｣・☆繧・+### 繧ｹ繝・ャ繝・1: FeatureSystem 繧ｯ繝ｩ繧ｹ繧貞ｮ溯｣・☆繧・ 
+ `src/game/systems/MyFeature.ts` 繧呈眠隕丈ｽ懈・縺励∪縺吶・ 
+@@ -155,7 +132,7 @@ export class MyFeature implements FeatureSystem {
+ }
+ ```
+ 
+-### 繧ｹ繝・ャ繝・3: 逋ｻ骭ｲ縺吶ｋ
++### 繧ｹ繝・ャ繝・2: 逋ｻ骭ｲ縺吶ｋ
+ 
+ `src/game/systems/index.ts` 縺ｫ霑ｽ蜉縺励∪縺吶・ 
+@@ -180,7 +157,7 @@ registerFeature(new MyFeature())
+   蜷郁ｨ・ { tempo: 4, aerial: 3 } 竊・髢ｾ蛟､縺｡繧・≧縺ｩ 竊・遒ｺ螳・ ```
+ 
+-譌｢蟄倥ず繝｣繝ｳ繝ｫ縺ｨ縺ｮ繝代Λ繝｡繝ｼ繧ｿ遶ｶ蜷医↓繧よｳｨ諢上＠縺ｦ縺上□縺輔＞縲ょ・繧ｸ繝｣繝ｳ繝ｫ縺ｮ髢ｾ蛟､縺ｯ `src/data/config/genres.json` 縺ｧ遒ｺ隱阪〒縺阪∪縺吶・+譌｢蟄倥ず繝｣繝ｳ繝ｫ縺ｨ縺ｮ繝代Λ繝｡繝ｼ繧ｿ遶ｶ蜷医↓繧よｳｨ諢上＠縺ｦ縺上□縺輔＞縲ょ・繧ｸ繝｣繝ｳ繝ｫ縺ｮ髢ｾ蛟､縺ｯ `src/data/genres/*.json` 縺ｧ遒ｺ隱阪〒縺阪∪縺吶・ 
+ ---
+ 
+diff --git a/docs/guide/GUIDE_README.md b/docs/guide/GUIDE_README.md
+index 7995d3c..fcfc14c 100644
+--- a/docs/guide/GUIDE_README.md
++++ b/docs/guide/GUIDE_README.md
+@@ -36,7 +36,7 @@
+ 
+ 讎ょｿｵ縺ｯ謚頑升縺ｧ縺阪◆縲∵ｬ｡縺ｯ螳溯｣・・隧ｳ邏ｰ繧堤衍繧翫◆縺・√→縺・≧蝣ｴ蜷医・莉･荳九ｒ蜿ら・縺励※縺上□縺輔＞縲・ 
+-- [genre-system.md](../genre-system.md) 窶・蜈ｨ21繧ｸ繝｣繝ｳ繝ｫ縺ｮ螳夂ｾｩ繝ｻ蜿取據繧｢繝ｫ繧ｴ繝ｪ繧ｺ繝
++- [genre-system.md](../genre-system.md) 窶・蜈ｨ22繧ｸ繝｣繝ｳ繝ｫ縺ｮ螳夂ｾｩ繝ｻ蜿取據繧｢繝ｫ繧ｴ繝ｪ繧ｺ繝
+ - [feature-ids.md](../feature-ids.md) 窶・蜈ｨ繝輔ぅ繝ｼ繝√Ε繝ｼID繝ｻ螳溯｣・せ繝・・繧ｿ繧ｹ荳隕ｧ
+ - [manual-json.md](../manual-json.md) 窶・隱ｬ譏取嶌JSON縺ｮ蜈ｨ繝輔ぅ繝ｼ繝ｫ繝我ｻ墓ｧ・ - [adding-content.md](../adding-content.md) 窶・繧ｳ繝ｳ繝・Φ繝・ｿｽ蜉縺ｮ螳溯ｷｵ謇矩・・繝√ぉ繝・け繝ｪ繧ｹ繝・diff --git a/docs/tetris-genre.md b/docs/tetris-genre.md
+index 0a00a7f..e619c5b 100644
+--- a/docs/tetris-genre.md
++++ b/docs/tetris-genre.md
+@@ -12,7 +12,7 @@ MANUAL-OVERRIDE繧ｲ繝ｼ繝縺ｫ縲後ユ繝医Μ繧ｹ縲阪ｒ譁ｰ縺励＞繧ｸ繝｣繝ｳ繝ｫ縺ｨ縺励※
+ ```
+ src/
+ 笏懌楳笏 data/
+-笏・  笏懌楳笏 config/genres.json          # 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ・・etris霑ｽ蜉・・+笏・  笏懌楳笏 genres/tetris.json          # 繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ・・etris・・ 笏・  笏披楳笏 manuals/tetris-branch.json  # 繝・ヨ繝ｪ繧ｹ蛻・ｲ舌・驕ｸ謚櫁い・・2繧ｨ繝ｳ繝医Μ・・ 笏懌楳笏 genres/
+ 笏・  笏懌楳笏 TetrisPlugin.ts             # 隕冶ｦ壹ユ繝ｼ繝橸ｼ域囓濶ｲ邉ｻ繝ｻ繧ｰ繝ｪ繝・ラ邱壹・T繝悶Ο繝・け・・

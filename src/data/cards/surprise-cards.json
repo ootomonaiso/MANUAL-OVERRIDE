@@ -1,100 +1,62 @@
 {
   "cards": [
     {
-      "id": "c-contradict-detail",
-      "label": "説明書をもっと詳しくする",
-      "manualText": ["説明書を詳細に書き換える。すべてのルールを明示する。"],
-      "genreParams": { "combo": 1, "growth": 1 },
-      "weight": 2,
-      "contradictionPair": "c-contradict-brief",
-      "reactionMessage": "…えっ、詳しくするの？ でも前の選択は全然逆だったよ？",
-      "hint": "矛盾ペア: 詳細化 vs 簡略化"
-    },
-    {
-      "id": "c-contradict-brief",
-      "label": "説明書を短くする（大事なことは削除する）",
-      "manualText": ["説明書を簡略化する。不要な情報は削除する。"],
-      "genreParams": { "tempo": 1, "speed": 1 },
-      "weight": 2,
-      "contradictionPair": "c-contradict-detail",
-      "reactionMessage": "…短くするの？ でも前は詳しくするって言ったよ？",
-      "hint": "矛盾ペア: 簡略化 vs 詳細化"
-    },
-    {
-      "id": "c-contradict-safe",
-      "label": "安全を重視する（リスクを排除する）",
-      "manualText": ["安全なプレイを推奨する。障害物は減らす。"],
-      "genreParams": { "survive": 2, "stealth": 1 },
-      "weight": 2,
-      "contradictionPair": "c-contradict-risk",
-      "reactionMessage": "…安全？ でも前はリスクを好むって言ったよね？",
-      "hint": "矛盾ペア: 安全 vs リスク"
-    },
-    {
-      "id": "c-contradict-risk",
-      "label": "リスクを高める（リターンも上がる）",
-      "manualText": ["リスクを高める。その分リターンも上がる。"],
-      "genreParams": { "enemy": 2, "tempo": 1 },
-      "weight": 2,
-      "contradictionPair": "c-contradict-safe",
-      "reactionMessage": "…リスク？ でも前は安全を重視するって言ったよ？",
-      "hint": "矛盾ペア: リスク vs 安全"
-    },
-    {
-      "id": "c-contradict-solo",
-      "label": "一人遊びを徹底する",
-      "manualText": ["このゲームは一人向けだ。協力要素は排除する。"],
-      "genreParams": { "stealth": 2, "survive": 1 },
-      "weight": 2,
-      "contradictionPair": "c-contradict-social",
-      "reactionMessage": "…一人？ でも前は誰かと遊ぶって言ってたよ？",
-      "hint": "矛盾ペア: 一人 vs 共同"
-    },
-    {
-      "id": "c-contradict-social",
-      "label": "誰かと一緒に玩べるようにする",
-      "manualText": ["共同プレイの要素を追加する。"],
-      "genreParams": { "combo": 2, "rhythm": 1 },
-      "weight": 2,
-      "contradictionPair": "c-contradict-solo",
-      "reactionMessage": "…共同プレイ？ でも前は一人遊びだって言ったよね？",
-      "hint": "矛盾ペア: 共同 vs 一人"
-    },
-    {
-      "id": "c-surprise-ghost",
-      "label": "画面の隅に何かいる気がする",
-      "manualText": ["画面の隅を時々確認すると、何かが動いているようでも。"],
-      "genreParams": { "stealth": 2, "survive": 2 },
+      "id": "c-surprise-chaos",
+      "label": "ルールを意図的に矛盾させる",
+      "manualText": ["ルールに矛盾が生じました。", "ゲームの仕様が揺らぎ始めました。"],
+      "genreParams": { "combo": 1, "tempo": 1, "enemy": 1 },
       "weight": 1,
+      "hint": "サプライズ: 矛盾を誘発",
+      "genreAffinity": ["puzzle", "hack_slash"],
+      "conflictsWith": ["c-combo-sequence", "c-stealth-hide"]
+    },
+    {
+      "id": "c-surprise-paradox",
+      "label": "同時に相反する2つの状態を作る",
+      "manualText": ["ゲームが2つの状態を同時に持つようになりました。", "何が起きるか分かりません。"],
+      "genreParams": { "stealth": 1, "enemy": 1 },
+      "weight": 1,
+      "hint": "サプライズ: 矛盾を誘発",
       "genreAffinity": ["horror", "stealth_action"],
-      "hint": "ホラー系への隠し誘導"
+      "conflictsWith": ["c-enemy-combat", "c-survive-danger"]
     },
     {
-      "id": "c-surprise-time",
-      "label": "時間が遅く感じるようになった",
-      "manualText": ["秒針の音が遅く聞こえる。もしかして時間そのものが…"],
-      "genreParams": { "craft": 2, "survive": 1 },
+      "id": "c-surprise-void",
+      "label": "存在しないものを操作できるようにする",
+      "manualText": ["見えないものを操作する仕様が加わりました。"],
+      "genreParams": { "stealth": 2, "combo": 1 },
       "weight": 1,
-      "genreAffinity": ["idle", "survival"],
-      "hint": "Idle系への隠し誘導"
+      "hint": "サプライズ: 隠し要素",
+      "genreAffinity": ["stealth_action", "puzzle"],
+      "conflictsWith": ["c-general-visual"]
     },
     {
       "id": "c-surprise-loop",
-      "label": "この障害物、前に見たことがある",
-      "manualText": ["障害物のパターンが繰り返されているようだ。ループ？"],
+      "label": "同じことを繰り返すと変化が起きる",
+      "manualText": ["繰り返すことで隠れた仕様が解き放たれます。"],
       "genreParams": { "combo": 2, "rhythm": 1 },
       "weight": 1,
-      "genreAffinity": ["puzzle", "rhythm"],
-      "hint": "パズル/リズム系への隠し誘導"
+      "hint": "サプライズ: ループ要素",
+      "genreAffinity": ["rhythm", "idle"]
     },
     {
-      "id": "c-surprise-rebel",
-      "label": "説明書の言う通りにしない選択肢",
-      "manualText": ["説明書に反して行動する。それがこのゲームの本当の遊びかもしれな"],
-      "genreParams": { "enemy": 2, "tempo": 2 },
+      "id": "c-surprise-memory",
+      "label": "過去の選択が今に影響する",
+      "manualText": ["過去の選択がゲームに影響し始めました。"],
+      "genreParams": { "growth": 1, "stealth": 1 },
       "weight": 1,
-      "genreAffinity": ["stg", "arena", "hack_slash"],
-      "hint": "戦闘系への隠し誘導"
+      "hint": "サプライズ: メタ要素",
+      "genreAffinity": ["rpg", "horror"]
+    },
+    {
+      "id": "c-surprise-break",
+      "label": "ゲームの枠組みそのものを変える",
+      "manualText": ["ゲームの根本が変わりつつあります。", "もはや説明書では追いつきません。"],
+      "genreParams": { "tempo": 1, "combo": 1, "enemy": 1, "growth": 1 },
+      "weight": 1,
+      "hint": "サプライズ: 根本変化",
+      "genreAffinity": ["hack_slash", "arena"],
+      "conflictsWith": ["c-combo-sequence", "c-tempo-smooth", "c-stealth-hide"]
     }
   ]
 }

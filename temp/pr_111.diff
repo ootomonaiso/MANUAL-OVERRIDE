@@ -1,0 +1,40 @@
+﻿diff --git a/src/composables/useGameState.ts b/src/composables/useGameState.ts
+index 75ba8d1..a25ed47 100644
+--- a/src/composables/useGameState.ts
++++ b/src/composables/useGameState.ts
+@@ -181,7 +181,7 @@ export function useGameState() {
+     if (roundCount.value >= MAX_ROUNDS || newState.converged) {
+       lockedGenre.value = newState.convergedGenre ?? resolveHighestProbGenre(accumulated, GENRES)
+       if (lockedGenre.value === 'base') {
+-        lockedGenre.value = DEFAULT_FALLBACK_GENRE as GenreId
++        lockedGenre.value = DEFAULT_FALLBACK_GENRE
+       }
+       // 繧ｸ繝｣繝ｳ繝ｫ遒ｺ螳壽枚繧定ｪｬ譏取嶌譛ｬ譁・↓霑ｽ險・       const genreDef = GENRES.find(g => g.id === lockedGenre.value)
+diff --git a/src/data/gameBalance.ts b/src/data/gameBalance.ts
+index 3666a56..1da3545 100644
+--- a/src/data/gameBalance.ts
++++ b/src/data/gameBalance.ts
+@@ -6,6 +6,8 @@
+  */
+ 
+ import { GAME_CONFIG } from './config'
++import { GENRES } from './genres'
++import type { GenreId } from '../domain/types'
+ 
+ const _gb = GAME_CONFIG.game_balance
+ const _d  = GAME_CONFIG.difficulty
+@@ -75,8 +77,13 @@ export const GENRE_LOCKED_BOOST = {
+ 
+ // 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ // DEFAULT_FALLBACK_GENRE 窶・蜿取據縺ｪ縺玲凾縺ｮ繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ繧ｸ繝｣繝ｳ繝ｫ
++// JSON縺ｮ蛟､縺檎匳骭ｲ貂医∩繧ｸ繝｣繝ｳ繝ｫID縺ｧ縺ゅｋ縺薙→繧偵Δ繧ｸ繝･繝ｼ繝ｫ繝ｭ繝ｼ繝画凾縺ｫ讀懆ｨｼ
+ // 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+-export const DEFAULT_FALLBACK_GENRE = _gb.defaultFallbackGenre as string
++const _rawFallback = _gb.defaultFallbackGenre as string
++if (!GENRES.some(g => g.id === _rawFallback)) {
++  throw new Error(`[gameBalance] defaultFallbackGenre "${_rawFallback}" 縺ｯ譛ｪ逋ｻ骭ｲ縺ｮ繧ｸ繝｣繝ｳ繝ｫID縺ｧ縺兪)
++}
++export const DEFAULT_FALLBACK_GENRE = _rawFallback as GenreId
+ 
+ // 笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏笏
+ // HAZARD_SPAWN 窶・繝上じ繝ｼ繝峨せ繝昴・繝ｳ譖ｲ邱・
