@@ -110,6 +110,20 @@ export interface GenrePlugin {
    * tempo パラメータとは別に、ジャンル固有の速度補正をかけたい時に使う。
    */
   readonly scrollSpeedBonus?: number
+  /**
+   * ジャンル固有のハザードスポーン密度設定。
+   * 省略時は game_balance.json の HAZARD_SPAWN を使用する。
+   * Bullet Hell や Survival など敵密度を調整したいジャンルで使用する。
+   */
+  readonly spawnDensity?: {
+    /** 初期スポーン間隔（ms）。省略時: 2400 */
+    baseInterval?: number
+    /** 最小スポーン間隔（ms）、つまり最大密度の上限。省略時: 800 */
+    minInterval?: number
+    /** 距離による間隔短縮の減衰率。省略時: 0.00015 */
+    decayRate?: number
+  }
+
 
   // ─── 描画フック（必須） ───────────────────────────────────────────
   /**

@@ -97,6 +97,35 @@ export function debugPrint(): void {
   console.warn('[GameRegistry] 登録状況 — Features:', [..._features.keys()].join(', '))
 }
 
+/**
+ * テスト用: ジャンルとFeatureの登録を全削除する。
+ * VITEST または DEV モードでのみ公開し、PRODUCTION ビルドでは呼び出せないようにする。
+ */
+export function resetRegistry(): void {
+  if (import.meta.env.PROD) {
+    console.warn('[GameRegistry] resetRegistry() は PRODUCTION ビルドでは使用できません。')
+    return
+  }
+  _genres.clear()
+  _features.clear()
+}
+
+/**
+ * JSON設定から読み込んだ spawnDensity を既存のGenrePluginにはめこむ。
+ * GenrePluginインタフェースはreadonlyとして宣言されているが、
+ * 起動時の1回限りのイミュータブルな初期化ではあるので、内部的に型キャストを使用する。
+ * 型安全性を維持するためにGameRegistry内で閉じている。
+ *
+ * @return 設定が適用されたか（プラグイン存在し、かつ未設定であった場合true）
+ */
+export function mergeSpawnDensity(id: GenreId, density: NonNullable<GenrePlugin['spawnDensity']>): void {
+  const plugin = _genres.get(id)
+  if (plugin === undefined) return
+  // TypeScript readonlyはビルド時のみ効く。起動時の初期化には型キャストを許容する。
+  // genres/index.ts は必ず未設定のプラグインにのみ呼び出すことを保証する。
+  (plugin as unknown as Record<string, unknown>).spawnDensity = density
+}
+
 // ──────────────────────────────────────────────────────────────────────
 // 開発時バリデーション
 // ──────────────────────────────────────────────────────────────────────

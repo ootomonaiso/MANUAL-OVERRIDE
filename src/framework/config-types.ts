@@ -488,6 +488,8 @@ export interface GenreDefJSON {
   controls?: Partial<Controls>
   /** TSプラグインなしでビジュアルをカスタマイズする場合に指定。省略時はthemeから自動決定。 */
   visual?: GenreVisualConfig
+  /** ジャンル固有のスポーン密度設定。TSプラグインもこれをマージされる。 */
+  spawnDensity?: { baseInterval?: number; minInterval?: number; decayRate?: number }
 }
 
 export interface ThemeColorDef {

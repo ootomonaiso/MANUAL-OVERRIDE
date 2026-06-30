@@ -24,7 +24,9 @@ export class StgPlugin extends GenrePluginBase {
     { shape: 'rect',    placement: 'air',    weightStart: 3,  weightEnd: 5,  wRange: [25, 42], hRange: [25, 42] },
     { shape: 'diamond', placement: 'float',  weightStart: 2,  weightEnd: 5,  wRange: [28, 38], hRange: [28, 38] },
     { shape: 'pillar',  placement: 'air',    weightStart: 0,  weightEnd: 3,  wRange: [15, 22], hRange: [45, 75] },
-  ]
+   ]
+
+  // spawnDensity is sourced from JSON config (stg.json) — see genres/index.ts merge
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
     // ネビュラ光

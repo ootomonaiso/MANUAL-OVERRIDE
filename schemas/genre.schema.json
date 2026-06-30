@@ -157,6 +157,31 @@
       "type": "string",
       "description": "エンディングで表示されるフレーバーテキスト"
     },
+    "spawnDensity": {
+      "type": "object",
+      "description": "ジャンル固有のハザードスポーン密度設定。省略時は game_balance.json の HAZARD_SPAWN を使用する。",
+      "additionalProperties": false,
+      "properties": {
+        "baseInterval": {
+          "type": "number",
+          "minimum": 100,
+          "default": 2400,
+          "description": "初期スポーン間隔（ms）。小さいほど高密度。省略時: 2400"
+        },
+        "minInterval": {
+          "type": "number",
+          "minimum": 50,
+          "default": 800,
+          "description": "最小スポーン間隔（ms）、つまり最大密度の上限。省略時: 800"
+        },
+        "decayRate": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0.00015,
+          "description": "距離による間隔短縮の減衰率。大きいほど距離でより急激に密度が上がる。省略時: 0.00015"
+        }
+      }
+    },
     "visual": {
       "type": "object",
       "description": "ビジュアル設定。TSプラグイン（XxxPlugin.ts）を書かなくても、ここだけでCanvas描画が決まる。省略時はthemeから自動決定。",

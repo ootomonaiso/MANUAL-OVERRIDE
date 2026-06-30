@@ -50,6 +50,9 @@ const MAX_DELTA_SEC = 0.05
 // LearningSystem の最初のチェックまでの遅延（秒）
 const INITIAL_LEARNING_DELAY_SEC = 0.5
 
+// ミリ秒 → 秒換算（spawnDensity の interval は ms、スクロール計算は px/s で一致させるため）
+const MS_TO_SEC = 1000
+
 // ──────────────────────────────────────────────────────────────────────
 // SideScroller — Canvas ゲームエンジン本体
 // ──────────────────────────────────────────────────────────────────────
@@ -477,8 +480,9 @@ export class SideScroller {
 
     if (this.distance >= this.nextSpawnDist) {
       this._spawnHazard()
-      const interval = HAZARD_SPAWN.baseInterval * Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
-      this.nextSpawnDist += (Math.max(HAZARD_SPAWN.minInterval, interval) / 1000) * speed
+      const sp = this._getSpawnParams()
+      const interval = sp.baseInterval * Math.exp(-sp.decayRate * this.distance)
+      this.nextSpawnDist += (Math.max(sp.minInterval, interval) / MS_TO_SEC) * speed
     }
 
     if (p.invincible > 0) p.invincible -= dt
@@ -606,8 +610,9 @@ export class SideScroller {
 
     if (this.distance >= this.nextSpawnDist) {
       this._spawnHazard()
-      const interval = HAZARD_SPAWN.baseInterval * Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
-      this.nextSpawnDist += (Math.max(HAZARD_SPAWN.minInterval, interval) / 1000) * speed
+      const sp = this._getSpawnParams()
+      const interval = sp.baseInterval * Math.exp(-sp.decayRate * this.distance)
+      this.nextSpawnDist += (Math.max(sp.minInterval, interval) / MS_TO_SEC) * speed
     }
 
     for (const h of this.hazards) {
@@ -1193,6 +1198,16 @@ export class SideScroller {
       if (rnd <= 0) return i
     }
     return weights.length - 1
+  }
+
+  /** Per-genre spawn params with fallback to global HAZARD_SPAWN */
+  private _getSpawnParams() {
+    const plugin = getGenre(this.rules.genre)
+    return {
+      baseInterval: plugin.spawnDensity?.baseInterval  ?? HAZARD_SPAWN.baseInterval,
+      minInterval:  plugin.spawnDensity?.minInterval   ?? HAZARD_SPAWN.minInterval,
+      decayRate:    plugin.spawnDensity?.decayRate     ?? HAZARD_SPAWN.decayRate,
+    }
   }
 
   // ─── パーティクル生成 ─────────────────────────────────────────────

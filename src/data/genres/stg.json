@@ -2,9 +2,19 @@
   "$schema": "../../../../schemas/genre.schema.json",
   "id": "stg",
   "label": "シューティングゲーム",
-  "thresholds": { "range": 5, "enemy": 5 },
-  "enableFeatures": ["shoot", "three_way", "enemy_hp"],
-  "disableFeatures": ["grid_stop", "puzzle_solve"],
+  "thresholds": {
+    "range": 5,
+    "enemy": 5
+  },
+  "enableFeatures": [
+    "shoot",
+    "three_way",
+    "enemy_hp"
+  ],
+  "disableFeatures": [
+    "grid_stop",
+    "puzzle_solve"
+  ],
   "scoreFormula": "kills * 120 + distance * 0.5 + combo * 80",
   "manualReveal": "これはシューティングゲームになりました。敵を倒してください。",
   "theme": "stg",
@@ -19,5 +29,10 @@
     "shoot": "z"
   },
   "gravity": 1600,
-  "endingFlavor": "あなたはすべてを撃ち抜いた。説明書は弾除けにでも使えばよかった。"
+  "endingFlavor": "あなたはすべてを撃ち抜いた。説明書は弾除けにでも使えばよかった。",
+  "spawnDensity": {
+    "baseInterval": 1800,
+    "minInterval": 600,
+    "decayRate": 0.0002
+  }
 }

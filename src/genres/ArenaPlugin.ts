@@ -51,6 +51,8 @@ export class ArenaPlugin extends GenrePluginBase {
     { shape: 'rect',   placement: 'ground', weightStart: 0, weightEnd: 0.5, wRange: [BOSS.bossWidth, BOSS.bossWidth], hRange: [BOSS.bossHeight, BOSS.bossHeight], safeChance: 0, hpOverride: BOSS.bossHp, isBoss: true },
   ]
 
+  // spawnDensity is sourced from JSON config (arena.json) — see genres/index.ts merge
+
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
     // 闘技場のアーチのシルエット（遠景）
     ctx.globalAlpha = 0.22

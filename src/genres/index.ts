@@ -15,7 +15,7 @@
  * ────────────────────────────────────────────────────────────────
  */
 
-import { registerGenre, hasGenre } from '../engine/GameRegistry'
+import { registerGenre, hasGenre, mergeSpawnDensity } from '../engine/GameRegistry'
 import type { GenrePlugin } from '../engine/GenrePlugin'
 import type { GenreId } from '../domain/types'
 import { pluginManager } from '../plugins/PluginManager'
@@ -29,14 +29,34 @@ const pluginModules = import.meta.glob<GenrePlugin | GenrePlugin[]>(
   { eager: true, import: 'default' },
 )
 
+// Collect registered TS plugin IDs for later merge
+const _registeredTsPluginIds = new Set<string>()
+
 for (const [path, exported] of Object.entries(pluginModules)) {
   if (path === './index.ts') continue
   if (Array.isArray(exported)) {
     for (const plugin of exported) {
-      if (plugin?.id) registerGenre(plugin)
+      if (plugin?.id) {
+        _registeredTsPluginIds.add(plugin.id)
+        registerGenre(plugin)
+      }
     }
   } else if (exported?.id) {
+    _registeredTsPluginIds.add(exported.id)
     registerGenre(exported)
+  }
+}
+
+// ── 1b. Merge spawnDensity from JSON into already-registered TS plugins ──
+// JSON genre definitions (src/data/genres/*.json) serve as the single source
+// of truth for spawnDensity. Two paths exist:
+//   a) TS plugin registered: merge spawnDensity into the plugin instance (below)
+//   b) No TS plugin: JSONGenrePlugin receives spawnDensity in constructor (step 2)
+// This avoids duplication between TS plugins and JSON genre definitions.
+for (const def of GAME_CONFIG.genres.genres) {
+  if (!_registeredTsPluginIds.has(def.id)) continue
+  if (def.spawnDensity) {
+    mergeSpawnDensity(def.id as GenreId, def.spawnDensity)
   }
 }
 
@@ -45,9 +65,10 @@ for (const [path, exported] of Object.entries(pluginModules)) {
 for (const def of GAME_CONFIG.genres.genres) {
   if (hasGenre(def.id as GenreId)) continue   // TSプラグインが登録済みならスキップ
   registerGenre(new JSONGenrePlugin({
-    id:     def.id,
-    theme:  def.theme,
-    visual: def.visual,
+    id:           def.id,
+    theme:        def.theme,
+    visual:       def.visual,
+    spawnDensity: def.spawnDensity,
   }))
 }
 

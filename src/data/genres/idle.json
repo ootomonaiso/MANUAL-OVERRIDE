@@ -2,9 +2,21 @@
   "$schema": "../../../../schemas/genre.schema.json",
   "id": "idle",
   "label": "放置ゲーム",
-  "thresholds": { "craft": 6 },
-  "enableFeatures": ["item_pickup", "exp", "tower"],
-  "disableFeatures": ["auto_run", "shoot", "beat_hazard", "boss", "stealth_mode"],
+  "thresholds": {
+    "craft": 6
+  },
+  "enableFeatures": [
+    "item_pickup",
+    "exp",
+    "tower"
+  ],
+  "disableFeatures": [
+    "auto_run",
+    "shoot",
+    "beat_hazard",
+    "boss",
+    "stealth_mode"
+  ],
   "scoreFormula": "itemsCollected * 200 + exp * 4 + survivedSec * 5",
   "manualReveal": "これは放置ゲームになりました。積み上げてください。",
   "theme": "puzzle",
@@ -17,5 +29,10 @@
     "moveDown": "ArrowDown"
   },
   "gravity": 1600,
-  "endingFlavor": "あなたは何もしなかった。それでも積み上がっていった。説明書はほこりをかぶった。"
+  "endingFlavor": "あなたは何もしなかった。それでも積み上がっていった。説明書はほこりをかぶった。",
+  "spawnDensity": {
+    "baseInterval": 4000,
+    "minInterval": 2000,
+    "decayRate": 0.00005
+  }
 }
