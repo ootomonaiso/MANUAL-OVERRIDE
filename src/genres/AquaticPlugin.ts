@@ -1,4 +1,4 @@
-﻿/**
+/**
  * genres/AquaticPlugin.ts
  * 'aquatic' ジャンル（水中アドベンチャー）のプラグイン。
  *

@@ -36,7 +36,7 @@
 
 概念は把握できた、次は実装の詳細を知りたい、という場合は以下を参照してください。
 
-- [genre-system.md](../genre-system.md) — 全21ジャンルの定義・収束アルゴリズム
+- [genre-system.md](../genre-system.md) — 全22ジャンルの定義・収束アルゴリズム
 - [feature-ids.md](../feature-ids.md) — 全フィーチャーID・実装ステータス一覧
 - [manual-json.md](../manual-json.md) — 説明書JSONの全フィールド仕様
 - [adding-content.md](../adding-content.md) — コンテンツ追加の実践手順・チェックリスト

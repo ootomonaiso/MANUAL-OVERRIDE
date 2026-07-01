@@ -111,6 +111,13 @@ export interface GenrePlugin {
    */
   readonly scrollSpeedBonus?: number
 
+  /**
+   * 縦スクロールモードでも drawFarLayer / drawMidLayer を呼ぶか（省略時 false）。
+   * 縦モードはデフォルトで空グラデーション＋星のみを描き遠景・中景を省略するが、
+   * このフラグを true にしたジャンルだけ遠景・中景レイヤーを描画する。
+   */
+  readonly verticalBackgroundLayers?: boolean
+
   // ─── 描画フック（必須） ───────────────────────────────────────────
   /**
    * 遠景（山稜・宇宙岩礁など）を描く。
