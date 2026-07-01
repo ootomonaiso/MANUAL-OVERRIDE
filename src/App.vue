@@ -63,6 +63,7 @@ const snapshot = ref<GameSnapshot>({
   beatHits: 0, survivedSec: 0, hp: 3, maxHp: 3, dead: false, shouldUpdate: null,
   statJumps: 0, statMoveLeft: 0, statMoveRight: 0, firstJumpDone: false,
   learningNotification: null, scoreFormulaError: null,
+  statCollisions: 0, statItemsCollected: 0, statShots: 0, statDashes: undefined,
 })
 
 // ─── Canvas サイズをウィンドウに合わせる ───────────────────────────
@@ -193,8 +194,14 @@ function giveUp() {
 
 // ─── 投擲完了 ────────────────────────────────────────────────────
 function onThrown(result: ThrowResult) {
+  // getStats() を stop() より先に呼ぶ（stop() で内部状態がクリアされるため）
+  const gameStats = scroller?.getStats()
   scroller?.stop()  // 投擲後はscrollerループを停止
-  gameState.finalizeThrowing(result, snapshot.value.playScore)
+  if (gameStats) {
+    gameState.finalizeThrowing(result, snapshot.value.playScore, gameStats)
+  } else {
+    gameState.finalizeThrowing(result, snapshot.value.playScore)
+  }
 }
 
 // ─── リスタート ──────────────────────────────────────────────────
@@ -468,6 +475,9 @@ onUnmounted(() => {
         :final-score="gameState.finalScore.value"
         :genre="gameState.lockedGenre.value ?? 'runner'"
         :choice-count="gameState.choiceHistory.length"
+        :play-style="gameState.playStyle.value"
+        :contradiction="gameState.contradiction.value"
+        :surprise-ending="gameState.surpriseEnding.value"
         @restart="restart"
       />
     </Transition>

@@ -36,6 +36,8 @@ export interface PhysicsConfig {
   dashCooldownSec: number
   dashIframesSec: number
   wallJumpPushSpeed: number
+  /** 地面Y座標のキャンバス下端からのオフセット（px） */
+  groundYOffset: number
 }
 
 /** shoot.json — 射撃システム */
@@ -227,6 +229,8 @@ export interface ScoreConfig {
   defaultColorTouchScore: number
   distanceScoreRate: number
   longAirScoreRate: number
+  /** エンディンググレードの閾値（合計スコア） */
+  gradeThresholds: { S: number; A: number; B: number; C: number }
 }
 
 /** difficulty.json — 難易度 + TEMPO_SPEED_BONUS */
@@ -314,6 +318,71 @@ export interface PuzzleConfig {
   solveScore: number
 }
 
+/** survival.json — サバイバルゲーム固有パラメータ */
+export interface SurvivalConfig {
+  maxHunger: number
+  hungerDecayRate: number
+  hungerCriticalThreshold: number
+  hungerDamageInterval: number
+  hungerDamageAmount: number
+  meleeDamage: number
+  meleeRange: number
+  meleeCooldown: number
+  meleeArc: number
+  meleeActiveRatio: number
+  meleeVerticalRatio: number
+  meleeCollisionGrace: number
+  xpPerKill: number
+  xpPerLevel: number
+  xpLevelScale: number
+  levelUpHealHp: number
+  levelUpDamageBonus: number
+  foodRestore: number
+  weaponDropChance: number
+  foodDropChance: number
+  weaponUpgradeAmount: number
+  hudBarHeight: number
+  hudTextSize: number
+  hudTopOffset: number
+  hudBarWidth: number
+  // Melee hit VFX
+  meleeHitParticleCount: number
+  meleeHitParticleSpeedMin: number
+  meleeHitParticleSpeedMax: number
+  meleeHitParticleLife: number
+  meleeHitParticleColor: string
+  meleeHitParticleSize: number
+  // Melee swing VFX
+  meleeSwingStrokeColor: string
+  meleeSwingLineWidth: number
+  meleeSwingShadowColor: string
+  meleeSwingShadowBlur: number
+  // Level up VFX
+  levelUpParticleCount: number
+  levelUpParticleSpeedMin: number
+  levelUpParticleSpeedMax: number
+  levelUpParticleLife: number
+  levelUpParticleColors: readonly string[]
+  levelUpParticleSize: number
+  levelUpShakeIntensity: number
+  levelUpPopupColor: string
+  // Popup colors
+  foodPopupColor: string
+  weaponPopupColor: string
+  // HUD colors
+  hudLabelColor: string
+  hudHungerColorHigh: string
+  hudHungerColorMid: string
+  hudHungerColorLow: string
+  hudBarBgColor: string
+  hudXpTextColor: string
+  hudXpBarColor: string
+  hudAtkTextColor: string
+  hudPanelBgColor: string
+  hudPanelPadding: number
+  hudPanelRadius: number
+}
+
 /** extra_movement.json — 拡張移動フィーチャー */
 export interface ExtraMovementConfig {
   verticalDriftFreq: number
@@ -370,6 +439,8 @@ export interface GameBalanceConfig {
   genreLockedBoostMult: number
   genreLockedBoostDurationMs: number
   defaultFallbackGenre: string
+  /** ジャンルパラメータのジッター幅（±20%） */
+  paramJitterRange: number
 }
 
 /**
@@ -456,6 +527,7 @@ export interface GameConfigMap {
   special: SpecialConfig
   puzzle: PuzzleConfig
   extra_movement: ExtraMovementConfig
+  survival: SurvivalConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap

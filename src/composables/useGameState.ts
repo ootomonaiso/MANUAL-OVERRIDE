@@ -1,5 +1,6 @@
 import { reactive, ref, readonly } from 'vue'
-import type { Phase, GenreId, RuntimeRules, FinalScore, ManualVersion, ManualCard, GenreParam, BayesianState } from '../domain/types'
+import type { Phase, GenreId, RuntimeRules, FinalScore, ManualVersion, ManualCard, GenreParam, BayesianState,
+  ActionStats, PlayStyleResult, ContradictionState, SurpriseEnding } from '../domain/types'
 import { BAYES_DEBUG_TOP_N } from '../domain/types'
 import { MANUAL_DECK } from '../data/manualDeck'
 import { GENRES } from '../data/genres'
@@ -14,15 +15,54 @@ import { calcThrowScore, calcFinalScore } from '../domain/scoreCalc'
 import type { ThrowResult } from '../domain/types'
 import { soundManager } from '../plugins/SoundManager'
 import { sampleCards, CARD_POOL } from '../data/cardPool'
-import { MAX_ROUNDS, DEFAULT_FALLBACK_GENRE } from '../data/gameBalance'
+import { MAX_ROUNDS, DEFAULT_FALLBACK_GENRE, PARAM_JITTER_RANGE } from '../data/gameBalance'
+import { detectPlayStyle } from '../domain/playStyleDetector'
+import { trackContradictions, shouldTriggerGlitchEnd } from '../domain/contradictionTracker'
 
 // genreParams のジッター幅（±20%）
-const PARAM_JITTER_RANGE = 0.4
+// gameBalance.ts からインポート済み
+
+// ─────────────────────────────────────────────────────────────
+// プレイスタイル・矛盾・サプライズエンド（Issue #24）
+// ─────────────────────────────────────────────────────────────
+
+/** プレイスタイル検出結果（ゲーム終了時に計算） */
+export function computePlayStyle(stats: ActionStats): PlayStyleResult {
+  return detectPlayStyle(stats)
+}
+
+/** 矛盾状態を計算（選択履歴から） */
+export function computeContradiction(history: ChoiceRecord[]): ContradictionState {
+  return trackContradictions(history)
+}
+
+/** サプライズエンドを判定（矛盾・プレイスタイルから） */
+export function computeSurpriseEnding(
+  contradiction: ContradictionState,
+  _playStyle: PlayStyleResult,
+): SurpriseEnding | null {
+  // 矛盾スコアが閾値を超えていれば glitch エンド
+  if (shouldTriggerGlitchEnd(contradiction)) {
+    return {
+      type: 'glitch',
+      title: 'ゲームが壊れました',
+      description: 'あなたが選んだ矛盾が、ゲームそのものを壊しました。これは誰も予想しなかった結末です。',
+      forcedGenre: 'glitch',
+    }
+  }
+  // TODO: hidden_genre / bad_ending / narrative_twist の判定ロジックを実装
+  return null
+}
 
 export function useGameState() {
   const phase = ref<Phase>('title')
   const lockedGenre = ref<GenreId | null>(null)
   const finalScore = ref<FinalScore | null>(null)
+
+  // サプライズエンド関連（Issue #24）
+  const playStyle = ref<PlayStyleResult | null>(null)
+  const contradiction = ref<ContradictionState>({ pairs: [], score: 0, hasEffect: false })
+  const surpriseEnding = ref<SurpriseEnding | null>(null)
 
   // カードラウンド管理
   const roundCount = ref(0)
@@ -210,8 +250,31 @@ export function useGameState() {
     phase.value = 'throwing'
   }
 
-  function finalizeThrowing(throwResult: ThrowResult, playScoreRaw: number) {
+  function finalizeThrowing(throwResult: ThrowResult, playScoreRaw: number, gameStats?: ActionStats) {
     soundManager.onThrowLand()
+
+    // 矛盾状態を計算
+    const contradictionState = computeContradiction(choiceHistory)
+    contradiction.value = contradictionState
+
+    // プレイスタイル検出（ゲーム統計が渡された場合）
+    if (gameStats) {
+      playStyle.value = computePlayStyle(gameStats)
+    }
+
+    // サプライズエンド判定
+    const ending = computeSurpriseEnding(contradictionState, playStyle.value ?? {
+      style: 'balanced',
+      confidence: 0,
+      scores: { aggressive: 0, defensive: 0, explorer: 0, balanced: 0, chaotic: 0, passive: 0 },
+    })
+    surpriseEnding.value = ending
+
+    // glitch エンドがトリガーされたらジャンルを強制書き換え
+    if (ending?.forcedGenre) {
+      lockedGenre.value = ending.forcedGenre as GenreId
+    }
+
     const throwScore = calcThrowScore(throwResult)
     finalScore.value = calcFinalScore(playScoreRaw, throwScore)
     phase.value = 'ending'
@@ -228,6 +291,9 @@ export function useGameState() {
     accumulatedManualText.value = [...MANUAL_DECK['1.0'].manualText]
     currentHazards.value = { ...MANUAL_DECK['1.0'].hazards }
     lastRuntimeConfig.value = undefined
+    playStyle.value = null
+    contradiction.value = { pairs: [], score: 0, hasEffect: false }
+    surpriseEnding.value = null
     _syncBayesState(initBayesianState(GENRES))
     _rebuildRules()
   }
@@ -247,6 +313,10 @@ export function useGameState() {
     roundCount: readonly(roundCount),
     maxRounds: MAX_ROUNDS,
     bayesState: readonly(bayesState) as BayesianState,
+    // Issue #24: サプライズエンド関連
+    playStyle: readonly(playStyle),
+    contradiction: readonly(contradiction),
+    surpriseEnding: readonly(surpriseEnding),
     currentManual,
     lockedGenreDef,
     startGame,
