@@ -14,9 +14,11 @@ import PluginLoader from './components/PluginLoader.vue'
 import GenreRevealOverlay from './components/GenreRevealOverlay.vue'
 import { GENRES, GENRE_THEME_COLORS } from './data/genres'
 import { GENRE_LOCKED_BOOST } from './data/gameBalance'
+import { MANUAL_DECK } from './data/manualDeck'
 import { resolveGenreProgress } from './domain/genreResolver'
-import type { ThrowResult, RuntimeRules, GenreParams } from './domain/types'
-import { computeGenreBlendStyle, isBlendActive, BLEND_START, BLEND_END } from './domain/genreBlend'
+import type { ThrowResult, RuntimeRules, GenreParams, FeatureId } from './domain/types'
+import { computeGenreBlendStyle, isBlendActive, BLEND_START, BLEND_END, computeFeaturesBlend, computeTextBlend } from './domain/genreBlend'
+import { buildRuntimeRules } from './domain/ruleEngine'
 import { TUTORIAL_ENABLED, TutorialScreen } from './tutorial'
 import { soundManager } from './plugins/SoundManager'
 
@@ -229,6 +231,34 @@ const genreBlendStyle = computed(() => {
   return computeGenreBlendStyle(targetTheme, t)
 })
 
+/** 説明書パネル用 features 補間（progress に応じて ver 1.0 → 目標ジャンルの features を遷移） */
+const blendedFeatures = computed(() => {
+  const fromRules = buildRuntimeRules(MANUAL_DECK['1.0'], [], null)
+  const fromFeatures = fromRules.features
+  const targetId = preConvergeGenre.value
+  const targetGenre = GENRES.find(g => g.theme === targetId)
+  const toFeatures = targetGenre ? new Set(targetGenre.enableFeatures) : new Set<FeatureId>()
+  return computeFeaturesBlend(fromFeatures, toFeatures, genreProgress.value)
+})
+
+/** 説明書パネル用テキスト補間（progress に応じて ver 1.0 → 目標ジャンルのテキストを遷移） */
+const blendedManualText = computed(() => {
+  const fromText = MANUAL_DECK['1.0'].manualText
+  const targetId = preConvergeGenre.value
+  const targetGenre = GENRES.find(g => g.theme === targetId)
+  const toText = targetGenre?.manualReveal ? [targetGenre.manualReveal] : fromText
+  return computeTextBlend(fromText, toText, genreProgress.value)
+})
+
+/** 説明書パネル用 manual オブジェクト（テキスト補間済み） */
+const blendedManual = computed(() => {
+  const current = gameState.currentManual()
+  return {
+    ...current,
+    manualText: blendedManualText.value,
+  } as typeof current
+})
+
 // ─── ゲームプレイ中UIの表示判定（フェーズ追加時の保守性向上） ─────
 const showGameUI = computed(() => {
   const p = gameState.phase.value
@@ -389,13 +419,13 @@ onUnmounted(() => {
       <!-- 説明書パネル（投擲中は ThrowOverlay が代替） -->
       <ManualPanel
         v-if="gameState.phase.value !== 'throwing'"
-        :manual="gameState.currentManual()"
+        :manual="blendedManual"
         :theme="currentTheme"
         :diff-lines="manualCtl.diffLines.value"
         :is-animating="manualCtl.isAnimating.value"
         :is-centered="manualCtl.isCentered.value"
         :history="manualCtl.history.value"
-        :features="gameState.rules.features"
+        :features="blendedFeatures"
         :controls="gameState.rules.controls"
         :highlight="gameState.phase.value === 'tutorial'"
         :genre-progress="genreProgress"

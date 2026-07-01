@@ -5,7 +5,7 @@
  * Node.js で実行可能（Vitest 不要）。
  */
 
-import { computeGenreBlendStyle, isBlendActive, GENRE_THEME_COLORS_BLEND } from '../src/domain/genreBlend'
+import { computeGenreBlendStyle, isBlendActive, computeFeaturesBlend, computeTextBlend, GENRE_THEME_COLORS_BLEND } from '../src/domain/genreBlend'
 
 function assert(condition: boolean, message: string): void {
   if (!condition) {
@@ -106,6 +106,50 @@ console.log('\n[GENRE_THEME_COLORS_BLEND coverage]')
     assert(colors.color.startsWith('#') || colors.color.startsWith('rgba'), `${theme}: color is hex or rgba`)
     assert(colors.border.startsWith('#') || colors.border.startsWith('rgba'), `${theme}: border is hex or rgba`)
   }
+}
+
+// ─── テスト: computeFeaturesBlend ──────────────────────────────
+
+console.log('\n[computeFeaturesBlend]')
+
+{
+  const from = new Set(['movement', 'jump'])
+  const to = new Set(['movement', 'jump', 'shoot', 'enemy_hp'])
+
+  // progress < 0.3: from のみ
+  const r1 = computeFeaturesBlend(from, to, 0.2)
+  assert(r1.has('movement'), 'features: progress=0.2 has movement')
+  assert(r1.has('jump'), 'features: progress=0.2 has jump')
+  assert(!r1.has('shoot'), 'features: progress=0.2 no shoot')
+
+  // progress >= 0.7: to 完全
+  const r2 = computeFeaturesBlend(from, to, 0.8)
+  assert(r2.has('movement'), 'features: progress=0.8 has movement')
+  assert(r2.has('jump'), 'features: progress=0.8 has jump')
+  assert(r2.has('shoot'), 'features: progress=0.8 has shoot')
+  assert(r2.has('enemy_hp'), 'features: progress=0.8 has enemy_hp')
+
+  // progress 0.3〜0.7: マージ
+  const r3 = computeFeaturesBlend(from, to, 0.5)
+  assert(r3.has('movement'), 'features: progress=0.5 has movement')
+  assert(r3.has('shoot'), 'features: progress=0.5 has shoot (merged)')
+}
+
+// ─── テスト: computeTextBlend ──────────────────────────────────
+
+console.log('\n[computeTextBlend]')
+
+{
+  const fromText = ['横スクロールゲームです。', '左右に移動できます。']
+  const toText = ['シューティングゲームです。', '敵を撃てます。']
+
+  // progress < 0.5: fromText
+  const r1 = computeTextBlend(fromText, toText, 0.4)
+  assert(r1[0] === '横スクロールゲームです。', 'text: progress=0.4 is fromText')
+
+  // progress >= 0.5: toText
+  const r2 = computeTextBlend(fromText, toText, 0.6)
+  assert(r2[0] === 'シューティングゲームです。', 'text: progress=0.6 is toText')
 }
 
 // ─── 結果 ───────────────────────────────────────────────────────

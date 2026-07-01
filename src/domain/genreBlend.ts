@@ -9,7 +9,7 @@
  * 単体テスト可能であり、将来他のコンポーネントでも再利用可能。
  */
 
-import type { ManualTheme } from '../domain/types'
+import type { ManualTheme, FeatureId } from '../domain/types'
 
 /** 補間先ジャンルテーマごとの代表色（キーは ManualTheme 限らない） */
 export const GENRE_THEME_COLORS_BLEND: Record<
@@ -143,3 +143,59 @@ const ALPHA_OPAQUE_THRESHOLD = 0.999
 export function isBlendActive(progress: number): boolean {
   return progress >= BLEND_START && progress < BLEND_END
 }
+
+/**
+ * features セットを progress に応じて補間。
+ * - progress < FEATURES_BLEND_START: fromFeatures のみ
+ * - FEATURES_BLEND_START <= progress < FEATURES_BLEND_END: fromFeatures + toFeatures の一部をマージ
+ * - progress >= FEATURES_BLEND_END: toFeatures 完全適用
+ *
+ * @param fromFeatures - 起点の features セット（例：ver 1.0）
+ * @param toFeatures   - 目標の features セット（例：目標ジャンル）
+ * @param progress     - 0〜1 の補間率
+ * @returns 補間後の features セット
+ */
+export function computeFeaturesBlend(
+  fromFeatures: Set<FeatureId>,
+  toFeatures: Set<FeatureId>,
+  progress: number,
+): Set<FeatureId> {
+  if (progress < FEATURES_BLEND_START) return new Set(fromFeatures)
+  if (progress >= FEATURES_BLEND_END) return new Set(toFeatures)
+
+  // 中間領域：toFeatures のみを返す（シンプル実装）
+  // 将来的に toFeatures のサブセットを返すロジックを追加可能
+  const blended = new Set<FeatureId>(fromFeatures)
+  for (const f of toFeatures) {
+    blended.add(f)
+  }
+  return blended
+}
+
+/** features 補間開始 threshold */
+export const FEATURES_BLEND_START = 0.3
+
+/** features 補間終了 threshold */
+export const FEATURES_BLEND_END = 0.7
+
+/**
+ * テキストを progress に応じて補間（切り替え）。
+ * - progress < TEXT_BLEND_START: fromText を完全返却
+ * - progress >= TEXT_BLEND_START: toText を完全返却
+ *
+ * @param fromText - 起点のテキスト配列
+ * @param toText   - 目標のテキスト配列
+ * @param progress - 0〜1 の補間率
+ * @returns 補間後のテキスト配列
+ */
+export function computeTextBlend(
+  fromText: string[],
+  toText: string[],
+  progress: number,
+): string[] {
+  if (progress < TEXT_BLEND_START) return fromText
+  return toText
+}
+
+/** text 補間開始 threshold */
+export const TEXT_BLEND_START = 0.5
