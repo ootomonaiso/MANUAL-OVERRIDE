@@ -226,6 +226,31 @@ const showGameUI = computed(() => {
   return !['title', 'ending', 'tutorialIntro'].includes(p)
 })
 
+// ─── エンディング用: プレイスタイル検出結果（Issue #24） ──────────
+// useGameState から expose される
+const endingPlayStyleResult = computed(() => {
+  const result = gameState.endingPlayStyleResult.value
+  if (!result) return undefined
+  // readonly を解除するためにディープコピー
+  return {
+    styles: [...result.styles],
+    dominant: result.dominant,
+    genreBonus: { ...result.genreBonus },
+  }
+})
+
+// ─── エンディング用: 累積 genreParams（別ルート計算用） ───────────
+const endingAccumulatedParams = computed(() => {
+  return gameState.endingAccumulatedParams.value
+})
+
+// ─── エンディングデータ計算（フェーズ遷移時に1回だけ実行） ────────
+watch(() => gameState.phase.value, (newPhase) => {
+  if (newPhase === 'ending' && scroller) {
+    gameState.computeEndingData(scroller.getStats())
+  }
+})
+
 // ─── ジャンル別テーマカラー CSS 変数（JSON 駆動 #36） ─────────────
 const giveupThemeStyle = computed(() => {
   const colors = GENRE_THEME_COLORS[currentTheme.value]
@@ -260,6 +285,13 @@ const shouldPause = computed(() => {
 
 watch(shouldPause, (paused) => {
   scroller?.setPaused(paused)
+})
+
+// ─── 矛盾反応メッセージの表示（Issue #24: 矛盾選択ルート） ─────
+watch(() => gameState.lastReactionMessage.value, (msg) => {
+  if (msg) {
+    showToast(`💬 ${msg}`)
+  }
 })
 
 // ─── ジャンル確定オーバーレイ ────
@@ -468,6 +500,9 @@ onUnmounted(() => {
         :final-score="gameState.finalScore.value"
         :genre="gameState.lockedGenre.value ?? 'runner'"
         :choice-count="gameState.choiceHistory.length"
+        :play-style-result="endingPlayStyleResult"
+        :contradiction-state="gameState.contradictionState"
+        :accumulated-params="endingAccumulatedParams"
         @restart="restart"
       />
     </Transition>

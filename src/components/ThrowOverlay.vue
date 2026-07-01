@@ -36,6 +36,7 @@ function startAnim() {
     updateThrow(state.value, dt, canvasH.value)
     if (state.value.phase === 'done') {
       if (state.value.result) emit('thrown', state.value.result)
+      rafId = 0
       return
     }
     rafId = requestAnimationFrame(loop)

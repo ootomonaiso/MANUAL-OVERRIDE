@@ -112,7 +112,7 @@ export class SideScroller {
   private _frameWorld: MutableWorld | null = null
 
   // ─── 統計 ────────────────────────────────────────────────────────
-  private stats: ActionStats = { jumps: 0, moveRight: 0, moveLeft: 0, shots: 0, ticks: 0 }
+  private stats: ActionStats = { jumps: 0, moveRight: 0, moveLeft: 0, shots: 0, ticks: 0, collisions: 0 }
   private rafId = 0
   private lastTime = 0
 
@@ -123,8 +123,8 @@ export class SideScroller {
   private _disabledActions = new Map<string, number>()
   // invertHazard 解除予定時刻（-Infinity = 永続/未設定）
   private _invertHazardUntil = -Infinity
-  // changeKey 元キー保存: action名 → 元のキー文字列
-  private _originalKeys: Partial<Record<string, string>> = {}
+  // changeKey キースタック: action名 → 元のキーのスタック（複数エフェクト対応）
+  private _keyStack = new Map<string, string[]>()
   // changeKey 解除予定時刻: action名 → 解除時刻
   private _changeKeyUntil = new Map<string, number>()
   // 次の getSnapshot() で一度だけ返す通知メッセージ
@@ -179,7 +179,7 @@ export class SideScroller {
     this._disabledActions.clear()
     this._invertHazardUntil = -Infinity
     this._changeKeyUntil.clear()
-    this._originalKeys = {}
+    this._keyStack.clear()
     this._pendingLearningMsg = null
     this._gameStats.beatHazardInverted = false
     // ManualVersion から learningRules を取得
@@ -361,10 +361,12 @@ export class SideScroller {
     }
     for (const [action, until] of this._changeKeyUntil) {
       if (now >= until) {
-        const orig = this._originalKeys[action]
+        const stack = this._keyStack.get(action)
+        const orig = stack?.pop()
         if (orig !== undefined) {
           this._setControl(action, orig)
-          delete this._originalKeys[action]
+        } else {
+          this._keyStack.delete(action)
         }
         this._changeKeyUntil.delete(action)
       }
@@ -634,6 +636,8 @@ export class SideScroller {
 
   // ─── 被弾処理 ────────────────────────────────────────────────────
   private _onPlayerHit(p: Player): void {
+    // 衝突回数をカウント（プレイスタイル検出用）
+    this.stats.collisions++
     const world = this._getWorld()
     soundManager.onHit()
     for (const sys of getActiveSystems(this.rules.features)) {
@@ -1323,8 +1327,14 @@ export class SideScroller {
       case 'changeKey': {
         // payload = "jump:w" のような形式（action:newKey）
         const [action, newKey] = effect.payload.split(':')
-        if (!(action in this._originalKeys)) {
-          this._originalKeys[action] = this._getControl(action)
+        // スタック方式: 各エフェクトが現在のキーをプッシュし、期限切れでポップして復元
+        if (!this._keyStack.has(action)) {
+          this._keyStack.set(action, [])
+        }
+        const currentKey = this._getControl(action)
+        if (currentKey) {
+          const stack = this._keyStack.get(action)
+          if (stack) stack.push(currentKey)
         }
         this._setControl(action, newKey)
         if (effect.durationSec != null) {

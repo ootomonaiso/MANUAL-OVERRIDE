@@ -66,7 +66,14 @@ function _parseExpr(src: string, vars: ScoreVars): number {
     while (peek() === '*' || peek() === '/') {
       const op = consume()
       const right = parseUnary()
-      left = op === '*' ? left * right : right !== 0 ? left / right : 0
+      if (op === '*') {
+        left = left * right
+      } else if (right === 0) {
+        console.warn('[scoreCalc] 0 除算を検出しました（式: "' + src + '"）— 0 で代替')
+        left = 0
+      } else {
+        left = left / right
+      }
       skipSpace()
     }
     return left
