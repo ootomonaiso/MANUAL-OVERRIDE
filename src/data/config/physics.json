@@ -23,5 +23,6 @@
   "dashDurationSec": 0.18,
   "dashCooldownSec": 0.9,
   "dashIframesSec": 0.25,
-  "wallJumpPushSpeed": 260
+  "wallJumpPushSpeed": 260,
+  "groundYOffset": 80
 }
