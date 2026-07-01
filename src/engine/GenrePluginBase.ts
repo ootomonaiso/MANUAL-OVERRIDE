@@ -28,6 +28,13 @@ export abstract class GenrePluginBase implements GenrePlugin {
   abstract readonly palette: GenrePlugin['palette']
   abstract readonly spawnTable: readonly SpawnEntry[]
 
+  // ─── オプション: _spawnDensity (省略可) ────────────────────
+  readonly spawnDensity?: {
+    baseInterval?: number
+    minInterval?: number
+    decayRate?: number
+  }
+
   // ─── 必須描画フック（サブクラスで実装） ──────────────────────────
   abstract drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void
   abstract drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void

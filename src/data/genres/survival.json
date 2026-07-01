@@ -2,9 +2,20 @@
   "$schema": "../../../../schemas/genre.schema.json",
   "id": "survival",
   "label": "サバイバルゲーム",
-  "thresholds": { "survive": 5, "growth": 4 },
-  "enableFeatures": ["hp", "item_pickup", "shield"],
-  "disableFeatures": ["auto_run", "beat_hazard", "grid_stop"],
+  "thresholds": {
+    "survive": 5,
+    "growth": 4
+  },
+  "enableFeatures": [
+    "hp",
+    "item_pickup",
+    "shield"
+  ],
+  "disableFeatures": [
+    "auto_run",
+    "beat_hazard",
+    "grid_stop"
+  ],
   "scoreFormula": "survivedSec * 15 + itemsCollected * 80 + distance * 0.2",
   "manualReveal": "これはサバイバルゲームになりました。生き延びてください。",
   "theme": "rpg",
@@ -18,5 +29,10 @@
     "moveDown": "ArrowDown"
   },
   "gravity": 1600,
-  "endingFlavor": "あなたは生き延びた。説明書は焚き火の燃料になっていた。"
+  "endingFlavor": "あなたは生き延びた。説明書は焚き火の燃料になっていた。",
+  "spawnDensity": {
+    "baseInterval": 2000,
+    "minInterval": 700,
+    "decayRate": 0.00018
+  }
 }
