@@ -160,7 +160,7 @@ jobs:
         run: npx playwright install-deps ${{ steps.browser.outputs.name }}
 
       - name: Download dist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: dist-${{ github.sha }}
           path: dist/
@@ -195,7 +195,7 @@ jobs:
       - run: npm ci
 
       - name: Download dist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: dist-${{ github.sha }}
           path: dist/
