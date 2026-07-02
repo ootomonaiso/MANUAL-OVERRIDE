@@ -28,6 +28,7 @@
 | `groundLineAlpha?: number` | 地面ライン透明度 |
 | `groundDashAlpha?: number` | 地面ダッシュ模様透明度 |
 | `scrollSpeedBonus?: number` | スクロール速度ボーナス px/s |
+| `verticalBackgroundLayers?: boolean` | 縦スクロールモードでも `drawFarLayer`/`drawMidLayer` を呼ぶか（省略時 false。縦モードは既定で空グラデーション＋星のみ描く） |
 | `drawFarLayer(ctx, offsetX, W, gY)` | 遠景描画（必須） |
 | `drawMidLayer(ctx, offsetX, W, gY)` | 中景描画（必須） |
 | `drawPlayer(ctx, w, h, onGround, runCycle)` | プレイヤー描画（必須） |

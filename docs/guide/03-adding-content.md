@@ -11,32 +11,18 @@
 | やりたいこと | 必要な作業 | コード変更 |
 |---|---|---|
 | 説明書の選択肢を追加 | `src/data/manuals/*.json` を編集 | 不要 |
-| 新しいジャンルを追加 | JSON 1箇所 + TypeScript 3箇所 | 必要 |
-| 新しいフィーチャーを追加 | TypeScript 3箇所 | 必要 |
+| 新しいジャンルを追加 | `src/data/genres/<id>.json`（+ 任意で TS プラグイン） | 任意 |
+| 新しいフィーチャーを追加 | TypeScript 2箇所 | 必要 |
 
 ---
 
 ## 新ジャンルを追加する流れ
 
-4つのステップがあります。
+3つのステップがあります（型定義の編集は不要 — `GenreId` は `string` 型です）。
 
-### ステップ 1: 型にIDを追加する
+### ステップ 1: ジャンル定義をJSONに追加する
 
-`src/domain/types.ts` の `GenreId` union に新しいIDを追加します。
-
-```typescript
-export type GenreId =
-  | 'base'
-  | 'runner'
-  // ... 既存 ...
-  | 'my_genre'   // ← 追加
-```
-
-これをしないとTypeScriptの型エラーになります。
-
-### ステップ 2: ジャンル定義をJSONに追加する
-
-`src/data/config/genres.json` の `genres` 配列にエントリを追加します。
+`src/data/genres/my_genre.json` を新規作成します。`src/data/genres/*.json` は `import.meta.glob` で自動収集されるため、ファイルを置くだけで登録されます（`src/data/config/genres.json` はテーマカラー等の補助設定で、定義本体ではありません）。
 
 ```json
 {
@@ -63,13 +49,13 @@ export type GenreId =
 | `scoreFormula` | 最終スコアの計算式（使える変数は後述） |
 | `manualReveal` | 確定時に説明書に書き込まれる宣言文 |
 | `endingFlavor` | 投擲後のエンディング画面に表示される一文 |
-| `theme` | 説明書UIの見た目。`plain` / `stg` / `rpg` / `puzzle` / `rhythm` / `horror` / `aquatic` |
+| `theme` | 説明書UIの見た目（`ManualTheme`）。`plain` / `stg` / `rpg` / `puzzle` / `rhythm` / `horror` / `aquatic` / `tetris` など全15種 |
 
 scoreFormula で使える変数: `distance` / `kills` / `combo` / `maxCombo` / `exp` / `beatHits` / `survivedSec` / `accuracy` / `deaths` / `itemsCollected` / `bossKills` / `stealthBonus` / `colorTouches`
 
-### ステップ 3: 視覚テーマを実装する
+### ステップ 2: 視覚テーマを実装する（任意）
 
-`src/genres/MyGenrePlugin.ts` を新規作成します。`GenrePluginBase` を継承して、背景・プレイヤーの見た目を実装します。
+専用ビジュアルが必要な場合のみ実装します。省略すると `theme` から `JSONGenrePlugin` が自動でフォールバック描画します。`src/genres/MyGenrePlugin.ts` を新規作成し、`GenrePluginBase` を継承して背景・プレイヤーの見た目を実装します。
 
 ```typescript
 import { GenrePluginBase } from '../engine/GenrePluginBase'
@@ -109,30 +95,21 @@ export class MyGenrePlugin extends GenrePluginBase {
 }
 ```
 
-### ステップ 4: 登録する
+### ステップ 3: 登録する
 
-`src/genres/index.ts` に2行追加します。
+ファイル末尾で `default export` するだけです。`src/genres/index.ts` が `import.meta.glob` で自動収集するため、`index.ts` の編集は不要です。
 
 ```typescript
-import { MyGenrePlugin } from './MyGenrePlugin'   // ← 追加
-registerGenre(new MyGenrePlugin())                  // ← 追加
+export default new MyGenrePlugin()   // ← これだけ
 ```
 
 ---
 
 ## 新フィーチャーを追加する流れ
 
-3つのステップがあります。
+2つのステップがあります（`FeatureId` は `string` 型なので型定義の編集は不要です）。
 
-### ステップ 1: 型にIDを追加する
-
-`src/domain/types.ts` の `FeatureId` union に追加します。
-
-```typescript
-export type FeatureId = 'shoot' | 'hp' | ... | 'my_feature'
-```
-
-### ステップ 2: FeatureSystem クラスを実装する
+### ステップ 1: FeatureSystem クラスを実装する
 
 `src/game/systems/MyFeature.ts` を新規作成します。
 
@@ -155,7 +132,7 @@ export class MyFeature implements FeatureSystem {
 }
 ```
 
-### ステップ 3: 登録する
+### ステップ 2: 登録する
 
 `src/game/systems/index.ts` に追加します。
 
@@ -180,7 +157,7 @@ registerFeature(new MyFeature())
   合計: { tempo: 4, aerial: 3 } → 閾値ちょうど → 確定
 ```
 
-既存ジャンルとのパラメータ競合にも注意してください。全ジャンルの閾値は `src/data/config/genres.json` で確認できます。
+既存ジャンルとのパラメータ競合にも注意してください。全ジャンルの閾値は `src/data/genres/*.json` で確認できます。
 
 ---
 

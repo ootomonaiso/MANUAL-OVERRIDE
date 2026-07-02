@@ -15,13 +15,15 @@ npm run lint         # コード品質チェック
 ## プルリクエストを送る前のチェックリスト
 
 ```
-□ npm run build  がエラーなしで通る
-□ npm run lint   で error が 0 件
+□ npm run ci     が通る（typecheck + lint + validate + build + bundle-size を一括実行）
 □ 変更したジャンル/フィーチャーをゲームで動作確認した
 □ マジックナンバーを直書きしていない（下記参照）
 □ コメントが "なぜ" だけを書いている（"何を" は書かない）
 □ プライベート関数に _ プレフィックスを付けた
+□ 新しいFeatureSystem実装やテストを追加した場合、tests/ と src/game/systems/index.ts への登録漏れがないか確認した
 ```
+
+`npm run ci` は `typecheck` → `lint` → `validate`（JSON検証） → `build` → `bundle-size` を順に実行します。個別に確認したい場合は各スクリプトを単体で実行してください（`npm run typecheck` 等）。
 
 詳細なコーディング規約 → [docs/coding-conventions.md](docs/coding-conventions.md)
 
@@ -33,7 +35,8 @@ npm run lint         # コード品質チェック
 |---|---|
 | はじめて触る | [docs/getting-started.md](docs/getting-started.md) |
 | アーキテクチャを知る | [docs/architecture.md](docs/architecture.md) |
-| ジャンルを追加する | [docs/genre-plugin.md](docs/genre-plugin.md) |
+| ジャンルを追加する（TypeScript不要・最小構成） | [content/README.md](content/README.md) + `npm run new-genre` |
+| ジャンルを追加する（フル機能・見た目も作り込む） | [docs/genre-plugin.md](docs/genre-plugin.md) |
 | フィーチャーを追加する | [docs/feature-system.md](docs/feature-system.md) |
 | 説明書 JSON を書く | [docs/manual-json.md](docs/manual-json.md) |
 | 使える FeatureId 一覧 | [docs/feature-ids.md](docs/feature-ids.md) |

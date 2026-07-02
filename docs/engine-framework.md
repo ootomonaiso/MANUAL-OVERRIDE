@@ -374,11 +374,13 @@ debugPrint(): void
 |---|---|---|---|---|---|---|
 | ShootFeature | shoot / three_way / charge_shot / spread_shot / bomb / enemy_hp | ─ | ✅ | ✅ | onManualUpdated | ✅ |
 | RhythmFeature | beat_hazard / just_input / beat_dash | ─ | ✅ | ✅ | onManualUpdated | ✅ |
-| MovementFeature | auto_run / slow_precise / double_jump / long_air | ✅ | ✅ | ─ | onInit | ✅ |
+| MovementFeature | auto_run / slow_precise / double_jump / long_air / dash / wall_jump / vertical_scroll | ✅ | ✅ | ✅ | onInit | ✅（slide / gravity_flip のみ未実装・warn） |
 | RpgFeature | hp / exp / item_pickup / shield | ─ | ✅ | ─ | onPlayerHit | ✅（shield のみスタブ） |
-| SpecialFeature | stealth_mode / time_bonus / tower / color_touch / boss | ─ | stub | ─ | onSafeHazardTouch (color_touch のみ) | ⚠️ |
-| ExtraMovementFeature | dash / wall_jump / slide / gravity_flip / vertical_scroll | ─ | stub | ─ | ─ | ❌ |
-| PuzzleFeature | grid_stop / puzzle_solve | ─ | stub | ─ | ─ | ❌ |
+| SpecialFeature | stealth_mode / time_bonus / tower / color_touch / boss | ─ | ✅ | ─ | onSafeHazardTouch | ✅ |
+| PuzzleFeature | grid_stop / puzzle_solve | ─ | ✅ | ─ | ─ | ✅ |
+| TetrisFeature | tetris_mode | ✅ | ✅ | ✅ | onInit | ✅ |
+
+> 旧 `ExtraMovementFeature`（dash / wall_jump / vertical_scroll）は `MovementFeature` に統合された。
 
 ### GenrePlugin
 
@@ -393,7 +395,13 @@ debugPrint(): void
 | SurvivalPlugin | survival | ✅ | ✅ | ─ | ✅ |
 | BulletRunnerPlugin | bullet_runner | ✅ | ✅ | ─ | ✅ |
 | PlatformerPlugin | platformer | ✅ | ✅ | ─ | ✅ |
-| 未実装 | stealth_action / racing / dungeon / tower_def / sports / idle / arena / aquatic / horror / hack_slash | ─ | ─ | ─ | ❌ |
+| RacingPlugin | racing | ✅ | ✅ | ─ | ✅ |
+| ArenaPlugin | arena | ✅ | ✅ | ─ | ✅ |
+| AquaticPlugin | aquatic | ✅ | ✅ | ─ | ✅ |
+| DungeonPlugin | dungeon | ✅ | ✅ | ─ | ✅ |
+| HackSlashPlugin | hack_slash | ✅ | ✅ | ─ | ✅ |
+| TetrisPlugin | tetris | ✅ | ✅ | ✅(TetrisFeature) | ✅ |
+| JSONフォールバック | bullet_hell / stealth_action / tower_def / sports / idle / horror | ✅ | ✅ | ─ | ✅（JSONGenrePlugin で描画） |
 
 ### ドメイン・ユーティリティ
 
@@ -402,8 +410,8 @@ debugPrint(): void
 | domain/ruleEngine.ts | buildRuntimeRules — 選択履歴 → RuntimeRules 合成 | ✅ |
 | domain/genreResolver.ts | resolveGenre — genreParams → ジャンル収束 | ✅ |
 | domain/scoreCalc.ts | 最終スコア計算（play × 0.7 + throw × 0.3） | ✅ |
-| domain/learning.ts | 行動統計→ルール変更 | ❌ 未実装 |
-| framework/ | ManualLoader / ManualValidator | ❌ ディレクトリ自体が存在しない |
+| domain/LearningSystem.ts | 行動統計→ルール変更（`evaluateLearningRules`）。sideScroller のループに統合済み | ✅ |
+| framework/ | ManualLoader / ManualBuilder / ManualValidator / ConfigLoader / ConfigValidator | ✅ |
 
 ---
 
@@ -510,33 +518,31 @@ game/
 
 ### E. 未実装 Feature の空スタブ（優先度: 中 → ✅ 実装済み）
 
-以下の FeatureId は登録済みだが `update()` が空の状態：
+かつてスタブだった Feature は順次実装され、現在は以下の少数のみが未実装で残る：
 
 ```
-ExtraMovementFeature: dash / wall_jump / slide / gravity_flip / vertical_scroll
-PuzzleFeature:        grid_stop / puzzle_solve
-SpecialFeature:       stealth_mode / time_bonus / tower / boss (※color_touch は実装済み)
-RpgFeature:           shield
+MovementFeature: slide / gravity_flip   （有効化時に console.warn）
+RpgFeature:      shield                  （onPlayerHit のスタブのみ）
 ```
 
-**実装ステータス（2026-05-31 更新）:**
+**実装ステータス（現状）:**
 
-- ✅ **ExtraMovementFeature**: update() 内で未実装 feature 有効化時に console.warn を出力
-- ✅ **PuzzleFeature**: update() 内で未実装 feature 有効化時に console.warn を出力
-- ✅ **SpecialFeature**: update() 内で未実装 feature（stealth_mode/time_bonus/tower/boss）有効化時に console.warn を出力
+- ✅ **MovementFeature**: 旧 ExtraMovementFeature を統合。dash / wall_jump / vertical_scroll は実装済み。slide / gravity_flip のみ未実装（console.warn）
+- ✅ **PuzzleFeature**: grid_stop / puzzle_solve を実装
+- ✅ **SpecialFeature**: stealth_mode / time_bonus / tower / boss / color_touch を実装
+- ✅ **TetrisFeature**: tetris_mode を実装
 - ⚠️ **RpgFeature**: shield は未実装のまま（onPlayerHit のスタブ実装済み）
 
-これにより、有効化されたが実装されていない feature は開発コンソールで即座に発見可能になる。
+未実装 feature が有効化された場合は開発コンソールに console.warn を出力するため、即座に発見可能。
 
 ---
 
-### F. Learning System の未統合（優先度: 低）
+### F. Learning System（実装完了 ✅）
 
-`domain/types.ts` に `LearningTrigger` / `LearningEffect` / `LearningRule` 型が定義されているが、  
-ゲームループと接続されていない。`ActionStats` も記録されるが参照されない。
-
-DESIGN.md の M6 に「学習ルール + 仕上げ」として計画されている機能。  
-現状は「定義だけある未実装機能」であり、混乱を避けるため状態を明記しておく。
+`domain/LearningSystem.ts` の `evaluateLearningRules` が `sideScroller.ts` のループに統合済み。  
+`ActionStats`（jumps / moveRight / shots 等）を一定間隔で評価し、`LearningRule` のトリガー成立時に  
+危険色反転・アクション無効化などの `LearningEffect` を発動する（発動時は `learningNotification` で通知）。  
+ルールは `ManualVersion.learningRules`（JSON）で定義する。
 
 ---
 
@@ -606,7 +612,7 @@ abstract class GenrePluginBase implements GenrePlugin {
 |---|---|---|
 | A | フック呼び出し実装 | すべてのフック（onPlayerDeath, onComboChange, onItemPickup 等）が実装され、適切に呼び出されている |
 | C | 座標系の不統一 | MutableWorld に getHazardScreenX / getPlayerWorldX ヘルパーメソッド実装 |
-| E | 空スタブ警告 | ExtraMovementFeature / PuzzleFeature / SpecialFeature に warning 出力実装 |
+| E | 空スタブの実装 | 旧 ExtraMovementFeature を Movement に統合。Puzzle / Special / Tetris は実装済み。残る未実装は slide / gravity_flip / shield のみ（warning 出力） |
 | G | setTimescale 実装 | タイムスケール機構が完全実装。RhythmFeature などで活用可能 |
 | H | framework/ 実装 | ManualLoader, ManualBuilder, ManualValidator が完全実装 |
 | I | GenrePluginBase 実装 | 抽象基底クラスが実装されすべてのプラグインが継承 |
@@ -631,4 +637,4 @@ const vy = player.vy + gravity * fallMult * dt
 |---|---|---|---|
 | B | buildWorld 多重コール | 中 | フレーム内で複数回コールされている。mutable world の再利用で GC 負荷削減可能 |
 | D | sideScroller 肥大 | 低 | 関心の分離（物理・衝突・描画の分割）で保守性向上 |
-| F | Learning System | 低 | 実装されているが未統合。DESIGN.md M6 参照 |
+| F | Learning System | 完了 ✅ | `evaluateLearningRules` が sideScroller のループに統合済み |
