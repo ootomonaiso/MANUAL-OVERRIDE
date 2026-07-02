@@ -74,12 +74,14 @@ assert.strictEqual(tetrisJson.scrollDirection, 'none', 'scrollDirection が none
 assert.strictEqual(tetrisJson.gravity, 0, 'gravity が 0 ではありません')
 
 // ─── config/genres.json に重複定義がないこと ──────────────────────
+// genres 配列は削除済み（実データは src/data/genres/*.json）。
+// 配列自体が存在しない場合は重複定義も存在しないため OK。
 
 const genresConfig = JSON.parse(
   fs.readFileSync(path.join(root, 'src/data/config/genres.json'), 'utf-8')
 )
 
-const tetrisGenres = genresConfig.genres.filter(g => g.id === 'tetris')
+const tetrisGenres = (genresConfig.genres ?? []).filter(g => g.id === 'tetris')
 assert.strictEqual(tetrisGenres.length, 0,
   `config/genres.json に tetris ジャンルの重複定義があります (${tetrisGenres.length}件)`)
 
