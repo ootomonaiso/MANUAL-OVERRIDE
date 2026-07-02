@@ -50,7 +50,7 @@
 
 ## ジャンル分岐システム
 
-### 実装されたジャンル（21種）
+### 実装されたジャンル（22種）
 
 | ジャンルID | ラベル | 説明 |
 |---|---|---|
@@ -68,6 +68,7 @@
 | `idle` | Idle | 放置ゲーム |
 | `horror` | Horror | サバイバルホラー |
 | `puzzle` | Puzzle | 思考パズル |
+| `tetris` | Tetris | 落ちものパズル（ブロック消し） |
 | `rhythm` | Rhythm | 音楽同期ゲーム |
 | `platformer` | Platformer | プラットフォーマー |
 | `runner` | Runner | エンドレスランナー |
@@ -118,7 +119,7 @@ src/
 ├── tutorial/        # チュートリアル画面
 └── data/
     ├── config/      # 設定JSON（21ファイル: score.json, genres.json, physics.json 等）
-    ├── genres/      # ジャンル定義JSON（21ファイル）
+    ├── genres/      # ジャンル定義JSON（22ファイル）
     └── cards/       # カードデッキJSON（starter-cards.json 等）
 ```
 
@@ -173,7 +174,7 @@ src/
 | ファイル | 内容 |
 |---|---|
 | `score.json` | scoreRatio（play 70% / throw 30%）・投擲スコア重み |
-| `genres.json` | ジャンル定義一覧・テーマカラーマップ |
+| `genres.json` | テーマカラーマップのみ（ジャンル定義本体ではない。ジャンルの追加・編集は `src/data/genres/*.json` を直接編集する） |
 | `game_balance.json` | MAX_ROUNDS・スクロール速度・難易度曲線係数 |
 | `physics.json` | 重力・ジャンプ力・摩擦係数 |
 | `spawn.json` | 障害物出現頻度・距離係数 |
@@ -237,7 +238,7 @@ src/
 - [x] 説明書UI（右下常時表示、テーマ切り替え対応）
 - [x] 説明書の多段階更新と2択選択
 - [x] ジャンルパラメータの蓄積と収束判定（genreParams / genrePoints / ベイズ収束 3方式）
-- [x] 21ジャンルの完全実装（JSON定義 + TSプラグイン）
+- [x] 22ジャンルの完全実装（JSON定義 + TSプラグイン15種 / JSON汎用プラグイン7種）
 
 ### 高度な機能
 - [x] 無限選択肢システム（100+ 選択肢、ver 9.0～15.0）
@@ -257,13 +258,14 @@ src/
 - [x] InputManager 分離（キー入力ロジックを SideScroller から独立）
 - [x] ParticleSystem 分離（パーティクル処理を SideScroller から独立）
 - [x] FeatureSystem インターフェース（Feature 追加が1ファイル+1行で完結）
-- [x] JSON駆動設計（config/ 21ファイル、genres/ 21ファイル）
+- [x] JSON駆動設計（config/ 21ファイル、genres/ 22ファイル）
 - [x] テーマカラーの完全JSON駆動化（CSS ハードコードなし）
 - [x] オフライン完全動作
 - [x] CI/CDパイプライン整備
 - [x] コーディング規約整備（ESLint naming-convention・any 厳格化）
 - [x] マジックナンバー排除（定数化: ruleEngine.ts / sideScroller.ts）
 - [x] 重複コード除去（useGameState.ts: genrePoints 累積をヘルパー関数化）
+- [x] デバッグ用インターフェース（`src/debug/`。`DEBUG_MODE`定数がtrueの時のみタイトル画面に表示。本番はfalse固定でバンドルからは除去されない点に注意 → バンドルサイズはCIの`bundle-size`チェックで監視）
 
 ### テスト & 確認
 - [x] Playwright 統合テスト
@@ -319,6 +321,11 @@ src/
 - 同じロジックが 2 箇所以上に現れたらヘルパー関数に抽出する
 - ファイル内プライベートなヘルパーは `function` 宣言（composable のクロージャ外）か、モジュールレベルの純粋関数として定義
 
+### ファイルサイズの目安
+
+- 1ファイルが概ね300行を超えたら責務分割を検討する（例: `FeatureSystem` 実装がボード状態・入力処理・描画を一手に抱えている場合、状態管理とレンダリングを別ファイルに分ける）
+- 既存の突出例: `src/game/systems/TetrisFeature.ts`（700行超）。新規の同種実装を作る際はこれをそのままテンプレートにせず、先に分割を検討する
+
 ### ESLint
 
 `npm run lint` で確認。主要ルール:
@@ -326,3 +333,15 @@ src/
 - `@typescript-eslint/naming-convention`: クラス/インターフェース/型は PascalCase を強制
 - `prefer-const`: **error**
 - `eqeqeq`: **error**（`===` を使う）
+
+---
+
+## 作業ファイルの置き場所
+
+調査・デバッグ・動作確認のために作る一時ファイル（使い捨てスクリプト、スクリーンショット、調査レポート等）はリポジトリ直下に置かない。
+
+- 会話の中だけで使い捨てるもの → スクラッチパッド（環境から与えられた一時ディレクトリ）
+- リポジトリに残す価値のある調査結果・計画メモ → `plan/`（例: `plan/engine-audit-report.md`）
+- どうしても作業ツリー内に置く必要がある使い捨てファイル → `tmp/`（gitignore済み）
+
+`test_*.cjs` / `tmp_screen*.png` のような命名で直下に量産しない。散らかりに気づいたら `cleanup` skill で棚卸しする。
