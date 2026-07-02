@@ -17,7 +17,7 @@
 | **このファイル** | すべて | フレームワーク全体図・クイックスタート |
 | [getting-started.md](getting-started.md) | 開発者・初参加 | セットアップ・はじめてのコーディングガイド |
 | [architecture.md](architecture.md) | 開発者 | レイヤー構成・依存関係・ファイルマップ |
-| [framework.md](framework.md) | 開発者 | エンジン仕様・ライフサイクル・実装ステータス |
+| [engine-framework.md](engine-framework.md) | 開発者 | エンジン仕様・ライフサイクル・実装ステータス（`src/framework/` のAPI一覧は [api/framework.md](api/framework.md)） |
 
 ### コード詳細解説
 
@@ -25,7 +25,7 @@
 |---|---|---|
 | [core-systems.md](core-systems.md) | コア実装 | 5つのコアシステムの詳細解説（sideScroller, genreResolver, useGameState, ruleEngine, scoreCalc） |
 | [architecture.md](architecture.md) | アーキテクチャ | レイヤー構成・依存関係・ファイルマップ |
-| [framework.md](framework.md) | エンジン仕様 | エンジン仕様・ライフサイクル・実装ステータス |
+| [engine-framework.md](engine-framework.md) | エンジン仕様 | エンジン仕様・ライフサイクル・実装ステータス |
 
 ### 要素別リファレンス（作成・拡張時に参照）
 
@@ -58,6 +58,7 @@
 | [CHANGELOG.md](CHANGELOG.md) | 開発者 | 変更履歴・バグ修正ログ |
 | [design.md](design.md) | 開発者 | 実装設計書・型設計・モジュール詳細 |
 | [spec.md](spec.md) | 参照 | 初期仕様ドラフト（歴史的資料） |
+| [../plan/engine-audit-report.md](../plan/engine-audit-report.md) | 開発者 | エンジン構造の静的監査（バグ優先度・対応状況付き）。修正前に既知の問題と重複していないか確認する |
 
 ---
 
@@ -111,6 +112,10 @@
 ## クイックスタート
 
 ### 新ジャンルを追加する
+
+**TypeScript を触りたくない・最小構成で試したいだけなら:** [../content/README.md](../content/README.md) と `npm run new-genre` を使う（`content/genres/` に3フィールドだけのJSONを置くと `npm run build` 時に自動補完される）。
+
+**フル機能（scoreFormula・enableFeatures・専用ビジュアル等）が必要なら:** 下記の通り `src/data/genres/` を直接編集する。
 
 **必要なステップ:** JSON 1ファイル（+ 任意で TS プラグイン・説明書ルート）
 
@@ -315,7 +320,9 @@ MutableWorld.cameraX を使い、座標変換を統一：
 | **新ジャンルを作りたい** | [genre-plugin.md](genre-plugin.md) → [adding-content.md](adding-content.md) |
 | **新フィーチャーを作りたい** | [feature-system.md](feature-system.md) → [adding-content.md](adding-content.md) |
 | **説明書を追加・修正したい** | [manual-json.md](manual-json.md) |
-| **エンジンの詳細を知りたい** | [framework.md](framework.md) |
+| **エンジンの詳細を知りたい** | [engine-framework.md](engine-framework.md) |
+| **`src/framework/`（説明書・設定のロード/検証）のAPIを知りたい** | [api/framework.md](api/framework.md) |
 | **すべての FeatureId を知りたい** | [feature-ids.md](feature-ids.md) |
 | **全ジャンルの定義を知りたい** | [genre-system.md](genre-system.md) |
 | **ファイルの関数・型を一覧で知りたい** | [api/](api/) の各ファイル |
+| **既知のバグ・設計課題を確認したい** | [../plan/engine-audit-report.md](../plan/engine-audit-report.md) |

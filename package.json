@@ -16,11 +16,12 @@
     "new-genre": "node scripts/new-genre.mjs",
     "test": "playwright test",
     "test:smoke": "playwright test tests/smoke.spec.ts",
+    "test:features": "node scripts/run-feature-tests.mjs",
     "test:e2e": "node tests/test_game.mjs",
     "test:choices": "node tests/test_choices.mjs",
     "test:infinite": "node tests/test_infinite_choices.mjs",
     "test:massive": "node tests/test_massive_choices.mjs",
-    "ci": "npm run typecheck && npm run lint && npm run validate && npm run build && npm run bundle-size"
+    "ci": "npm run typecheck && npm run lint && npm run validate && npm run test:features && npm run build && npm run bundle-size"
   },
   "dependencies": {
     "vue": "^3.5.13"

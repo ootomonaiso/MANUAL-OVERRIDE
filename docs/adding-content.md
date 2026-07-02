@@ -175,6 +175,11 @@ cp src/data/manuals/TEMPLATE.json src/data/manuals/my-branch.json
 
 > `GenreId` / `FeatureId` は `string` 型のため、`src/domain/types.ts` の編集は不要です。
 
+> TypeScript を触らず最小構成で試したいだけなら、先に [content/README.md](../content/README.md)
+> と `npm run new-genre` を試してください。`content/genres/` に3フィールドのJSONを置くだけで
+> `npm run build` 時に下記のフル構成へ自動補完されます。以下はフル機能（scoreFormula や
+> 専用ビジュアルなど）が必要な場合の直接編集手順です。
+
 ### ステップ 1: GenreDef（ジャンル定義）を JSON で追加する
 
 `src/data/genres/my_genre.json` を新規作成します。`src/data/genres/*.json` は `import.meta.glob` で自動収集されるため、**ファイルを置くだけ**で登録されます（`src/data/genres.ts` は `GAME_CONFIG` からの再エクスポートなので編集不要）。
@@ -456,4 +461,4 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
 - [manual-json.md](./manual-json.md) — JSON スキーマの全フィールド詳細
 - [genre-plugin.md](./genre-plugin.md) — GenrePlugin の全メソッド仕様
 - [feature-system.md](./feature-system.md) — FeatureSystem（メカニクス追加）の方法
-- [framework.md](./framework.md) — ManualBuilder / ManualValidator の使い方
+- [api/framework.md](./api/framework.md) — ManualBuilder / ManualValidator の使い方（`src/framework/` のAPI一覧）
