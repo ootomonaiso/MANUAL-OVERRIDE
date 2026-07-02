@@ -3,7 +3,7 @@
   "id": "puzzle",
   "label": "パズルゲーム",
   "thresholds": { "combo": 6 },
-  "enableFeatures": ["grid_stop"],
+  "enableFeatures": ["grid_stop", "puzzle_solve"],
   "disableFeatures": ["auto_run", "shoot", "beat_hazard"],
   "scoreFormula": "combo * 200 + survivedSec * 3",
   "manualReveal": "これはパズルゲームになりました。正解を考えてください。",

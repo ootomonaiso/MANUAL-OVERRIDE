@@ -18,7 +18,7 @@
     "moveDown": "ArrowDown",
     "shoot": "z"
   },
-  "gravity": 1600,
+  "gravity": 0,
   "endingFlavor": "あなたはすべてを撃ち抜いた。説明書は弾除けにでも使えばよかった。",
   "spawnDensity": {
     "baseInterval": 1800,
