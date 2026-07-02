@@ -64,13 +64,24 @@ jobs:
           cache: npm
       - run: npm run test:features
 
+  doc-links:
+    name: Doc Links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm run check-doc-links
+
 # ══════════════════════════════════════════════════════════
 #  Phase 2 — Build (gates on all Phase 1)
 # ══════════════════════════════════════════════════════════
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [typecheck, lint, validate-json, feature-tests]
+    needs: [typecheck, lint, validate-json, feature-tests, doc-links]
     permissions:
       pull-requests: write
     steps:
