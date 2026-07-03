@@ -2,7 +2,7 @@
   "$schema": "../../../../schemas/genre.schema.json",
   "id": "stealth_action",
   "label": "ステルスアクション",
-  "thresholds": { "stealth": 5 },
+  "thresholds": { "stealth": 7 },
   "enableFeatures": ["stealth_mode", "slow_precise"],
   "disableFeatures": ["shoot", "auto_run", "beat_hazard", "boss"],
   "scoreFormula": "stealthBonus * 0.5 + survivedSec * 10 + distance * 0.4",

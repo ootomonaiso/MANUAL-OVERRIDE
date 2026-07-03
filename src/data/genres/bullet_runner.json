@@ -2,7 +2,7 @@
   "$schema": "../../../../schemas/genre.schema.json",
   "id": "bullet_runner",
   "label": "弾幕ランナー",
-  "thresholds": { "tempo": 6, "enemy": 5 },
+  "thresholds": { "tempo": 7, "enemy": 6 },
   "enableFeatures": ["auto_run", "shoot", "enemy_hp"],
   "disableFeatures": ["grid_stop", "puzzle_solve", "slow_precise", "stealth_mode"],
   "scoreFormula": "kills * 100 + distance * 1.5 + combo * 60",

@@ -4,6 +4,34 @@
 
 ---
 
+## ジャンル確定後の説明書自動更新停止修正（2026-07-01）
+
+### 問題
+
+ジャンルが確定した後も（`genreLocked`フェーズ中）、スナップショット監視ループから`triggerUpdate()`が呼び出され続け、説明書が無限に更新され続けていた。
+
+### 原因
+
+`src/App.vue` のスナップショット監視ループ内にて、`activePlay`配列に`'genreLocked'`が含まれていたため、ジャンル確定後も`triggerUpdate()`が発火し、`phase`が`'updating'`に遷移→カード選択→`phase`が`'genreLocked'`に戻る、というループが発生していた。
+
+### 修正
+
+**変更ファイル**: `src/App.vue`（116行目）
+
+```diff
+- const activePlay = ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
++ const activePlay = ['playing', 'tutorial'].includes(gameState.phase.value)
+```
+
+`genreLocked`フェーズでは`triggerUpdate()`を呼ばないことで、ジャンル確定後はカード選択が自動で発生しなくなる。プレイヤーはギブアップ（説明書の投擲）によってのみ次のフェーズに進める。
+
+### テスト
+
+- **ユニットテスト** (`tests/unit/composables/useGameState.test.ts`): ジャンル確定後の`choose()`がphaseを`genreLocked`に保持することを検証
+- **Playwrightテスト** (`tests/genre-lock-no-update.spec.ts`): ジャンル確定後にChoicePanelが出現しないことをE2Eで検証
+
+---
+
 ## aerial_stg「近代都市の遥か上空・大気圏内」改修セッション（2026-06-29）
 
 ### 概要
