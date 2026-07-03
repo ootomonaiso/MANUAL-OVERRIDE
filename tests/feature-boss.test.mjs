@@ -6,6 +6,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import assert from 'node:assert'
 import { fileURLToPath } from 'node:url'
+import { loadGenres } from './helpers/loadGenres.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const src = fs.readFileSync(path.join(root, 'src/game/systems/SpecialFeature.ts'), 'utf-8')
@@ -22,9 +23,9 @@ assert.ok(src.includes('bossRespawnDist'), 'リスポーン間隔 (bossRespawnDi
 assert.ok(src.includes('removeHazardById'), 'スポーン取り消し処理 (removeHazardById) が見つかりません')
 assert.ok(src.includes('triggerShake'), '撃破時の画面シェイク (triggerShake) が見つかりません')
 
-// genres.json: 影響ジャンルが boss を有効化していること
-const genres = JSON.parse(fs.readFileSync(path.join(root, 'src/data/config/genres.json'), 'utf-8'))
-const bossGenres = genres.genres.filter(g => g.enableFeatures.includes('boss')).map(g => g.id)
+// src/data/genres/*.json: 影響ジャンルが boss を有効化していること
+const genres = loadGenres(root)
+const bossGenres = genres.filter(g => g.enableFeatures.includes('boss')).map(g => g.id)
 for (const id of ['arena', 'hack_slash']) {
   assert.ok(bossGenres.includes(id), `ジャンル "${id}" は boss を有効化している必要があります`)
 }

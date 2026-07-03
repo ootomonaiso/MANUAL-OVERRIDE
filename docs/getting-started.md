@@ -145,7 +145,7 @@ src/
     ├── gameBalance.ts            ゲームバランス値
     ├── tunables.ts               調整可能なパラメータ
     ├── manualDeck.ts             説明書データベース
-    ├── config/                   ← JSON 設定ファイル群（17個）
+    ├── config/                   ← JSON 設定ファイル群（21個）
     │   ├── genres.json           ジャンル定義（20+ ジャンル）
     │   ├── game_balance.json     敵の密度・スポーン・難易度
     │   ├── score.json            スコア計算の重み
@@ -314,7 +314,7 @@ getRegistry().registerFeature(new JumpHeightFeature())
 #### Step 3: JSON で有効化
 
 ```json
-// src/data/config/genres.json の該当ジャンルで:
+// src/data/genres/my_genre.json の該当ジャンルで:
 {
   "id": "my_genre",
   "enableFeatures": ["show_jump_height"],
@@ -370,12 +370,12 @@ dist/
 
 ### Q: 説明書のテーマを変えたい
 
-`src/data/config/genres.json` で：
+`src/data/genres/my_genre.json` で：
 
 ```json
 {
   "id": "my_genre",
-  "theme": "stg"  // plain, stg, rpg, puzzle, rhythm など
+  "theme": "stg"  // plain, stg, rpg, puzzle, rhythm, tetris など
 }
 ```
 
