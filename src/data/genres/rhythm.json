@@ -2,7 +2,7 @@
   "$schema": "../../../../schemas/genre.schema.json",
   "id": "rhythm",
   "label": "リズムゲーム",
-  "thresholds": { "tempo": 5, "rhythm": 5 },
+  "thresholds": { "tempo": 6, "rhythm": 6 },
   "enableFeatures": ["beat_hazard", "just_input", "beat_dash"],
   "disableFeatures": ["grid_stop"],
   "scoreFormula": "beatHits * 150 + combo * 100 + distance * 0.4",

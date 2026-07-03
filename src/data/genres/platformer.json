@@ -2,7 +2,7 @@
   "$schema": "../../../../schemas/genre.schema.json",
   "id": "platformer",
   "label": "プラットフォームアクション",
-  "thresholds": { "aerial": 4, "combo": 4 },
+  "thresholds": { "aerial": 5, "combo": 4 },
   "enableFeatures": ["double_jump", "long_air", "wall_jump"],
   "disableFeatures": ["auto_run", "grid_stop", "beat_hazard"],
   "scoreFormula": "combo * 150 + distance * 0.8 + survivedSec * 5",

@@ -15,5 +15,6 @@
   "maxRounds": 5,
   "genreLockedBoostMult": 1.35,
   "genreLockedBoostDurationMs": 800,
-  "defaultFallbackGenre": "runner"
+  "defaultFallbackGenre": "runner",
+  "paramJitterRange": 0.4
 }

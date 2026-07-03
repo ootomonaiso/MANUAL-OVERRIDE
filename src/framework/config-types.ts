@@ -36,6 +36,8 @@ export interface PhysicsConfig {
   dashCooldownSec: number
   dashIframesSec: number
   wallJumpPushSpeed: number
+  /** 地面Y座標のキャンバス下端からのオフセット（px） */
+  groundYOffset: number
 }
 
 /** shoot.json — 射撃システム */
@@ -227,6 +229,8 @@ export interface ScoreConfig {
   defaultColorTouchScore: number
   distanceScoreRate: number
   longAirScoreRate: number
+  /** エンディンググレードの閾値（合計スコア） */
+  gradeThresholds: { S: number; A: number; B: number; C: number }
 }
 
 /** difficulty.json — 難易度 + TEMPO_SPEED_BONUS */
@@ -370,6 +374,8 @@ export interface GameBalanceConfig {
   genreLockedBoostMult: number
   genreLockedBoostDurationMs: number
   defaultFallbackGenre: string
+  /** ジャンルパラメータのジッター幅（±20%） */
+  paramJitterRange: number
 }
 
 /**
@@ -417,6 +423,8 @@ export interface GenreDefJSON {
   controls?: Partial<Controls>
   /** TSプラグインなしでビジュアルをカスタマイズする場合に指定。省略時はthemeから自動決定。 */
   visual?: GenreVisualConfig
+  /** ジャンル固有のスポーン密度設定。TSプラグインもこれをマージされる。 */
+  spawnDensity?: import('../domain/types').SpawnDensityConfig
 }
 
 export interface ThemeColorDef {

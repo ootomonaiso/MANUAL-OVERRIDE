@@ -48,6 +48,8 @@ export class SurvivalPlugin extends GenrePluginBase {
     { shape: 'rect',   placement: 'air',    weightStart: 0, weightEnd: 2, wRange: [26, 45], hRange: [25, 40], safeChance: 0.25 },
   ]
 
+  // spawnDensity is sourced from JSON config (survival.json) — see genres/index.ts merge
+
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
     // 霧がかかった暗い丘シルエット
     ctx.globalAlpha = 0.18

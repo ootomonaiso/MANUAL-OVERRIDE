@@ -3,5 +3,11 @@
   "section": "score",
   "defaultColorTouchScore": 200,
   "distanceScoreRate": 0.28,
-  "longAirScoreRate": 1.6
+  "longAirScoreRate": 1.6,
+  "gradeThresholds": {
+    "S": 8000,
+    "A": 5000,
+    "B": 2500,
+    "C": 1000
+  }
 }

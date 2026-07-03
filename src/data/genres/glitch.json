@@ -1,0 +1,12 @@
+{
+  "id": "glitch",
+  "label": "壊れたゲーム",
+  "thresholds": {},
+  "enableFeatures": ["movement", "hp"],
+  "disableFeatures": [],
+  "scoreFormula": "distance * 0.1 + survivedSec * 2",
+  "manualReveal": "説明書が壊れました。もう何をすべきか分かりません。",
+  "theme": "glitch",
+  "bgColor": "#0a0a0a",
+  "endingFlavor": "あなたが選んだ矛盾が、ゲームそのものを壊しました。これは誰も予想しなかった結末です。"
+}
