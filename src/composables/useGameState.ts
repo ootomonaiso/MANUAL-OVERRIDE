@@ -181,7 +181,7 @@ export function useGameState() {
     if (roundCount.value >= MAX_ROUNDS || newState.converged) {
       lockedGenre.value = newState.convergedGenre ?? resolveHighestProbGenre(accumulated, GENRES)
       if (lockedGenre.value === 'base') {
-        lockedGenre.value = DEFAULT_FALLBACK_GENRE as GenreId
+        lockedGenre.value = DEFAULT_FALLBACK_GENRE
       }
       // ジャンル確定文を説明書本文に追記
       const genreDef = GENRES.find(g => g.id === lockedGenre.value)
@@ -196,6 +196,13 @@ export function useGameState() {
       phase.value = 'playing'
     }
     return undefined
+  }
+
+  // デバッグ専用: ジャンルを強制確定する（収束判定を飛ばす）
+  function debugForceGenre(genreId: GenreId) {
+    lockedGenre.value = genreId
+    _rebuildRules()
+    phase.value = 'genreLocked'
   }
 
   function startThrowing() {
@@ -246,6 +253,7 @@ export function useGameState() {
     startTutorial,
     triggerUpdate,
     choose,
+    debugForceGenre,
     startThrowing,
     finalizeThrowing,
     restart,

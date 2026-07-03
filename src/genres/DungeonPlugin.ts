@@ -1,4 +1,4 @@
-﻿/**
+/**
  * genres/DungeonPlugin.ts
  * 'dungeon' ジャンル（ダンジョン探索）のプラグイン。
  *

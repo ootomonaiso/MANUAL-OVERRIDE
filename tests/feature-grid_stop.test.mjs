@@ -6,6 +6,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import assert from 'node:assert'
 import { fileURLToPath } from 'node:url'
+import { loadGenres } from './helpers/loadGenres.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const src = fs.readFileSync(path.join(root, 'src/game/systems/PuzzleFeature.ts'), 'utf-8')
@@ -20,9 +21,9 @@ assert.ok(src.includes('r.scrollSpeed = 0'), 'スクロール停止処理 (r.scr
 assert.ok(src.includes('baseScrollSpeed'), 'スクロール速度の復元処理 (baseScrollSpeed) が見つかりません')
 assert.ok(src.includes('render('), 'グリッドターゲットの描画処理 (render) が見つかりません')
 
-// genres.json: puzzle ジャンルが grid_stop を有効化していること
-const genres = JSON.parse(fs.readFileSync(path.join(root, 'src/data/config/genres.json'), 'utf-8'))
-const gridStopGenres = genres.genres.filter(g => g.enableFeatures.includes('grid_stop')).map(g => g.id)
+// src/data/genres/*.json: puzzle ジャンルが grid_stop を有効化していること
+const genres = loadGenres(root)
+const gridStopGenres = genres.filter(g => g.enableFeatures.includes('grid_stop')).map(g => g.id)
 assert.ok(gridStopGenres.includes('puzzle'), 'ジャンル "puzzle" は grid_stop を有効化している必要があります')
 
 console.log('✓ grid_stop: PuzzleFeature に実装あり（unimplementedFeatures から除外済み）')
