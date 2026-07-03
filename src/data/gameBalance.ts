@@ -6,6 +6,8 @@
  */
 
 import { GAME_CONFIG } from './config'
+import { GENRES } from './genres'
+import type { GenreId } from '../domain/types'
 
 const _gb = GAME_CONFIG.game_balance
 const _d  = GAME_CONFIG.difficulty
@@ -75,8 +77,13 @@ export const GENRE_LOCKED_BOOST = {
 
 // ─────────────────────────────────────────────────────────────
 // DEFAULT_FALLBACK_GENRE — 収束なし時のフォールバックジャンル
+// JSONの値が登録済みジャンルIDであることをモジュールロード時に検証
 // ─────────────────────────────────────────────────────────────
-export const DEFAULT_FALLBACK_GENRE = _gb.defaultFallbackGenre as string
+const _rawFallback = _gb.defaultFallbackGenre as string
+if (!GENRES.some(g => g.id === _rawFallback)) {
+  throw new Error(`[gameBalance] defaultFallbackGenre "${_rawFallback}" は未登録のジャンルIDです`)
+}
+export const DEFAULT_FALLBACK_GENRE = _rawFallback as GenreId
 
 // ─────────────────────────────────────────────────────────────
 // PARAM_JITTER_RANGE — ジャンルパラメータのジッター幅（±20%）

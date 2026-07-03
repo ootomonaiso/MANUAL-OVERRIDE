@@ -111,16 +111,14 @@ src/
     │       ├── index.ts               全 FeatureSystem を一括登録（7系統）
     │       ├── ShootFeature.ts        shoot 系 Feature 実装
     │       ├── RhythmFeature.ts       rhythm 系 Feature 実装
-    │       ├── MovementFeature.ts     movement 系 Feature 実装
+    │       ├── MovementFeature.ts     movement 系 Feature 実装（dash/wall_jump/vertical_scroll も統合）
     │       ├── RpgFeature.ts          hp/exp/item_pickup 実装
-    │       ├── ExtraMovementFeature.ts dash/wall_jump/vertical_scroll 実装
     │       ├── PuzzleFeature.ts       grid_stop/puzzle_solve 実装
     │       ├── SpecialFeature.ts      stealth_mode/time_bonus/tower/boss/color_touch 実装
-    │       ├── shootSystem.ts         弾物理エンジン（純粋関数）
-    │       └── rhythmSystem.ts        BPM・タイミング判定（純粋関数）
+    │       └── TetrisFeature.ts       tetris_mode 実装
 │
 ├── genres/
-    │   ├── index.ts           全 GenrePlugin を一括登録（15種+JSONプラグイン）
+    │   ├── index.ts           全 GenrePlugin を自動収集・登録（16種 + JSONフォールバックプラグイン）
     │   ├── BasePlugin.ts      base / runner
     │   ├── StgPlugin.ts       stg
     │   ├── RpgPlugin.ts       rpg
@@ -134,12 +132,13 @@ src/
     │   ├── ArenaPlugin.ts       arena
     │   ├── AquaticPlugin.ts     aquatic
     │   ├── DungeonPlugin.ts     dungeon
-    │   └── HackSlashPlugin.ts   hack_slash
+    │   ├── HackSlashPlugin.ts   hack_slash
+    │   └── TetrisPlugin.ts      tetris
 │
 ├── data/
     │   ├── config.ts          GAME_CONFIG エントリポイント
-    │   ├── config/            JSON設定ファイル群（19個）
-    │   │   ├── genres.json    21 種の GenreDef
+    │   ├── config/            JSON設定ファイル群（21個）
+    │   │   ├── genres.json    22 種の GenreDef
     │   │   ├── game_balance.json   スコア比率/投擲重み/基本速度
     │   │   ├── difficulty.json     難易度カーブ/アップデート距離
     │   │   ├── physics.json        プレイヤー物理定数
@@ -177,8 +176,8 @@ src/
 | `MutableWorld` | engine/types.ts | FeatureSystem/GenrePlugin がフレームごとに受け取るコンテキスト |
 | `GameStats` | engine/types.ts | kills / combo / beatHits など FeatureSystem が書き込む統計 |
 | `GenreDef` | domain/types.ts | ジャンルの閾値・Feature・スコア式・テーマを記述するデータ |
-| `GenreId` | domain/types.ts | `string` 型（union 型ではない）。config/genres.json で定義 |
-| `FeatureId` | domain/types.ts | `string` 型（union 型ではない）。config/genres.json の enableFeatures で定義 |
+| `GenreId` | domain/types.ts | `string` 型（union 型ではない）。値は src/data/genres/*.json で定義 |
+| `FeatureId` | domain/types.ts | `string` 型（union 型ではない）。src/data/genres/*.json の enableFeatures で参照 |
 | `SpawnEntry` | engine/types.ts | ジャンルプラグインが宣言するハザード出現テーブルの1行 |
 | `ManualVersion` | domain/types.ts | 1バージョン分の説明書データ（controls, hazards, choices…） |
 | `Choice` | domain/types.ts | 選択肢の定義（genreParams, genrePoints, paramMultiplier 等） |
