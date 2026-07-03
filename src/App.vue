@@ -17,10 +17,15 @@ import { GENRE_LOCKED_BOOST } from './data/gameBalance'
 import type { ThrowResult, RuntimeRules } from './domain/types'
 import { TUTORIAL_ENABLED, TutorialScreen } from './tutorial'
 import { soundManager } from './plugins/SoundManager'
+import { DEBUG_MODE } from './debug/const'
+import { useDebugSettings } from './debug/useDebugSettings'
+import DebugPanel from './debug/DebugPanel.vue'
+import type { DebugSettings } from './debug/types'
 
 // ─── 状態 ─────────────────────────────────────────────────────────
 const gameState = useGameState()
 const manualCtl = useManual(gameState.currentManual)
+const debugCtl = useDebugSettings()
 
 /** readonly() ラッパーを剥がして RuntimeRules として返す */
 function getRules(): RuntimeRules {
@@ -87,7 +92,22 @@ function startGame() {
   if (TUTORIAL_ENABLED) {
     scroller.setPaused(true)
   }
+
+  // デバッグ: ジャンル強制（lockedGenre の watch が scroller へルールを反映する）
+  if (debugCtl.debugSettings.forceGenre) {
+    gameState.debugForceGenre(debugCtl.debugSettings.forceGenre)
+    // チュートリアルをスキップして genreLocked へ直行するため明示的に再開する。
+    // phase が title→genreLocked と遷移し shouldPause が変化しないため watch では再開されない。
+    scroller.setPaused(false)
+  }
+
   beginSnapshotLoop()
+}
+
+// ─── デバッグパネル「OK」: 設定を反映して通常フローでゲーム開始 ───
+function onDebugApply(settings: DebugSettings) {
+  debugCtl.applyDebug(settings)
+  startGame()
 }
 
 // ─── チュートリアル完了 → ゲームプレイ開始 ────────────────────
@@ -189,6 +209,8 @@ function restart() {
   revealActive.value = false
   soundManager.stopBgm(600)
   gameState.restart()
+  // タイトルへ戻る際にデバッグ設定をクリア（DebugPanel 再マウント時の表示と一致させる）
+  debugCtl.resetDebug()
 }
 
 // ─── 現在のジャンルテーマ ─────────────────────────────────────────
@@ -230,7 +252,8 @@ const shouldPause = computed(() => {
   const p = gameState.phase.value
   if (p === 'updating') return true
   if (p === 'tutorialIntro') return true
-  if (manualCtl.isCentered.value) return true
+  // 説明書非表示時はセンタリング演出が見えないため停止もしない
+  if (manualCtl.isCentered.value && debugCtl.debugSettings.showManual) return true
   return false
 })
 
@@ -333,6 +356,12 @@ onUnmounted(() => {
       </div>
     </Transition>
 
+    <!-- ─── デバッグパネル（DEBUG_MODE 時のみ・タイトル画面に重畳） ─── -->
+    <DebugPanel
+      v-if="DEBUG_MODE && gameState.phase.value === 'title'"
+      @apply="onDebugApply"
+    />
+
     <!-- ─── チュートリアル画面 ─── -->
     <Transition name="fade">
       <TutorialScreen
@@ -357,7 +386,7 @@ onUnmounted(() => {
 
       <!-- 説明書パネル（投擲中は ThrowOverlay が代替） -->
       <ManualPanel
-        v-if="gameState.phase.value !== 'throwing'"
+        v-if="gameState.phase.value !== 'throwing' && debugCtl.debugSettings.showManual"
         :manual="gameState.currentManual()"
         :theme="currentTheme"
         :diff-lines="manualCtl.diffLines.value"
@@ -371,7 +400,7 @@ onUnmounted(() => {
 
       <!-- 説明書更新時のフォーカスオーバーレイ -->
       <Transition name="fade">
-        <div v-if="manualCtl.isCentered.value" class="manual-focus-overlay" />
+        <div v-if="manualCtl.isCentered.value && debugCtl.debugSettings.showManual" class="manual-focus-overlay" />
       </Transition>
 
       <!-- チュートリアルヒント（序盤のみ表示） -->

@@ -6,6 +6,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import assert from 'node:assert'
 import { fileURLToPath } from 'node:url'
+import { loadGenres } from './helpers/loadGenres.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const src = fs.readFileSync(path.join(root, 'src/game/systems/SpecialFeature.ts'), 'utf-8')
@@ -26,9 +27,9 @@ for (const key of ['stealthAlpha', 'stealthDurationSec', 'stealthSafeBonus']) {
   assert.strictEqual(typeof stealth[key], 'number', `stealth.json.${key} は number である必要があります`)
 }
 
-// genres.json: 影響ジャンルが stealth_mode を有効化していること
-const genres = JSON.parse(fs.readFileSync(path.join(root, 'src/data/config/genres.json'), 'utf-8'))
-const stealthGenres = genres.genres.filter(g => g.enableFeatures.includes('stealth_mode')).map(g => g.id)
+// src/data/genres/*.json: 影響ジャンルが stealth_mode を有効化していること
+const genres = loadGenres(root)
+const stealthGenres = genres.filter(g => g.enableFeatures.includes('stealth_mode')).map(g => g.id)
 for (const id of ['stealth_action', 'horror']) {
   assert.ok(stealthGenres.includes(id), `ジャンル "${id}" は stealth_mode を有効化している必要があります`)
 }
