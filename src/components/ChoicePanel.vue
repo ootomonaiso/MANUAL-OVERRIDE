@@ -139,96 +139,43 @@ onUnmounted(() => {
 }
 
 /* ─── ジャンル別文体テーマ（CSS 変数経由で制御） ─── */
-.choice-card.genre-stg {
-  --genre-font: 'Courier New', monospace;
-}
-.choice-card.genre-rpg {
-  --genre-font: 'Georgia', serif;
-  --genre-bg: #120e00;
-}
-.choice-card.genre-puzzle {
-  --genre-font: 'Courier New', monospace;
-  --genre-bg: #f5f5f0;
-  --genre-text: #222;
-}
-.choice-card.genre-rhythm {
-  --genre-bg: #0a0014;
-}
-.choice-card.genre-horror {
-  --genre-bg: #0a0000;
-}
-.choice-card.genre-aquatic {
-  --genre-bg: #00090d;
-}
+/* 変数値は global.css の .theme-global-* から継承。
+   ここには .genre-* 固有のボーダー/シャドウ装飾のみを定義。 */
 .choice-card.genre-runner {
   border-left-width: 6px;
   box-shadow: -4px 0 0 #ff3333, 0 2px 8px rgba(0, 0, 0, 0.15);
-  --genre-bg: #ffffff;
-  --genre-font: Impact, 'Arial Black', sans-serif;
-  --genre-text: #111;
 }
 .choice-card.genre-stealth-action {
   border-style: dashed;
   box-shadow: none;
-  --genre-bg: #050505;
-  --genre-font: 'Courier New', monospace;
 }
 .choice-card.genre-racing {
   border-top-width: 5px;
   box-shadow: 0 -3px 0 #ff6600, 0 0 20px rgba(255, 100, 0, 0.18), 0 0 50px rgba(0, 0, 0, 0.5);
-  --genre-font: Impact, 'Arial Black', sans-serif;
-  --genre-bg: #0f0a00;
 }
 .choice-card.genre-platformer {
   border-width: 3px;
   border-radius: var(--radius-lg);
   box-shadow: 4px 4px 0 #ffcc00, 0 0 20px rgba(0, 80, 180, 0.2), 0 0 50px rgba(0, 0, 0, 0.5);
-  --genre-bg: #001a4a;
 }
 .choice-card.genre-dungeon {
   box-shadow: 3px 3px 0 #3a2000, 0 0 20px rgba(180, 80, 0, 0.15), 0 0 50px rgba(0, 0, 0, 0.5);
-  --genre-font: 'Georgia', serif;
-  --genre-bg: #0c0800;
 }
 .choice-card.genre-survival {
   box-shadow: 3px 3px 0 #1a3a1a, 0 0 16px rgba(60, 100, 40, 0.1), 0 0 50px rgba(0, 0, 0, 0.5);
-  --genre-bg: #050a05;
 }
 .choice-card.genre-hack-slash {
   box-shadow: 5px 5px 0 #440000, 0 0 20px rgba(200, 0, 0, 0.25), 0 0 50px rgba(0, 0, 0, 0.5);
-  --genre-bg: #0a0000;
 }
 .choice-card.genre-arena {
   border-width: 3px;
   box-shadow: 5px 5px 0 #440000, 0 0 28px rgba(200, 0, 0, 0.35), 0 0 50px rgba(0, 0, 0, 0.7);
-  --genre-bg: #0f0000;
-}
-.choice-card.genre-aerial-stg {
-  --genre-font: 'Courier New', monospace;
-  --genre-bg: #000820;
-}
-.choice-card.genre-bullet-hell {
-  --genre-font: 'Courier New', monospace;
-  --genre-bg: #000010;
-}
-.choice-card.genre-bullet-runner {
-  --genre-font: 'Courier New', monospace;
-  --genre-bg: #0a0018;
 }
 .choice-card.genre-idle {
   box-shadow: 2px 2px 0 #aaa;
-  --genre-font: 'Courier New', monospace;
-  --genre-bg: #fafaf8;
-  --genre-text: #444;
 }
 .choice-card.genre-tower-def {
   box-shadow: 2px 2px 0 #558855;
-  --genre-font: 'Courier New', monospace;
-  --genre-bg: #0a0f0a;
-  --genre-text: #88aa88;
-}
-.choice-card.genre-sports {
-  --genre-bg: #0a001a;
 }
 
 /* ─── ヘッダー ─── */

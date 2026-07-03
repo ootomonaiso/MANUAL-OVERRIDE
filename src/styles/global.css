@@ -225,4 +225,5 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #app { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
 button { outline: none; }
+button:focus-visible { outline: 2px solid var(--genre-accent, var(--green)); outline-offset: 2px; }
 body { font-family: var(--font-main); }

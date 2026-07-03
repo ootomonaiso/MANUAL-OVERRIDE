@@ -7,7 +7,7 @@
   "disableFeatures": ["grid_stop", "puzzle_solve", "beat_hazard", "slow_precise"],
   "scoreFormula": "distance * 2.0 + survivedSec * 3 + combo * 30",
   "manualReveal": "これはレーシングゲームになりました。最速を目指してください。",
-  "theme": "plain",
+  "theme": "racing",
   "bgColor": "#0f0a00",
   "controls": {
     "jump": "Space",

@@ -7,7 +7,7 @@
   "disableFeatures": ["shoot", "auto_run", "beat_hazard", "boss"],
   "scoreFormula": "stealthBonus * 0.5 + survivedSec * 10 + distance * 0.4",
   "manualReveal": "これはステルスアクションになりました。見つからないでください。",
-  "theme": "plain",
+  "theme": "stealth",
   "bgColor": "#050505",
   "environment": "city",
   "controls": {

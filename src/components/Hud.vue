@@ -44,16 +44,16 @@ const POPUP_Y_MIN = 40
 const POPUP_Y_RANGE = 60
 const POPUP_LIFETIME_MS = 700
 
-let nextPopupId = 0
+const popupIdCounter = ref(0)
 const popups = ref<ScorePopup[]>([])
-let prevScore = props.playScore
-let popupTimers: ReturnType<typeof setTimeout>[] = []
+const prevScore = ref(props.playScore)
+const popupTimers = ref<ReturnType<typeof setTimeout>[]>([])
 
 // 前回のスコアを監視
 watch(() => props.playScore, (newScore) => {
-  if (newScore > prevScore) {
-    const delta = newScore - prevScore
-    const popupId = nextPopupId++
+  if (newScore > prevScore.value) {
+    const delta = newScore - prevScore.value
+    const popupId = popupIdCounter.value++
     // ポップアップを生成（ランダム位置）
     popups.value.push({
       id: popupId,
@@ -66,14 +66,14 @@ watch(() => props.playScore, (newScore) => {
     const timer = setTimeout(() => {
       popups.value = popups.value.filter(p => p.id !== popupId)
     }, POPUP_LIFETIME_MS)
-    popupTimers.push(timer)
+    popupTimers.value.push(timer)
   }
-  prevScore = newScore
+  prevScore.value = newScore
 })
 
 onUnmounted(() => {
-  for (const t of popupTimers) clearTimeout(t)
-  popupTimers.length = 0
+  for (const t of popupTimers.value) clearTimeout(t)
+  popupTimers.value.length = 0
 })
 </script>
 

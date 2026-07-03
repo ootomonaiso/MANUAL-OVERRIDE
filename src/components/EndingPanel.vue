@@ -446,7 +446,7 @@ onUnmounted(() => {
 }
 .contradiction-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--genre-accent, var(--green-dim)), var(--danger, #ff0040));
+  background: linear-gradient(90deg, var(--genre-accent, var(--green-dim)), var(--danger, #ff3333));
   border-radius: 3px;
   transition: width 0.6s ease;
 }

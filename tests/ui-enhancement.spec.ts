@@ -34,7 +34,7 @@ test.describe('UI Visual Enhancement (Issue #136)', () => {
     await expect(page.locator('[class*="hud-dist"]').first()).toBeVisible()
   })
 
-test('HUD にスコア加算ポップアップが表示される', async ({ page }) => {
+   test('HUD にスコア加算ポップアップが表示される', async ({ page }) => {
     await page.goto('/')
     await page.click('text=はじめる')
     await page.click('text=わかった、プレイする')
@@ -64,7 +64,13 @@ test('HUD にスコア加算ポップアップが表示される', async ({ page
     // ゲームを進行させて説明書更新をトリガー
     // 更新が来るまで待つ（最大20秒）
     const choicePanel = page.locator('[class*="choice-overlay"]').first()
-    const appeared = await choicePanel.isVisible({ timeout: 20000 }).catch(() => false)
+    let appeared = false
+    try {
+      await choicePanel.waitFor({ state: 'visible', timeout: 20000 })
+      appeared = true
+    } catch {
+      // タイムアウト = パネル未表示。非決定的な進行によるものでテストはパス
+    }
 
     if (appeared) {
       // 選択肢ボタンが2つ存在する
@@ -77,7 +83,6 @@ test('HUD にスコア加算ポップアップが表示される', async ({ page
       // ホバー後も可視であること
       await expect(firstBtn).toBeVisible()
     }
-    // パネルが表示されなくてもテストはパス（非決定的なゲーム進行による）
   })
 
   test('CSS 変数が正しく定義されている', async ({ page }) => {

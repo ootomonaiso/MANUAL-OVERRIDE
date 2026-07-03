@@ -62,8 +62,6 @@ UI コンポーネント（HUD・選択肢パネル・エンディング等）�
 | `src/App.vue` | ローディング画面統合・グローバルCSS削除 |
 | `tests/ui-enhancement.spec.ts` | **新規** - UIテスト（9件） |
 | `tests/unit/domain/genreTheme.test.ts` | **新規** - ジャンルテーマユニットテスト |
-| `tests/unit/setup.ts` | **新規** - vitest セットアップファイル |
-
 ## テスト結果
 
 - ユニットテスト: 34件 全件パス

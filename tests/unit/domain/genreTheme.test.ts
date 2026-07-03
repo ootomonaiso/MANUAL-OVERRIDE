@@ -28,8 +28,7 @@ describe('Genre Theme System (Issue #136)', () => {
     }
   })
 
-  it('plain テーマは定義されていない場合でも base ジャンルは動作する', () => {
-    // plain テーマが GENRE_THEME_COLORS に存在しなくても、base ジャンルの theme は 'plain'
+  it('base ジャンルの theme は plain である', () => {
     const baseGenre = GENRES.find(g => g.id === 'base')
     expect(baseGenre).toBeDefined()
     expect(baseGenre?.theme).toBe('plain')
