@@ -11,6 +11,8 @@ interface RhythmState {
   beatHazardInverted: boolean
   beatHits: number
   justWindowMs: number
+  // beat_hazardの再有効化を検出する（無効→有効のトランジションでbeatHazardInvertedをリセット）
+  prevBeatHazardActive: boolean
 }
 
 export class RhythmFeature implements FeatureSystem {
@@ -32,6 +34,7 @@ export class RhythmFeature implements FeatureSystem {
       beatHazardInverted: false,
       beatHits: 0,
       justWindowMs: RHYTHM_TUNING.justWindowSec * 1000,
+      prevBeatHazardActive: false,
     }
   }
 
@@ -52,17 +55,25 @@ export class RhythmFeature implements FeatureSystem {
     s.beatMarkers.forEach(m => { m.t -= dtMs })
     s.beatMarkers = s.beatMarkers.filter(m => m.t > 0)
 
+    // beat_hazard の再有効化を検出。無効→有効のトランジションで beatHazardInverted をリセット。
+    // これにより、無効期間中に進んだビートクロックの影響が再有効化時に反映されない。
+    const beatHazardActive = r.features.has('beat_hazard')
+    if (beatHazardActive && !s.prevBeatHazardActive) {
+      s.beatHazardInverted = false
+    }
+    s.prevBeatHazardActive = beatHazardActive
+
     if (s.nextBeat <= 0) {
       s.nextBeat += s.beatInterval
       s.beatCount++
 
-      if (r.features.has('beat_hazard')) {
+      if (beatHazardActive) {
         s.beatHazardInverted = s.beatCount % 2 === 0
         s.beatMarkers.push({ t: 400, x: Math.random() * 600 + 100, strength: 1 })
       }
     }
 
-    if (r.features.has('beat_hazard')) {
+    if (beatHazardActive) {
       world.setBeatHazardInverted(s.beatHazardInverted)
     }
 
