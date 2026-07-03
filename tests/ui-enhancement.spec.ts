@@ -34,7 +34,7 @@ test.describe('UI Visual Enhancement (Issue #136)', () => {
     await expect(page.locator('[class*="hud-dist"]').first()).toBeVisible()
   })
 
-   test('HUD にスコア加算ポップアップが表示される', async ({ page }) => {
+  test('HUD にスコア加算ポップアップが表示される', async ({ page }) => {
     await page.goto('/')
     await page.click('text=はじめる')
     await page.click('text=わかった、プレイする')
@@ -88,33 +88,6 @@ test.describe('UI Visual Enhancement (Issue #136)', () => {
   test('CSS 変数が正しく定義されている', async ({ page }) => {
     await page.goto('/')
 
-    // :root に必要な CSS 変数が定義されているか確認
-    const cssVars = await page.evaluate(() => {
-      const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-      let allCss = ''
-      styles.forEach(s => {
-        if (s.tagName === 'STYLE') allCss += s.textContent
-        else if (s.tagName === 'LINK') {
-          // External stylesheets are not accessible via JS, so we check computed properties
-        }
-      })
-      return allCss
-    })
-
-    // global.css から読み込まれた変数を確認
-    const rootStyle = await page.evaluate(() => {
-      const sheet = Array.from(document.styleSheets).find(s => s.href?.includes('global'))
-      if (!sheet) return ''
-      let css = ''
-      try {
-        for (const rule of sheet.cssRules) {
-          css += rule.cssText
-        }
-      } catch { /* CORS */ }
-      return css
-    })
-
-    // CSS 変数が定義されているか確認
     // getComputedStyle().getPropertyValue() は未定義でも空文字列を返すため、
     // trim して空でないことを確認する
     const hasGreenVar = await page.evaluate(() => {

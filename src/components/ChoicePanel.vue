@@ -269,11 +269,6 @@ onUnmounted(() => {
     -2px 0 0 var(--genre-accent, var(--green)) inset;
 }
 
-/* キーボードフォーカス */
-.choice-btn:focus-visible {
-  outline: 2px solid var(--genre-accent, var(--green));
-  outline-offset: 2px;
-}
 
 /* 確定エフェクト */
 .choice-btn.selected {
