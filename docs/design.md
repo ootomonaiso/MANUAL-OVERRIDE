@@ -74,8 +74,8 @@ src/
     gameBalance.ts            # 距離/スコア比率/投擲重み/難易度カーブ（config から再エクスポート）
     tunables.ts               # VFX・カメラ・スコアの調整値（config から再エクスポート）
     config.ts                 # GAME_CONFIG エントリポイント
-    config/                   # JSON設定ファイル群（19個）
-      genres.json             # 各ジャンル定義（閾値・有効機能・スコア式・21種+base）
+    config/                   # JSON設定ファイル群（21個）
+      genres.json             # テーマカラー等。ジャンル定義本体は genres/*.json（22種、base 含む）
       game_balance.json       # スコア比率/投擲重み/基本速度
       difficulty.json         # 難易度カーブ/アップデート距離
       physics.json            # プレイヤー物理定数
@@ -108,11 +108,11 @@ src/
     systems/                  # ジャンル機能のシステム（feature単位）
       ShootFeature.ts
       RhythmFeature.ts
-      MovementFeature.ts
+      MovementFeature.ts       # dash/wall_jump/vertical_scroll も統合（旧 ExtraMovementFeature）
       RpgFeature.ts
-      ExtraMovementFeature.ts
       PuzzleFeature.ts
       SpecialFeature.ts
+      TetrisFeature.ts
     throwEngine.ts            # 投擲フェーズの物理 + 投擲スコア
 
   composables/
@@ -127,7 +127,7 @@ src/
     EndingPanel.vue           # ジャンル別エンディング
     TutorialHints.vue         # 初心者向けヒント
 
-  genres/                     # ジャンルプラグイン（15種 + JSONプラグイン対応）
+  genres/                     # ジャンルプラグイン（16種 + JSONフォールバックプラグイン対応）
     BasePlugin.ts
     StgPlugin.ts
     RpgPlugin.ts
@@ -172,9 +172,9 @@ src/
 | `craft` | 作成・設置・積み上げ | tower_def / idle |
 | `speed` | 純粋速度・ダッシュ量 | racing / sports |
 
-### 3.2 ジャンル一覧（21種 + base）
+### 3.2 ジャンル一覧（22種 + base）
 
-> 閾値は `src/data/config/genres.json` に定義。変更時はこのファイルと同期すること。
+> 閾値は `src/data/genres/<id>.json`（1ジャンル1ファイル）に定義。変更時はこのファイルと同期すること。
 
 | ID | ラベル | 閾値 |
 |---|---|---|
@@ -198,6 +198,7 @@ src/
 | `aquatic` | 水中アドベンチャー | vertical:3 + aerial:3 + survive:4 |
 | `horror` | サバイバルホラー | survive:6 + stealth:4 |
 | `hack_slash` | ハックアンドスラッシュ | enemy:5 + combo:6 |
+| `tetris` | テトリス | combo:4 + craft:4 |
 
 ### 3.3 主要型のリファレンス
 
@@ -211,7 +212,7 @@ export type GenreId = string
 export type Phase = 'title' | 'tutorialIntro' | 'tutorial' | 'updating' | 'playing' | 'genreLocked' | 'throwing' | 'ending';
 
 // 機能フラグ（ジャンルが有効/無効化する挙動の単位）
-// 実際は string 型（union 型ではない）。定義は config/genres.json の enableFeatures に記載。
+// 実際は string 型（union 型ではない）。enableFeatures は src/data/genres/<id>.json に記載。
 export type FeatureId = string
 // 既知の FeatureId: shoot / three_way / charge_shot / spread_shot / bomb / enemy_hp / boss
 //   auto_run / slow_precise / double_jump / long_air / dash / wall_jump / slide / gravity_flip / vertical_scroll
@@ -219,6 +220,7 @@ export type FeatureId = string
 //   grid_stop / puzzle_solve
 //   beat_hazard / just_input / beat_dash
 //   stealth_mode / time_bonus / tower / color_touch
+//   tetris_mode
 
 export interface ManualVersion {
   version: string;                 // "1.0" 等
@@ -272,9 +274,9 @@ export interface FinalScore { play: number; throw: number; total: number; }
 - 各 `Choice.genreParams` が分岐の核。プレイヤーには方向性を見せない。
 - 末端バージョン（`choices` が空）に到達 → Phase C 収束判定へ。
 
-### 4.2 ジャンル定義（`data/config/genres.json`）
-- 21ジャンル + base を定義。
-- `runner` / `stg` が完全実装、他は段階的に有効化。
+### 4.2 ジャンル定義（`data/genres/*.json`）
+- 22ジャンル + base を定義。
+- 16ジャンルが TSプラグイン実装、残り6ジャンルは JSONフォールバックで描画。
 
 ### 4.3 スコア式 DSL（`scoreFormula`）
 ジャンルごとのプレイスコア式を文字列で持ち、安全な評価器（`evalScoreFormula`）で計算する。
@@ -364,13 +366,13 @@ featuresFor(genreId, genres): { enable: Set, disable: Set }
 ### 6.4 `game/systems/`（feature 単位の差し込み）
 | system | 担当 feature | 効果 |
 |---|---|---|
-| ShootFeature | shoot, three_way, enemy_hp | 弾発射・敵HP・撃破コンボ |
-| MovementFeature | auto_run, slow_precise | 自動前進 / 低速精密 |
+| ShootFeature | shoot, three_way, charge_shot, spread_shot, bomb, enemy_hp | 弾発射・敵HP・撃破コンボ |
+| MovementFeature | auto_run, slow_precise, double_jump, long_air, dash, wall_jump, vertical_scroll | 移動全般・ダッシュ・壁ジャンプ・縦スクロール（旧 ExtraMovementFeature 統合） |
 | RhythmFeature | beat_hazard, just_input, beat_dash | BPM同期の危険色反転・ジャスト入力加点 |
 | RpgFeature | hp, exp, item_pickup | HP・経験値・アイテム収集 |
-| ExtraMovementFeature | dash, wall_jump, vertical_scroll | ダッシュ・壁ジャンプ・縦スクロール |
 | PuzzleFeature | grid_stop, puzzle_solve | スクロール停止・配置パズル |
 | SpecialFeature | color_touch, stealth_mode, time_bonus, tower, boss | 安全色接触・ステルス・時間ボーナス・タワー・ボス |
+| TetrisFeature | tetris_mode | テトリス（グリッド・テトリミノ・ライン消去） |
 
 ### 6.5 `game/throwEngine.ts`
 - 入力：ドラッグ方向（角度）+ パワーゲージ（リリース時の値）。
@@ -414,8 +416,8 @@ featuresFor(genreId, genres): { enable: Set, disable: Set }
 | **M2: 説明書＋2択** | ManualPanel/ChoicePanel、3段階更新、controls/hazards 動的切替＋差分演出 | ✅ 完了 |
 | **M3: ジャンル収束 + RUNNER/STG** | genreResolver、shoot/autorun フィーチャー、説明書テーマ切替、scoreFormula 評価 | ✅ 完了 (MVP) |
 | **M4: 投擲＋エンディング** | throwEngine、ThrowOverlay、scoreCalc 合算、EndingPanel | ✅ 完了 |
-| **M5: 残りジャンル** | 15 ジャンルプラグイン + JSON プラグイン対応、rhythm/rpg/puzzle/survival 等のフィーチャー | ✅ 完了 |
-| **M6: 学習ルール + 仕上げ** | LearningSystem 統合、難易度調整、無限選択肢、offline ビルド検証 | ⚠️ 一部完了（LearningEffect 未実装） |
+| **M5: 残りジャンル** | 16 ジャンルプラグイン + JSON フォールバック対応、rhythm/rpg/puzzle/survival/tetris 等のフィーチャー | ✅ 完了 |
+| **M6: 学習ルール + 仕上げ** | LearningSystem 統合（`evaluateLearningRules` を sideScroller に接続）、難易度調整、無限選択肢、offline ビルド検証 | ✅ 完了 |
 
 ---
 
@@ -431,6 +433,6 @@ featuresFor(genreId, genres): { enable: Set, disable: Set }
 | 項目 | 状態 |
 |---|---|
 | 説明書の差分演出は CSS アニメで足りるか | ✅ 決定: ManualPanel.vue で差分強調・取り消し線・手書き風フェードインを実装済み |
-| PUZZLE のスクロール停止時、横スクロールの「面影」をどう残すか | ⚠️ 未解決: PuzzleFeature の実装継続中 |
+| PUZZLE のスクロール停止時、横スクロールの「面影」をどう残すか | ✅ 実装済み: PuzzleFeature が move/solve フェーズを交互に切替（solve 中のみ停止） |
 | 学習ルールと2択分岐が競合した時の優先順位 | ✅ 決定: 学習ルールが後勝ちで上書き |
 | BGM/SE を入れるか | ⚠️ 部分実装: SoundManager.ts は実装済み、実際の音声ファイルは未配置 |
