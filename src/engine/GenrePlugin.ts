@@ -112,11 +112,11 @@ export interface GenrePlugin {
   readonly scrollSpeedBonus?: number
 
   /**
-   * ジャンル固有のハザードスポーン密度設定。
-   * 省略時は game_balance.json の HAZARD_SPAWN を使用する。
-   * Bullet Hell や Survival など敵密度を調整したいジャンルで使用する。
+   * 縦スクロールモードでも drawFarLayer / drawMidLayer を呼ぶか（省略時 false）。
+   * 縦モードはデフォルトで空グラデーション＋星のみを描き遠景・中景を省略するが、
+   * このフラグを true にしたジャンルだけ遠景・中景レイヤーを描画する。
    */
-  readonly spawnDensity?: import('../domain/types').SpawnDensityConfig
+  readonly verticalBackgroundLayers?: boolean
 
   // ─── 描画フック（必須） ───────────────────────────────────────────
   /**
@@ -187,8 +187,9 @@ export interface GenrePlugin {
   ): boolean | void
 
   /**
-   * 地面より手前に追加の前景レイヤーを描くフック。
-   * パーティクルより前、プレイヤーより後に描画される。
+   * すべてのワールド要素より手前に追加の前景レイヤーを描くフック。
+   * プレイヤー描画の後・shake 変換内で呼ばれる（走査線・ビネット・HUD枠などの画面装飾に使う）。
+   * @param offsetX 現在のカメラX（前景パララックスに使用）
    * 省略可。
    */
   drawForeground?(

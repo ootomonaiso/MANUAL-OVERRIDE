@@ -47,7 +47,11 @@ export class ShootFeature implements FeatureSystem {
     ctx.fillStyle = '#ffff00'
     for (const b of world.bullets) {
       const sx = isVertical ? b.x : b.x - world.cameraX
-      ctx.fillRect(sx - 4, b.y - 2, 8, 4)
+      if (isVertical) {
+        ctx.fillRect(sx - 2, b.y - 4, 4, 8)
+      } else {
+        ctx.fillRect(sx - 4, b.y - 2, 8, 4)
+      }
     }
     ctx.restore()
   }
@@ -80,11 +84,11 @@ export class ShootFeature implements FeatureSystem {
 
   private _spawnVerticalBullets(world: MutableWorld): void {
     const { player: p, rules } = world
-    const bx = p.x + SHOOT.bulletWidth / 2
+    const bx = p.x + p.w / 2
     const by = p.y - SHOOT.bulletHeight
     const spd = SHOOT.bulletSpeed
 
-    if (rules.features.has('three_way')) {
+    if (rules.features.has('three_way') || rules.features.has('spread_shot')) {
       this.state.bullets.push(
         new Bullet(bx, by, 0, -spd),
         new Bullet(bx, by, -spd * SHOOT.threeWayYRatio, -spd * SHOOT.threeWaySpeedRatio),
@@ -122,7 +126,9 @@ export class ShootFeature implements FeatureSystem {
     for (const b of this.state.bullets) {
       b.x += b.vx * dt
       b.y += b.vy * dt
-      if (isVertical ? b.y < -100 : (b.x > viewRight || b.x < viewLeft)) {
+      if (isVertical
+        ? (b.y < -100 || b.x < viewLeft || b.x > viewRight)
+        : (b.x > viewRight || b.x < viewLeft)) {
         b.alive = false
       }
     }

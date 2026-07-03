@@ -56,10 +56,12 @@ export class MyGenrePlugin implements GenrePlugin {
 ### 登録
 
 ```typescript
-// src/genres/index.ts に1行追加するだけ
-import { MyGenrePlugin } from './MyGenrePlugin'
-registerGenre(new MyGenrePlugin())
+// ファイル末尾で default export するだけ。
+// src/genres/index.ts が import.meta.glob で自動収集するため index.ts の編集は不要。
+export default new MyGenrePlugin()
 ```
+
+> `BasePlugin.ts` のように複数クラスを `export default [new A(), new B()]` の配列で返すこともできる。
 
 ---
 
@@ -148,7 +150,7 @@ readonly scrollSpeedBonus = 50
 | `onGenreLocked(world)` | ジャンル確定直後に1回 | BGM変更・初期エフェクト |
 | `onUpdate(world, dt)` | 毎フレーム | ジャンル全体の継続処理 |
 | `drawHazard(ctx, hazard, sx, world)` | ハザード描画前 | カスタムハザード外見（`true` 返却でデフォルト描画をスキップ） |
-| `drawForeground(ctx, offsetX, W, H, gY)` | パーティクルの後 | 前景レイヤー（波・霧など） |
+| `drawForeground(ctx, offsetX, W, H, gY)` | プレイヤー描画の後（shake変換内） | 前景レイヤー（波・霧・走査線・HUD枠など） |
 | `drawGenreHUD(ctx, world, W, H)` | フレーム描画の最後 | ボスHPバー・タワー残数など |
 | `onPlayerJump(world)` | ジャンプの瞬間 | ジャンプSEキュー・エフェクト |
 | `onPlayerLand(world)` | 着地の瞬間 | ランディングエフェクト |
@@ -169,6 +171,10 @@ drawHazard(ctx, hazard, sx, world): boolean {
   return true  // true = デフォルト描画をスキップ
 }
 ```
+
+### 縦スクロールモードの背景レイヤー
+
+縦スクロール（`scrollAxis === 'y'`）では既定で空グラデーション＋星フィールドのみが描かれ、`drawFarLayer` / `drawMidLayer` は呼ばれない。縦モードでも遠景・中景を描きたいジャンルは `readonly verticalBackgroundLayers = true` を宣言する。true のときエンジンは `distance * parallax`（far / mid）を `offsetX` として両レイヤーに渡す。`aerial_stg`（都市上空のトップビュー）が利用例で、`offsetX` を横ではなく Y 方向スクロール量として使う。
 
 ---
 

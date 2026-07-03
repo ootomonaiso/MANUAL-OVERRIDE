@@ -1,528 +1,111 @@
 {
-  "$comment": "ジャンル定義テーブル（21エントリ）。thresholdsはカードシステム(5ラウンド)で収束するよう調整済み。",
+  "$comment": "テーマカラーマップのみ。genres配列は使われないため削除済み（実データは src/data/genres/*.json）",
   "section": "genres",
   "themeColors": {
-    "stg":        { "accent": "#1a66ff", "border": "#1a66ff", "hint": "rgba(168,216,255,0.5)",  "bg": "#000d1a", "glow": "rgba(26,102,255,0.25)" },
-    "rpg":        { "accent": "#c4960a", "border": "#8b6100", "hint": "rgba(196,150,10,0.5)",   "bg": "#1a1100", "glow": "rgba(196,150,10,0.25)",  "font": "'Georgia', serif" },
-    "puzzle":     { "accent": "#222222", "border": "#444444", "hint": "rgba(80,80,80,0.5)",     "bg": "#0d0d0d", "glow": "rgba(80,80,80,0.15)",    "font": "'Courier New', monospace" },
-    "rhythm":     { "accent": "#ee88ff", "border": "#9900ff", "hint": "rgba(204,136,255,0.5)",  "bg": "#0d0019", "glow": "rgba(153,0,255,0.25)" },
-    "horror":     { "accent": "#cc4444", "border": "#880000", "hint": "rgba(204,68,68,0.4)",    "bg": "#1a0000", "glow": "rgba(204,68,68,0.25)" },
-    "aquatic":    { "accent": "#88ccff", "border": "#0088bb", "hint": "rgba(136,204,255,0.4)",  "bg": "#00141a", "glow": "rgba(136,204,255,0.25)" },
-    "runner":     { "accent": "#ff3333", "border": "#cc1111", "hint": "rgba(255,50,50,0.45)",   "bg": "#ffffff", "glow": "rgba(255,40,40,0.2)",    "font": "Impact, 'Arial Black', sans-serif" },
-    "stealth":    { "accent": "#666666", "border": "#333333", "hint": "rgba(80,80,80,0.25)",    "bg": "#050505", "glow": "rgba(50,50,50,0.1)",     "font": "'Courier New', monospace" },
-    "racing":     { "accent": "#ff6600", "border": "#cc4400", "hint": "rgba(255,100,0,0.5)",    "bg": "#100800", "glow": "rgba(255,80,0,0.25)",    "font": "Impact, 'Arial Black', sans-serif" },
-    "platformer": { "accent": "#ffcc00", "border": "#0055dd", "hint": "rgba(0,100,220,0.45)",   "bg": "#001a3a", "glow": "rgba(0,80,200,0.2)" },
-    "dungeon":    { "accent": "#c87020", "border": "#6a3800", "hint": "rgba(200,100,30,0.4)",   "bg": "#0a0600", "glow": "rgba(180,80,0,0.2)",     "font": "'Georgia', serif" },
-    "hack_slash": { "accent": "#ff4444", "border": "#880000", "hint": "rgba(220,50,50,0.4)",    "bg": "#100000", "glow": "rgba(200,0,0,0.25)" },
-    "survival":   { "accent": "#88bb55", "border": "#445522", "hint": "rgba(100,160,60,0.4)",   "bg": "#050a05", "glow": "rgba(80,130,40,0.2)" },
-    "tetris":     { "accent": "#a000f0", "border": "#a000f0", "hint": "rgba(160,0,240,0.5)",    "bg": "#0a0a0a", "glow": "rgba(160,0,240,0.25)",   "font": "'Courier New', monospace" },
-    "glitch":     { "accent": "#ff0040", "border": "#ff0040", "hint": "rgba(255,0,64,0.3)",     "bg": "#0a0a0a", "glow": "rgba(255,0,64,0.15)",    "font": "'Courier New', monospace" }
-  },
-  "genres": [
-    {
-      "id": "base",
-      "label": "横スクロールアクション",
-      "thresholds": {},
-      "enableFeatures": ["auto_run"],
-      "disableFeatures": [],
-      "scoreFormula": "distance * 0.8",
-      "manualReveal": "",
-      "theme": "plain",
-      "bgColor": "#1a1a2e",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 1600,
-      "endingFlavor": "",
-      "bgm": { "src": "bgm/base.ogg", "loop": true, "volume": 0.4, "fadeInMs": 800 }
+    "stg": {
+      "accent": "#1a66ff",
+      "border": "#1a66ff",
+      "hint": "rgba(168,216,255,0.5)",
+      "bg": "#000d1a",
+      "glow": "rgba(26,102,255,0.25)"
     },
-    {
-      "id": "runner",
-      "label": "エンドレスランナー",
-      "thresholds": {"tempo": 8},
-      "enableFeatures": ["auto_run", "double_jump", "long_air"],
-      "disableFeatures": ["grid_stop", "puzzle_solve"],
-      "scoreFormula": "distance * 1.2 + survivedSec * 8 + combo * 50",
-      "manualReveal": "これはエンドレスランナーになりました。走り続けることが目的です。",
-      "theme": "runner",
-      "bgColor": "#1a1a2e",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたはただ走り続けることを選んだ。説明書を読む必要などなかった。",
-      "bgm": { "src": "bgm/runner.ogg", "loop": true, "volume": 0.55, "fadeInMs": 1200 }
+    "rpg": {
+      "accent": "#c4960a",
+      "border": "#8b6100",
+      "hint": "rgba(196,150,10,0.5)",
+      "bg": "#1a1100",
+      "glow": "rgba(196,150,10,0.25)",
+      "font": "'Georgia', serif"
     },
-    {
-      "id": "stg",
-      "label": "シューティングゲーム",
-      "thresholds": {"range": 3, "enemy": 6},
-      "enableFeatures": ["shoot", "three_way", "enemy_hp"],
-      "disableFeatures": ["grid_stop", "puzzle_solve"],
-      "scoreFormula": "kills * 120 + distance * 0.5 + combo * 80",
-      "manualReveal": "これはシューティングゲームになりました。敵を倒してください。",
-      "theme": "stg",
-      "bgColor": "#0d0d1a",
-      "environment": "space",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown",
-        "shoot": "z"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたはすべてを撃ち抜いた。説明書は弾除けにでも使えばよかった。",
-      "bgm": { "src": "bgm/stg.ogg", "loop": true, "volume": 0.6, "fadeInMs": 1500 }
+    "puzzle": {
+      "accent": "#222222",
+      "border": "#444444",
+      "hint": "rgba(80,80,80,0.5)",
+      "bg": "#0d0d0d",
+      "glow": "rgba(80,80,80,0.15)",
+      "font": "'Courier New', monospace"
     },
-    {
-      "id": "rpg",
-      "label": "ロールプレイングゲーム",
-      "thresholds": {"growth": 8},
-      "enableFeatures": ["hp", "exp", "item_pickup", "slow_precise"],
-      "disableFeatures": ["auto_run", "beat_hazard"],
-      "scoreFormula": "exp * 2 + kills * 60 + distance * 0.3",
-      "manualReveal": "これはRPGになりました。成長することが目的です。",
-      "theme": "rpg",
-      "bgColor": "#1a1200",
-      "environment": "dungeon",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたは強くなった。説明書もいつしか経典になっていた。",
-      "bgm": { "src": "bgm/rpg.ogg", "loop": true, "volume": 0.5, "fadeInMs": 2000 }
+    "rhythm": {
+      "accent": "#ee88ff",
+      "border": "#9900ff",
+      "hint": "rgba(204,136,255,0.5)",
+      "bg": "#0d0019",
+      "glow": "rgba(153,0,255,0.25)"
     },
-    {
-      "id": "puzzle",
-      "label": "パズルゲーム",
-      "thresholds": {"combo": 6},
-      "enableFeatures": ["grid_stop"],
-      "disableFeatures": ["auto_run", "shoot", "beat_hazard"],
-      "scoreFormula": "combo * 200 + survivedSec * 3",
-      "manualReveal": "これはパズルゲームになりました。正解を考えてください。",
-      "theme": "puzzle",
-      "bgColor": "#f0f0f0",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたはすべての答えを見つけた。説明書に書いてあったことは間違いではなかった。",
-      "bgm": { "src": "bgm/puzzle.ogg", "loop": true, "volume": 0.45, "fadeInMs": 1000 }
+    "horror": {
+      "accent": "#cc4444",
+      "border": "#880000",
+      "hint": "rgba(204,68,68,0.4)",
+      "bg": "#1a0000",
+      "glow": "rgba(204,68,68,0.25)"
     },
-    {
-      "id": "rhythm",
-      "label": "リズムゲーム",
-      "thresholds": {"tempo": 6, "rhythm": 6},
-      "enableFeatures": ["beat_hazard", "just_input", "beat_dash"],
-      "disableFeatures": ["grid_stop"],
-      "scoreFormula": "beatHits * 150 + combo * 100 + distance * 0.4",
-      "manualReveal": "これはリズムゲームになりました。音に合わせてください。",
-      "theme": "rhythm",
-      "bgColor": "#1a0030",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたはリズムを刻んだ。説明書のページをめくる音さえも拍子になった。",
-      "bgm": { "src": "bgm/rhythm.ogg", "loop": true, "volume": 0.65, "fadeInMs": 800 }
+    "aquatic": {
+      "accent": "#88ccff",
+      "border": "#0088bb",
+      "hint": "rgba(136,204,255,0.4)",
+      "bg": "#00141a",
+      "glow": "rgba(136,204,255,0.25)"
     },
-    {
-      "id": "aerial_stg",
-      "label": "縦スクロールシューティング",
-      "thresholds": {"vertical": 3, "range": 3, "enemy": 4},
-      "enableFeatures": ["shoot", "vertical_scroll", "enemy_hp", "spread_shot"],
-      "disableFeatures": ["grid_stop", "puzzle_solve", "auto_run"],
-      "scoreFormula": "kills * 130 + combo * 90 + survivedSec * 3",
-      "manualReveal": "これは縦スクロールシューティングになりました。上を目指してください。",
-      "theme": "stg",
-      "bgColor": "#000015",
-      "environment": "sky",
-      "scrollDirection": "vertical",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown",
-        "shoot": "z"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたは空へと昇った。説明書は地上に落ちていった。",
-      "bgm": { "src": "bgm/aerial_stg.ogg", "loop": true, "volume": 0.6, "fadeInMs": 1200 }
+    "runner": {
+      "accent": "#ff3333",
+      "border": "#cc1111",
+      "hint": "rgba(255,50,50,0.45)",
+      "bg": "#ffffff",
+      "glow": "rgba(255,40,40,0.2)",
+      "font": "Impact, 'Arial Black', sans-serif"
     },
-    {
-      "id": "bullet_hell",
-      "label": "弾幕シューティング",
-      "thresholds": {"vertical": 4, "enemy": 8},
-      "enableFeatures": ["shoot", "spread_shot", "enemy_hp", "vertical_scroll"],
-      "disableFeatures": ["grid_stop", "auto_run", "slow_precise"],
-      "scoreFormula": "kills * 80 + combo * 150 + survivedSec * 10 + accuracy * 500",
-      "manualReveal": "これは弾幕シューティングになりました。弾の隙間を縫ってください。",
-      "theme": "stg",
-      "bgColor": "#000010",
-      "environment": "space",
-      "scrollDirection": "vertical",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown",
-        "shoot": "z"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたは無数の弾を避け続けた。説明書の活字も弾丸に見えた。",
-      "bgm": { "src": "bgm/bullet_hell.ogg", "loop": true, "volume": 0.6, "fadeInMs": 600 }
+    "stealth": {
+      "accent": "#666666",
+      "border": "#333333",
+      "hint": "rgba(80,80,80,0.25)",
+      "bg": "#050505",
+      "glow": "rgba(50,50,50,0.1)",
+      "font": "'Courier New', monospace"
     },
-    {
-      "id": "survival",
-      "label": "サバイバルゲーム",
-      "thresholds": {"survive": 6, "growth": 6},
-      "enableFeatures": ["hp", "item_pickup", "shield"],
-      "disableFeatures": ["auto_run", "beat_hazard", "grid_stop"],
-      "scoreFormula": "survivedSec * 15 + itemsCollected * 80 + distance * 0.2",
-      "manualReveal": "これはサバイバルゲームになりました。生き延びてください。",
-      "theme": "survival",
-      "bgColor": "#0a1a0a",
-      "environment": "forest",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたは生き延びた。説明書は焚き火の燃料になっていた。",
-      "bgm": { "src": "bgm/survival.ogg", "loop": true, "volume": 0.45, "fadeInMs": 1800 }
+    "racing": {
+      "accent": "#ff6600",
+      "border": "#cc4400",
+      "hint": "rgba(255,100,0,0.5)",
+      "bg": "#100800",
+      "glow": "rgba(255,80,0,0.25)",
+      "font": "Impact, 'Arial Black', sans-serif"
     },
-    {
-      "id": "stealth_action",
-      "label": "ステルスアクション",
-      "thresholds": {"stealth": 7},
-      "enableFeatures": ["stealth_mode", "slow_precise"],
-      "disableFeatures": ["shoot", "auto_run", "beat_hazard", "boss"],
-      "scoreFormula": "stealthBonus * 0.5 + survivedSec * 10 + distance * 0.4",
-      "manualReveal": "これはステルスアクションになりました。見つからないでください。",
-      "theme": "stealth",
-      "bgColor": "#050505",
-      "environment": "city",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたは気配を消した。説明書も読まれなかった。",
-      "bgm": { "src": "bgm/stealth_action.ogg", "loop": true, "volume": 0.35, "fadeInMs": 2500 }
+    "platformer": {
+      "accent": "#ffcc00",
+      "border": "#0055dd",
+      "hint": "rgba(0,100,220,0.45)",
+      "bg": "#001a3a",
+      "glow": "rgba(0,80,200,0.2)"
     },
-    {
-      "id": "racing",
-      "label": "レーシングゲーム",
-      "thresholds": {"speed": 4, "tempo": 6},
-      "enableFeatures": ["auto_run", "dash", "time_bonus"],
-      "disableFeatures": ["grid_stop", "puzzle_solve", "beat_hazard", "slow_precise"],
-      "scoreFormula": "distance * 2.0 + survivedSec * 3 + combo * 30",
-      "manualReveal": "これはレーシングゲームになりました。最速を目指してください。",
-      "theme": "racing",
-      "bgColor": "#0f0a00",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown",
-        "dash": "Shift"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたは誰よりも速かった。説明書を読む暇などなかった。",
-      "bgm": { "src": "bgm/racing.ogg", "loop": true, "volume": 0.65, "fadeInMs": 600 }
+    "dungeon": {
+      "accent": "#c87020",
+      "border": "#6a3800",
+      "hint": "rgba(200,100,30,0.4)",
+      "bg": "#0a0600",
+      "glow": "rgba(180,80,0,0.2)",
+      "font": "'Georgia', serif"
     },
-    {
-      "id": "platformer",
-      "label": "プラットフォームアクション",
-      "thresholds": {"aerial": 5, "combo": 4},
-      "enableFeatures": ["double_jump", "long_air", "wall_jump"],
-      "disableFeatures": ["auto_run", "grid_stop", "beat_hazard"],
-      "scoreFormula": "combo * 150 + distance * 0.8 + survivedSec * 5",
-      "manualReveal": "これはプラットフォームアクションになりました。飛び跳ねてください。",
-      "theme": "platformer",
-      "bgColor": "#001f3f",
-      "environment": "sky",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたは高みへ跳んだ。説明書の紙は踏み台になった。",
-      "bgm": { "src": "bgm/platformer.ogg", "loop": true, "volume": 0.55, "fadeInMs": 1000 }
+    "hack_slash": {
+      "accent": "#ff4444",
+      "border": "#880000",
+      "hint": "rgba(220,50,50,0.4)",
+      "bg": "#100000",
+      "glow": "rgba(200,0,0,0.25)"
     },
-    {
-      "id": "dungeon",
-      "label": "ダンジョン探索",
-      "thresholds": {"growth": 6, "craft": 5},
-      "enableFeatures": ["hp", "exp", "item_pickup", "slow_precise"],
-      "disableFeatures": ["auto_run", "beat_hazard", "vertical_scroll"],
-      "scoreFormula": "exp * 3 + kills * 70 + itemsCollected * 60 + distance * 0.2",
-      "manualReveal": "これはダンジョン探索になりました。奥へ進んでください。",
-      "theme": "dungeon",
-      "bgColor": "#0a0a00",
-      "environment": "dungeon",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたは迷宮の奥底へたどり着いた。説明書は地図代わりになっていた。",
-      "bgm": { "src": "bgm/dungeon.ogg", "loop": true, "volume": 0.45, "fadeInMs": 2000 }
+    "survival": {
+      "accent": "#88bb55",
+      "border": "#445522",
+      "hint": "rgba(100,160,60,0.4)",
+      "bg": "#050a05",
+      "glow": "rgba(80,130,40,0.2)"
     },
-    {
-      "id": "tower_def",
-      "label": "タワーディフェンス",
-      "thresholds": {"craft": 6, "enemy": 6},
-      "enableFeatures": ["tower", "enemy_hp", "item_pickup"],
-      "disableFeatures": ["auto_run", "beat_hazard", "vertical_scroll", "stealth_mode"],
-      "scoreFormula": "kills * 90 + combo * 110 + survivedSec * 8",
-      "manualReveal": "これはタワーディフェンスになりました。陣地を守ってください。",
-      "theme": "puzzle",
-      "bgColor": "#0a0f0a",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたの要塞は崩れなかった。説明書は防壁の一部になっていた。",
-      "bgm": { "src": "bgm/tower_def.ogg", "loop": true, "volume": 0.5, "fadeInMs": 1500 }
-    },
-    {
-      "id": "sports",
-      "label": "スポーツゲーム",
-      "thresholds": {"speed": 4, "rhythm": 5},
-      "enableFeatures": ["dash", "time_bonus", "just_input"],
-      "disableFeatures": ["grid_stop", "puzzle_solve", "enemy_hp", "stealth_mode"],
-      "scoreFormula": "combo * 180 + distance * 1.0 + beatHits * 80",
-      "manualReveal": "これはスポーツゲームになりました。記録を更新してください。",
-      "theme": "rhythm",
-      "bgColor": "#001500",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown",
-        "dash": "Shift"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたは新記録を打ち立てた。説明書はルールブックになっていた。",
-      "bgm": { "src": "bgm/sports.ogg", "loop": true, "volume": 0.6, "fadeInMs": 700 }
-    },
-    {
-      "id": "idle",
-      "label": "放置ゲーム",
-      "thresholds": {"craft": 7},
-      "enableFeatures": ["item_pickup", "exp", "tower"],
-      "disableFeatures": ["auto_run", "shoot", "beat_hazard", "boss", "stealth_mode"],
-      "scoreFormula": "itemsCollected * 200 + exp * 4 + survivedSec * 5",
-      "manualReveal": "これは放置ゲームになりました。積み上げてください。",
-      "theme": "puzzle",
-      "bgColor": "#f5f5f0",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたは何もしなかった。それでも積み上がっていった。説明書はほこりをかぶった。",
-      "bgm": { "src": "bgm/idle.ogg", "loop": true, "volume": 0.3, "fadeInMs": 3000 }
-    },
-    {
-      "id": "bullet_runner",
-      "label": "弾幕ランナー",
-      "thresholds": {"tempo": 7, "enemy": 6},
-      "enableFeatures": ["auto_run", "shoot", "enemy_hp"],
-      "disableFeatures": ["grid_stop", "puzzle_solve", "slow_precise", "stealth_mode"],
-      "scoreFormula": "kills * 100 + distance * 1.5 + combo * 60",
-      "manualReveal": "これは弾幕ランナーになりました。走りながら戦ってください。",
-      "theme": "stg",
-      "bgColor": "#100010",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown",
-        "shoot": "z"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたは走りながら撃ち続けた。説明書は読む間もなかった。",
-      "bgm": { "src": "bgm/bullet_runner.ogg", "loop": true, "volume": 0.65, "fadeInMs": 800 }
-    },
-    {
-      "id": "arena",
-      "label": "アリーナバトル",
-      "thresholds": {"enemy": 7, "combo": 5},
-      "enableFeatures": ["shoot", "enemy_hp", "boss", "dash"],
-      "disableFeatures": ["auto_run", "grid_stop", "puzzle_solve", "stealth_mode"],
-      "scoreFormula": "kills * 110 + bossKills * 500 + combo * 130",
-      "manualReveal": "これはアリーナバトルになりました。全てを倒してください。",
-      "theme": "hack_slash",
-      "bgColor": "#0f0000",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown",
-        "shoot": "z",
-        "dash": "Shift"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたは闘技場の覇者になった。説明書は戦利品として飾られた。",
-      "bgm": { "src": "bgm/arena.ogg", "loop": true, "volume": 0.7, "fadeInMs": 500 }
-    },
-    {
-      "id": "aquatic",
-      "label": "水中アドベンチャー",
-      "thresholds": {"vertical": 3, "aerial": 3, "survive": 4},
-      "enableFeatures": ["hp", "item_pickup", "slow_precise"],
-      "disableFeatures": ["auto_run", "shoot", "boss", "beat_hazard"],
-      "scoreFormula": "distance * 0.8 + itemsCollected * 100 + survivedSec * 12",
-      "manualReveal": "これは水中アドベンチャーになりました。深海を探索してください。",
-      "theme": "aquatic",
-      "bgColor": "#000f2a",
-      "environment": "ocean",
-      "scrollDirection": "vertical",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたは深淵へ到達した。説明書のインクは水に滲んで消えた。",
-      "bgm": { "src": "bgm/aquatic.ogg", "loop": true, "volume": 0.5, "fadeInMs": 2000 }
-    },
-    {
-      "id": "horror",
-      "label": "サバイバルホラー",
-      "thresholds": {"survive": 6, "stealth": 5},
-      "enableFeatures": ["hp", "stealth_mode", "slow_precise"],
-      "disableFeatures": ["auto_run", "shoot", "beat_hazard", "boss"],
-      "scoreFormula": "survivedSec * 20 + stealthBonus * 0.8 + deaths * -200",
-      "manualReveal": "これはサバイバルホラーになりました。正気を保ってください。",
-      "theme": "horror",
-      "bgColor": "#020202",
-      "environment": "dungeon",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたは夜明けを迎えた。説明書には見てはいけないことが書いてあった。",
-      "bgm": { "src": "bgm/horror.ogg", "loop": true, "volume": 0.4, "fadeInMs": 3000 }
-    },
-    {
-      "id": "hack_slash",
-      "label": "ハックアンドスラッシュ",
-      "thresholds": {"enemy": 5, "combo": 7},
-      "enableFeatures": ["shoot", "enemy_hp", "exp", "dash", "boss"],
-      "disableFeatures": ["grid_stop", "puzzle_solve", "stealth_mode", "slow_precise"],
-      "scoreFormula": "kills * 90 + maxCombo * 200 + exp * 2 + bossKills * 400",
-      "manualReveal": "これはハックアンドスラッシュになりました。コンボを繋いでください。",
-      "theme": "hack_slash",
-      "bgColor": "#150000",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown",
-        "shoot": "z",
-        "dash": "Shift"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたはコンボを途切れさせなかった。説明書は斬られて散った。",
-      "bgm": { "src": "bgm/hack_slash.ogg", "loop": true, "volume": 0.65, "fadeInMs": 600 }
-    },
-    {
-      "id": "tetris",
-      "label": "テトリス",
-      "thresholds": {"combo": 4, "craft": 4},
-      "enableFeatures": ["tetris_mode"],
-      "disableFeatures": ["auto_run", "shoot", "beat_hazard", "boss", "stealth_mode", "slow_precise"],
-      "scoreFormula": "combo * 300 + survivedSec * 5 + distance * 0.1",
-      "manualReveal": "これはテトリスになりました。ブロックを積み上げてください。",
-      "theme": "tetris",
-      "bgColor": "#0a0a0a",
-      "scrollDirection": "none",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 0,
-      "endingFlavor": "あなたはブロックを積み重ねた。説明書もその塔の一部になった。"
-    },
-    {
-      "id": "glitch",
-      "label": "壊れたゲーム",
-      "thresholds": {},
-      "enableFeatures": ["movement"],
-      "disableFeatures": [],
-      "scoreFormula": "distance * 0.1 + survivedSec * 2",
-      "manualReveal": "説明書が壊れました。もう何をすべきか分かりません。",
-      "theme": "glitch",
-      "bgColor": "#0a0a0a",
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight",
-        "moveUp": "ArrowUp",
-        "moveDown": "ArrowDown"
-      },
-      "gravity": 1600,
-      "endingFlavor": "あなたが選んだ矛盾が、ゲームそのものを壊しました。これは誰も予想しなかった結末です。"
+    "tetris": {
+      "accent": "#a000f0",
+      "border": "#a000f0",
+      "hint": "rgba(160,0,240,0.5)",
+      "bg": "#0a0a0a",
+      "glow": "rgba(160,0,240,0.25)",
+      "font": "'Courier New', monospace"
     }
-  ]
+  }
 }

@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s http://localhost:5178/)",
+      "Bash(curl -s http://localhost:5174)",
+      "Bash(start \"http://localhost:5174\")",
+      "Bash(tasklist)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "timeout": 90,
+            "statusMessage": "typecheck + lint を実行中...",
+            "command": "if ! OUTPUT=$(npm run typecheck 2>&1 && npm run lint 2>&1); then printf '%s' \"$OUTPUT\" | node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{console.log(JSON.stringify({decision:'block',reason:'typecheck/lint failed:\\n'+d}))})\"; else echo '{}'; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
