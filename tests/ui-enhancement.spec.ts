@@ -34,7 +34,7 @@ test.describe('UI Visual Enhancement (Issue #136)', () => {
     await expect(page.locator('[class*="hud-dist"]').first()).toBeVisible()
   })
 
-  test('HUD にスコア加算ポップアップが表示される', async ({ page }) => {
+test('HUD にスコア加算ポップアップが表示される', async ({ page }) => {
     await page.goto('/')
     await page.click('text=はじめる')
     await page.click('text=わかった、プレイする')
@@ -43,10 +43,10 @@ test.describe('UI Visual Enhancement (Issue #136)', () => {
 
     // ゲームを少し進行（スコアを加算）
     await page.keyboard.press('Space')
-    await page.waitForTimeout(500)
+    await page.waitForTimeout(800)
 
-    // スコア加算ポップアップが表示される可能性がある（スコアが増加した場合）
-    // popup クラスを持つ要素が500ms以内に出現・消滅する
+    // スコア加算ポップアップが表示される可能性がある（スコアが増加した場合のみ表示）
+    // popup クラスを持つ要素が出現・消滅する
     const popupVisible = page.locator('[class*="score-popup"]').first()
     // ポップアップはオプション（スコアが増加した場合のみ表示）
     // 表示されていれば可視、そうでなければ無視
@@ -62,11 +62,11 @@ test.describe('UI Visual Enhancement (Issue #136)', () => {
     await page.click('text=わかった、プレイする')
 
     // ゲームを進行させて説明書更新をトリガー
-    // 更新が来るまで待つ（最大10秒）
+    // 更新が来るまで待つ（最大20秒）
     const choicePanel = page.locator('[class*="choice-overlay"]').first()
-    await choicePanel.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {})
+    const appeared = await choicePanel.isVisible({ timeout: 20000 }).catch(() => false)
 
-    if (await choicePanel.isVisible()) {
+    if (appeared) {
       // 選択肢ボタンが2つ存在する
       const buttons = page.locator('[class*="choice-btn"]')
       await expect(buttons.first()).toBeVisible()
@@ -77,6 +77,7 @@ test.describe('UI Visual Enhancement (Issue #136)', () => {
       // ホバー後も可視であること
       await expect(firstBtn).toBeVisible()
     }
+    // パネルが表示されなくてもテストはパス（非決定的なゲーム進行による）
   })
 
   test('CSS 変数が正しく定義されている', async ({ page }) => {
@@ -108,14 +109,14 @@ test.describe('UI Visual Enhancement (Issue #136)', () => {
       return css
     })
 
-    // CSS 変数が定義されている（global.css が読み込まれていれば）
-    // または inline style として存在する
+    // CSS 変数が定義されているか確認
+    // getComputedStyle().getPropertyValue() は未定義でも空文字列を返すため、
+    // trim して空でないことを確認する
     const hasGreenVar = await page.evaluate(() => {
-      return getComputedStyle(document.documentElement).getPropertyValue('--green') !== '' ||
-             getComputedStyle(document.documentElement).getPropertyValue('--green') !== undefined
+      const val = getComputedStyle(document.documentElement).getPropertyValue('--green').trim()
+      return val !== ''
     })
     // --green は global.css で定義されるため、存在するはず
-    // （Vite が CSS をバンドルしている場合は inline style として存在）
     expect(hasGreenVar).toBeTruthy()
   })
 

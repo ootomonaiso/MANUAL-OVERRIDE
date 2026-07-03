@@ -42,11 +42,12 @@ interface ScorePopup {
 const POPUP_X_MARGIN = 60
 const POPUP_Y_MIN = 40
 const POPUP_Y_RANGE = 60
-const POPUP_LIFETIME_MS = 500
+const POPUP_LIFETIME_MS = 700
 
 let nextPopupId = 0
 const popups = ref<ScorePopup[]>([])
 let prevScore = props.playScore
+let popupTimers: ReturnType<typeof setTimeout>[] = []
 
 // 前回のスコアを監視
 watch(() => props.playScore, (newScore) => {
@@ -62,17 +63,17 @@ watch(() => props.playScore, (newScore) => {
       createdAt: performance.now(),
     })
     // POPUP_LIFETIME_MS 後に削除
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       popups.value = popups.value.filter(p => p.id !== popupId)
     }, POPUP_LIFETIME_MS)
+    popupTimers.push(timer)
   }
   prevScore = newScore
 })
 
-// 古いポップアップをクリーンアップ
-let cleanupInterval: ReturnType<typeof setInterval> | null = null
 onUnmounted(() => {
-  if (cleanupInterval !== null) clearInterval(cleanupInterval)
+  for (const t of popupTimers) clearTimeout(t)
+  popupTimers.length = 0
 })
 </script>
 

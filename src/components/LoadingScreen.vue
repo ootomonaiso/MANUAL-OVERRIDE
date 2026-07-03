@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const progress = ref(0)
 const statusText = ref('初期化中...')
@@ -13,12 +13,13 @@ const statusMessages = [
 ]
 
 let progressInterval: ReturnType<typeof setInterval> | null = null
+let statusInterval: ReturnType<typeof setInterval> | null = null
 let statusIndex = 0
 
 onMounted(() => {
   // ステータスメッセージを交互に表示
   statusIndex = 0
-  const statusTimer = setInterval(() => {
+  statusInterval = setInterval(() => {
     statusIndex = (statusIndex + 1) % statusMessages.length
     statusText.value = statusMessages[statusIndex]
   }, 600)
@@ -27,10 +28,15 @@ onMounted(() => {
   progressInterval = setInterval(() => {
     progress.value = Math.min(progress.value + Math.random() * 15 + 5, 100)
     if (progress.value >= 100) {
-      clearInterval(statusTimer)
+      if (statusInterval !== null) clearInterval(statusInterval)
       if (progressInterval !== null) clearInterval(progressInterval)
     }
   }, 200)
+})
+
+onUnmounted(() => {
+  if (statusInterval !== null) clearInterval(statusInterval)
+  if (progressInterval !== null) clearInterval(progressInterval)
 })
 </script>
 

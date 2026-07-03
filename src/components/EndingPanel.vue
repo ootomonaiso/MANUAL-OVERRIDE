@@ -265,7 +265,7 @@ onUnmounted(() => {
 }
 .ending-bg-puzzle,
 .ending-bg-idle,
-.ending-bg-tower_def {
+.ending-bg-tower-def {
   background:
     linear-gradient(rgba(100, 100, 100, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(100, 100, 100, 0.05) 1px, transparent 1px);
@@ -283,7 +283,7 @@ onUnmounted(() => {
     radial-gradient(ellipse at 40% 60%, rgba(0, 136, 187, 0.2) 0%, transparent 50%),
     radial-gradient(ellipse at 70% 30%, rgba(0, 100, 160, 0.15) 0%, transparent 40%);
 }
-.ending-bg-stealth_action {
+.ending-bg-stealth-action {
   background: radial-gradient(ellipse at 50% 50%, rgba(50, 50, 50, 0.3) 0%, transparent 60%);
 }
 .ending-bg-racing {
@@ -446,7 +446,7 @@ onUnmounted(() => {
 }
 .contradiction-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--genre-accent, var(--green-dim)), #ff0040);
+  background: linear-gradient(90deg, var(--genre-accent, var(--green-dim)), var(--danger, #ff0040));
   border-radius: 3px;
   transition: width 0.6s ease;
 }
