@@ -17,10 +17,14 @@ import { GENRE_LOCKED_BOOST } from './data/gameBalance'
 import type { ThrowResult, RuntimeRules } from './domain/types'
 import { TUTORIAL_ENABLED, TutorialScreen } from './tutorial'
 import { soundManager } from './plugins/SoundManager'
+import LoadingScreen from './components/LoadingScreen.vue'
 
 // ─── 状態 ─────────────────────────────────────────────────────────
 const gameState = useGameState()
 const manualCtl = useManual(gameState.currentManual)
+
+/** ローディング状態（初期化完了まで表示） */
+const isLoading = ref(true)
 
 /** readonly() ラッパーを剥がして RuntimeRules として返す */
 function getRules(): RuntimeRules {
@@ -84,6 +88,8 @@ function startGame() {
   // 初期説明書を履歴に登録
   manualCtl.recordUpdate(gameState.currentManual())
   scroller.start()
+  // 初期化完了 → ローディング非表示
+  isLoading.value = false
   // チュートリアル有効時は一時停止（チュートリアル画面の背後で静止）
   if (TUTORIAL_ENABLED) {
     scroller.setPaused(true)
@@ -211,7 +217,7 @@ const showGameUI = computed(() => {
   return !['title', 'ending', 'tutorialIntro'].includes(p)
 })
 
-// ─── ジャンル別テーマカラー CSS 変数（JSON 駆動 #36） ─────────────
+// ─── ジャンル別テーマカラー CSS 変数 ─────────────────────────────
 const giveupThemeStyle = computed(() => {
   const colors = GENRE_THEME_COLORS[currentTheme.value]
   if (!colors) return {}
@@ -219,7 +225,7 @@ const giveupThemeStyle = computed(() => {
     '--genre-btn-accent': colors.accent,
     '--genre-btn-border': colors.border,
     '--genre-hint-color': colors.hint ?? 'var(--text-dim)',
-    '--genre-btn-font':   colors.font  ?? 'var(--font-mono)',
+    '--genre-btn-font':   colors.font  ?? 'var(--font-main)',
     '--genre-btn-bg':     colors.bg    ?? 'var(--green-dark)',
     '--genre-btn-glow':   colors.glow  ?? 'var(--green-glow)',
   }
@@ -290,9 +296,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="app-root" :class="gameState.lockedGenre.value ? `genre-locked-root theme-global-${currentTheme}` : ''"  >
+  <div class="app-root" :class="gameState.lockedGenre.value ? `genre-locked-root theme-global-${currentTheme}` : ''">
     <!-- ゲームキャンバス（常に背面） -->
     <canvas ref="canvasRef" class="game-canvas" />
+
+    <!-- ─── ローディング画面 ─── -->
+    <Transition name="fade">
+      <LoadingScreen v-if="isLoading" />
+    </Transition>
 
     <!-- ─── タイトル画面 ─── -->
     <Transition name="fade">
@@ -467,32 +478,7 @@ onUnmounted(() => {
 </template>
 
 <style>
-/* グローバルCSS変数 */
-:root {
-  --bg:          #0a0a0a;
-  --bg-panel:    #0d120d;
-  --green:       #00ff41;
-  --green-dim:   #33aa55;
-  --green-dark:  #001a00;
-  --green-glow:  rgba(0, 255, 65, 0.25);
-  --text:        #b8ffb8;
-  --text-dim:    rgba(184, 255, 184, 0.45);
-  --danger:      #ff3333;
-  --amber:       #ffbb00;
-  --font-mono:   'Courier New', 'Consolas', 'Liberation Mono', monospace;
-  --font-hand:   'Courier New', 'Consolas', 'Liberation Mono', monospace;
-  --scanline: repeating-linear-gradient(
-    to bottom,
-    transparent 0px, transparent 2px,
-    rgba(0, 0, 0, 0.15) 2px, rgba(0, 0, 0, 0.15) 3px
-  );
-}
-
-/* グローバルリセット */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body, #app { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
-button { outline: none; }
-body { font-family: var(--font-mono); }
+/* グローバルスタイルは src/styles/global.css で定義 */
 </style>
 
 <style scoped>
@@ -541,16 +527,14 @@ body { font-family: var(--font-mono); }
 
 .title-card {
   text-align: center;
-  font-family: var(--font-mono);
+  font-family: var(--font-main);
   color: var(--text);
   background: var(--bg-panel);
   border: 1px solid var(--green-dim);
   padding: 36px 48px 30px;
   max-width: 480px;
   width: 90%;
-  box-shadow:
-    0 0 30px var(--green-glow),
-    inset 0 1px 0 rgba(0,255,65,0.1);
+  box-shadow: var(--panel-shadow);
   animation: titleCardIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -587,7 +571,7 @@ body { font-family: var(--font-mono); }
   line-height: 1.35;
   color: var(--green);
   text-shadow: 0 0 20px var(--green-glow);
-  font-family: var(--font-hand);
+  font-family: var(--font-display);
 }
 
 .title-sub {
@@ -596,7 +580,7 @@ body { font-family: var(--font-mono); }
   line-height: 2.1;
   margin-bottom: 30px;
   letter-spacing: 0.3px;
-  font-family: var(--font-mono);
+  font-family: var(--font-main);
 }
 
 .title-btn {
@@ -665,7 +649,7 @@ body { font-family: var(--font-mono); }
   color: var(--genre-btn-accent, var(--green));
   padding: 7px 20px;
   font-size: 12px;
-  font-family: var(--genre-btn-font, var(--font-mono));
+  font-family: var(--genre-btn-font, var(--font-main));
   cursor: pointer;
   border-radius: 3px;
   letter-spacing: 0.5px;
@@ -681,7 +665,7 @@ body { font-family: var(--font-mono); }
 .giveup-hint {
   font-size: 10px;
   color: var(--genre-hint-color, var(--text-dim));
-  font-family: var(--genre-btn-font, var(--font-mono));
+  font-family: var(--genre-btn-font, var(--font-main));
   letter-spacing: 0.5px;
 }
 
@@ -725,16 +709,16 @@ body { font-family: var(--font-mono); }
   left: 50%;
   transform: translate(-50%, -50%);
   background: var(--bg-panel);
-  border: 2px solid var(--green);
-  color: var(--green);
+  border: 2px solid var(--genre-accent, var(--green));
+  color: var(--genre-accent, var(--green));
   padding: 16px 40px;
-  font-family: var(--font-mono);
+  font-family: var(--genre-font, var(--font-mono));
   font-size: 18px;
   z-index: 26;
   max-width: 520px;
   text-align: center;
   backdrop-filter: blur(6px);
-  box-shadow: 0 8px 30px var(--green-glow);
+  box-shadow: 0 8px 30px var(--genre-glow, var(--green-glow));
   letter-spacing: 0.5px;
   font-weight: 500;
   animation: genreNameReveal 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) 0.8s both;
@@ -780,13 +764,13 @@ body { font-family: var(--font-mono); }
   padding: 8px 18px;
   font-size: 12px;
   font-family: var(--font-mono);
-  border-radius: 2px;
+  border-radius: var(--radius-md);
   z-index: 80;
   white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 7px;
-  box-shadow: 0 0 16px rgba(255, 51, 51, 0.3);
+  box-shadow: 0 0 16px var(--danger-dim);
   pointer-events: none;
 }
 .toast-icon { color: #ff3333; font-size: 14px; }

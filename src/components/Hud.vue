@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, toRef } from 'vue'
+import { computed, ref, watch, toRef, onUnmounted } from 'vue'
 import { GENRES } from '../data/genres'
 import { useScoreAnimation } from '../composables/useScoreAnimation'
 
@@ -17,12 +17,62 @@ const props = defineProps<{
 
 const displayScore = useScoreAnimation(toRef(props, 'playScore'))
 
+const DIST_BAR_MAX = 4000
+
 const genreLabel  = computed(() => GENRES.find(g => g.id === props.genre)?.label ?? '')
-const distBar     = computed(() => Math.min(100, (props.distance / 4000) * 100))
+const distBar     = computed(() => Math.min(100, (props.distance / DIST_BAR_MAX) * 100))
+const COMBO_THRESHOLD_HIGH = 10
+const COMBO_THRESHOLD_MED  = 5
+
 const comboColor  = computed(() => {
-  if (props.combo >= 10) return '#00ff41'
-  if (props.combo >= 5)  return '#33aa55'
+  if (props.combo >= COMBO_THRESHOLD_HIGH) return '#00ff41'
+  if (props.combo >= COMBO_THRESHOLD_MED)  return '#33aa55'
   return '#88ff44'
+})
+
+// ── スコア加算ポップアップ ──────────────────────────────────────
+interface ScorePopup {
+  id: number
+  x: number
+  y: number
+  value: number
+  createdAt: number
+}
+
+const POPUP_X_MARGIN = 60
+const POPUP_Y_MIN = 40
+const POPUP_Y_RANGE = 60
+const POPUP_LIFETIME_MS = 500
+
+let nextPopupId = 0
+const popups = ref<ScorePopup[]>([])
+let prevScore = props.playScore
+
+// 前回のスコアを監視
+watch(() => props.playScore, (newScore) => {
+  if (newScore > prevScore) {
+    const delta = newScore - prevScore
+    const popupId = nextPopupId++
+    // ポップアップを生成（ランダム位置）
+    popups.value.push({
+      id: popupId,
+      x: POPUP_X_MARGIN + Math.random() * (window.innerWidth - POPUP_X_MARGIN * 2),
+      y: POPUP_Y_MIN + Math.random() * POPUP_Y_RANGE,
+      value: delta,
+      createdAt: performance.now(),
+    })
+    // POPUP_LIFETIME_MS 後に削除
+    setTimeout(() => {
+      popups.value = popups.value.filter(p => p.id !== popupId)
+    }, POPUP_LIFETIME_MS)
+  }
+  prevScore = newScore
+})
+
+// 古いポップアップをクリーンアップ
+let cleanupInterval: ReturnType<typeof setInterval> | null = null
+onUnmounted(() => {
+  if (cleanupInterval !== null) clearInterval(cleanupInterval)
 })
 </script>
 
@@ -38,6 +88,18 @@ const comboColor  = computed(() => {
         <span class="hud-dist-text">{{ Math.floor(distance) }}m</span>
       </div>
     </div>
+
+    <!-- スコア加算ポップアップ -->
+    <TransitionGroup name="popup">
+      <div
+        v-for="popup in popups"
+        :key="popup.id"
+        class="score-popup"
+        :style="{ left: popup.x + 'px', top: popup.y + 'px' }"
+      >
+        +{{ popup.value.toLocaleString() }}
+      </div>
+    </TransitionGroup>
 
     <!-- ジャンルバッジ（中央上） -->
     <Transition name="badge-pop">
@@ -101,11 +163,14 @@ const comboColor  = computed(() => {
 .hud-score {
   font-size: 30px;
   font-weight: 900;
-  color: #00ff41;
-  font-family: 'M PLUS 1 Code', monospace;
+  color: var(--genre-accent, var(--green));
+  font-family: var(--genre-font, var(--font-mono));
   letter-spacing: 2px;
-  text-shadow: 0 0 16px rgba(0,255,65,0.4), 0 2px 4px rgba(0,0,0,0.6);
+  text-shadow:
+    0 0 16px var(--genre-glow, var(--green-glow)),
+    0 2px 4px rgba(0, 0, 0, 0.6);
   line-height: 1;
+  transition: color 0.4s ease, text-shadow 0.4s ease;
 }
 .hud-dist {
   display: flex;
@@ -115,20 +180,50 @@ const comboColor  = computed(() => {
 }
 .hud-dist-bar {
   width: 100px; height: 3px;
-  background: rgba(0,255,65,0.15);
+  background: var(--genre-glow, var(--green-glow));
   border-radius: 1px;
   overflow: hidden;
 }
 .hud-dist-fill {
   height: 100%;
-  background: linear-gradient(90deg, #33aa55, #00ff41);
+  background: linear-gradient(90deg, var(--genre-accent, var(--green-dim)), var(--genre-accent, var(--green)));
   border-radius: 1px;
   transition: width 0.3s ease;
 }
 .hud-dist-text {
   font-size: 11px;
-  color: rgba(184,255,184,0.45);
-  font-family: 'M PLUS 1 Code', monospace;
+  color: var(--genre-text, var(--text-dim));
+  font-family: var(--genre-font, var(--font-mono));
+}
+
+/* ─── スコア加算ポップアップ ─── */
+.score-popup {
+  position: absolute;
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--genre-accent, var(--green));
+  font-family: var(--genre-font, var(--font-mono));
+  text-shadow: 0 0 8px var(--genre-glow, var(--green-glow));
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 11;
+}
+
+.popup-enter-active {
+  animation: popupIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.popup-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.popup-leave-to {
+  opacity: 0;
+  transform: translateY(-12px);
+}
+
+@keyframes popupIn {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.8); }
+  60%  { transform: translateY(-4px) scale(1.05); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ─── ジャンルバッジ ─── */
@@ -136,16 +231,17 @@ const comboColor  = computed(() => {
   position: absolute;
   top: 14px; left: 50%;
   transform: translateX(-50%);
-  background: rgba(0,255,65,0.08);
+  background: var(--genre-bg, var(--green-subtle));
   backdrop-filter: blur(6px);
-  border: 1px solid rgba(0,255,65,0.2);
-  color: #33aa55;
+  border: 1px solid var(--genre-border, var(--green-dim));
+  color: var(--genre-accent, var(--green-dim));
   font-size: 11px;
   padding: 3px 14px;
-  border-radius: 2px;
-  font-family: 'M PLUS 1 Code', monospace;
+  border-radius: var(--radius-sm);
+  font-family: var(--genre-font, var(--font-mono));
   letter-spacing: 2px;
   text-transform: uppercase;
+  transition: all 0.4s ease;
 }
 
 /* ─── 右上ブロック ─── */
@@ -160,12 +256,12 @@ const comboColor  = computed(() => {
 .hud-hp-row { display: flex; gap: 3px; }
 .hud-hp-heart {
   font-size: 20px;
-  color: #ff3333;
-  text-shadow: 0 0 8px #ff3333;
+  color: var(--danger);
+  text-shadow: 0 0 8px var(--danger-dim);
   transition: color 0.2s, text-shadow 0.2s;
 }
 .hud-hp-heart.empty {
-  color: rgba(0,255,65,0.15);
+  color: var(--genre-glow, var(--green-glow));
   text-shadow: none;
 }
 .hud-stat {
@@ -175,15 +271,15 @@ const comboColor  = computed(() => {
 }
 .hud-stat-label {
   font-size: 10px;
-  color: rgba(184,255,184,0.45);
-  font-family: 'M PLUS 1 Code', monospace;
+  color: var(--genre-text, var(--text-dim));
+  font-family: var(--genre-font, var(--font-mono));
   letter-spacing: 1px;
 }
 .hud-stat-val {
   font-size: 18px;
   font-weight: bold;
-  color: #00ff41;
-  font-family: 'M PLUS 1 Code', monospace;
+  color: var(--genre-accent, var(--green));
+  font-family: var(--genre-font, var(--font-mono));
 }
 
 /* ─── コンボ ─── */
@@ -199,7 +295,7 @@ const comboColor  = computed(() => {
   display: block;
   font-size: 42px;
   font-weight: 900;
-  font-family: 'M PLUS 1 Code', monospace;
+  font-family: var(--genre-font, var(--font-mono));
   text-shadow: 0 0 20px currentColor;
   line-height: 1;
 }
@@ -208,7 +304,7 @@ const comboColor  = computed(() => {
   font-size: 12px;
   letter-spacing: 4px;
   opacity: 0.8;
-  font-family: 'M PLUS 1 Code', monospace;
+  font-family: var(--genre-font, var(--font-mono));
 }
 
 /* ─── トランジション ─── */
