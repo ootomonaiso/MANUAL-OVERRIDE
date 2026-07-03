@@ -503,6 +503,9 @@ export class SideScroller {
     const leftKey  = r.controls.moveLeft
     const rightKey = r.controls.moveRight
     const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
+    // tetris_mode: jump key is repurposed for hard drop; lights_out: パズル中は操作不要
+    const tetrisMode = r.features.has('tetris_mode')
+    const noControlMode = tetrisMode || r.features.has('lights_out')
 
     if (!r.features.has('auto_run') && !r.features.has('tetris_mode') && this.input.keys.has(leftKey))  this.stats.moveLeft++
     if ((r.features.has('auto_run') || this.input.keys.has(rightKey)) && !r.features.has('tetris_mode')) this.stats.moveRight++
@@ -521,13 +524,8 @@ export class SideScroller {
       p.onGround = false
       p.airTime += dt
     } else {
-
     const isDouble         = r.features.has('double_jump')
     const jumpDisabled     = this._isActionDisabled('jump')
-    // tetris_mode: jump key is repurposed for hard drop; lights_out: パズル中は操作不要
-    // どちらもジャンプ検出を完全にスキップする
-    const tetrisMode       = r.features.has('tetris_mode')
-    const noControlMode    = tetrisMode || r.features.has('lights_out')
     const jumpJustPressed  = !noControlMode && !jumpDisabled && this.input.justPressed.has(jumpKey)
     const jumpJustReleased = this.input.justReleased.has(jumpKey)
 
