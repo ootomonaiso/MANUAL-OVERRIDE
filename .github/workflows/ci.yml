@@ -129,12 +129,47 @@ jobs:
             }
 
 # ══════════════════════════════════════════════════════════
+#  Phase 2b — E2E-only build (DEBUG_MODE enabled)
+#  DebugPanel / window.__puzzleState 等のテスト用フックは
+#  import.meta.env.DEV で実行時に有効化される（DebugPanel は静的 import の
+#  ためコード自体はどちらのビルドでもバンドルに残るが、DEV=false では
+#  v-if により描画されない）。NODE_ENV=development を渡すことで import.meta.env.DEV
+#  が true になった dist を、E2E 専用の別アーティファクトとして用意する
+#  （`--mode` だけでは PROD/DEV フラグは切り替わらないため NODE_ENV が必須）。
+#  Lighthouse / bundle-size / 実デプロイ(deploy.yml) は
+#  引き続き `build` ジョブの純粋な本番 dist のみを使用する。
+# ══════════════════════════════════════════════════════════
+  build-e2e:
+    name: Build (E2E debug)
+    runs-on: ubuntu-latest
+    needs: [typecheck, lint, validate-json, feature-tests]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+
+      - name: Vite build (DEV=true, for E2E debug hooks)
+        run: node scripts/preprocess.mjs && npx vite build
+        env:
+          NODE_ENV: development
+
+      - name: Upload E2E dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-e2e-${{ github.sha }}
+          path: dist/
+          retention-days: 3
+
+# ══════════════════════════════════════════════════════════
 #  Phase 3 — E2E matrix (chromium / firefox / mobile)
 # ══════════════════════════════════════════════════════════
   e2e:
     name: E2E (${{ matrix.project }})
     runs-on: ubuntu-latest
-    needs: build
+    needs: build-e2e
     strategy:
       fail-fast: false
       matrix:
@@ -173,7 +208,7 @@ jobs:
       - name: Download dist
         uses: actions/download-artifact@v8
         with:
-          name: dist-${{ github.sha }}
+          name: dist-e2e-${{ github.sha }}
           path: dist/
 
       - name: Run E2E (${{ matrix.project }})
@@ -225,13 +260,16 @@ jobs:
   ci-ok:
     name: CI OK
     runs-on: ubuntu-latest
-    needs: [build, e2e, lighthouse]
+    needs: [build, build-e2e, e2e, lighthouse]
     if: always()
     steps:
       - name: Check all jobs passed
         run: |
           if [[ "${{ needs.build.result }}" != "success" ]]; then
             echo "❌ Build failed"; exit 1
+          fi
+          if [[ "${{ needs.build-e2e.result }}" != "success" ]]; then
+            echo "❌ Build (E2E debug) failed"; exit 1
           fi
           if [[ "${{ needs.e2e.result }}" != "success" ]]; then
             echo "❌ E2E failed"; exit 1

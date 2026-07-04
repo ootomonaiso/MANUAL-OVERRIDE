@@ -6,6 +6,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import assert from 'node:assert'
 import { fileURLToPath } from 'node:url'
+import { loadGenres } from './helpers/loadGenres.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const src = fs.readFileSync(path.join(root, 'src/game/systems/PuzzleFeature.ts'), 'utf-8')
@@ -34,14 +35,10 @@ assert.ok(src.includes('soundManager'), '効果音 (soundManager) が見つか�
 // 操作抑止（プレイヤー速度を 0 に固定）
 assert.ok(src.includes('player.vx = 0') && src.includes('player.vy = 0'), 'パズル中のプレイヤー静止処理が見つかりません')
 
-// genres.json: puzzle ジャンルが lights_out を有効化していること
-const genres = JSON.parse(fs.readFileSync(path.join(root, 'src/data/config/genres.json'), 'utf-8'))
-const lightsOutGenres = genres.genres.filter(g => g.enableFeatures.includes('lights_out')).map(g => g.id)
+// src/data/genres/*.json: puzzle ジャンルが lights_out を有効化していること
+const genres = loadGenres(root)
+const lightsOutGenres = genres.filter(g => g.enableFeatures.includes('lights_out')).map(g => g.id)
 assert.ok(lightsOutGenres.includes('puzzle'), 'ジャンル "puzzle" は lights_out を有効化している必要があります')
-
-// 単一ソース（src/data/genres/puzzle.json）でも一致していること
-const puzzleGenre = JSON.parse(fs.readFileSync(path.join(root, 'src/data/genres/puzzle.json'), 'utf-8'))
-assert.ok(puzzleGenre.enableFeatures.includes('lights_out'), 'genres/puzzle.json も lights_out を有効化している必要があります')
 
 console.log('✓ lights_out: PuzzleFeature に実装あり')
 console.log('✓ lights_out: 正解→次の問題へ進む処理 + クリア/ダメージ演出 + 操作抑止あり')
