@@ -6,6 +6,9 @@ on:
   push:
     branches: [dev, main]
 
+# フォークPRからのCI実行を許可（GitHub Actionsのデフォルトはread-only）
+permissions: read-all
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -72,6 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [typecheck, lint, validate-json, feature-tests]
     permissions:
+      contents: read
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
@@ -95,7 +99,8 @@ jobs:
           retention-days: 3
 
       - name: Post bundle report to PR
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |
@@ -170,6 +175,8 @@ jobs:
     name: E2E (${{ matrix.project }})
     runs-on: ubuntu-latest
     needs: build-e2e
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -232,6 +239,8 @@ jobs:
     name: Lighthouse CI
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v6
@@ -262,6 +271,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, build-e2e, e2e, lighthouse]
     if: always()
+    permissions:
+      contents: read
+      statuses: write
     steps:
       - name: Check all jobs passed
         run: |

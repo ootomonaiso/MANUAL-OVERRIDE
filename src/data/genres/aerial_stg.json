@@ -2,7 +2,7 @@
   "$schema": "../../../../schemas/genre.schema.json",
   "id": "aerial_stg",
   "label": "縦スクロールシューティング",
-  "thresholds": { "vertical": 4, "range": 4, "enemy": 4 },
+  "thresholds": { "vertical": 3, "range": 3, "enemy": 4 },
   "enableFeatures": ["shoot", "vertical_scroll", "enemy_hp", "spread_shot"],
   "disableFeatures": ["grid_stop", "puzzle_solve", "auto_run"],
   "scoreFormula": "kills * 130 + combo * 90 + survivedSec * 3",

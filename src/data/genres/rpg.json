@@ -2,7 +2,7 @@
   "$schema": "../../../../schemas/genre.schema.json",
   "id": "rpg",
   "label": "ロールプレイングゲーム",
-  "thresholds": { "growth": 6 },
+  "thresholds": { "growth": 8 },
   "enableFeatures": ["hp", "exp", "item_pickup", "slow_precise"],
   "disableFeatures": ["auto_run", "beat_hazard"],
   "scoreFormula": "exp * 2 + kills * 60 + distance * 0.3",
