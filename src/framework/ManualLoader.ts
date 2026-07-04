@@ -16,6 +16,7 @@
 
 import type { ManualVersion } from '../domain/types'
 import type { ManualDeckFile, ManualEntryJSON } from './types'
+import { RULE_DEFAULTS } from '../data/gameBalance'
 
 
 const DEFAULT_HAZARDS = { colors: ['red'], safeColors: ['blue'] } as const
@@ -140,7 +141,7 @@ function _parseEntry(entry: ManualEntryJSON): ManualVersion {
     const ov = entry.runtimeOverrides
     runtimeConfig = {
       scrollSpeed:    ov.scrollSpeed,
-      gravity:        ov.gravity ?? ov.physics?.gravity,
+      gravity:        ov.gravity ?? ov.physics?.gravity ?? RULE_DEFAULTS.gravity,
       bpm:            ov.bpm,
       scrollDirection: ov.scrollDirection,
       environment:    ov.environment,

@@ -2,7 +2,7 @@
   "$schema": "../../../../schemas/genre.schema.json",
   "id": "horror",
   "label": "サバイバルホラー",
-  "thresholds": { "survive": 6, "stealth": 4 },
+  "thresholds": { "survive": 6, "stealth": 5 },
   "enableFeatures": ["hp", "stealth_mode", "slow_precise"],
   "disableFeatures": ["auto_run", "shoot", "beat_hazard", "boss"],
   "scoreFormula": "survivedSec * 20 + stealthBonus * 0.8 + deaths * -200",

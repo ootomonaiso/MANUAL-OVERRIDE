@@ -136,10 +136,9 @@ function beginSnapshotLoop() {
     }
     snapshot.value = scroller.getSnapshot()
 
-    // 更新トリガー（tutorial / playing / genreLocked で発火）
-    // genreLocked 後もカード選択は続く（ジャンルは固定のまま説明書テキストだけ追記）
+    // genreLocked 後は説明書の自動更新を止める（フェーズの意図と矛盾するため）
     // 最初のジャンプまで待つ
-    const activePlay = ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
+    const activePlay = ['playing', 'tutorial'].includes(gameState.phase.value)
     if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
       scroller.setPaused(true)
       if (!gameState.triggerUpdate()) {

@@ -74,6 +74,7 @@ export type EnvironmentId   =
 //       movement / auto_run / slow_precise / double_jump / long_air / dash /
 //       wall_jump / slide / gravity_flip / vertical_scroll
 //       hp / exp / item_pickup / shield
+//       survival_hunger / survival_melee / survival_level
 //       grid_stop / puzzle_solve
 //       beat_hazard / just_input / beat_dash
 //       stealth_mode / time_bonus / tower / color_touch
@@ -351,6 +352,23 @@ export interface BayesConfig {
 
 /** ベイズデバッグログで表示する上位ジャンル数 */
 export const BAYES_DEBUG_TOP_N = 5
+
+// ─────────────────────────────────────────────────────────────
+// ジャンル固有スポーン密度設定
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * ジャンル固有のハザードスポーン密度設定。
+ * JSON（src/data/genres/*.json）と TS プラグインの両方で使用される共通型。
+ */
+export interface SpawnDensityConfig {
+  /** 初期スポーン間隔（ms）。省略時: 2400 */
+  baseInterval?: number
+  /** 最小スポーン間隔（ms）、つまり最大密度の上限。省略時: 800 */
+  minInterval?: number
+  /** 距離による間隔短縮の減衰率。省略時: 0.00015 */
+  decayRate?: number
+}
 
 // ─────────────────────────────────────────────────────────────
 // プレイスタイル検出（Issue #24: 意外な結末）

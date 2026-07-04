@@ -10,7 +10,11 @@
  * ────────────────────────────────────────────────────────────
  */
 
-import { loadConfigFromGlob, devValidateConfig } from '../framework'
+// framework/index.ts 経由だとバレル export が ManualLoader.ts を re-export しており、
+// ManualLoader.ts → data/gameBalance.ts → data/config.ts → framework(barrel) の循環importに
+// なるため、ここでは実体モジュールから直接importして循環を回避する。
+import { loadConfigFromGlob } from '../framework/ConfigLoader'
+import { devValidateConfig } from '../framework/ConfigValidator'
 import type { GenreDefJSON } from '../framework/config-types'
 
 const _rawModules = import.meta.glob('./config/*.json', { eager: true })

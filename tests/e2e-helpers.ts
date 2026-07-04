@@ -42,6 +42,39 @@ export async function clickFirstChoice(page: Page): Promise<boolean> {
   return false
 }
 
+/**
+ * ジャンル確定を強制的にトリガーする。
+ *
+ * チュートリアル通過 → ジャンプ → カード選択を MAX_ROUNDS 回繰り返す。
+ * 各ラウンド: triggerUpdate() 発火 → ChoicePanel 表示 → 選択 → genreLocked 判定
+ */
+export async function forceGenreLock(page: Page, maxRounds = 10): Promise<void> {
+  // 最初のジャンプで firstJumpDone = true にする
+  await page.keyboard.press('Space')
+  await page.waitForTimeout(500)
+
+  for (let round = 0; round < maxRounds; round++) {
+    // ChoicePanel が表示されるまで待つ（最大5秒）
+    const choiceBtn = page.locator('.choice-btn').first()
+    const isVisible = await choiceBtn.isVisible({ timeout: 5_000 }).catch(() => false)
+    if (!isVisible) {
+      // triggerUpdate が発火しない場合、Space で firstJumpDone を再確認
+      await page.keyboard.press('Space')
+      await page.waitForTimeout(500)
+      continue
+    }
+    // 最初の選択肢をクリック（detached 時は無視）
+    try {
+      await choiceBtn.click({ timeout: 2_000 })
+    } catch {
+      // クリック失敗時は次のラウンドへ
+    }
+    // フェーズが genreLocked に遷移するのを待つ（ChoicePanel が消えるまで）
+    await page.locator('[class*="choice-overlay"]').waitFor({ state: 'hidden', timeout: 3_000 }).catch(() => {})
+    await page.waitForTimeout(300)
+  }
+}
+
 // ──────────────────────────────────────────────────────────────────────
 // カスタムフィクスチャ
 // ──────────────────────────────────────────────────────────────────────

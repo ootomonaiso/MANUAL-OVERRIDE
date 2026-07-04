@@ -2,7 +2,7 @@
   "$schema": "../../../../schemas/genre.schema.json",
   "id": "racing",
   "label": "レーシングゲーム",
-  "thresholds": { "speed": 5, "tempo": 4 },
+  "thresholds": { "speed": 4, "tempo": 6 },
   "enableFeatures": ["auto_run", "dash", "time_bonus"],
   "disableFeatures": ["grid_stop", "puzzle_solve", "beat_hazard", "slow_precise"],
   "scoreFormula": "distance * 2.0 + survivedSec * 3 + combo * 30",

@@ -1,8 +1,17 @@
 {
-  "$comment": "パズルフィーチャー",
+  "$comment": "パズルフィーチャー (スライド移動パズル) — サイズ別 目標最短手数・制限時間・出題重み。timeHalfLifeSteps 問ごとに制限時間が半減し timeScaleMin で下げ止まる（第1問=100%, 第50問=50%, 第99-100問=25%）",
   "section": "puzzle",
-  "gridSize": 60,
-  "movePhaseSec": 2.5,
-  "solvePhaseSec": 2.0,
-  "solveScore": 200
+  "grids": [
+    { "n": 4, "minMoves": 2, "maxMoves": 3,  "timeSec": 15, "weightStart": 8, "weightEnd": 2 },
+    { "n": 5, "minMoves": 3, "maxMoves": 5,  "timeSec": 18, "weightStart": 4, "weightEnd": 4 },
+    { "n": 6, "minMoves": 4, "maxMoves": 6,  "timeSec": 22, "weightStart": 2, "weightEnd": 5 },
+    { "n": 7, "minMoves": 5, "maxMoves": 8,  "timeSec": 26, "weightStart": 0, "weightEnd": 4 },
+    { "n": 8, "minMoves": 6, "maxMoves": 10, "timeSec": 30, "weightStart": 0, "weightEnd": 3 }
+  ],
+  "cellPx": 48,
+  "weightMaxDist": 12,
+  "wallRatio": 0.18,
+  "maxGenAttempts": 400,
+  "timeScaleMin": 0.25,
+  "timeHalfLifeSteps": 49
 }
