@@ -22,7 +22,7 @@ export { validateDeck, devValidate } from './ManualValidator'
 export type { ManualDeckFile, ManualEntryJSON, ChoiceJSON } from './types'
 
 // Config API (new)
-export { loadConfigFromGlob } from './ConfigLoader'
+export { loadConfigFromGlob, normalizeGenreDef } from './ConfigLoader'
 export { validateGameConfig, devValidateConfig } from './ConfigValidator'
 export type {
   GameConfigMap,
@@ -45,4 +45,5 @@ export type {
   GameBalanceConfig,
   GenresConfig,
   GenreDefJSON,
+  GenreDefJSONInput,
 } from './config-types'

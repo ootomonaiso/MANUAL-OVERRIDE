@@ -288,12 +288,10 @@ export interface StealthConfig {
 
 /** bayes.json — ベイズ収束 */
 export interface BayesConfig {
-  convergenceThreshold: number
   minProb: number
   dominanceRatio: number
   decayRate: number
   baseDecay: number
-  candidateThreshold: number
 }
 
 /** special.json — 特殊フィーチャー (タワー / ボス撃破 / タイムボーナス) */
@@ -399,7 +397,7 @@ export interface GenreVisualConfig {
   }
 }
 
-/** genres.json — ジャンル定義テーブル */
+/** genres.json — ジャンル定義テーブル（正規化済み。ロード時にデフォルト補完される） */
 export interface GenreDefJSON {
   id: string
   label: string
@@ -418,6 +416,14 @@ export interface GenreDefJSON {
   /** TSプラグインなしでビジュアルをカスタマイズする場合に指定。省略時はthemeから自動決定。 */
   visual?: GenreVisualConfig
 }
+
+/**
+ * src/data/genres/*.json に人間が書く生の形式。
+ * 必須は id / label / thresholds の3つだけで、残りは normalizeGenreDef が補完する。
+ */
+export type GenreDefJSONInput =
+  Pick<GenreDefJSON, 'id' | 'label' | 'thresholds'> &
+  Partial<Omit<GenreDefJSON, 'id' | 'label' | 'thresholds'>>
 
 export interface ThemeColorDef {
   accent: string

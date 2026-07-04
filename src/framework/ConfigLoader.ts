@@ -5,7 +5,29 @@
  * ManualLoader.ts のパターンを踏襲。
  */
 
-import type { GameConfigMap, GameConfigSection } from './config-types'
+import type { GameConfigMap, GameConfigSection, GenreDefJSON, GenreDefJSONInput } from './config-types'
+
+// ジャンル定義の省略可能フィールドのデフォルト値。
+// scripts/preprocess.mjs の検証と対になる（補完はここで一元管理）。
+const GENRE_DEFAULTS = {
+  enableFeatures:  [] as string[],
+  disableFeatures: [] as string[],
+  scoreFormula:    'distance * 1.0 + survivedSec * 5',
+  theme:           'plain',
+  bgColor:         '#1a1a2e',
+} as const
+
+/**
+ * 人間が書いた最小構成のジャンルJSON（id / label / thresholds のみ必須）を
+ * 完全な GenreDefJSON に補完する。manualReveal はラベルから自動生成。
+ */
+export function normalizeGenreDef(input: GenreDefJSONInput): GenreDefJSON {
+  return {
+    ...GENRE_DEFAULTS,
+    manualReveal: input.manualReveal ?? `これは${input.label}になりました。`,
+    ...input,
+  }
+}
 
 /**
  * import.meta.glob の結果から GameConfigMap を構築する。

@@ -10,17 +10,20 @@
  */
 
 import { createInterface } from 'node:readline'
-import { writeFileSync, existsSync } from 'node:fs'
+import { writeFileSync, readFileSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT       = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT_DIR    = resolve(ROOT, 'content', 'genres')
-const SCHEMA_REF = '../../../../schemas/genre.schema.json'
+const SCHEMA_REF = '../../schemas/genre.schema.json'
 
-const THEMES = ['plain', 'stg', 'rpg', 'puzzle', 'rhythm', 'horror', 'aquatic']
-const PARAMS  = ['tempo', 'range', 'enemy', 'combo', 'growth', 'rhythm',
-                 'stealth', 'vertical', 'aerial', 'survive', 'craft', 'speed']
+// テーマ・軸の一覧は schemas/genre.schema.json が唯一の定義元
+const _schema = JSON.parse(
+  readFileSync(resolve(ROOT, 'schemas', 'genre.schema.json'), 'utf-8')
+)
+const THEMES = _schema.properties.theme.enum
+const PARAMS = Object.keys(_schema.properties.thresholds.properties)
 
 // ── 引数モード（対話なし）──────────────────────────────────────────────
 const [,, argId, argLabel] = process.argv

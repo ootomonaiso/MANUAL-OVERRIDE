@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../../schemas/genre.schema.json",
+  "$schema": "../../../schemas/genre.schema.json",
   "id": "sports",
   "label": "スポーツゲーム",
   "thresholds": { "speed": 4, "rhythm": 4 },

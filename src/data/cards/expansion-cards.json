@@ -1,0 +1,124 @@
+{
+  "$schema": "../../../schemas/cards.schema.json",
+  "cards": [
+    {
+      "id": "c-range-updown",
+      "label": "上下から来るものにも対処できるようにする",
+      "manualText": ["上下方向にも対応できるようになりました。"],
+      "genreParams": { "range": 2, "vertical": 2 },
+      "weight": 2,
+      "hint": "aerial_stg 方向（vertical+range の供給源）",
+      "genreAffinity": ["aerial_stg", "stg"]
+    },
+    {
+      "id": "c-enemy-swarm",
+      "label": "画面を埋め尽くすほど飛び交うものを増やす",
+      "manualText": ["飛来物が大幅に増えました。", "隙間を見つけて進んでください。"],
+      "genreParams": { "vertical": 2, "enemy": 2 },
+      "weight": 2,
+      "hint": "bullet_hell 方向（vertical+enemy の供給源）",
+      "genreAffinity": ["bullet_hell", "aerial_stg"]
+    },
+    {
+      "id": "c-speed-limit",
+      "label": "限界まで速度を出せるようにする",
+      "manualText": ["最高速度の上限が解放されました。"],
+      "genreParams": { "speed": 3 },
+      "weight": 2,
+      "hint": "racing 方向（speed 単軸の供給源）",
+      "genreAffinity": ["racing", "sports"],
+      "conflictsWith": ["c-idle-wait"]
+    },
+    {
+      "id": "c-speed-rhythm",
+      "label": "一定のリズムで動くと調子が上がるようにする",
+      "manualText": ["リズムに乗ると動きにキレが出ます。"],
+      "genreParams": { "speed": 2, "rhythm": 2 },
+      "weight": 2,
+      "hint": "sports 方向（speed+rhythm の供給源）",
+      "genreAffinity": ["sports", "rhythm"]
+    },
+    {
+      "id": "c-survive-tension",
+      "label": "一瞬の油断が命取りになる状況にする",
+      "manualText": ["危険度が上がりました。", "慎重に進んでください。"],
+      "genreParams": { "survive": 3 },
+      "weight": 2,
+      "hint": "survival/horror 方向（survive の供給量を増やす）",
+      "genreAffinity": ["survival", "horror"]
+    },
+    {
+      "id": "c-stealth-survive",
+      "label": "危険をやり過ごして生き延びる場面を作る",
+      "manualText": ["隠れてやり過ごすことも選択肢になりました。"],
+      "genreParams": { "stealth": 2, "survive": 2 },
+      "weight": 2,
+      "hint": "horror 方向（stealth+survive の供給源）",
+      "genreAffinity": ["horror", "stealth_action"]
+    },
+    {
+      "id": "c-craft-lineup",
+      "label": "集めたものを揃えて整理できるようにする",
+      "manualText": ["同じ種類のものを揃えると整理されます。"],
+      "genreParams": { "combo": 2, "craft": 2 },
+      "weight": 3,
+      "hint": "tetris 方向（combo+craft の唯一の供給源なので重め）",
+      "genreAffinity": ["tetris", "puzzle"]
+    },
+    {
+      "id": "c-combo-repel",
+      "label": "連続で撃退すると勢いがつくようにする",
+      "manualText": ["連続撃退でボーナスが増えます。"],
+      "genreParams": { "enemy": 2, "combo": 2 },
+      "weight": 3,
+      "hint": "hack_slash/arena 方向（enemy+combo の唯一の供給源なので重め）",
+      "genreAffinity": ["hack_slash", "arena"]
+    },
+    {
+      "id": "c-range-far",
+      "label": "遠くまで攻撃が届くようにする",
+      "manualText": ["攻撃の射程が伸びました。"],
+      "genreParams": { "range": 3 },
+      "weight": 2,
+      "hint": "stg 方向（range 単軸の供給源）",
+      "genreAffinity": ["stg", "aerial_stg"]
+    },
+    {
+      "id": "c-tempo-danger",
+      "label": "スピードを保ったまま危険を増やす",
+      "manualText": ["速度はそのままに、障害が増えました。"],
+      "genreParams": { "tempo": 2, "enemy": 2 },
+      "weight": 2,
+      "hint": "bullet_runner 方向（tempo+enemy の供給源）",
+      "genreAffinity": ["bullet_runner", "arena"],
+      "conflictsWith": ["c-idle-wait"]
+    },
+    {
+      "id": "c-craft-guard",
+      "label": "置いたものが身を守ってくれるようにする",
+      "manualText": ["設置物が防衛に役立ちます。"],
+      "genreParams": { "craft": 2, "enemy": 2 },
+      "weight": 2,
+      "hint": "tower_def 方向（craft+enemy の供給源）",
+      "genreAffinity": ["tower_def"]
+    },
+    {
+      "id": "c-rhythm-world",
+      "label": "音に合わせて世界全体が動くようにする",
+      "manualText": ["世界がリズムと同期し始めました。"],
+      "genreParams": { "rhythm": 2, "tempo": 2 },
+      "weight": 2,
+      "hint": "rhythm 方向（rhythm+tempo の供給量を増やす）",
+      "genreAffinity": ["rhythm"]
+    },
+    {
+      "id": "c-growth-explore",
+      "label": "奥へ進むほど発見があるようにする",
+      "manualText": ["探索すると新しい発見があります。"],
+      "genreParams": { "growth": 2, "craft": 2 },
+      "weight": 2,
+      "hint": "dungeon 方向（growth+craft の供給源）",
+      "genreAffinity": ["dungeon", "rpg"]
+    }
+  ]
+}

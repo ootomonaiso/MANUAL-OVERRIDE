@@ -105,13 +105,6 @@ export interface Choice {
   genreParams: GenreParams
   /** genreParams への乗数。デフォルト 1.0。大きくするとこの選択の重みが増す */
   paramMultiplier?: number
-  /**
-   * ジャンルへの直接ポイント付与（軸パラメータの代替）。
-   * 例: { "stg": 3, "rpg": 1 } → この選択で STG に3点、RPG に1点加算。
-   * ジャンル側が `threshold` を持つ場合にこちらが評価される。
-   * `genreParams` と併用可（genreParams は軸ベース収束用に残しても良い）。
-   */
-  genrePoints?: Record<string, number>
 }
 
 /**
@@ -125,7 +118,6 @@ export interface ManualCard {
   manualText: string[]
   genreParams?: GenreParams
   paramMultiplier?: number
-  genrePoints?: Record<string, number>
   weight?: number
   hazards?: { colors: string[]; safeColors: string[] }
   runtimeConfig?: ManualRuntimeConfig
@@ -191,23 +183,8 @@ export interface ManualVersion {
 export interface GenreDef {
   id: GenreId
   label: string
-  /**
-   * 軸パラメータ型の閾値（旧システム）。
-   * `threshold` が指定されていない場合にこちらが使われる。
-   */
+  /** 軸パラメータの閾値。ベイズ尤度計算の基準点となる */
   thresholds: GenreParams
-  /**
-   * genrePoints 型の収束閾値（新システム）。
-   * この値以上の genrePoints が蓄積されるとジャンルが収束する。
-   * 指定した場合、`thresholds` の代わりにこちらが評価される。
-   */
-  threshold?: number
-  /**
-   * このジャンルに収束するために必要な選択肢 ID のリスト（任意）。
-   * 全 ID が選ばれていない限り収束しない。
-   * `threshold` と組み合わせて使用する。
-   */
-  requiredChoices?: string[]
   enableFeatures: FeatureId[]
   disableFeatures: FeatureId[]
   /** 安全パーサで評価するスコア式。変数は ScoreVars のキーを使用 */
@@ -330,8 +307,6 @@ export interface BayesianState {
 
 /** ベイズ収束のハイパーパラメータ */
 export interface BayesConfig {
-  /** 収束閾値（後方互換用） */
-  convergenceThreshold: number
   /** 最小事後確率（最尤ジャンルがこの値以上であることが収束の必要条件） */
   minProb: number
   /** 支配比率（最尤ジャンルが2位以上に対してこの比率以上で優位なことが収束の必要条件） */
@@ -340,8 +315,6 @@ export interface BayesConfig {
   decayRate: number
   /** base ジャンルの decay 率（累積パラメータ増大とともに base の尤度が低下） */
   baseDecay: number
-  /** 「◯◯にもできた」候補の閾値 */
-  candidateThreshold: number
 }
 
 /** ベイズデバッグログで表示する上位ジャンル数 */

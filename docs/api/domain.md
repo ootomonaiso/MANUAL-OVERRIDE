@@ -38,32 +38,21 @@
 
 ## `genreResolver.ts`
 
-ジャンル収束アルゴリズム。
+ジャンル収束アルゴリズム（ベイズ事後確率方式）。
+
+各軸の閾値との乖離量から尤度 `L = exp(-decayRate × deviation)` を求め、事後確率で収束を判定する。収束条件は「最尤ジャンルが `minProb` 以上、かつ2位の `dominanceRatio` 倍以上」（ハイパーパラメータは `config/bayes.json`）。
 
 ### エクスポート関数
 
 | 関数 | 概要 |
 |---|---|
-| `accumulateParams(paramsList: GenreParams[]): GenreParams` | 選択履歴から genreParams を単純合算 |
-| `resolveGenre(accumulated: GenreParams, genres: GenreDef[]): GenreId` | 累積パラメータからジャンルを決定（超過量最大のものを選択） |
-| `resolveFeaturesForGenre(genreId, genres): { enable: Set<FeatureId>, disable: Set<FeatureId> }` | ジャンルの enable/disable features を取得 |
-| `resolveGenreProgress(accumulated, genres): { closestGenre: GenreId, progress: number }` | 収束の近さを 0〜1 で返す（UI 演出用） |
-| `resolveAllGenreProgress(accumulated, genres)` | 全ジャンルの進捗を返す |
-| `resolveAllMetGenres(accumulated, genres): GenreId[]` | 収束済みの全ジャンルを返す（「◯◯にもできた」表示用） |
-
-### ベイズ収束（主方式）
-
-現在の主たる収束判定はベイズ事後確率方式。各軸の閾値との乖離量から尤度 `L = exp(-decayRate × deviation)` を求め、事後確率で収束を判定する（ハイパーパラメータは `config/bayes.json`）。
-
-| 関数 | 概要 |
-|---|---|
-| `accumulateGenrePoints(history)` | 選択履歴から genrePoints（ジャンル直接ポイント）を合算 |
-| `computeBayesianPosteriors(accumulated, genres, config)` | 各ジャンルの事後確率を計算 |
-| `initBayesianState(genres): BayesianState` | ベイズ状態（事後分布）を初期化 |
-| `updateBayesianState(state, accumulated, genres, config): BayesianState` | 1選択分の事後分布を更新し収束判定 |
-| `resolveHighestProbGenre(accumulated, genres, config): GenreId` | 最尤ジャンルを返す |
-| `getGenreDistribution(accumulated, genres, config)` | デバッグ用に上位ジャンルの確率分布を返す |
-| `DEFAULT_BAYES_CONFIG` | `bayes.json` 不在時のフォールバック設定 |
+| `computeBayesianPosteriors(accumulated, genres, config?)` | 各ジャンルの事後確率を計算 |
+| `initBayesianState(genres): BayesianState` | ベイズ状態（事後分布）を一様事前分布で初期化 |
+| `updateBayesianState(state, accumulated, genres, config?): BayesianState` | 1選択分の事後分布を更新し収束判定（収束後は凍結） |
+| `resolveGenre(accumulated, genres, config?): GenreId` | 収束済みジャンルを返す（未収束なら `'base'`） |
+| `resolveHighestProbGenre(accumulated, genres, config?): GenreId` | 最尤ジャンルを返す（MAX_ROUNDS 到達時の強制解決用） |
+| `resolveFeatureSet(genreId, genres): Set<FeatureId>` | ジャンルの有効 feature セット（enableFeatures − disableFeatures） |
+| `DEFAULT_BAYES_CONFIG` | `bayes.json` からロードしたデフォルト設定 |
 
 ---
 

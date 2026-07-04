@@ -1,85 +1,57 @@
-import type { ManualVersion, RuntimeRules, GenreParams, GenreParam, FeatureId, GenreId } from './types'
-import { accumulateParams, accumulateGenrePoints, resolveGenre, resolveFeaturesForGenre } from './genreResolver'
+import type { ManualVersion, RuntimeRules, GenreParams, GenreParam, GenreId } from './types'
+import { resolveGenre, resolveFeatureSet } from './genreResolver'
 import { GENRES } from '../data/genres'
 import { BASE_SCROLL_SPEED, TEMPO_SPEED_BONUS, RULE_DEFAULTS } from '../data/gameBalance'
 import { DEFAULT_CONTROLS } from './defaults'
 
+const DEFAULT_TIMESCALE = 1.0
+
 export interface ChoiceRecord {
-  versionKey?: string
   choiceId: string
   genreParams: GenreParams
   /** genreParams への乗数（デフォルト 1.0） */
   paramMultiplier?: number
-  /** ジャンルへの直接ポイント（新システム）。genrePoints ベースのジャンルで使用 */
-  genrePoints?: Record<string, number>
 }
 
 /**
  * 選択履歴と現在のバージョンから RuntimeRules を合成する純粋関数。
  *
- * 適用順序:
- *  1. 蓄積 genreParams → ジャンル解決
- *  2. ジャンルの enable/disableFeatures → features セット
- *  3. ジャンルの scrollDirection / environment → デフォルト
- *  4. currentVersion.runtimeConfig → バージョン固有の上書き（最優先）
+ * ジャンルの優先順位: runtimeConfig.forceGenreId > lockedGenre > ベイズ解決。
+ * ジャンル定義がデフォルト値（features / controls / gravity / scrollDirection /
+ * environment）を与え、currentVersion.runtimeConfig が個別に上書きする（最優先）。
  */
 export function buildRuntimeRules(
   currentVersion: ManualVersion,
   history: ChoiceRecord[],
   lockedGenre: GenreId | null,
 ): RuntimeRules {
-  // ── 1. ジャンルパラメータ累積（paramMultiplier を考慮） ──────────────
   const allParams = accumulateWithMultiplier(history)
-  const allGenrePoints = accumulateGenrePoints(history)
-  const selectedChoiceIds = history.map(r => r.choiceId)
-
-  // ── 2. ジャンル解決 ──────────────────────────────────────────────────
-  const genre = lockedGenre ?? resolveGenre(allParams, GENRES, allGenrePoints, selectedChoiceIds)
-  const genreDef = GENRES.find(g => g.id === genre)
-
-  // ── 3. feature セット ────────────────────────────────────────────────
-  const { enable, disable } = resolveFeaturesForGenre(genre, GENRES)
-  const features = new Set<FeatureId>(enable)
-  for (const f of disable) features.delete(f)
-
-  // ── 4. ジャンルデフォルト値 ──────────────────────────────────────────
-  const tempo = allParams.tempo ?? 0
-  const baseScrollSpeed = BASE_SCROLL_SPEED + tempo * TEMPO_SPEED_BONUS
-  const baseBpm         = RULE_DEFAULTS.bpm + tempo * RULE_DEFAULTS.bpmTempoBonus
-  const baseScrollDir   = genreDef?.scrollDirection ?? 'horizontal'
-  const baseEnvironment = genreDef?.environment     ?? 'ground'
-
-  // ── 5. runtimeConfig の上書き適用（最優先） ───────────────────────────
   const rc = currentVersion.runtimeConfig
 
-  const resolvedScrollDir = rc?.scrollDirection ?? baseScrollDir
-  const resolvedGenre     = rc?.forceGenreId ?? genre
+  const genre = rc?.forceGenreId ?? lockedGenre ?? resolveGenre(allParams, GENRES)
+  const genreDef = GENRES.find(g => g.id === genre)
 
-  // forceGenreId が指定されている場合は features も再合成
-  let resolvedFeatures = features
-  if (rc?.forceGenreId) {
-    const { enable: fe, disable: fd } = resolveFeaturesForGenre(rc.forceGenreId, GENRES)
-    resolvedFeatures = new Set<FeatureId>(fe)
-    for (const f of fd) resolvedFeatures.delete(f)
-  }
-
+  const features = resolveFeatureSet(genre, GENRES)
   // 基本移動は常時有効（ジャンル・フェーズに関わらず左右移動を保証）
-  resolvedFeatures.add('movement')
+  features.add('movement')
+
+  const tempo = allParams.tempo ?? 0
+  const scrollDirection = rc?.scrollDirection ?? genreDef?.scrollDirection ?? 'horizontal'
 
   return {
     controls:        { ...DEFAULT_CONTROLS, ...(genreDef?.controls ?? {}) },
     hazardColors:    new Set(currentVersion.hazards.colors),
     safeColors:      new Set(currentVersion.hazards.safeColors),
-    features:        resolvedFeatures,
-    genre:           resolvedGenre,
-    scrollSpeed:     rc?.scrollSpeed     ?? baseScrollSpeed,
-    bpm:             rc?.bpm             ?? baseBpm,
+    features,
+    genre,
+    scrollSpeed:     rc?.scrollSpeed     ?? BASE_SCROLL_SPEED + tempo * TEMPO_SPEED_BONUS,
+    bpm:             rc?.bpm             ?? RULE_DEFAULTS.bpm + tempo * RULE_DEFAULTS.bpmTempoBonus,
     gravity:         rc?.gravity         ?? genreDef?.gravity ?? RULE_DEFAULTS.gravity,
-    scrollDirection: resolvedScrollDir,
-    environment:     rc?.environment     ?? baseEnvironment,
+    scrollDirection,
+    environment:     rc?.environment     ?? genreDef?.environment ?? 'ground',
     playerMaxHp:     rc?.playerMaxHp     ?? RULE_DEFAULTS.playerMaxHp,
-    timescale:       rc?.timescale       ?? 1.0,
-    scrollAxis:      resolvedScrollDir === 'vertical' ? 'y' : 'x',
+    timescale:       rc?.timescale       ?? DEFAULT_TIMESCALE,
+    scrollAxis:      scrollDirection === 'vertical' ? 'y' : 'x',
     colorTouchScore: rc?.colorTouchScore ?? RULE_DEFAULTS.colorTouchScore,
   }
 }
@@ -95,14 +67,3 @@ export function accumulateWithMultiplier(history: ChoiceRecord[]): GenreParams {
   }
   return total
 }
-
-// 現在のバージョンに選択をたどって次バージョンキーを返す
-export function nextVersionKey(deck: Record<string, ManualVersion>, currentKey: string, choiceId: string): string | null {
-  const version = deck[currentKey]
-  if (!version) return null
-  const choice = version.choices.find(c => c.id === choiceId)
-  return choice?.next ?? null
-}
-
-// genreResolver の accumulateParams を後方互換のため再エクスポート
-export { accumulateParams }

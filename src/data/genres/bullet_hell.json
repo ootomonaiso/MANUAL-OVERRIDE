@@ -1,8 +1,8 @@
 {
-  "$schema": "../../../../schemas/genre.schema.json",
+  "$schema": "../../../schemas/genre.schema.json",
   "id": "bullet_hell",
   "label": "弾幕シューティング",
-  "thresholds": { "vertical": 4, "enemy": 6 },
+  "thresholds": { "vertical": 3, "enemy": 5 },
   "enableFeatures": ["shoot", "spread_shot", "enemy_hp", "vertical_scroll"],
   "disableFeatures": ["grid_stop", "auto_run", "slow_precise"],
   "scoreFormula": "kills * 80 + combo * 150 + survivedSec * 10 + accuracy * 500",

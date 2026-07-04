@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../../schemas/genre.schema.json",
+  "$schema": "../../../schemas/genre.schema.json",
   "id": "idle",
   "label": "放置ゲーム",
   "thresholds": { "craft": 6 },

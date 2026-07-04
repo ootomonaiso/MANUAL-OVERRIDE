@@ -5,7 +5,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..')
-const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', '.pw-browsers'])
+const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', '.pw-browsers', '.claude'])
 
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

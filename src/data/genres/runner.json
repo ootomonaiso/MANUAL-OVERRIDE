@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../../schemas/genre.schema.json",
+  "$schema": "../../../schemas/genre.schema.json",
   "id": "runner",
   "label": "エンドレスランナー",
   "thresholds": { "tempo": 7 },

@@ -10,16 +10,23 @@
  * ────────────────────────────────────────────────────────────
  */
 
-import { loadConfigFromGlob, devValidateConfig } from '../framework'
-import type { GenreDefJSON } from '../framework/config-types'
+import { loadConfigFromGlob, devValidateConfig, normalizeGenreDef } from '../framework'
+import type { GenreDefJSON, GenreDefJSONInput } from '../framework/config-types'
 
 const _rawModules = import.meta.glob('./config/*.json', { eager: true })
 
-// src/data/genres/*.json を自動収集してジャンル定義を組み立てる
+// src/data/genres/*.json を自動収集してジャンル定義を組み立てる。
+// 必須は id / label / thresholds のみ。残りは normalizeGenreDef が補完する。
 const _genreModules = import.meta.glob('./genres/*.json', { eager: true })
-const _genreList = Object.values(_genreModules)
-  .map(m => ((m as { default?: unknown }).default ?? m) as GenreDefJSON)
-  .filter(g => typeof (g as GenreDefJSON).id === 'string')
+const _genreList: GenreDefJSON[] = []
+for (const [path, mod] of Object.entries(_genreModules)) {
+  const raw = ((mod as { default?: unknown }).default ?? mod) as Partial<GenreDefJSONInput>
+  if (typeof raw.id !== 'string' || typeof raw.label !== 'string' || typeof raw.thresholds !== 'object') {
+    console.error(`[config] ${path}: id / label / thresholds は必須です。このジャンルはスキップされます。`)
+    continue
+  }
+  _genreList.push(normalizeGenreDef(raw as GenreDefJSONInput))
+}
 
 // genres.json の代わりに合成セクションとして注入する
 // themeColors は genres.json から直接取得（上書き防止のため）

@@ -1,4 +1,5 @@
 {
+  "$schema": "../../../schemas/cards.schema.json",
   "cards": [
     {
       "id": "c-enemy-active",

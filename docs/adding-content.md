@@ -19,153 +19,114 @@
 ## 全体の仕組みを3分で理解する
 
 ```
-プレイヤーが選択肢を選ぶ
+毎ラウンド、カードプールから2枚が抽選されて提示される
+        ↓
+プレイヤーが選択肢（カード）を選ぶ
         ↓
   genreParams が蓄積される
   例: { tempo: +2, aerial: +1 }
         ↓
-  蓄積値がどのジャンルの thresholds を超えたか判定（genreResolver）
+  蓄積値から各ジャンルの事後確率を計算（genreResolver・ベイズ方式）
         ↓
-  閾値を全て超えたジャンルのうち「超過量の合計が最大」のものが確定
+  確率が十分に偏ったジャンルで確定（詳細: genre-system.md）
         ↓
   GenrePlugin の視覚テーマ・スポーンテーブルが適用される
         ↓
   投擲 → エンディング（manualReveal + endingFlavor を表示）
 ```
 
-**選択肢を追加する = JSON ファイルを編集するだけ**
+**選択肢を追加する = `src/data/cards/` にカード JSON を足すだけ**
 **ジャンル・エンディングを追加する = `src/data/genres/<id>.json` を置くだけ（見た目を作り込むなら TS プラグインも）**
 
 ---
 
 ## 選択肢（説明書の分岐）を追加する
 
-選択肢は `src/data/manuals/` 以下の JSON ファイルで定義します。
-Vite が `*.json` を自動ロードするため、**ファイルを置くだけで反映されます**。
+選択肢は**カードプール方式**です。`src/data/cards/` 以下の JSON にカードを足すと、
+毎ラウンドの2択にそのカードが自動的に抽選されます。ツリー構造や `next` ポインタは
+ないので、**カード1枚から独立して追加できます**。
+
+> 旧方式（`src/data/manuals/` の `choices` + `next` によるツリー分岐）は現在
+> ゲームでは使われていません。`src/data/manuals/base.json` の `1.0` エントリだけが
+> 初期説明書として参照されます。選択肢を追加したいときに `manuals/` を編集しても
+> 反映されないので注意してください。
 
 ### ファイル構成
 
 ```
-src/data/manuals/
-├── base.json          ← ver 1.0（チュートリアル直後の最初の2択）
-├── action-branch.json ← 戦闘・探索系の分岐（2.0-a → 3.0-xxx）
-├── flow-branch.json   ← 速度・音楽系の分岐（2.0-b → 3.0-xxx）
-└── TEMPLATE.json      ← 新ブランチ追加時のテンプレート
+src/data/cards/
+├── starter-cards.json ← 基本カード30枚
+├── TEMPLATE.json      ← コピペ用テンプレート（ゲームには読み込まれない）
+└── user-cards.json    ← content/choices/ から自動生成（ある場合）
 ```
 
-**既存の流れ:**
-```
-1.0 (base.json)
-  ├─ 2.0-a (action-branch.json) ─ STG・RPG・サバイバル方向
-  └─ 2.0-b (flow-branch.json)  ─ ランナー・リズム・プラットフォーム方向
-```
+### カードを追加する
 
-### 既存ブランチに選択肢を追記する
-
-`action-branch.json` などを開き、`choices` 配列に追記します。
+既存ファイルの `cards` 配列に追記するか、新しい JSON ファイルを
+`src/data/cards/` に置きます（`import.meta.glob` で自動収集）。
 
 ```json
 {
-  "choices": [
+  "$schema": "../../../schemas/cards.schema.json",
+  "cards": [
     {
+      "id": "c-my-card",
       "label": "プレイヤーに見える文章（ジャンル方向を直接書かない）",
-      "next": "3.0-my-choice",
+      "manualText": ["選択後に説明書へ追記される行。"],
       "genreParams": { "enemy": 2, "range": 1 },
-      "hint": "開発者メモ（プレイヤーには非表示）: STG方向"
+      "weight": 2,
+      "hint": "開発者メモ（プレイヤーには非表示）: STG方向",
+      "genreAffinity": ["stg"]
     }
   ]
 }
 ```
+
+`$schema` を付けると VS Code 上で自動補完と検証が効きます。
 
 | フィールド | 必須 | 説明 |
 |---|---|---|
+| `id` | ✅ | 一意なカードID（英小文字・数字・`_`・`-`） |
 | `label` | ✅ | プレイヤーに表示するテキスト |
-| `next` | ✅ | 次のマニュアルバージョンのキー |
-| `genreParams` | ✅ | 蓄積するジャンルパラメータ（後述） |
+| `manualText` | ✅ | 選択後に説明書へ追記される行（1行1要素） |
+| `genreParams` | ― | 蓄積するジャンルパラメータ（後述） |
+| `weight` | ― | 抽選の出やすさ（省略時 1） |
+| `genreAffinity` | ― | 向かうジャンルID群。プレイヤーの傾向と合うと提示されやすくなる |
+| `conflictsWith` | ― | 矛盾するカードID群（相手の説明書行が取り消し線になる） |
 | `hint` | ― | 開発者向けメモ（非表示） |
-| `id` | ― | 省略するとラベルから自動生成 |
+| `paramMultiplier` | ― | genreParams への乗数（省略時 1.0） |
 
-### 新しいブランチファイルを追加する
+TypeScript を触りたくない場合は `content/choices/` に置く簡易形式もあります
+（`label` と `genreParams` だけで書ける。→ [content/README.md](../content/README.md)）。
 
-`TEMPLATE.json` をコピーして新しいファイルを作ります。
+### runtimeConfig でゲームの挙動を変える
 
-```bash
-# 例: my-branch.json を作成
-cp src/data/manuals/TEMPLATE.json src/data/manuals/my-branch.json
-```
+カードにはゲームルールの上書きも持たせられます。
 
 ```json
 {
-  "id": "my-branch",
-  "description": "開発者向けのブランチ説明",
-  "entries": [
-    {
-      "key": "3.0-my-route",
-      "version": "3.0",
-      "manualText": [
-        "ここに説明書の本文を書く。",
-        "4〜6行が見やすい。"
-      ],
-      "controls": {
-        "jump": "Space",
-        "moveLeft": "ArrowLeft",
-        "moveRight": "ArrowRight"
-      },
-      "hazards": {
-        "colors": ["red"],
-        "safeColors": ["blue"]
-      },
-      "choices": [
-        {
-          "label": "ステージを縦に広げる",
-          "next": "4.0-vertical",
-          "genreParams": { "vertical": 3 },
-          "hint": "aerial_stg 方向"
-        },
-        {
-          "label": "ステージに宝箱を置く",
-          "next": "4.0-loot",
-          "genreParams": { "growth": 3 },
-          "hint": "RPG/dungeon 方向"
-        }
-      ]
-    }
-  ]
-}
-```
-
-このファイルを `src/data/manuals/` に置くだけで自動ロードされます。
-親エントリ（`2.0-a` など）の `next` を新しいキーに変えることで接続します。
-
-### runtimeOverrides でゲームの挙動を変える
-
-選択肢によってゲームの物理パラメータも変えられます。
-
-```json
-{
-  "key": "3.0-fast-route",
-  "version": "3.0",
+  "id": "c-fast-route",
+  "label": "ゲームをもっと速くする",
   "manualText": ["スピードが上がりました。"],
-  "runtimeOverrides": {
-    "scrollSpeed": 6.0,
+  "genreParams": { "tempo": 2 },
+  "runtimeConfig": {
+    "scrollSpeed": 300,
     "gravity": 1400,
     "bpm": 160
-  },
-  "controls": { "jump": "Space", "moveLeft": "ArrowLeft", "moveRight": "ArrowRight" },
-  "hazards": { "colors": ["red"], "safeColors": ["blue"] },
-  "choices": []
+  }
 }
 ```
 
 | パラメータ | デフォルト | 説明 |
 |---|---|---|
-| `scrollSpeed` | 3.0 | 横スクロール速度（px/フレーム換算） |
-| `gravity` | 1200 | 重力加速度 |
+| `scrollSpeed` | tempo 依存 | スクロール速度 px/s |
+| `gravity` | 1600 | 重力加速度 px/s²（0 で無重力） |
 | `bpm` | 120 | リズムゲーム用 BPM |
 | `scrollDirection` | `"horizontal"` | `"vertical"` / `"none"` も可 |
-| `playerMaxHp` | 1 | HP 制（2以上でRPG的被弾許容） |
+| `playerMaxHp` | 3 | 最大HP（hp Feature 有効時） |
 | `timescale` | 1.0 | ゲーム全体の時間倍率 |
 | `environment` | `"ground"` | `"sky"` / `"space"` / `"ocean"` など |
+| `colorTouchScore` | 200 | color_touch 時の1タッチスコア |
 
 ---
 
@@ -226,13 +187,17 @@ cp src/data/manuals/TEMPLATE.json src/data/manuals/my-branch.json
 
 ### ステップ 3: 選択肢が収束するようにパラメータを設計する
 
-マニュアルの JSON ファイルの `genreParams` を調整して、
-プレイヤーが特定の選択を続けると `thresholds` に到達するようにします。
+カードの `genreParams` を調整して、プレイヤーが特定の傾向の選択を続けると
+`thresholds` に到達するようにします。新ジャンルへ向かうカードが
+プールに 2〜3 枚あると自然に収束ルートができます。
 
 **例:** `thresholds: { tempo: 3, aerial: 3 }` の場合
-- ver 2.0 の選択肢で `{ tempo: 2, aerial: 1 }` を加算
-- ver 3.0 の選択肢で `{ tempo: 1, aerial: 2 }` を加算
-- 合計で `{ tempo: 3, aerial: 3 }` → ジャンル確定
+- カードA で `{ tempo: 2, aerial: 1 }` を加算
+- カードB で `{ tempo: 1, aerial: 2 }` を加算
+- 合計で `{ tempo: 3, aerial: 3 }` → 事後確率が偏りジャンル確定
+
+カードの `genreAffinity` に新ジャンルの `id` を入れておくと、
+その方向へ進んでいるプレイヤーに提示されやすくなります。
 
 ---
 
@@ -389,8 +354,9 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
 
 ```json
 {
+  "id": "c-intense",
   "label": "敵をどんどん強くする",
-  "next": "3.0-intense",
+  "manualText": ["敵が強くなりました。"],
   "genreParams": { "enemy": 2, "tempo": 1 }
 }
 ```
@@ -404,26 +370,22 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
 
 ### 自動バリデーション
 
-開発中（`import.meta.env.DEV`）は起動時に自動で検証が走ります。
-コンソールに以下が出れば正常:
+`npm run validate` で全 JSON の整合性を検証できます（CI でも自動実行）。
+以下を検出します:
 
-```
-[ManualDeck] Validation OK (42 entries, 0 errors, 2 warnings)
-```
+- ジャンル: 必須キー欠落・`id` とファイル名の不一致・`thresholds` の軸名 typo・`theme` の不正値・`id` 重複
+- カード: 必須キー欠落・`genreParams` の軸名 typo・`id` 重複・
+  `conflictsWith` / `genreAffinity` が存在しない ID を指している
 
-エラーが出た場合の例:
-
-```
-[ManualDeck] ERROR: key "3.0-my-route" の choices[0].next "4.0-nonexist" が存在しません
-[ManualDeck] WARNING: key "3.0-orphan" は "1.0" から到達不可能です
-```
+また開発中（`import.meta.env.DEV`）は起動時にもコンソールで検証が走ります。
 
 ### よくあるミス
 
 | 症状 | 原因 |
 |---|---|
-| 選択肢を選んでも何も起きない | `next` のキーが存在しない or タイプミス |
-| いつまでもジャンルが確定しない | `thresholds` の値が選択肢の合計を超えている |
+| 追加したカードが出てこない | `cards` 配列の外に書いている・`id` 重複・`weight: 0`（`npm run validate` を確認） |
+| パラメータが蓄積されない | `genreParams` の軸名 typo（例: `tenpo`）。validate が検出する |
+| いつまでもジャンルが確定しない | `thresholds` の値が高すぎて事後確率が偏らない（目安: 1軸なら5、2軸なら各3） |
 | エンディングテキストが表示されない | `endingFlavor` が `src/data/genres/<id>.json` に未記載 |
 | 見た目が変わらない | TSプラグインの `export default` 忘れ、または `id` の不一致 |
 | ジャンルが認識されない | `src/data/genres/<id>.json` の `id` 重複・JSON 構文エラー（起動時の validation を確認） |
@@ -432,20 +394,20 @@ drawGenreHUD(ctx: CanvasRenderingContext2D, W: number, H: number, stats: GameSta
 
 ## チェックリスト
 
-### 新しい選択肢ブランチを追加する
+### 新しい選択肢（カード）を追加する
 
-- [ ] `src/data/manuals/` に JSON ファイルを作成（TEMPLATE.json をコピー）
-- [ ] `key` が全ファイル通じてユニークであることを確認
-- [ ] 親エントリの `choices[].next` が新しいキーを指していることを確認
-- [ ] ブラウザ開発者コンソールで validation エラーがないことを確認
+- [ ] `src/data/cards/` の JSON に追記、または新ファイル作成（TEMPLATE.json をコピー）
+- [ ] `id` が全ファイル通じてユニークであることを確認
+- [ ] `$schema` を付けてエディタ検証を有効にする
+- [ ] `npm run validate` でエラーがないことを確認
 
 ### 新しいジャンルエンディングを追加する
 
-- [ ] `src/data/genres/<id>.json` を作成（thresholds, enableFeatures, scoreFormula, manualReveal, endingFlavor, theme, bgColor）
+- [ ] `src/data/genres/<id>.json` を作成（必須は id / label / thresholds。scoreFormula や theme は任意）
 - [ ]（任意）`src/genres/MyGenrePlugin.ts` を作成し末尾で `export default new MyGenrePlugin()`（視覚テーマ + spawnTable）
 - [ ] ※ `src/domain/types.ts` や `src/genres/index.ts` の編集は不要（GenreId は string・プラグインは自動収集）
-- [ ] `src/data/manuals/` の JSON で genreParams を調整し、新ジャンルの thresholds へ収束するルートが存在することを確認
-- [ ] ブラウザで実際にそのジャンルへ収束するか動作確認
+- [ ] 新ジャンルへ向かうカード（genreParams / genreAffinity）を 2〜3 枚用意し、thresholds へ収束するルートが存在することを確認
+- [ ] ブラウザで実際にそのジャンルへ収束するか動作確認（デバッグ画面の強制確定も使える）
 
 ### テスト時のショートカット
 

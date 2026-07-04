@@ -53,7 +53,7 @@
   → buildRuntimeRules(currentVersion, history, lockedGenre)
       ├─ genreParams を累積 (paramMultiplier 考慮)
       ├─ resolveGenre → GenreId を決定
-      ├─ resolveFeaturesForGenre → features Set を構築
+      ├─ resolveFeatureSet → features Set を構築
       └─ runtimeConfig の上書き適用
   → RuntimeRules（イミュータブル）を生成
   → sideScroller.updateRules(rules) → FeatureSystem.onManualUpdated()
@@ -180,6 +180,6 @@ src/
 | `FeatureId` | domain/types.ts | `string` 型（union 型ではない）。src/data/genres/*.json の enableFeatures で参照 |
 | `SpawnEntry` | engine/types.ts | ジャンルプラグインが宣言するハザード出現テーブルの1行 |
 | `ManualVersion` | domain/types.ts | 1バージョン分の説明書データ（controls, hazards, choices…） |
-| `Choice` | domain/types.ts | 選択肢の定義（genreParams, genrePoints, paramMultiplier 等） |
+| `Choice` | domain/types.ts | 選択肢の定義（genreParams, paramMultiplier 等） |
 | `LearningRule` | domain/types.ts | 行動統計に基づく自動ルール更新 |
 | `ManualRuntimeConfig` | domain/types.ts | 説明書バージョンが runtime に適用できる上書き設定 |

@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "cards.schema.json",
+  "title": "説明書カードデッキ",
+  "description": "src/data/cards/ 内のカードデッキファイルのスキーマ。cards 配列にカードを足すだけで選択肢プールに自動追加される。",
+  "type": "object",
+  "required": ["cards"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSONスキーマへの参照（自動補完のため）"
+    },
+    "cards": {
+      "type": "array",
+      "description": "この選択肢プールに含まれるカード。各ラウンドでここからランダムに2枚提示される。",
+      "items": { "$ref": "#/definitions/card" }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "genreParams": {
+      "type": "object",
+      "description": "この選択がジャンル収束軸に加算する値。負数で減算も可能。1〜3 が目安。",
+      "additionalProperties": false,
+      "properties": {
+        "tempo":   { "type": "number", "description": "速度・テンポ系（runner / rhythm 方向）" },
+        "range":   { "type": "number", "description": "射程・遠距離攻撃系（stg 方向）" },
+        "enemy":   { "type": "number", "description": "敵・戦闘密度系（stg / arena 方向）" },
+        "combo":   { "type": "number", "description": "コンボ・連続入力系（puzzle / hack_slash 方向）" },
+        "growth":  { "type": "number", "description": "成長・経験値系（rpg / dungeon 方向）" },
+        "rhythm":  { "type": "number", "description": "音楽・リズム系（rhythm 方向）" },
+        "stealth": { "type": "number", "description": "隠密・ステルス系（stealth_action / horror 方向）" },
+        "vertical":{ "type": "number", "description": "縦スクロール系（aerial_stg / aquatic 方向）" },
+        "aerial":  { "type": "number", "description": "空中・ジャンプ系（platformer 方向）" },
+        "survive": { "type": "number", "description": "生存・HP管理系（survival / horror 方向）" },
+        "craft":   { "type": "number", "description": "構築・設置系（tower_def / idle 方向）" },
+        "speed":   { "type": "number", "description": "速度特化系（racing / sports 方向）" }
+      }
+    },
+    "card": {
+      "type": "object",
+      "required": ["id", "label", "manualText"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$",
+          "description": "カードの一意識別子（英小文字・数字・_・- のみ）。例: c-enemy-active"
+        },
+        "label": {
+          "type": "string",
+          "description": "選択肢としてプレイヤーに表示されるテキスト"
+        },
+        "manualText": {
+          "type": "array",
+          "description": "選択後に説明書へ追記される行（1行1要素）",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "genreParams": { "$ref": "#/definitions/genreParams" },
+        "paramMultiplier": {
+          "type": "number",
+          "description": "genreParams への乗数。省略時 1.0。大きくするとこの選択の重みが増す",
+          "minimum": 0
+        },
+        "weight": {
+          "type": "number",
+          "description": "抽選の出やすさ。省略時 1。大きいほど提示されやすい",
+          "minimum": 0
+        },
+        "hint": {
+          "type": "string",
+          "description": "開発者メモ（プレイヤーには表示されない）。どのジャンル方向かを書いておくとよい"
+        },
+        "genreAffinity": {
+          "type": "array",
+          "description": "このカードが向かうジャンルID群。プレイヤーの選択傾向と合うと提示されやすくなる",
+          "items": { "type": "string" }
+        },
+        "conflictsWith": {
+          "type": "array",
+          "description": "矛盾するカードID群。選択時、相手カードの説明書行が取り消し線になる",
+          "items": { "type": "string" }
+        },
+        "hazards": {
+          "type": "object",
+          "description": "障害物の危険色・安全色を上書きする",
+          "required": ["colors", "safeColors"],
+          "additionalProperties": false,
+          "properties": {
+            "colors":     { "type": "array", "items": { "type": "string" }, "description": "危険色" },
+            "safeColors": { "type": "array", "items": { "type": "string" }, "description": "安全色" }
+          }
+        },
+        "runtimeConfig": {
+          "type": "object",
+          "description": "選択中のゲームルール上書き（スクロール速度・重力など）",
+          "additionalProperties": false,
+          "properties": {
+            "scrollSpeed":     { "type": "number", "description": "スクロール速度 px/s" },
+            "gravity":         { "type": "number", "description": "重力 px/s²。0 で無重力" },
+            "bpm":             { "type": "number", "description": "BPM（リズム系で使用）" },
+            "scrollDirection": { "type": "string", "enum": ["horizontal", "vertical", "none"], "description": "スクロール方向" },
+            "environment":     { "type": "string", "enum": ["ground", "sky", "space", "ocean", "dungeon", "forest", "city"], "description": "舞台環境" },
+            "playerMaxHp":     { "type": "number", "description": "最大HP（hp Feature 有効時）" },
+            "timescale":       { "type": "number", "description": "時間スケール。1.0=通常、<1 でスロー" },
+            "colorTouchScore": { "type": "number", "description": "color_touch 時の1タッチスコア" },
+            "forceGenreId":    { "type": "string", "description": "ジャンル強制固定（テスト・演出用）" }
+          }
+        }
+      }
+    }
+  }
+}

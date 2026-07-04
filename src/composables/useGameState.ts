@@ -15,6 +15,7 @@ import type { ThrowResult } from '../domain/types'
 import { soundManager } from '../plugins/SoundManager'
 import { sampleCards, CARD_POOL } from '../data/cardPool'
 import { MAX_ROUNDS, DEFAULT_FALLBACK_GENRE } from '../data/gameBalance'
+import { DEBUG_MODE } from '../debug/const'
 
 // genreParams のジッター幅（±20%）
 const PARAM_JITTER_RANGE = 0.4
@@ -100,6 +101,60 @@ export function useGameState() {
     return true
   }
 
+  // genreParams のジッター（±PARAM_JITTER_RANGE の幅でランダムブレ）
+  function _jitteredParams(card: ManualCard): Partial<Record<GenreParam, number>> {
+    const jitter = 1 + (Math.random() - 0.5) * PARAM_JITTER_RANGE
+    const params: Partial<Record<GenreParam, number>> = {}
+    for (const [k, v] of Object.entries(card.genreParams ?? {}) as [GenreParam, number][]) {
+      params[k] = v * jitter
+    }
+    return params
+  }
+
+  // 矛盾カード: 過去に選ばれた矛盾相手の説明書行を取り消し線化
+  function _applyConflicts(card: ManualCard) {
+    for (const conflictId of card.conflictsWith ?? []) {
+      if (!choiceHistory.some(h => h.choiceId === conflictId)) continue
+      const conflictedCard = CARD_POOL.find(c => c.id === conflictId)
+      if (!conflictedCard) continue
+      for (const line of conflictedCard.manualText) {
+        const idx = accumulatedManualText.value.indexOf(line)
+        if (idx >= 0) accumulatedManualText.value[idx] = `~~${line}~~`
+      }
+    }
+  }
+
+  function _appendManualText(card: ManualCard) {
+    for (const line of card.manualText) {
+      if (!accumulatedManualText.value.includes(line) && !accumulatedManualText.value.includes(`~~${line}~~`)) {
+        accumulatedManualText.value.push(line)
+      }
+    }
+  }
+
+  function _logBayesDebug(state: BayesianState, cardId: string) {
+    if (!DEBUG_MODE) return
+    const top = GENRES
+      .filter(g => g.id !== 'base')
+      .sort((a, b) => (state.posteriors[b.id] ?? 0) - (state.posteriors[a.id] ?? 0))
+      .slice(0, BAYES_DEBUG_TOP_N)
+      .map(g => `  ${g.id.padEnd(14)} ${((state.posteriors[g.id] ?? 0) * 100).toFixed(1)}%`)
+      .join('\n')
+    console.warn(`[BAYES] round #${roundCount.value} | cardId=${cardId}`)
+    console.warn(`[BAYES] Top${BAYES_DEBUG_TOP_N}:\n${top}`)
+    console.warn(`[BAYES] converged=${state.converged} | genre=${state.convergedGenre ?? '—'} | criteria=minProb${(DEFAULT_BAYES_CONFIG.minProb * 100).toFixed(0)}% ratio>=${DEFAULT_BAYES_CONFIG.dominanceRatio}x`)
+  }
+
+  // ジャンル確定: base 収束はフォールバックへ振り替え、確定文追記と効果音を伴う
+  function _lockGenre(genreId: GenreId) {
+    lockedGenre.value = genreId === 'base' ? DEFAULT_FALLBACK_GENRE : genreId
+    const genreDef = GENRES.find(g => g.id === lockedGenre.value)
+    if (genreDef?.manualReveal) {
+      accumulatedManualText.value.push('', genreDef.manualReveal)
+    }
+    soundManager.onGenreLock(lockedGenre.value)
+  }
+
   // プレイヤーがカードを選んだとき
   function choose(cardId: string): string | undefined {
     const card = activeCards.value.find(c => c.id === cardId)
@@ -107,94 +162,32 @@ export function useGameState() {
 
     soundManager.onChoiceSelect()
 
-    // genreParams のジッター（±PARAM_JITTER_RANGE の幅でランダムブレ）
-    const jitter = 1 + (Math.random() - 0.5) * PARAM_JITTER_RANGE
-    const jitteredParams: Partial<Record<GenreParam, number>> = {}
-    for (const [k, v] of Object.entries(card.genreParams ?? {}) as [GenreParam, number][]) {
-      jitteredParams[k] = v * jitter
-    }
-
     choiceHistory.push({
       choiceId: cardId,
-      genreParams: jitteredParams,
+      genreParams: _jitteredParams(card),
       paramMultiplier: card.paramMultiplier,
-      genrePoints: card.genrePoints,
     })
 
-    // 矛盾カード処理
-    if (card.conflictsWith?.length) {
-      for (const conflictId of card.conflictsWith) {
-        const wasSelected = choiceHistory.some(h => h.choiceId === conflictId)
-        if (!wasSelected) continue
-        const conflictedCard = CARD_POOL.find(c => c.id === conflictId)
-        if (!conflictedCard) continue
-        for (const line of conflictedCard.manualText) {
-          const idx = accumulatedManualText.value.indexOf(line)
-          if (idx >= 0) accumulatedManualText.value[idx] = `~~${line}~~`
-        }
-      }
-    }
-
-    // 説明書本文に追記
-    for (const line of card.manualText) {
-      if (!accumulatedManualText.value.includes(line) && !accumulatedManualText.value.includes(`~~${line}~~`)) {
-        accumulatedManualText.value.push(line)
-      }
-    }
-
-    // 障害物設定を上書き
-    if (card.hazards) {
-      currentHazards.value = { ...card.hazards }
-    }
-
-    // runtimeConfig を更新
-    if (card.runtimeConfig) {
-      lastRuntimeConfig.value = card.runtimeConfig
-    }
+    _applyConflicts(card)
+    _appendManualText(card)
+    if (card.hazards) currentHazards.value = { ...card.hazards }
+    if (card.runtimeConfig) lastRuntimeConfig.value = card.runtimeConfig
 
     roundCount.value++
 
-    // ベイズ更新
     const accumulated = accumulateWithMultiplier(choiceHistory)
     const newState = updateBayesianState(bayesState, accumulated, GENRES)
     _syncBayesState(newState)
+    _logBayesDebug(newState, cardId)
 
-    // デバッグログ
-    const sorted = GENRES
-      .filter(g => g.id !== 'base')
-      .sort((a, b) => (newState.posteriors[b.id] ?? 0) - (newState.posteriors[a.id] ?? 0))
-      .slice(0, BAYES_DEBUG_TOP_N)
-      .map(g => `  ${g.id.padEnd(14)} ${((newState.posteriors[g.id] ?? 0) * 100).toFixed(1)}%`)
-      .join('\n')
-    console.warn(`[BAYES] round #${roundCount.value} | cardId=${cardId}`)
-    console.warn(`[BAYES] Top${BAYES_DEBUG_TOP_N}:\n${sorted}`)
-    console.warn(`[BAYES] converged=${newState.converged} | genre=${newState.convergedGenre ?? '—'} | criteria=minProb${(DEFAULT_BAYES_CONFIG.minProb * 100).toFixed(0)}% ratio>=${DEFAULT_BAYES_CONFIG.dominanceRatio}x`)
-
-    // ジャンル確定済みなら説明書更新のみ
-    if (lockedGenre.value !== null) {
-      _rebuildRules()
-      phase.value = 'genreLocked'
-      return undefined
+    const shouldLock = lockedGenre.value === null &&
+      (roundCount.value >= MAX_ROUNDS || newState.converged)
+    if (shouldLock) {
+      _lockGenre(newState.convergedGenre ?? resolveHighestProbGenre(accumulated, GENRES))
     }
 
-    // ジャンル収束チェック
-    if (roundCount.value >= MAX_ROUNDS || newState.converged) {
-      lockedGenre.value = newState.convergedGenre ?? resolveHighestProbGenre(accumulated, GENRES)
-      if (lockedGenre.value === 'base') {
-        lockedGenre.value = DEFAULT_FALLBACK_GENRE
-      }
-      // ジャンル確定文を説明書本文に追記
-      const genreDef = GENRES.find(g => g.id === lockedGenre.value)
-      if (genreDef?.manualReveal) {
-        accumulatedManualText.value.push('', genreDef.manualReveal)
-      }
-      soundManager.onGenreLock(lockedGenre.value)
-      _rebuildRules()
-      phase.value = 'genreLocked'
-    } else {
-      _rebuildRules()
-      phase.value = 'playing'
-    }
+    _rebuildRules()
+    phase.value = lockedGenre.value !== null ? 'genreLocked' : 'playing'
     return undefined
   }
 
