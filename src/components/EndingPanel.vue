@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import type { FinalScore, GenreId, PlayStyleResult, ContradictionState, SurpriseEnding } from '../domain/types'
+import type { FinalScore, GenreId, PlayStyleResult, SurpriseEnding } from '../domain/types'
 import { GENRES } from '../data/genres'
 import { SCORE } from '../data/tunables'
 

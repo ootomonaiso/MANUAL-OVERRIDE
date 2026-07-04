@@ -106,6 +106,14 @@
       "bg": "#0a0a0a",
       "glow": "rgba(160,0,240,0.25)",
       "font": "'Courier New', monospace"
+    },
+    "glitch": {
+      "accent": "#ff0040",
+      "border": "#ff0040",
+      "hint": "rgba(255,0,64,0.3)",
+      "bg": "#0a0a0a",
+      "glow": "rgba(255,0,64,0.15)",
+      "font": "'Courier New', monospace"
     }
   }
 }
