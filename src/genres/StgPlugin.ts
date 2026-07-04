@@ -40,6 +40,8 @@ export class StgPlugin extends GenrePluginBase {
     { shape: 'rect',    placement: 'float', weightStart: 0, weightEnd: 4, wRange: [18, 30], hRange: [18, 30], floatAmpRange: [40, 110] },
   ]
 
+  // spawnDensity is sourced from JSON config (stg.json) — see genres/index.ts merge
+
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
     // 遠方の恒星（巨大なグロー）。セクター移動でゆっくり横切る
     const sunX = ((-offsetX * 0.08) % (W * 2.2) + W * 2.2) % (W * 2.2) - W * 0.4

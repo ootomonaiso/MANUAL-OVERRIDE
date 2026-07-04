@@ -2,7 +2,7 @@
   "$schema": "../../../../schemas/genre.schema.json",
   "id": "dungeon",
   "label": "ダンジョン探索",
-  "thresholds": { "growth": 6, "craft": 3 },
+  "thresholds": { "growth": 6, "craft": 5 },
   "enableFeatures": ["hp", "exp", "item_pickup", "slow_precise"],
   "disableFeatures": ["auto_run", "beat_hazard", "vertical_scroll"],
   "scoreFormula": "exp * 3 + kills * 70 + itemsCollected * 60 + distance * 0.2",

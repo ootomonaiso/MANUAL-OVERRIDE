@@ -72,6 +72,8 @@ export class SurvivalPlugin extends GenrePluginBase {
     p.weaponDamage = SURVIVAL.meleeDamage
   }
 
+  // spawnDensity is sourced from JSON config (survival.json) — see genres/index.ts merge
+
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
     // 霧がかかった暗い丘シルエット
     ctx.globalAlpha = 0.18
