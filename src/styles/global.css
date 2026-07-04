@@ -1,0 +1,181 @@
+/*
+ * Global theme variables for MANUAL OVERRIDE.
+ * All colors, fonts, and spacing tokens are defined here.
+ * Components reference these via CSS custom properties.
+ */
+
+:root {
+  /* ── Colors ── */
+  --bg:          #0a0a0a;
+  --bg-panel:    #0d120d;
+  --bg-panel-light: #1a1f1a;
+  --green:       #00ff41;
+  --green-dim:   #33aa55;
+  --green-dark:  #001a00;
+  --green-glow:  rgba(0, 255, 65, 0.25);
+  --green-subtle:rgba(0, 255, 65, 0.08);
+  --text:        #b8ffb8;
+  --text-dim:    rgba(184, 255, 184, 0.45);
+  --text-muted:  rgba(184, 255, 184, 0.25);
+  --danger:      #ff3333;
+  --danger-dim:  rgba(255, 51, 51, 0.3);
+  --amber:       #ffbb00;
+  --white:       #ffffff;
+  --black:       #000000;
+
+  /* ── Fonts ── */
+  --font-mono:   'Courier New', 'Consolas', 'Liberation Mono', monospace;
+  --font-main:   'M PLUS 1 Code', 'Courier New', monospace;
+  --font-display: 'M PLUS 1 Code', 'Courier New', monospace;
+  --font-hand:   'Courier New', 'Consolas', 'Liberation Mono', monospace;
+
+  /* ── Effects ── */
+  --scanline: repeating-linear-gradient(
+    to bottom,
+    transparent 0px, transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px, rgba(0, 0, 0, 0.15) 3px
+  );
+  --panel-shadow:
+    0 0 20px var(--green-glow),
+    0 0 60px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(0, 255, 65, 0.08);
+
+  /* ── Spacing ── */
+  --radius-sm: 1px;
+  --radius-md: 2px;
+  --radius-lg: 8px;
+
+  /* ── Transitions ── */
+  --transition-fast: 0.15s ease;
+  --transition-med:  0.3s ease;
+  --transition-slow: 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Genre themes (applied via .theme-global-{name} on .app-root) ── */
+.theme-global-stg {
+  --genre-accent: #1a66ff;
+  --genre-border: #1a66ff;
+  --genre-bg:     #000d1a;
+  --genre-glow:   rgba(26, 102, 255, 0.25);
+  --genre-text:   #aaccff;
+  --genre-font:   'Courier New', monospace;
+}
+.theme-global-rpg {
+  --genre-accent: #c4960a;
+  --genre-border: #8b6100;
+  --genre-bg:     #1a1100;
+  --genre-glow:   rgba(196, 150, 10, 0.25);
+  --genre-text:   #d4b870;
+  --genre-font:   'Georgia', serif;
+}
+.theme-global-puzzle {
+  --genre-accent: #333333;
+  --genre-border: #666666;
+  --genre-bg:     #f5f5f0;
+  --genre-glow:   rgba(100, 100, 100, 0.15);
+  --genre-text:   #222222;
+  --genre-font:   'Courier New', monospace;
+}
+.theme-global-rhythm {
+  --genre-accent: #ee88ff;
+  --genre-border: #9900ff;
+  --genre-bg:     #0d0019;
+  --genre-glow:   rgba(153, 0, 255, 0.25);
+  --genre-text:   #ddaaff;
+  --genre-font:   'M PLUS 1 Code', monospace;
+}
+.theme-global-horror {
+  --genre-accent: #cc4444;
+  --genre-border: #880000;
+  --genre-bg:     #1a0000;
+  --genre-glow:   rgba(204, 68, 68, 0.25);
+  --genre-text:   #cc6666;
+  --genre-font:   'Courier New', monospace;
+}
+.theme-global-aquatic {
+  --genre-accent: #88ccff;
+  --genre-border: #0088bb;
+  --genre-bg:     #00141a;
+  --genre-glow:   rgba(136, 204, 255, 0.25);
+  --genre-text:   #aaddff;
+  --genre-font:   'M PLUS 1 Code', monospace;
+}
+.theme-global-runner {
+  --genre-accent: #ff3333;
+  --genre-border: #cc1111;
+  --genre-bg:     #ffffff;
+  --genre-glow:   rgba(255, 40, 40, 0.2);
+  --genre-text:   #222222;
+  --genre-font:   Impact, 'Arial Black', sans-serif;
+}
+.theme-global-stealth {
+  --genre-accent: #666666;
+  --genre-border: #333333;
+  --genre-bg:     #050505;
+  --genre-glow:   rgba(50, 50, 50, 0.1);
+  --genre-text:   rgba(155, 155, 155, 0.7);
+  --genre-font:   'Courier New', monospace;
+}
+.theme-global-racing {
+  --genre-accent: #ff6600;
+  --genre-border: #cc4400;
+  --genre-bg:     #100800;
+  --genre-glow:   rgba(255, 80, 0, 0.25);
+  --genre-text:   #ffcc88;
+  --genre-font:   Impact, 'Arial Black', sans-serif;
+}
+.theme-global-platformer {
+  --genre-accent: #ffcc00;
+  --genre-border: #0055dd;
+  --genre-bg:     #001a3a;
+  --genre-glow:   rgba(0, 80, 200, 0.2);
+  --genre-text:   #88ddff;
+  --genre-font:   'M PLUS 1 Code', monospace;
+}
+.theme-global-dungeon {
+  --genre-accent: #c87020;
+  --genre-border: #6a3800;
+  --genre-bg:     #0a0600;
+  --genre-glow:   rgba(180, 80, 0, 0.2);
+  --genre-text:   #c8a060;
+  --genre-font:   'Georgia', serif;
+}
+.theme-global-hack_slash {
+  --genre-accent: #ff4444;
+  --genre-border: #880000;
+  --genre-bg:     #100000;
+  --genre-glow:   rgba(200, 0, 0, 0.25);
+  --genre-text:   #ff9999;
+  --genre-font:   'Courier New', monospace;
+}
+.theme-global-survival {
+  --genre-accent: #88bb55;
+  --genre-border: #445522;
+  --genre-bg:     #050a05;
+  --genre-glow:   rgba(80, 130, 40, 0.2);
+  --genre-text:   #88cc88;
+  --genre-font:   'M PLUS 1 Code', monospace;
+}
+.theme-global-tetris {
+  --genre-accent: #a000f0;
+  --genre-border: #a000f0;
+  --genre-bg:     #0a0a0a;
+  --genre-glow:   rgba(160, 0, 240, 0.25);
+  --genre-text:   #cc88ff;
+  --genre-font:   'Courier New', monospace;
+}
+.theme-global-glitch {
+  --genre-accent: #ff0040;
+  --genre-border: #ff0040;
+  --genre-bg:     #0a0a0a;
+  --genre-glow:   rgba(255, 0, 64, 0.15);
+  --genre-text:   #ff6680;
+  --genre-font:   'Courier New', monospace;
+}
+
+/* ── Global reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #app { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+button { outline: none; }
+button:focus-visible { outline: 2px solid var(--genre-accent, var(--green)); outline-offset: 2px; }
+body { font-family: var(--font-main); }

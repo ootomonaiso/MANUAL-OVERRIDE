@@ -7,7 +7,7 @@
   "disableFeatures": ["auto_run", "grid_stop", "beat_hazard"],
   "scoreFormula": "combo * 150 + distance * 0.8 + survivedSec * 5",
   "manualReveal": "これはプラットフォームアクションになりました。飛び跳ねてください。",
-  "theme": "plain",
+  "theme": "platformer",
   "bgColor": "#001f3f",
   "environment": "sky",
   "controls": {

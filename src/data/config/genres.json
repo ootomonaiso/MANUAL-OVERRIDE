@@ -18,11 +18,11 @@
       "font": "'Georgia', serif"
     },
     "puzzle": {
-      "accent": "#222222",
-      "border": "#444444",
-      "hint": "rgba(80,80,80,0.5)",
-      "bg": "#0d0d0d",
-      "glow": "rgba(80,80,80,0.15)",
+      "accent": "#333333",
+      "border": "#666666",
+      "hint": "rgba(100,100,100,0.5)",
+      "bg": "#f5f5f0",
+      "glow": "rgba(100,100,100,0.15)",
       "font": "'Courier New', monospace"
     },
     "rhythm": {

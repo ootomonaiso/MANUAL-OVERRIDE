@@ -27,8 +27,8 @@ audit.json
 
 # Playwright
 .pw-browsers/
-playwright-report/
 test-results/
+playwright-report/
 
 # OS files
 .DS_Store
