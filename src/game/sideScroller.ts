@@ -37,6 +37,11 @@ export interface GameSnapshot {
   learningNotification: string | null
   // スコア計算式のパースエラー（発生時のみ非 null）
   scoreFormulaError: string | null
+  // プレイスタイル検出用の統計（Issue #24）
+  statCollisions: number
+  statItemsCollected: number
+  statShots: number
+  statDashes: number | undefined
 }
 
 // ループ内 dt のクランプ上限（フレーム落ち時に物理が発散するのを防ぐ）
@@ -44,6 +49,9 @@ const MAX_DELTA_SEC = 0.05
 
 // LearningSystem の最初のチェックまでの遅延（秒）
 const INITIAL_LEARNING_DELAY_SEC = 0.5
+
+// ミリ秒 → 秒換算（spawnDensity の interval は ms、スクロール計算は px/s で一致させるため）
+const MS_TO_SEC = 1000
 
 // ──────────────────────────────────────────────────────────────────────
 // SideScroller — Canvas ゲームエンジン本体
@@ -112,7 +120,7 @@ export class SideScroller {
   private _frameWorld: MutableWorld | null = null
 
   // ─── 統計 ────────────────────────────────────────────────────────
-  private stats: ActionStats = { jumps: 0, moveRight: 0, moveLeft: 0, shots: 0, ticks: 0 }
+  private stats: ActionStats = { jumps: 0, moveRight: 0, moveLeft: 0, shots: 0, ticks: 0, collisions: 0, itemsCollected: 0, dashes: 0 }
   private rafId = 0
   private lastTime = 0
 
@@ -123,8 +131,8 @@ export class SideScroller {
   private _disabledActions = new Map<string, number>()
   // invertHazard 解除予定時刻（-Infinity = 永続/未設定）
   private _invertHazardUntil = -Infinity
-  // changeKey 元キー保存: action名 → 元のキー文字列
-  private _originalKeys: Partial<Record<string, string>> = {}
+  // changeKey キースタック: action名 → 元のキーのスタック（複数エフェクト対応）
+  private _keyStack = new Map<string, string[]>()
   // changeKey 解除予定時刻: action名 → 解除時刻
   private _changeKeyUntil = new Map<string, number>()
   // 次の getSnapshot() で一度だけ返す通知メッセージ
@@ -138,7 +146,7 @@ export class SideScroller {
     this.ctx = ctx2d
     this.rules = rules
 
-    const gY = canvas.height - 80
+    const gY = canvas.height - PHYSICS.groundYOffset
     this.player = new Player(PLAYER_PHYSICS.startX, gY)
     this.player.jumpsLeft = rules.features.has('double_jump') ? 2 : 1
 
@@ -179,7 +187,7 @@ export class SideScroller {
     this._disabledActions.clear()
     this._invertHazardUntil = -Infinity
     this._changeKeyUntil.clear()
-    this._originalKeys = {}
+    this._keyStack.clear()
     this._pendingLearningMsg = null
     this._gameStats.beatHazardInverted = false
     // ManualVersion から learningRules を取得
@@ -260,6 +268,10 @@ export class SideScroller {
       firstJumpDone: this.firstJumpDone,
       learningNotification,
       scoreFormulaError,
+      statCollisions: this.stats.collisions,
+      statItemsCollected: this.stats.itemsCollected,
+      statShots: this.stats.shots,
+      statDashes: this.stats.dashes,
     }
   }
 
@@ -274,7 +286,7 @@ export class SideScroller {
     }
   }
 
-  getStats(): ActionStats { return this.stats }
+  getStats(): ActionStats { return { ...this.stats } }
 
   /**
    * ScoreVars を構築し、ジャンル別 scoreFormula を使って playScore を再計算する。
@@ -361,10 +373,12 @@ export class SideScroller {
     }
     for (const [action, until] of this._changeKeyUntil) {
       if (now >= until) {
-        const orig = this._originalKeys[action]
+        const stack = this._keyStack.get(action)
+        const orig = stack?.pop()
         if (orig !== undefined) {
           this._setControl(action, orig)
-          delete this._originalKeys[action]
+        } else {
+          this._keyStack.delete(action)
         }
         this._changeKeyUntil.delete(action)
       }
@@ -376,7 +390,7 @@ export class SideScroller {
     const isVertical = r.scrollAxis === 'y'
 
     if (r.features.has('dash') && this.input.justPressed.has(dashKey)) {
-      this.stats.dashes = (this.stats.dashes ?? 0) + 1
+      this.stats.dashes += 1
     }
 
     // ─── 距離ベースの自動加速 ─────────────────────────────────────────
@@ -468,8 +482,9 @@ export class SideScroller {
 
     if (this.distance >= this.nextSpawnDist) {
       this._spawnHazard()
-      const interval = HAZARD_SPAWN.baseInterval * Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
-      this.nextSpawnDist += (Math.max(HAZARD_SPAWN.minInterval, interval) / 1000) * speed
+      const sp = this._getSpawnParams()
+      const interval = sp.baseInterval * Math.exp(-sp.decayRate * this.distance)
+      this.nextSpawnDist += (Math.max(sp.minInterval, interval) / MS_TO_SEC) * speed
     }
 
     if (p.invincible > 0) p.invincible -= dt
@@ -503,6 +518,9 @@ export class SideScroller {
     const leftKey  = r.controls.moveLeft
     const rightKey = r.controls.moveRight
     const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
+    // tetris_mode: jump key is repurposed for hard drop; lights_out: パズル中は操作不要
+    const tetrisMode = r.features.has('tetris_mode')
+    const noControlMode = tetrisMode || r.features.has('lights_out')
 
     if (!r.features.has('auto_run') && !r.features.has('tetris_mode') && this.input.keys.has(leftKey))  this.stats.moveLeft++
     if ((r.features.has('auto_run') || this.input.keys.has(rightKey)) && !r.features.has('tetris_mode')) this.stats.moveRight++
@@ -521,12 +539,9 @@ export class SideScroller {
       p.onGround = false
       p.airTime += dt
     } else {
-
     const isDouble         = r.features.has('double_jump')
     const jumpDisabled     = this._isActionDisabled('jump')
-    // tetris_mode: jump key is repurposed for hard drop; skip jump detection entirely
-    const tetrisMode       = r.features.has('tetris_mode')
-    const jumpJustPressed  = !tetrisMode && !jumpDisabled && this.input.justPressed.has(jumpKey)
+    const jumpJustPressed  = !noControlMode && !jumpDisabled && this.input.justPressed.has(jumpKey)
     const jumpJustReleased = this.input.justReleased.has(jumpKey)
 
     if (p.onGround) {
@@ -602,7 +617,7 @@ export class SideScroller {
     if (p.landSquash > 0) p.landSquash *= PHYSICS.landSquashDecay
     }
 
-    if (!r.features.has('auto_run') && !r.features.has('tetris_mode')) p.x += p.vx * dt
+    if (!r.features.has('auto_run') && !noControlMode) p.x += p.vx * dt
     p.x = Math.max(PHYSICS.playerMinX, Math.min(W * PHYSICS.playerMaxXRatio, p.x))
 
     this.distance += speed * dt
@@ -610,12 +625,17 @@ export class SideScroller {
 
     if (this.distance >= this.nextSpawnDist) {
       this._spawnHazard()
-      const interval = HAZARD_SPAWN.baseInterval * Math.exp(-HAZARD_SPAWN.decayRate * this.distance)
-      this.nextSpawnDist += (Math.max(HAZARD_SPAWN.minInterval, interval) / 1000) * speed
+      const sp = this._getSpawnParams()
+      const interval = sp.baseInterval * Math.exp(-sp.decayRate * this.distance)
+      this.nextSpawnDist += (Math.max(sp.minInterval, interval) / MS_TO_SEC) * speed
     }
 
     for (const h of this.hazards) {
       h.pulse += dt * VFX.hazardPulseRate
+      // 左方向ハザードは右へ移動（スクロール速度と同速）
+      if (h.direction === 'left') {
+        h.x += speed * dt
+      }
     }
 
     if (p.invincible > 0) p.invincible -= dt
@@ -639,7 +659,13 @@ export class SideScroller {
       }
     }
 
-    this.hazards = this.hazards.filter(h => h.x - this.cameraX > SPAWN.hazardCullLeft)
+    // 右方向: 画面左外で除去、左方向: 画面右外で除去
+    this.hazards = this.hazards.filter(h => {
+      if (h.direction === 'left') {
+        return h.x - this.cameraX < this.canvas.width - SPAWN.hazardCullLeft
+      }
+      return h.x - this.cameraX > SPAWN.hazardCullLeft
+    })
 
     if (this.input.justPressed.has(shootKey)) this.stats.shots++
     return false
@@ -647,6 +673,7 @@ export class SideScroller {
 
   // ─── 被弾処理 ────────────────────────────────────────────────────
   private _onPlayerHit(p: Player): void {
+    this.stats.collisions += 1
     const world = this._getWorld()
     soundManager.onHit()
     for (const sys of getActiveSystems(this.rules.features)) {
@@ -684,7 +711,7 @@ export class SideScroller {
     const ctx = this.ctx
     const W = this.canvas.width, H = this.canvas.height
     const r = this.rules
-    const gY = H - 80
+    const gY = H - PHYSICS.groundYOffset
 
     ctx.save()
     ctx.translate(this.shakeX, this.shakeY)
@@ -738,6 +765,9 @@ export class SideScroller {
 
     // ─── 前景レイヤー（ジャンル装飾: 走査線・ビネット・HUD枠など） ──
     getGenre(this.rules.genre).drawForeground?.(ctx, this.cameraX, W, H, gY)
+
+    // ─── ジャンル固有HUD ──────────────────────────────────────────
+    getGenre(r.genre).drawGenreHUD?.(ctx, this._getWorld(), W, H)
 
     ctx.restore()  // shake の restore
 
@@ -1049,7 +1079,7 @@ export class SideScroller {
     return `rgb(${rr},${gg},${bb})`
   }
 
-  // ─── アイテム描画 ─────────────────────────────────────────────────
+   // ─── アイテム描画 ─────────────────────────────────────────────────
   private _drawItem(item: Item, sx: number): void {
     const ctx = this.ctx
     const bounce = Math.sin(item.pulse) * 4
@@ -1062,7 +1092,7 @@ export class SideScroller {
       ctx.fillStyle = '#ffcc00'
       // 星形
       this._drawStar(ctx, sx + 11, y + 11, 10, 5, 5)
-    } else {
+    } else if (item.type === 'hp') {
       ctx.shadowColor = '#ff8888'
       ctx.shadowBlur = 12
       ctx.fillStyle = '#ff5555'
@@ -1073,6 +1103,36 @@ export class SideScroller {
       ctx.font = 'bold 11px sans-serif'
       ctx.textAlign = 'center'
       ctx.fillText('♥', sx + 11, y + 15)
+    } else if (item.type === 'food') {
+      // 食料: リンゴ形
+      ctx.shadowColor = '#88cc44'
+      ctx.shadowBlur = 10
+      ctx.fillStyle = '#66aa22'
+      ctx.beginPath()
+      ctx.arc(sx + 11, y + 13, 8, 0, Math.PI * 2)
+      ctx.fill()
+      // 葉
+      ctx.fillStyle = '#448800'
+      ctx.beginPath()
+      ctx.ellipse(sx + 13, y + 4, 4, 2, 0.3, 0, Math.PI * 2)
+      ctx.fill()
+    } else if (item.type === 'weapon') {
+      // 武器: 剣形
+      ctx.shadowColor = '#ccaa44'
+      ctx.shadowBlur = 10
+      ctx.fillStyle = '#ddbb55'
+      // 刃
+      ctx.beginPath()
+      ctx.moveTo(sx + 11, y + 2)
+      ctx.lineTo(sx + 14, y + 10)
+      ctx.lineTo(sx + 11, y + 20)
+      ctx.lineTo(sx + 8, y + 10)
+      ctx.closePath()
+      ctx.fill()
+      // 柄
+      ctx.fillStyle = '#886633'
+      ctx.fillRect(sx + 9, y + 19, 4, 5)
+      ctx.fillRect(sx + 6, y + 17, 10, 3)
     }
     ctx.restore()
   }
@@ -1112,13 +1172,14 @@ export class SideScroller {
     const color     = entry.colorOverride     ?? (isSafe ? pal.safe    : pal.danger)
     const glowColor = entry.safeColorOverride ?? (isSafe ? pal.safeGlow : pal.dangerGlow)
     const hp = r.features.has('enemy_hp') ? (entry.hpOverride ?? SPAWN.enemyHpAmount) : 1
+    const direction = entry.direction ?? 'right'
 
     if (isVertical) {
       // ─── 縦スクロール: 画面上端からランダムX位置に出現 ──────────
       // hazard は screen 座標で管理（y が増加 → 下に落ちる）
       const spawnX = Math.random() * (W - w - 20) + 10
       const spawnY = -h - 20  // 画面外上部
-      this.hazards.push(new Hazard(spawnX, spawnY, w, h, color, glowColor, entry.shape, hp, isSafe, 0))
+      this.hazards.push(new Hazard(spawnX, spawnY, w, h, color, glowColor, entry.shape, hp, isSafe, 0, direction))
       if (entry.isBoss) {
         const bw = this._getWorld()
         for (const sys of getActiveSystems(r.features)) sys.onBossSpawn?.(bw)
@@ -1148,7 +1209,11 @@ export class SideScroller {
         default: // 'ground'
           y = gY - h
       }
-      this.hazards.push(new Hazard(worldX, y, w, h, color, glowColor, entry.shape, hp, isSafe, floatAmp))
+      // 左方向ハザードは画面左外にスポーン
+      const spawnX = direction === 'left'
+        ? this.cameraX - w - SPAWN.hazardSpawnOffsetX
+        : worldX
+      this.hazards.push(new Hazard(spawnX, y, w, h, color, glowColor, entry.shape, hp, isSafe, floatAmp, direction))
       if (entry.isBoss) {
         const bw = this._getWorld()
         for (const sys of getActiveSystems(r.features)) sys.onBossSpawn?.(bw)
@@ -1170,6 +1235,16 @@ export class SideScroller {
       if (rnd <= 0) return i
     }
     return weights.length - 1
+  }
+
+  /** Per-genre spawn params with fallback to global HAZARD_SPAWN */
+  private _getSpawnParams() {
+    const plugin = getGenre(this.rules.genre)
+    return {
+      baseInterval: plugin.spawnDensity?.baseInterval  ?? HAZARD_SPAWN.baseInterval,
+      minInterval:  plugin.spawnDensity?.minInterval   ?? HAZARD_SPAWN.minInterval,
+      decayRate:    plugin.spawnDensity?.decayRate     ?? HAZARD_SPAWN.decayRate,
+    }
   }
 
   // ─── パーティクル生成 ─────────────────────────────────────────────
@@ -1343,8 +1418,14 @@ export class SideScroller {
       case 'changeKey': {
         // payload = "jump:w" のような形式（action:newKey）
         const [action, newKey] = effect.payload.split(':')
-        if (!(action in this._originalKeys)) {
-          this._originalKeys[action] = this._getControl(action)
+        // スタック方式: 各エフェクトが現在のキーをプッシュし、期限切れでポップして復元
+        if (!this._keyStack.has(action)) {
+          this._keyStack.set(action, [])
+        }
+        const currentKey = this._getControl(action)
+        if (currentKey) {
+          const stack = this._keyStack.get(action)
+          if (stack) stack.push(currentKey)
         }
         this._setControl(action, newKey)
         if (effect.durationSec != null) {

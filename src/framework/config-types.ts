@@ -36,6 +36,8 @@ export interface PhysicsConfig {
   dashCooldownSec: number
   dashIframesSec: number
   wallJumpPushSpeed: number
+  /** 地面Y座標のキャンバス下端からのオフセット（px） */
+  groundYOffset: number
 }
 
 /** shoot.json — 射撃システム */
@@ -227,6 +229,8 @@ export interface ScoreConfig {
   defaultColorTouchScore: number
   distanceScoreRate: number
   longAirScoreRate: number
+  /** エンディンググレードの閾値（合計スコア） */
+  gradeThresholds: { S: number; A: number; B: number; C: number }
 }
 
 /** difficulty.json — 難易度 + TEMPO_SPEED_BONUS */
@@ -304,12 +308,95 @@ export interface SpecialConfig {
   timeBonusScore: number
 }
 
-/** puzzle.json — パズルフィーチャー */
+/** puzzle.json — パズルフィーチャー (スライド移動パズル) */
+export interface PuzzleGridConfig {
+  n: number
+  /** このサイズで採用する盤面の目標最短手数（下限） */
+  minMoves: number
+  /** このサイズで採用する盤面の目標最短手数（上限） */
+  maxMoves: number
+  timeSec: number
+  weightStart: number
+  weightEnd: number
+}
+
 export interface PuzzleConfig {
-  gridSize: number
-  movePhaseSec: number
-  solvePhaseSec: number
-  solveScore: number
+  grids: PuzzleGridConfig[]
+  cellPx: number
+  weightMaxDist: number
+  /** 各セルが壁になる確率 0〜1（盤面生成の壁密度） */
+  wallRatio: number
+  /** 盤面生成の再試行上限。到達時は目標手数に最も近い盤面へフォールバック */
+  maxGenAttempts: number
+  /** 制限時間スケールの下限（元の時間に対する割合。これ以上は短くしない） */
+  timeScaleMin: number
+  /** 制限時間が半減するまでの問題数。第(1+N)問で 0.5 倍になる（第1問=1.0倍） */
+  timeHalfLifeSteps: number
+}
+
+/** survival.json — サバイバルゲーム固有パラメータ */
+export interface SurvivalConfig {
+  maxHunger: number
+  hungerDecayRate: number
+  hungerCriticalThreshold: number
+  hungerDamageInterval: number
+  hungerDamageAmount: number
+  meleeDamage: number
+  meleeRange: number
+  meleeCooldown: number
+  meleeArc: number
+  meleeActiveRatio: number
+  meleeVerticalRatio: number
+  meleeCollisionGrace: number
+  xpPerKill: number
+  xpPerLevel: number
+  xpLevelScale: number
+  levelUpHealHp: number
+  levelUpDamageBonus: number
+  foodRestore: number
+  weaponDropChance: number
+  foodDropChance: number
+  weaponUpgradeAmount: number
+  hudBarHeight: number
+  hudTextSize: number
+  hudTopOffset: number
+  hudBarWidth: number
+  // Melee hit VFX
+  meleeHitParticleCount: number
+  meleeHitParticleSpeedMin: number
+  meleeHitParticleSpeedMax: number
+  meleeHitParticleLife: number
+  meleeHitParticleColor: string
+  meleeHitParticleSize: number
+  // Melee swing VFX
+  meleeSwingStrokeColor: string
+  meleeSwingLineWidth: number
+  meleeSwingShadowColor: string
+  meleeSwingShadowBlur: number
+  // Level up VFX
+  levelUpParticleCount: number
+  levelUpParticleSpeedMin: number
+  levelUpParticleSpeedMax: number
+  levelUpParticleLife: number
+  levelUpParticleColors: readonly string[]
+  levelUpParticleSize: number
+  levelUpShakeIntensity: number
+  levelUpPopupColor: string
+  // Popup colors
+  foodPopupColor: string
+  weaponPopupColor: string
+  // HUD colors
+  hudLabelColor: string
+  hudHungerColorHigh: string
+  hudHungerColorMid: string
+  hudHungerColorLow: string
+  hudBarBgColor: string
+  hudXpTextColor: string
+  hudXpBarColor: string
+  hudAtkTextColor: string
+  hudPanelBgColor: string
+  hudPanelPadding: number
+  hudPanelRadius: number
 }
 
 /** extra_movement.json — 拡張移動フィーチャー */
@@ -368,6 +455,8 @@ export interface GameBalanceConfig {
   genreLockedBoostMult: number
   genreLockedBoostDurationMs: number
   defaultFallbackGenre: string
+  /** ジャンルパラメータのジッター幅（±20%） */
+  paramJitterRange: number
 }
 
 /**
@@ -415,6 +504,8 @@ export interface GenreDefJSON {
   controls?: Partial<Controls>
   /** TSプラグインなしでビジュアルをカスタマイズする場合に指定。省略時はthemeから自動決定。 */
   visual?: GenreVisualConfig
+  /** ジャンル固有のスポーン密度設定。TSプラグインもこれをマージされる。 */
+  spawnDensity?: import('../domain/types').SpawnDensityConfig
 }
 
 /**
@@ -462,6 +553,7 @@ export interface GameConfigMap {
   special: SpecialConfig
   puzzle: PuzzleConfig
   extra_movement: ExtraMovementConfig
+  survival: SurvivalConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap

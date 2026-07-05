@@ -2,7 +2,7 @@
   "$schema": "../../../schemas/genre.schema.json",
   "id": "arena",
   "label": "アリーナバトル",
-  "thresholds": { "enemy": 5, "combo": 3 },
+  "thresholds": { "enemy": 7, "combo": 5 },
   "enableFeatures": ["shoot", "enemy_hp", "boss", "dash"],
   "disableFeatures": ["auto_run", "grid_stop", "puzzle_solve", "stealth_mode"],
   "scoreFormula": "kills * 110 + bossKills * 500 + combo * 130",
@@ -19,5 +19,10 @@
     "dash": "Shift"
   },
   "gravity": 1600,
-  "endingFlavor": "あなたは闘技場の覇者になった。説明書は戦利品として飾られた。"
+  "endingFlavor": "あなたは闘技場の覇者になった。説明書は戦利品として飾られた。",
+  "spawnDensity": {
+    "baseInterval": 1500,
+    "minInterval": 500,
+    "decayRate": 0.00025
+  }
 }

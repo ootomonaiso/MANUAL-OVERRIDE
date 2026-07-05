@@ -122,7 +122,7 @@ export interface InputSnapshot {
 // ──────────────────────────────────────────────────────────────────────
 // SpawnEntry — ジャンルプラグインが宣言するハザード出現テーブルの1行
 // ──────────────────────────────────────────────────────────────────────
-import type { HazardShape } from '../game/entities'
+import type { HazardDirection, HazardShape } from '../game/entities'
 
 export interface SpawnEntry {
   shape: HazardShape
@@ -225,11 +225,18 @@ export interface SpawnEntry {
    */
   groupId?: string
 
-  /**
-   * スポーン時に環境条件を評価する関数（将来拡張用）。
-   * false を返した場合このエントリーはスキップされる。
-   */
+ /**
+    * スポーン時に環境条件を評価する関数（将来拡張用）。
+    * false を返した場合このエントリーはスキップされる。
+    */
   spawnCondition?: (distance: number, rules: RuntimeRules) => boolean
+
+  /**
+    * ハザードの移動方向。'right' = 右から左へ（デフォルト）、
+    * 'left' = 左から右へ（サバイバルの両方向攻撃対応）。
+    * 省略時は 'right'。
+    */
+  direction?: HazardDirection
 }
 
 /** distance に基づいて SpawnEntry の重みを補間して返す */

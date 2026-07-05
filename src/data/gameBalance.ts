@@ -86,6 +86,11 @@ if (!GENRES.some(g => g.id === _rawFallback)) {
 export const DEFAULT_FALLBACK_GENRE = _rawFallback as GenreId
 
 // ─────────────────────────────────────────────────────────────
+// PARAM_JITTER_RANGE — ジャンルパラメータのジッター幅（±20%）
+// ─────────────────────────────────────────────────────────────
+export const PARAM_JITTER_RANGE = _gb.paramJitterRange
+
+// ─────────────────────────────────────────────────────────────
 // HAZARD_SPAWN — ハザードスポーン曲線
 // ─────────────────────────────────────────────────────────────
 export const HAZARD_SPAWN = {

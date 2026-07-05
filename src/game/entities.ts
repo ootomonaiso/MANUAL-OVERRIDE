@@ -23,6 +23,11 @@ export class Player {
   hp = 3
   maxHp = 3
   exp = 0
+  currentLevelXp = 0   // 現在レベル内の進行XP（レベルアップでリセット）
+  nextLevelXp = 100    // 次のレベルに必要なXP
+  hunger = 100
+  level = 1
+  weaponDamage = 1
   airTime = 0
   landSquash = 0   // 0〜1：着地スカッシュ量
 
@@ -39,6 +44,8 @@ export class Player {
 // ──────────────────────────────────────────────────────────────────────
 export type HazardShape = 'rect' | 'spike' | 'pillar' | 'diamond'
 
+export type HazardDirection = 'right' | 'left'
+
 export class Hazard {
   x: number; y: number
   w: number; h: number
@@ -50,6 +57,7 @@ export class Hazard {
   isSafe: boolean
   pulse = 0   // 0〜1 sin アニメ（floating系）
   floatAmp = 0  // 上下に浮遊する振幅
+  direction: HazardDirection = 'right'
 
   constructor(
     x: number, y: number, w: number, h: number,
@@ -57,11 +65,13 @@ export class Hazard {
     shape: HazardShape = 'rect',
     hp = 1, isSafe = false,
     floatAmp = 0,
+    direction: HazardDirection = 'right',
   ) {
     this.x = x; this.y = y; this.w = w; this.h = h
     this.color = color; this.glowColor = glowColor
     this.shape = shape; this.hp = hp; this.maxHp = hp
     this.isSafe = isSafe; this.floatAmp = floatAmp
+    this.direction = direction
   }
 
   get rect(): Rect {
@@ -93,11 +103,11 @@ export class Bullet {
 export class Item {
   x: number; y: number
   w = 22; h = 22
-  type: 'exp' | 'hp'
+  type: 'exp' | 'hp' | 'food' | 'weapon'
   alive = true
   pulse = Math.random() * Math.PI * 2  // ランダム位相
 
-  constructor(x: number, y: number, type: 'exp' | 'hp') {
+  constructor(x: number, y: number, type: 'exp' | 'hp' | 'food' | 'weapon') {
     this.x = x; this.y = y; this.type = type
   }
 
