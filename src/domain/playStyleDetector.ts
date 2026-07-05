@@ -62,7 +62,6 @@ const FRAMES_PER_SECOND = 60
 export function detectPlayStyle(stats: ActionStats): PlayStyleResult {
   const { jumps, moveRight, moveLeft, shots, ticks, collisions, itemsCollected, dashes } = stats
 
-  // ticks が 0 なら passive を返す
   if (ticks <= 0) {
     return {
       style: 'passive',
@@ -80,7 +79,6 @@ export function detectPlayStyle(stats: ActionStats): PlayStyleResult {
   const itemRate = itemsCollected / seconds
   const dashRate = dashes / seconds
 
-  // 各スタイルのスコア計算
   const scores: Record<DetectedPlayStyle, number> = {
     aggressive: 0,
     defensive: 0,
@@ -136,7 +134,6 @@ export function detectPlayStyle(stats: ActionStats): PlayStyleResult {
   // 信頼度計算
   const confidence = Math.min(1, ticks / MIN_MEANINGFUL_TICKS)
 
-  // 最高スコアのスタイルを返す
   let bestStyle: DetectedPlayStyle = 'balanced'
   let bestScore = 0
   for (const [style, score] of Object.entries(scores) as [DetectedPlayStyle, number][]) {
