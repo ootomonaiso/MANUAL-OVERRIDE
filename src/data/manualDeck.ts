@@ -4,17 +4,14 @@
  * MANUAL_DECK の構築エントリーポイント。
  *
  * ─────────────────────────────────────────────────────
- * 新しいブランチを追加する方法（2通り）:
+ * 【重要】ランタイムが参照するのは '1.0' エントリ（初期説明書）のみ。
+ * ゲーム中の選択肢はツリー分岐ではなくカードプール方式で提供される
+ * （src/data/cardPool.ts / src/data/cards/*.json）。
  *
- * ① JSON ファイルを追加（推奨: コンテンツのみ、TS 不要）
- *    src/data/manuals/ に *.json を作成するだけ。
- *    import.meta.glob が自動収集するので他の変更不要。
- *    → フォーマット: src/data/manuals/TEMPLATE.json を参照
- *
- * ② TypeScript の ManualBuilder を使う（動的生成・条件分岐が必要な場合）
- *    import { ManualBuilder, extendDeck } from '../framework'
- *    const [key, ver] = new ManualBuilder('my-key', '2.5').text('...').build()
- *    extendDeck(MANUAL_DECK, [[key, ver]])
+ * 選択肢を追加したい場合はここではなく src/data/cards/ にカードを
+ * 追加すること（書式: src/data/cards/TEMPLATE.json）。
+ * manuals/*.json のツリー定義と ManualBuilder は後方互換のために
+ * 残されている（deck-extension プラグインが注入先として使用）。
  * ─────────────────────────────────────────────────────
  */
 

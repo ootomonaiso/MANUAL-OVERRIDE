@@ -29,8 +29,15 @@ gh pr list --repo ootomonaiso/MANUAL-OVERRIDE --state open --json number,title,h
 
 - PR番号・ブランチ名
 - **マージ（`gh pr merge`）・クローズ・強制pushは絶対に実行しない**こと
+- **メインの作業ツリー（リポジトリ直下）で直接 `gh pr checkout` しない。** 複数PRを並行処理するため、また誰か（ユーザー本人など）がメインの作業ツリーで並行して作業中の可能性があるため、PRごとに独立した `git worktree` を切って隔離した場所で作業する:
+  ```bash
+  git fetch origin <headRefName>   # 同一リポジトリ上のブランチの場合
+  git worktree add <スクラッチパス>/pr<番号> origin/<headRefName>
+  # 作業後は必ず: git worktree remove <スクラッチパス>/pr<番号> --force
+  ```
+  フォークPRで `maintainerCanModify: true` の場合、修正コミットをpushするなら該当フォークをリモートに追加してから同様にworktreeを切る。メインの作業ツリーのファイルには一切触れない
 - 実行してよい作業:
-  - `gh pr checkout <number> --repo ootomonaiso/MANUAL-OVERRIDE` でチェックアウト
+  - 上記worktree内で `gh pr checkout <number> --repo ootomonaiso/MANUAL-OVERRIDE` 相当のチェックアウト
   - `npm run typecheck` / `npm run lint` / `npm run validate`（このリポジトリの最低品質ゲート。詳細は [create-pr](../create-pr/SKILL.md) 参照）
   - 自動解決可能な trivial コンフリクトの解消（ロジック判断が要るものは手を出さず「要人力判断」として報告のみ）
   - CIが落ちている場合の原因調査

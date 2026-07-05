@@ -160,7 +160,7 @@ src/
 
 - 説明書更新時に2択を提示
 - 選択肢にはジャンル方向性が隠れている（プレイヤーには明示しない）
-- カードは `src/data/cards/` のJSONデッキから引く（starter-cards, action-branch 等）
+- カードは `src/data/cards/` のJSONデッキから引く（starter-cards 等。追加は `cards` 配列に足すだけ、書式は `TEMPLATE.json` と `schemas/cards.schema.json` を参照）
 - 矛盾カード機能: 特定の選択の組み合わせでランダム展開が変わる
 
 ---

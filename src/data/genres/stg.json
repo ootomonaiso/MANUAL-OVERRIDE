@@ -1,8 +1,8 @@
 {
-  "$schema": "../../../../schemas/genre.schema.json",
+  "$schema": "../../../schemas/genre.schema.json",
   "id": "stg",
   "label": "シューティングゲーム",
-  "thresholds": { "range": 3, "enemy": 6 },
+  "thresholds": { "range": 4, "enemy": 4 },
   "enableFeatures": ["shoot", "three_way", "enemy_hp"],
   "disableFeatures": ["grid_stop", "puzzle_solve"],
   "scoreFormula": "kills * 120 + distance * 0.5 + combo * 80",

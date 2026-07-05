@@ -1,6 +1,6 @@
 {
   "name": "manual-game",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,8 +12,10 @@
     "lint": "eslint src --ext .ts,.vue",
     "lint:fix": "eslint src --ext .ts,.vue --fix",
     "validate": "node scripts/validate-json.mjs",
+    "check-doc-links": "node scripts/check-doc-links.mjs",
     "bundle-size": "node scripts/check-bundle-size.mjs",
     "new-genre": "node scripts/new-genre.mjs",
+    "reach-sim": "node scripts/genre-reach-sim.mjs .",
     "test": "playwright test",
     "test:unit": "vitest run tests/unit",
     "test:smoke": "playwright test tests/smoke.spec.ts",
@@ -23,7 +25,7 @@
     "test:infinite": "node tests/test_infinite_choices.mjs",
     "test:massive": "node tests/test_massive_choices.mjs",
     "test:unit:ci": "vitest run tests/unit/engine tests/unit/framework tests/unit/composables",
-    "ci": "npm run typecheck && npm run lint && npm run validate && npm run test:features && npm run build && npm run bundle-size && npm run test:unit:ci"
+    "ci": "npm run typecheck && npm run lint && npm run validate && npm run check-doc-links && npm run test:features && npm run build && npm run bundle-size && npm run test:unit:ci"
   },
   "dependencies": {
     "vue": "^3.5.39"

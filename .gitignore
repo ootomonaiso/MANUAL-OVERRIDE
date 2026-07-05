@@ -27,8 +27,8 @@ audit.json
 
 # Playwright
 .pw-browsers/
-test-results/
 playwright-report/
+test-results/
 
 # OS files
 .DS_Store
@@ -58,3 +58,5 @@ debug*.png
 real_browser_test.png
 tmp_screen*.png
 /tmp/
+# Claude Code local worktrees (git worktree metadata — never commit)
+.claude/worktrees/

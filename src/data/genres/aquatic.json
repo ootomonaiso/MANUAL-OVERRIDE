@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../../schemas/genre.schema.json",
+  "$schema": "../../../schemas/genre.schema.json",
   "id": "aquatic",
   "label": "水中アドベンチャー",
   "thresholds": { "vertical": 3, "aerial": 3, "survive": 4 },

@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../../schemas/genre.schema.json",
+  "$schema": "../../../schemas/genre.schema.json",
   "id": "horror",
   "label": "サバイバルホラー",
   "thresholds": { "survive": 6, "stealth": 5 },

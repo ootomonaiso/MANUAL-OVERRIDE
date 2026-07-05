@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../schemas/cards.schema.json",
+  "cards": [
+    {
+      "id": "c-my-card",
+      "label": "選択肢としてプレイヤーに表示される文",
+      "manualText": ["選択後に説明書へ追記される行。"],
+      "genreParams": { "tempo": 2, "speed": 1 },
+      "weight": 2,
+      "hint": "開発者メモ: このカードが向かうジャンル方向を書く",
+      "genreAffinity": ["runner", "racing"]
+    },
+    {
+      "id": "c-my-card-full",
+      "label": "全フィールドを使う例（不要なものは消してよい）",
+      "manualText": ["1行目。", "2行目。"],
+      "genreParams": { "enemy": 2, "survive": -1 },
+      "paramMultiplier": 1.5,
+      "weight": 1,
+      "hint": "conflictsWith は矛盾カード。相手の説明書行が取り消し線になる",
+      "genreAffinity": ["arena"],
+      "conflictsWith": ["c-idle-wait"],
+      "hazards": { "colors": ["red"], "safeColors": ["blue"] },
+      "runtimeConfig": { "scrollSpeed": 300, "environment": "space" }
+    }
+  ]
+}

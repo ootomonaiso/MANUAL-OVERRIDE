@@ -242,7 +242,7 @@
 | 星 | なし |
 | ハザード | 赤 (`#e74c3c`) / 青 (`#3498db`) |
 
-> 実際のゲームロジック（グリッド・テトリミノ・ライン消去）は `TetrisFeature`（`tetris_mode`）が担当する。プラグインは視覚テーマを提供する。詳細は [tetris-genre.md](../tetris-genre.md) を参照。
+> 実際のゲームロジック（グリッド・テトリミノ・ライン消去）は `TetrisFeature`（`tetris_mode`）が担当する。プラグインは視覚テーマを提供する。詳細は [tetris-genre.md](../genre/tetris-genre.md) を参照。
 
 ---
 

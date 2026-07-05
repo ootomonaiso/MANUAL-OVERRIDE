@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../../schemas/genre.schema.json",
+  "$schema": "../../../schemas/genre.schema.json",
   "id": "puzzle",
   "label": "パズルゲーム",
   "thresholds": { "combo": 6 },
