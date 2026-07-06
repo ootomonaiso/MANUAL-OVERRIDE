@@ -226,6 +226,15 @@ export function useGameState() {
       _lockGenre(newState.convergedGenre ?? resolveHighestProbGenre(accumulated, GENRES))
     }
 
+    // 矛盾の蓄積をリアルタイム監視: ジャンル確定後も選択は続くため、
+    // 度重なる矛盾が閾値を超えたらここで「壊れたゲーム」へ強制上書きする
+    // （投擲時の computeSurpriseEnding は選択を続けず即ギブアップした場合の保険として残す）
+    const contradictionState = computeContradiction(choiceHistory)
+    contradiction.value = contradictionState
+    if (shouldTriggerGlitchEnd(contradictionState) && lockedGenre.value !== 'glitch') {
+      _lockGenre('glitch')
+    }
+
     _rebuildRules()
     phase.value = lockedGenre.value !== null ? 'genreLocked' : 'playing'
     return undefined

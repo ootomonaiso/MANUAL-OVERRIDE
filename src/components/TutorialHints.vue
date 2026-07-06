@@ -4,19 +4,15 @@ import { ref, watch } from 'vue'
 const props = defineProps<{
   survivedSec: number
   jumps: number
-  movesLeft: number
-  movesRight: number
   distance: number
 }>()
 
 // ── 各ヒントが「こなされた」かを追跡 ──────────────────
-const movedDone  = ref(false)
 const jumpedDone = ref(false)
 const manualDone = ref(false)
 const allDone    = ref(false)
 
 // 操作が行われたら対応ヒントを消す
-watch(() => props.movesLeft + props.movesRight, v => { if (v > 0) movedDone.value = true })
 watch(() => props.jumps, v => { if (v > 0) jumpedDone.value = true })
 watch(() => props.distance, v => {
   if (v > 300) manualDone.value = true  // 説明書ヒントを300pxまで表示
@@ -31,22 +27,10 @@ watch(() => props.survivedSec, v => {
   <Transition name="hints-fade">
     <div v-if="!allDone" class="tutorial-overlay">
 
-      <!-- 移動ヒント -->
-      <Transition name="hint-pop">
-        <div v-if="!movedDone" class="hint hint-move">
-          <div class="hint-step">① 移動</div>
-          <div class="hint-keys">
-            <kbd class="hint-key">← ArrowLeft</kbd>
-            <kbd class="hint-key">→ ArrowRight</kbd>
-          </div>
-          <div class="hint-pulse" />
-        </div>
-      </Transition>
-
       <!-- ジャンプヒント -->
       <Transition name="hint-pop">
         <div v-if="!jumpedDone" class="hint hint-jump">
-          <div class="hint-step">② ジャンプ</div>
+          <div class="hint-step">① ジャンプ</div>
           <div class="hint-keys">
             <kbd class="hint-key hint-key-wide">SPACE キー</kbd>
           </div>
@@ -87,7 +71,6 @@ watch(() => props.survivedSec, v => {
   z-index: 12;
 }
 
-/* ── 移動ヒント（左下） ── */
 .hint {
   position: absolute;
   display: flex;
@@ -96,14 +79,9 @@ watch(() => props.survivedSec, v => {
   gap: 6px;
 }
 
-.hint-move {
-  bottom: 110px;
-  left: 160px;
-}
-
 /* ── ジャンプヒント（プレイヤー上） ── */
 .hint-jump {
-  bottom: 200px;
+  bottom: 110px;
   left: 120px;
 }
 
@@ -122,13 +100,6 @@ watch(() => props.survivedSec, v => {
   text-align: center;
 }
 .hint-key-wide { min-width: 64px; }
-
-.hint-label {
-  font-size: 11px;
-  color: rgba(184,255,184,0.45);
-  font-family: 'M PLUS 1 Code', monospace;
-  letter-spacing: 1px;
-}
 
 .hint-step {
   font-size: 12px;

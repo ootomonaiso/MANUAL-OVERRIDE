@@ -62,11 +62,6 @@ defineEmits<{
           <h2 class="tutorial-section-title">操作方法</h2>
           <div class="tutorial-controls">
             <div class="ctrl-row">
-              <kbd class="tutorial-ctrl-key">←</kbd>
-              <kbd class="tutorial-ctrl-key">→</kbd>
-              <span class="tutorial-ctrl-desc">移動</span>
-            </div>
-            <div class="ctrl-row">
               <kbd class="tutorial-ctrl-key tutorial-ctrl-key-wide">SPACE</kbd>
               <span class="tutorial-ctrl-desc">ジャンプ</span>
             </div>
