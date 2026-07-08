@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import type { ManualVersion } from '../domain/types'
 
 export type DiffLine = { text: string; type: 'added' | 'removed' | 'unchanged' }
@@ -91,6 +91,11 @@ export function useManual(_currentManual: () => ManualVersion) {
     animTimer = setTimeout(() => { isAnimating.value = false }, ANIM_DURATION_MS)
     centerTimer = setTimeout(() => { isCentered.value = false }, CENTER_DURATION_MS)
   }
+
+  onUnmounted(() => {
+    if (animTimer !== null) clearTimeout(animTimer)
+    if (centerTimer !== null) clearTimeout(centerTimer)
+  })
 
   return { history, diffLines, isAnimating, isCentered, recordUpdate }
 }

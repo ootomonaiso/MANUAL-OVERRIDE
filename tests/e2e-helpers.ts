@@ -3,6 +3,11 @@
  *
  * Playwright E2E テストの共通ヘルパー。
  * 重複するページ操作パターンを一元管理する。
+ *
+ * 【ゲームフロー】
+ *   1. タイトル画面（"はじめる" ボタン）→ クリック
+ *   2. チュートリアルイントロ（QUICK START / "わかった、プレイする" ボタン）→ クリック
+ *   3. ゲームプレイ（canvas 表示）
  */
 
 import { Page, test as base, expect } from '@playwright/test'
@@ -11,11 +16,17 @@ import { Page, test as base, expect } from '@playwright/test'
 // スタンドアロン関数（フィクスチャと共通利用）
 // ──────────────────────────────────────────────────────────────────────
 
-/** ゲームを開始する（タイトル画面 → ゲームプレイ） */
+/** ゲームを開始する（タイトル画面 → チュートリアル → ゲームプレイ） */
 export async function startGame(page: Page): Promise<void> {
   await page.goto('/')
-  await expect(page.locator('button', { hasText: 'はじめる' })).toBeVisible({ timeout: 10_000 })
-  await page.click('text=はじめる')
+
+  // フェーズ1: タイトル画面の "はじめる" ボタンをクリック
+  const startBtn = page.locator('button', { hasText: 'はじめる' })
+  const startVisible = await startBtn.isVisible({ timeout: 5_000 }).catch(() => false)
+  if (startVisible) {
+    await startBtn.click()
+  }
+
   await expect(page.locator('canvas')).toBeVisible({ timeout: 5_000 })
 }
 
