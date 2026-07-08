@@ -131,10 +131,8 @@ export class SideScroller {
   private _disabledActions = new Map<string, number>()
   // invertHazard 解除予定時刻（-Infinity = 永続/未設定）
   private _invertHazardUntil = -Infinity
-  // changeKey キースタック: action名 → 元のキーのスタック（複数エフェクト対応）
-  private _keyStack = new Map<string, string[]>()
-  // changeKey 解除予定時刻: action名 → 解除時刻
-  private _changeKeyUntil = new Map<string, number>()
+  // changeKey キースタック: action名 → {キー, 解除時刻} のスタック（複数エフェクト対応）
+  private _keyStack = new Map<string, Array<{ key: string; until: number }>>()
   // 次の getSnapshot() で一度だけ返す通知メッセージ
   private _pendingLearningMsg: string | null = null
   private _pendingFormulaError: string | null = null
@@ -186,7 +184,6 @@ export class SideScroller {
     // LearningSystem の副作用状態をリセット（ルール差し替えで古いエフェクトが残らないよう）
     this._disabledActions.clear()
     this._invertHazardUntil = -Infinity
-    this._changeKeyUntil.clear()
     this._keyStack.clear()
     this._pendingLearningMsg = null
     this._gameStats.beatHazardInverted = false
@@ -371,17 +368,12 @@ export class SideScroller {
       this._gameStats.beatHazardInverted = false
       this._invertHazardUntil = -Infinity
     }
-    for (const [action, until] of this._changeKeyUntil) {
-      if (now >= until) {
-        const stack = this._keyStack.get(action)
-        const orig = stack?.pop()
-        if (orig !== undefined) {
-          this._setControl(action, orig)
-        } else {
-          this._keyStack.delete(action)
-        }
-        this._changeKeyUntil.delete(action)
+    for (const [action, entries] of this._keyStack) {
+      while (entries.length > 0 && now >= entries[entries.length - 1].until) {
+        const entry = entries.pop()!
+        this._setControl(action, entry.key)
       }
+      if (entries.length === 0) this._keyStack.delete(action)
     }
 
     const r = this.rules
@@ -1418,19 +1410,19 @@ export class SideScroller {
       case 'changeKey': {
         // payload = "jump:w" のような形式（action:newKey）
         const [action, newKey] = effect.payload.split(':')
-        // スタック方式: 各エフェクトが現在のキーをプッシュし、期限切れでポップして復元
+        const currentKey = this._getControl(action)
+        if (!currentKey) break
+        // スタック方式: 各エフェクトが元のキーと解除時刻をプッシュし、期限切れでポップして復元
         if (!this._keyStack.has(action)) {
           this._keyStack.set(action, [])
         }
-        const currentKey = this._getControl(action)
-        if (currentKey) {
-          const stack = this._keyStack.get(action)
-          if (stack) stack.push(currentKey)
-        }
+        const stack = this._keyStack.get(action)!
+        // 現在のキーと解除時刻をスタックに保存
+        const until = effect.durationSec != null
+          ? performance.now() + effect.durationSec * 1000
+          : Infinity
+        stack.push({ key: currentKey, until })
         this._setControl(action, newKey)
-        if (effect.durationSec != null) {
-          this._changeKeyUntil.set(action, performance.now() + effect.durationSec * 1000)
-        }
         break
       }
     }
