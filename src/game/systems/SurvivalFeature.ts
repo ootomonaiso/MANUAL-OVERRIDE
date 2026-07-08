@@ -13,7 +13,7 @@ import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import { rectsOverlap, Hazard } from '../entities'
 import { SURVIVAL, VFX } from '../../data/tunables'
-import { getActiveSystems } from '../../engine/GameRegistry'
+import { getActiveSystems, getGenre } from '../../engine/GameRegistry'
 
 interface SurvivalState {
   meleeCooldown: number
@@ -21,6 +21,7 @@ interface SurvivalState {
   lastHungerDamage: number
   xp: number
   nextLevelXp: number
+  kills: number
 }
 
 export class SurvivalFeature implements FeatureSystem {
@@ -35,6 +36,7 @@ export class SurvivalFeature implements FeatureSystem {
       lastHungerDamage: 0,
       xp: 0,
       nextLevelXp: SURVIVAL.xpPerLevel,
+      kills: 0,
     }
   }
 
@@ -156,8 +158,15 @@ export class SurvivalFeature implements FeatureSystem {
     }
   }
 
-  // ─── 内部: 敵撃破時のXP付与とレベルアップ ────────────────────────
-  private _onEnemyKilled(world: MutableWorld, _hazard: Hazard): void {
+  // ─── 内部: 敵撃破時のハザード除去・スコア反映・XP付与とレベルアップ ──
+  private _onEnemyKilled(world: MutableWorld, hazard: Hazard): void {
+    // ハザードを即座に除去する。除去しないと hp<=0 のまま当たり判定だけが
+    // 生き残り、倒したはずの敵に触れ続けてダメージを受け続けてしまう。
+    world.removeHazardById(hazard)
+    this.state.kills++
+    world.setKills(this.state.kills)
+    getGenre(world.rules.genre).onHazardDestroyed?.(world, hazard)
+
     if (!world.rules.features.has('survival_level')) return
     const p = world.player
 

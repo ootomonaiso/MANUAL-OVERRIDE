@@ -1,8 +1,19 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { SurvivalFeature } from '../../../src/game/systems/SurvivalFeature'
 import { Player, Hazard, Item } from '../../../src/game/entities'
 import type { MutableWorld, InputSnapshot } from '../../../src/engine/types'
 import { SURVIVAL } from '../../../src/data/tunables'
+
+// このユニットテストは src/genres/index.ts（GameRegistry へのジャンル登録）を経由しないため、
+// SurvivalFeature が呼ぶ getGenre() をスタブに差し替える（getActiveSystems は未登録でも
+// 空配列を返すだけで安全なため実装のまま使う）
+vi.mock('../../../src/engine/GameRegistry', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/engine/GameRegistry')>()
+  return {
+    ...actual,
+    getGenre: () => ({ onHazardDestroyed: () => {} }),
+  }
+})
 
 // テスト用の最小限のMutableWorldモック
 function createMockWorld(): MutableWorld {
@@ -19,7 +30,9 @@ function createMockWorld(): MutableWorld {
     items,
     cameraX: 0,
     distance: 0,
+    gameStats: { kills: 0 },
     rules: {
+      genre: 'survival',
       features: new Set(['survival_hunger', 'survival_melee', 'survival_level']),
       controls: { shoot: 'z' },
     },
@@ -39,6 +52,13 @@ function createMockWorld(): MutableWorld {
     addScoreVarsItemCollected: () => {},
     spawnItem: (item: Item) => {
       items.push(item)
+    },
+    removeHazardById: (h: Hazard) => {
+      const i = hazards.indexOf(h)
+      if (i >= 0) hazards.splice(i, 1)
+    },
+    setKills: (n: number) => {
+      (world.gameStats as { kills: number }).kills = n
     },
   } as unknown as MutableWorld
 

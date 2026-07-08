@@ -187,7 +187,9 @@ export class SpecialFeature implements FeatureSystem {
 
     if (this.stealth.idleTimer >= STEALTH.stealthDurationSec) {
       this.stealth.hidden = true
-      p.invincible = Math.max(p.invincible, dt)
+      // dt だと1フレーム分（数十ms）しか無敵が付与されず、次フレームの減算で
+      // 実質無効化してしまうため、隠密中は毎フレーム再付与される専用の下限値を使う
+      p.invincible = Math.max(p.invincible, STEALTH.stealthInvincibleSec)
       world.addScoreVarsStealthBonus(dt)
       world.addScore(STEALTH.stealthSafeBonus)
     }

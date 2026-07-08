@@ -298,6 +298,7 @@ watch(() => gameState.lockedGenre.value, (newGenre) => {
   const rawRules = cloneRules()
   rawRules.scrollSpeed = rawRules.scrollSpeed * GENRE_LOCKED_BOOST.mult
   scroller.updateRules(rawRules, gameState.currentManual())
+  scroller.notifyGenreLocked()
 
   genreLockedBoostTimer = window.setTimeout(() => {
     genreLockedBoostTimer = null
@@ -324,7 +325,7 @@ onUnmounted(() => {
 
     <!-- ─── ローディング画面 ─── -->
     <Transition name="fade">
-      <LoadingScreen v-if="isLoading" />
+      <LoadingScreen v-if="isLoading" @complete="isLoading = false" />
     </Transition>
 
     <!-- ─── タイトル画面 ─── -->

@@ -238,6 +238,10 @@ export class PuzzleFeature implements FeatureSystem {
   private readonly _damageParticleSize = 5
 
   private _state: SlidePuzzleState = this._initialState()
+  // onManualUpdated が onInit を再度呼ぶため、2回目以降は scrollSpeed が既に
+  // 0 になっている。復元用の baseScrollSpeed は初回の onInit でのみ保存する
+  // （TetrisFeature の同種ガードと同じ狙い）
+  private _firstInit = true
 
   private _initialState(): SlidePuzzleState {
     return {
@@ -263,8 +267,10 @@ export class PuzzleFeature implements FeatureSystem {
   }
 
   onInit(world: MutableWorld): void {
+    const savedScrollSpeed = this._firstInit ? world.rules.scrollSpeed : this._state.baseScrollSpeed
     this._state = this._initialState()
-    this._state.baseScrollSpeed = world.rules.scrollSpeed
+    this._state.baseScrollSpeed = savedScrollSpeed
+    this._firstInit = false
     world.rules.scrollSpeed = 0
     this._state.active = true
     // 入力キー名はジャンル確定後に変化しないため初期化時にキャッシュする。
@@ -282,6 +288,8 @@ export class PuzzleFeature implements FeatureSystem {
   onDisable(world: MutableWorld): void {
     world.rules.scrollSpeed = this._state.baseScrollSpeed
     this._state.active = false
+    // 次にこの Feature が有効化されたときに新しい scrollSpeed を保存し直す
+    this._firstInit = true
   }
 
   // 物理計算前にプレイヤーを静止させ、横スクロールの慣性を打ち消す。
