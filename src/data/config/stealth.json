@@ -6,5 +6,6 @@
   "stealthInvincibleSec": 0.2,
   "stealthCooldownSec": 5.0,
   "stealthSafeBonus": 1.5,
-  "detectionRange": 120
+  "detectionRange": 120,
+  "stealthInvincibleSec": 0.5
 }

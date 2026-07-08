@@ -285,6 +285,7 @@ export interface RhythmTuningConfig {
 export interface StealthConfig {
   stealthAlpha: number
   stealthDurationSec: number
+  /** 隠密状態が成立している間に付与する無敵時間の下限（秒）。フレームごとに再付与される */
   stealthInvincibleSec: number
   stealthCooldownSec: number
   stealthSafeBonus: number

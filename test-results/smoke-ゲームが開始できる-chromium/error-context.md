@@ -12,62 +12,55 @@
 # Error details
 
 ```
-Tearing down "context" exceeded the test timeout of 30000ms.
+Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/
+Call log:
+  - navigating to "http://localhost:5173/", waiting until "load"
+
 ```
 
-# Page snapshot
+# Test source
 
-```yaml
-- generic [ref=e3]:
-  - generic [ref=e6]:
-    - generic [ref=e7]:
-      - generic [ref=e8]: QUICK START
-      - generic [ref=e9]: ver.0.0
-    - generic [ref=e11]:
-      - generic [ref=e12]:
-        - heading "このゲームについて" [level=2] [ref=e13]
-        - paragraph [ref=e14]:
-          - text: 「説明書を読むゲーム」です。
-          - text: 説明書が更新されるたびに、ゲームのルール・見た目・ジャンルが変化します。
-          - text: あなたが選ぶ選択肢の積み重ねで、どんなゲームになるかが決まります。
-      - generic [ref=e15]:
-        - heading "遊び方" [level=2] [ref=e16]
-        - generic [ref=e17]:
-          - generic [ref=e18]:
-            - generic [ref=e19]: ①
-            - generic [ref=e20]: プレイして障害物を避ける
-          - generic [ref=e21]: →
-          - generic [ref=e22]:
-            - generic [ref=e23]: ②
-            - generic [ref=e24]: 説明書が更新され、2択の選択肢が出る
-          - generic [ref=e25]: →
-          - generic [ref=e26]:
-            - generic [ref=e27]: ③
-            - generic [ref=e28]: 選んだ分、ゲームが変化する
-        - paragraph [ref=e29]:
-          - text: これを繰り返すうちに、ゲームの「ジャンル」が確定します。
-          - text: ランナー？STG？RPG？それとも…？
-      - generic [ref=e30]:
-        - heading "操作方法" [level=2] [ref=e31]
-        - generic [ref=e32]:
-          - generic [ref=e33]:
-            - generic [ref=e34]: ←
-            - generic [ref=e35]: →
-            - generic [ref=e36]: 移動
-          - generic [ref=e37]:
-            - generic [ref=e38]: SPACE
-            - generic [ref=e39]: ジャンプ
-      - generic [ref=e40]:
-        - heading "色のルール" [level=2] [ref=e41]
-        - generic [ref=e42]:
-          - generic [ref=e45]: 赤 — 触れると失敗
-          - generic [ref=e48]: 青 — 安全（触れても大丈夫）
-      - generic [ref=e49]:
-        - heading "ジャンルの収束" [level=2] [ref=e50]
-        - paragraph [ref=e51]:
-          - text: 各選択肢は裏で「ジャンルパラメータ」を蓄積しています。
-          - text: 一定以上蓄積されると、ゲームのジャンルが確定します。
-          - text: 例：攻撃系を選択 → STG / 成長系を選択 → RPG
-    - button "[ わかった、プレイする ]" [ref=e52] [cursor=pointer]
-  - button "⚙" [ref=e54] [cursor=pointer]
+```ts
+  1  | import { test, expect } from '@playwright/test'
+  2  | 
+  3  | test('タイトル画面が表示される', async ({ page }) => {
+  4  |   await page.goto('/')
+  5  |   await expect(page.locator('button', { hasText: 'はじめる' })).toBeVisible({ timeout: 10000 })
+  6  | })
+  7  | 
+  8  | test('ゲームが開始できる', async ({ page }) => {
+> 9  |   await page.goto('/')
+     |              ^ Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/
+  10 |   await page.click('text=はじめる')
+  11 |   await expect(page.locator('canvas')).toBeVisible({ timeout: 5000 })
+  12 | })
+  13 | 
+  14 | test('説明書パネルが表示される', async ({ page }) => {
+  15 |   await page.goto('/')
+  16 |   await page.click('text=はじめる')
+  17 |   // チュートリアルイントロを通過してゲームプレイフェーズへ
+  18 |   await page.click('text=わかった、プレイする')
+  19 |   // ManualPanel は右下に常時表示
+  20 |   await expect(page.locator('[class*="manual"]').first()).toBeVisible({ timeout: 5000 })
+  21 | })
+  22 | 
+  23 | test('キー入力でプレイヤーが動作する', async ({ page }) => {
+  24 |   await page.goto('/')
+  25 |   await page.click('text=はじめる')
+  26 |   await expect(page.locator('canvas')).toBeVisible()
+  27 | 
+  28 |   // ゲームがクラッシュしないことを確認（3秒間操作）
+  29 |   for (let i = 0; i < 6; i++) {
+  30 |     await page.keyboard.press('Space')
+  31 |     await page.waitForTimeout(300)
+  32 |     if (i % 2 === 0) await page.keyboard.press('ArrowRight')
+  33 |   }
+  34 | 
+  35 |   await expect(page.locator('canvas')).toBeVisible()
+  36 |   // JS エラーが発生していないことを確認
+  37 |   const errors: string[] = []
+  38 |   page.on('pageerror', err => errors.push(err.message))
+  39 |   expect(errors).toHaveLength(0)
+  40 | })
+  41 | 
 ```

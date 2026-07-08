@@ -13,7 +13,7 @@ import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import { rectsOverlap, Hazard } from '../entities'
 import { SURVIVAL, VFX } from '../../data/tunables'
-import { getActiveSystems } from '../../engine/GameRegistry'
+import { getActiveSystems, getGenre } from '../../engine/GameRegistry'
 
 interface SurvivalState {
   meleeCooldown: number
@@ -156,20 +156,23 @@ export class SurvivalFeature implements FeatureSystem {
         )
       }
 
-      // 撃破した敵は配列から除去する。除去しないと hp<=0 でも
-      // メインループの被弾判定（!isSafe のみ参照）で当たり続け、倒した敵に殺される
+      // 撃破時のハザード除去・kills 加算・スコア反映・XP付与は _onEnemyKilled が一手に担う。
+      // 除去しないと hp<=0 でもメインループの被弾判定（!isSafe のみ参照）で当たり続け、倒した敵に殺される。
       if (h.hp <= 0) {
         this._onEnemyKilled(world, h)
-        // scoreFormula の kills 項に反映（setKills は累計絶対値を受け取る）
-        this.state.kills++
-        world.setKills(this.state.kills)
-        world.hazards.splice(i, 1)
       }
     }
   }
 
-  // ─── 内部: 敵撃破時のXP付与とレベルアップ ────────────────────────
-  private _onEnemyKilled(world: MutableWorld, _hazard: Hazard): void {
+  // ─── 内部: 敵撃破時のハザード除去・スコア反映・XP付与とレベルアップ ──
+  private _onEnemyKilled(world: MutableWorld, hazard: Hazard): void {
+    // ハザードを即座に除去する。除去しないと hp<=0 のまま当たり判定だけが
+    // 生き残り、倒したはずの敵に触れ続けてダメージを受け続けてしまう。
+    world.removeHazardById(hazard)
+    this.state.kills++
+    world.setKills(this.state.kills)
+    getGenre(world.rules.genre).onHazardDestroyed?.(world, hazard)
+
     if (!world.rules.features.has('survival_level')) return
     const p = world.player
 

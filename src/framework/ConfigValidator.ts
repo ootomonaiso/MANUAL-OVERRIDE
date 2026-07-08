@@ -94,6 +94,7 @@ const RANGE_CHECKS: Array<{
   { section: 'stealth',    field: 'stealthDurationSec', min: 0 },
   { section: 'stealth',    field: 'stealthInvincibleSec', min: 0 },
   { section: 'stealth',    field: 'stealthCooldownSec', min: 0 },
+  { section: 'stealth',    field: 'stealthInvincibleSec', min: 0 },
   { section: 'game_balance', field: 'scoreRatioPlay', min: 0, max: 1 },
   { section: 'game_balance', field: 'scoreRatioThrow', min: 0, max: 1 },
   { section: 'game_balance', field: 'baseScrollSpeed', min: 0 },

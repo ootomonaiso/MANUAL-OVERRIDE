@@ -159,9 +159,6 @@ export class SideScroller {
     // （無重力ジャンルへの切り替え時に、旧重力下で蓄積した速度がそのまま残り続けるのを防ぐ）
     const oldGravity = this.rules.gravity
     const newGravity = rules.gravity
-    // ジャンル確定（base 以外への遷移）を検出して onGenreLocked を1回だけ発火するため、
-    // rules 差し替え前の genre を控える。
-    const oldGenre = this.rules.genre
     // スクロール軸が切り替わると既存オブジェクトの座標系が別軸として再解釈され、
     // 切替直後にハザードがワープ/消失する。軸が変わったら一掃する。
     const oldAxis = this.rules.scrollAxis
@@ -214,11 +211,12 @@ export class SideScroller {
     for (const sys of getActiveSystems(rules.features)) {
       sys.onManualUpdated?.(world, '')
     }
-    // ジャンルが base 以外へ切り替わった＝ジャンル確定。GenrePlugin.onGenreLocked を
-    // 確定直後に1回だけ呼ぶ（確定後ブースト解除の再 updateRules では genre が変わらず再発火しない）。
-    if (rules.genre !== oldGenre && rules.genre !== 'base') {
-      getGenre(rules.genre).onGenreLocked?.(world)
-    }
+    getGenre(rules.genre).onManualUpdated?.(world, '')
+  }
+
+  /** ジャンル確定直後に1回だけ呼ぶ（App.vue の lockedGenre watch から） */
+  notifyGenreLocked(): void {
+    getGenre(this.rules.genre).onGenreLocked?.(this._buildWorld())
   }
 
   /** フレーム内で _buildWorld() を1回だけ呼ぶためのキャッシュアクセサ */
@@ -512,10 +510,9 @@ export class SideScroller {
         if (!h.isSafe) {
           this._onPlayerHit(p)
           if (this.dead) return true
-          // _onPlayerHit で無敵が付与済み。ループ先頭の invincible 判定は
-          // フレーム開始時に一度評価されるだけなので、ここで抜けないと
-          // 同フレームで重なった別ハザードにも多重被弾してしまう。
-          break
+          // 無敵時間が付与されたら、同一フレーム内で重なっている他のハザードによる
+          // 多重ヒットを防ぐため以降のハザードは処理しない
+          if (p.invincible > 0) break
         } else {
           for (const sys of getActiveSystems(r.features)) {
             sys.onSafeHazardTouch?.(this._getWorld(), h, h.x)
@@ -669,8 +666,9 @@ export class SideScroller {
         if (isHazardous) {
           this._onPlayerHit(p)
           if (this.dead) return true
-          // 無敵付与後は同フレームの残りハザードで多重被弾しないよう抜ける（縦スクロール版）
-          break
+          // 無敵時間が付与されたら、同一フレーム内で重なっている他のハザードによる
+          // 多重ヒットを防ぐため以降のハザードは処理しない
+          if (p.invincible > 0) break
         } else {
           for (const sys of getActiveSystems(r.features)) {
             sys.onSafeHazardTouch?.(this._getWorld(), h, sx)

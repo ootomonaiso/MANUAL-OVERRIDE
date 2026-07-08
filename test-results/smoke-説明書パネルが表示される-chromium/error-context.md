@@ -12,28 +12,55 @@
 # Error details
 
 ```
-Tearing down "context" exceeded the test timeout of 30000ms.
+Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/
+Call log:
+  - navigating to "http://localhost:5173/", waiting until "load"
+
 ```
 
-# Page snapshot
+# Test source
 
-```yaml
-- generic [ref=e3]:
-  - generic:
-    - generic:
-      - generic: 1,922
-      - generic:
-        - generic: 2402m
-  - generic [ref=e5]:
-    - generic [ref=e6]:
-      - generic [ref=e7]: 取扱説明書 ver.0/5
-      - generic [ref=e8]: ← → キーで左右に移動できます。
-      - generic [ref=e9]: Spaceキーでジャンプします。
-      - generic [ref=e10]: 赤いオブジェクトに触れると失敗です。
-      - generic [ref=e11]: 青いオブジェクトは安全です。
-      - generic [ref=e12]: できるだけ遠くまで走ってください。
-    - generic [ref=e13]:
-      - generic [ref=e14]: 説明書をドラッグして投げる
-      - generic [ref=e15]: 弧を描くように投げると高スコア
-  - button "⚙" [ref=e17] [cursor=pointer]
+```ts
+  1  | import { test, expect } from '@playwright/test'
+  2  | 
+  3  | test('タイトル画面が表示される', async ({ page }) => {
+  4  |   await page.goto('/')
+  5  |   await expect(page.locator('button', { hasText: 'はじめる' })).toBeVisible({ timeout: 10000 })
+  6  | })
+  7  | 
+  8  | test('ゲームが開始できる', async ({ page }) => {
+  9  |   await page.goto('/')
+  10 |   await page.click('text=はじめる')
+  11 |   await expect(page.locator('canvas')).toBeVisible({ timeout: 5000 })
+  12 | })
+  13 | 
+  14 | test('説明書パネルが表示される', async ({ page }) => {
+> 15 |   await page.goto('/')
+     |              ^ Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/
+  16 |   await page.click('text=はじめる')
+  17 |   // チュートリアルイントロを通過してゲームプレイフェーズへ
+  18 |   await page.click('text=わかった、プレイする')
+  19 |   // ManualPanel は右下に常時表示
+  20 |   await expect(page.locator('[class*="manual"]').first()).toBeVisible({ timeout: 5000 })
+  21 | })
+  22 | 
+  23 | test('キー入力でプレイヤーが動作する', async ({ page }) => {
+  24 |   await page.goto('/')
+  25 |   await page.click('text=はじめる')
+  26 |   await expect(page.locator('canvas')).toBeVisible()
+  27 | 
+  28 |   // ゲームがクラッシュしないことを確認（3秒間操作）
+  29 |   for (let i = 0; i < 6; i++) {
+  30 |     await page.keyboard.press('Space')
+  31 |     await page.waitForTimeout(300)
+  32 |     if (i % 2 === 0) await page.keyboard.press('ArrowRight')
+  33 |   }
+  34 | 
+  35 |   await expect(page.locator('canvas')).toBeVisible()
+  36 |   // JS エラーが発生していないことを確認
+  37 |   const errors: string[] = []
+  38 |   page.on('pageerror', err => errors.push(err.message))
+  39 |   expect(errors).toHaveLength(0)
+  40 | })
+  41 | 
 ```
