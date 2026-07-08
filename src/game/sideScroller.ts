@@ -182,6 +182,8 @@ export class SideScroller {
     this.input.setGameKeys(rules.controls)
     if (rules.features.has('double_jump')) {
       this.player.jumpsLeft = Math.max(this.player.jumpsLeft, 2)
+    } else {
+      this.player.jumpsLeft = Math.min(this.player.jumpsLeft, 1)
     }
     // LearningSystem の副作用状態をリセット（ルール差し替えで古いエフェクトが残らないよう）
     this._disabledActions.clear()
