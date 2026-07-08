@@ -24,7 +24,7 @@
     "test:choices": "node tests/test_choices.mjs",
     "test:infinite": "node tests/test_infinite_choices.mjs",
     "test:massive": "node tests/test_massive_choices.mjs",
-    "test:unit:ci": "vitest run tests/unit/engine tests/unit/framework tests/unit/composables",
+    "test:unit:ci": "vitest run tests/unit",
     "ci": "npm run typecheck && npm run lint && npm run validate && npm run check-doc-links && npm run test:features && npm run build && npm run bundle-size && npm run test:unit:ci"
   },
   "dependencies": {

@@ -187,8 +187,9 @@ export class SpecialFeature implements FeatureSystem {
 
     if (this.stealth.idleTimer >= STEALTH.stealthDurationSec) {
       this.stealth.hidden = true
-      // dt だと1フレーム分（数十ms）しか無敵が付与されず、次フレームの減算で
-      // 実質無効化してしまうため、隠密中は毎フレーム再付与される専用の下限値を使う
+      // 潜伏中は毎フレーム無敵時間を上限まで補充する。dt（1フレーム分）だと
+      // 当たり判定・無敵減算が _updateStealth より前に走るため次フレームには実質0へ戻り、
+      // 無敵が機能しない。フレーム間隔を十分に超える固定値で上書きする。
       p.invincible = Math.max(p.invincible, STEALTH.stealthInvincibleSec)
       world.addScoreVarsStealthBonus(dt)
       world.addScore(STEALTH.stealthSafeBonus)

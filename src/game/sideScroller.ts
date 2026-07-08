@@ -159,6 +159,9 @@ export class SideScroller {
     // （無重力ジャンルへの切り替え時に、旧重力下で蓄積した速度がそのまま残り続けるのを防ぐ）
     const oldGravity = this.rules.gravity
     const newGravity = rules.gravity
+    // スクロール軸が切り替わると既存オブジェクトの座標系が別軸として再解釈され、
+    // 切替直後にハザードがワープ/消失する。軸が変わったら一掃する。
+    const oldAxis = this.rules.scrollAxis
     if (!this.player.onGround && newGravity !== oldGravity) {
       if (oldGravity > 0 && newGravity > 0) {
         this.player.vy *= newGravity / oldGravity
@@ -180,6 +183,12 @@ export class SideScroller {
 
     this.rules = rules
     this.input.setGameKeys(rules.controls)
+    if (oldAxis !== rules.scrollAxis) {
+      this.hazards = []
+      this.items = []
+      this._bullets = []
+      this.scorePopups = []
+    }
     if (rules.features.has('double_jump')) {
       this.player.jumpsLeft = Math.max(this.player.jumpsLeft, 2)
     }
@@ -589,11 +598,8 @@ export class SideScroller {
     }
     if (!this.input.keys.has(jumpKey)) this.jumpHeld = false
 
-    if (r.gravity === 0) {
-      p.vy *= Math.pow(0.05, dt)
-    } else {
-      p.vy += r.gravity * (p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0) * dt
-    }
+    // このブロックは外側の else（gravity !== 0 が確定）内なので通常重力のみ
+    p.vy += r.gravity * (p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0) * dt
     p.y += p.vy * dt
 
     if (p.y + p.h >= gY) {
@@ -983,12 +989,6 @@ export class SideScroller {
 
     ctx.save()
 
-    // ジャンル固有のハザード描画フック。true ならデフォルト描画（形状・HPバー）をスキップ
-    if (pluginH.drawHazard?.(ctx, h, sx, this._getWorld())) {
-      ctx.restore()
-      return
-    }
-
     // グロー効果
     ctx.shadowColor = glow
     ctx.shadowBlur = glowBlur
@@ -1174,6 +1174,9 @@ export class SideScroller {
     const table = plugin.spawnTable
     const weights = table.map(e => resolveWeight(e, this.distance, e.weightMaxDist ?? SPAWN.spawnWeightMaxDist))
     const entry = table[this._weightedRandom(weights)]
+    // spawnTable が空（または重み合計0）だと _weightedRandom が -1 を返し entry が undefined。
+    // 現行データでは全ジャンル非空だが、将来の空テーブルでのクラッシュを防ぐ。
+    if (!entry) return
 
     const w = entry.wRange[0] + Math.random() * (entry.wRange[1] - entry.wRange[0])
     const h = entry.hRange[0] + Math.random() * (entry.hRange[1] - entry.hRange[0])

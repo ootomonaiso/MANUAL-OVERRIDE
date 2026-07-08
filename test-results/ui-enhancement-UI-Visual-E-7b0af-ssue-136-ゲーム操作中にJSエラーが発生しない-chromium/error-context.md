@@ -7,53 +7,139 @@
 # Test info
 
 - Name: ui-enhancement.spec.ts >> UI Visual Enhancement (Issue #136) >> ゲーム操作中にJSエラーが発生しない
-- Location: tests\ui-enhancement.spec.ts:172:3
+- Location: tests\ui-enhancement.spec.ts:150:3
 
 # Error details
 
 ```
-Test timeout of 30000ms exceeded.
+Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/
+Call log:
+  - navigating to "http://localhost:5173/", waiting until "load"
+
 ```
 
-# Page snapshot
+# Test source
 
-```yaml
-- generic [ref=e3]:
-  - generic:
-    - generic:
-      - generic: "311"
-      - generic:
-        - generic: 1109m
-  - generic [ref=e5]:
-    - generic [ref=e6]:
-      - generic [ref=e7]: ver.0/5
-      - button "▼ 履歴" [ref=e9] [cursor=pointer]
-    - generic [ref=e10]:
-      - generic [ref=e11]: Spaceキーでジャンプします。
-      - generic [ref=e12]: 赤いオブジェクトに触れると失敗です。
-      - generic [ref=e13]: 青いオブジェクトは安全です。
-      - generic [ref=e14]: できるだけ遠くまで走ってください。
-    - generic [ref=e15]:
-      - generic [ref=e16]: 操作
-      - generic [ref=e17]:
-        - generic [ref=e18]: SPACE
-        - generic [ref=e19]: ジャンプ
-  - generic [ref=e21]:
-    - generic [ref=e22]:
-      - generic [ref=e23]: UPDATE
-      - generic [ref=e24]: ver.0/5 → ?
-      - generic [ref=e25]: 説明書の内容を選んでください
-    - generic [ref=e26]:
-      - button "1 ステージの雰囲気や背景を大きく変える →" [ref=e27] [cursor=pointer]:
-        - generic [ref=e28]: "1"
-        - generic [ref=e29]: ステージの雰囲気や背景を大きく変える
-        - generic [ref=e30]: →
-      - button "2 アイテムを集めることで変化が起きるようにする →" [ref=e31] [cursor=pointer]:
-        - generic [ref=e32]: "2"
-        - generic [ref=e33]: アイテムを集めることで変化が起きるようにする
-        - generic [ref=e34]: →
-    - generic [ref=e35]:
-      - text: 選んだ内容によってゲームが変わります
-      - generic [ref=e36]: "[ 1 / 2 キーでも選択 ]"
-  - button "⚙" [ref=e38] [cursor=pointer]
+```ts
+  51  |     // ポップアップはオプション（スコアが増加した場合のみ表示）
+  52  |     // 表示されていれば可視、そうでなければ無視
+  53  |     const count = await popupVisible.count()
+  54  |     if (count > 0) {
+  55  |       await expect(popupVisible).toBeVisible()
+  56  |     }
+  57  |   })
+  58  | 
+  59  |   test('選択肢パネルがアニメーション付きで表示される', async ({ page }) => {
+  60  |     await page.goto('/')
+  61  |     await page.click('text=はじめる')
+  62  |     await page.click('text=わかった、プレイする')
+  63  | 
+  64  |     // ゲームを進行させて説明書更新をトリガー
+  65  |     // 更新が来るまで待つ（最大20秒）
+  66  |     const choicePanel = page.locator('[class*="choice-overlay"]').first()
+  67  |     let appeared = false
+  68  |     try {
+  69  |       await choicePanel.waitFor({ state: 'visible', timeout: 20000 })
+  70  |       appeared = true
+  71  |     } catch {
+  72  |       // タイムアウト = パネル未表示。非決定的な進行によるものでテストはパス
+  73  |     }
+  74  | 
+  75  |     if (appeared) {
+  76  |       // 選択肢ボタンが2つ存在する
+  77  |       const buttons = page.locator('[class*="choice-btn"]')
+  78  |       await expect(buttons.first()).toBeVisible()
+  79  | 
+  80  |       // ホバーエフェクト（transform が適用される）
+  81  |       const firstBtn = buttons.first()
+  82  |       await firstBtn.hover()
+  83  |       // ホバー後も可視であること
+  84  |       await expect(firstBtn).toBeVisible()
+  85  |     }
+  86  |   })
+  87  | 
+  88  |   test('CSS 変数が正しく定義されている', async ({ page }) => {
+  89  |     await page.goto('/')
+  90  | 
+  91  |     // getComputedStyle().getPropertyValue() は未定義でも空文字列を返すため、
+  92  |     // trim して空でないことを確認する
+  93  |     const hasGreenVar = await page.evaluate(() => {
+  94  |       const val = getComputedStyle(document.documentElement).getPropertyValue('--green').trim()
+  95  |       return val !== ''
+  96  |     })
+  97  |     // --green は global.css で定義されるため、存在するはず
+  98  |     expect(hasGreenVar).toBeTruthy()
+  99  |   })
+  100 | 
+  101 |   test('ジャンルテーマが適用される', async ({ page }) => {
+  102 |     await page.goto('/')
+  103 |     await page.click('text=はじめる')
+  104 |     await page.click('text=わかった、プレイする')
+  105 | 
+  106 |     // app-root に theme-global-* クラスが付与されるか確認
+  107 |     // （ジャンル確定は確率的なので、最大15秒待つ）
+  108 |     const appRoot = page.locator('.app-root')
+  109 |     const themeClass = await appRoot.evaluate((el, timeout) => {
+  110 |       const start = Date.now()
+  111 |       return new Promise<string | null>((resolve) => {
+  112 |         const check = () => {
+  113 |           const classes = el.className.split(' ')
+  114 |           const hasTheme = classes.find(c => c.startsWith('theme-global-'))
+  115 |           if (hasTheme || Date.now() - start > timeout) {
+  116 |             resolve(hasTheme ?? null)
+  117 |           } else {
+  118 |             requestAnimationFrame(check)
+  119 |           }
+  120 |         }
+  121 |         check()
+  122 |       })
+  123 |     }, 15000)
+  124 | 
+  125 |     // ジャンル確定は確率的なので、クラスが付与されていればパス
+  126 |     if (themeClass) {
+  127 |       expect(themeClass).toMatch(/^theme-global-/)
+  128 |     }
+  129 |     // 付与されなくてもエラーにはしない（確率的なテスト）
+  130 |   })
+  131 | 
+  132 |   test('エンディング画面の構造が正しい', async ({ page }) => {
+  133 |     await page.goto('/')
+  134 |     // エンディングパネルの Vue コンポーネントがバンドルされているか確認
+  135 |     // （ゲームを最後まで進めずに、DOM 上に存在する要素で検証）
+  136 |     const endingPanel = page.locator('[class*="ending-overlay"]').first()
+  137 |     // ゲーム開始直後はエンディングは非表示（当然）
+  138 |     await expect(endingPanel).not.toBeVisible()
+  139 |     // ただしコンポーネントはマウントされている（v-if なので DOM に存在しない場合もある）
+  140 |     // タイトル画面でゲームを開始
+  141 |     await page.click('text=はじめる')
+  142 |     await page.click('text=わかった、プレイする')
+  143 |     // ゲーム操作中にエラーがないことを確認
+  144 |     const errors: string[] = []
+  145 |     page.on('pageerror', err => errors.push(err.message))
+  146 |     await page.waitForTimeout(2000)
+  147 |     expect(errors).toHaveLength(0)
+  148 |   })
+  149 | 
+  150 |   test('ゲーム操作中にJSエラーが発生しない', async ({ page }) => {
+> 151 |     await page.goto('/')
+      |                ^ Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:5173/
+  152 |     const errors: string[] = []
+  153 |     page.on('pageerror', err => errors.push(err.message))
+  154 | 
+  155 |     await page.click('text=はじめる')
+  156 |     await page.click('text=わかった、プレイする')
+  157 | 
+  158 |     // 5秒間ランダムに操作
+  159 |     for (let i = 0; i < 10; i++) {
+  160 |       await page.keyboard.press('Space')
+  161 |       await page.waitForTimeout(200)
+  162 |       await page.keyboard.press('ArrowRight')
+  163 |       await page.waitForTimeout(200)
+  164 |     }
+  165 | 
+  166 |     // エラーがないことを確認
+  167 |     expect(errors).toHaveLength(0)
+  168 |   })
+  169 | })
+  170 | 
 ```

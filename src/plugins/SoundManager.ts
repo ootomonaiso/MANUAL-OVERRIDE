@@ -51,6 +51,9 @@ class SoundManager implements SoundHooks {
     this._bgmAudio = audio
 
     audio.play().then(() => {
+      // play() の解決前に別の playBgm/stopBgm で BGM が差し替えられている場合、
+      // 既に破棄済みの古い audio をフェードインし直さない（二重再生防止）。
+      if (this._bgmAudio !== audio) return
       this._cancelFadeIn = this._fade(audio, volume, fadeInMs, () => {
         this._cancelFadeIn = null
       })

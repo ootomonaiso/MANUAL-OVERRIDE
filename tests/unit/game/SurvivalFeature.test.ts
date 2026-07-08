@@ -174,6 +174,52 @@ describe('SurvivalFeature', () => {
 
       expect(hazard.hp).toBe(3)
     })
+
+    it('撃破した敵はhazards配列から除去される（倒した敵に殺され続けないため）', () => {
+      const hazard = new Hazard(
+        world.player.x + 5, world.player.y + 5,
+        30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
+      )
+      world.hazards.push(hazard)
+
+      const input = createMockInput(new Set(['z']))
+      feature.update(world, input, 0)
+      feature.update(world, createMockInput(), 0)
+
+      expect(hazard.hp).toBeLessThanOrEqual(0)
+      expect(world.hazards.includes(hazard)).toBe(false)
+    })
+
+    it('撃破数を setKills でスコアへ反映する（scoreFormula の kills 項）', () => {
+      let reportedKills = 0
+      ;(world as { setKills: (n: number) => void }).setKills = (n: number) => { reportedKills = n }
+      const hazard = new Hazard(
+        world.player.x + 5, world.player.y + 5,
+        30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
+      )
+      world.hazards.push(hazard)
+      feature.update(world, createMockInput(new Set(['z'])), 0)
+      feature.update(world, createMockInput(), 0)
+      // kills 項は撃破前は 0 のまま更新されないので、1 になっていれば反映されている
+      expect(reportedKills).toBe(1)
+    })
+
+    it('cameraX（スクロール）が進んでも画面上で重なる敵に当たる', () => {
+      // ハザードはワールド座標。画面上でプレイヤーの目の前になる位置に置く
+      ;(world as { cameraX: number }).cameraX = 5000
+      const hazard = new Hazard(
+        world.player.x + 5 + 5000, world.player.y + 5,
+        30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
+      )
+      world.hazards.push(hazard)
+
+      const input = createMockInput(new Set(['z']))
+      feature.update(world, input, 0)
+      feature.update(world, createMockInput(), 0)
+
+      expect(hazard.hp).toBeLessThanOrEqual(0)
+      expect(world.player.exp).toBe(SURVIVAL.xpPerKill)
+    })
   })
 
   describe('XP/レベルシステム', () => {

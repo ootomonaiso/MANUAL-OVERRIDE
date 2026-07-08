@@ -32,16 +32,21 @@ export class InputManager {
       const key = InputManager._normalize(e)
       if (key !== null) this.keys.delete(key)
     }
-    // ウィンドウがフォーカスを失うと keyup が発火しないまま押しっぱなしのキーが
-    // 固着することがあるため、フォーカス喪失時にキー状態を強制的にクリアする
-    this._onBlur = () => this.keys.clear()
+    // フォーカス喪失・タブ非表示時、ブラウザは keyup を発火しないことがある。
+    // 押しっぱなしのキーが残ると移動が止まらなくなるため、ここで全キーをクリアする。
+    this._onBlur = () => this._clearKeys()
     this._onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') this.keys.clear()
+      if (document.hidden) this._clearKeys()
     }
     window.addEventListener('keydown', this._onKeyDown)
     window.addEventListener('keyup', this._onKeyUp)
     window.addEventListener('blur', this._onBlur)
     document.addEventListener('visibilitychange', this._onVisibilityChange)
+  }
+
+  /** 押下中の全キー状態をクリアする（フォーカス喪失時のキー固着対策） */
+  private _clearKeys(): void {
+    this.keys.clear()
   }
 
   /** ゲームで使うキーを登録し、ブラウザのデフォルト動作を抑制する */

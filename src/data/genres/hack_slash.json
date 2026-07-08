@@ -2,7 +2,7 @@
   "$schema": "../../../schemas/genre.schema.json",
   "id": "hack_slash",
   "label": "ハックアンドスラッシュ",
-  "thresholds": { "enemy": 4, "combo": 5 },
+  "thresholds": { "enemy": 3, "combo": 5 },
   "enableFeatures": ["shoot", "enemy_hp", "exp", "item_pickup", "dash", "boss"],
   "disableFeatures": ["grid_stop", "puzzle_solve", "stealth_mode", "slow_precise"],
   "scoreFormula": "kills * 90 + maxCombo * 200 + exp * 2 + bossKills * 400",

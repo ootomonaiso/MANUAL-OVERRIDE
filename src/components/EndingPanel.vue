@@ -695,47 +695,4 @@ onUnmounted(() => {
   font-family: 'M PLUS 1 Code', monospace;
 }
 
-/* ── Issue #24: メタ情報セクション ── */
-.ending-meta-section {
-  margin-bottom: 14px;
-  padding: 8px 12px;
-  border: 1px solid rgba(0,255,65,0.15);
-  border-radius: 1px;
-  background: rgba(0,255,65,0.03);
-}
-.meta-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 0;
-  font-size: 12px;
-  font-family: 'M PLUS 1 Code', monospace;
-}
-.meta-label {
-  color: rgba(184,255,184,0.45);
-  font-size: 11px;
-  letter-spacing: 0.5px;
-}
-.meta-value {
-  color: #b8ffb8;
-  font-size: 12px;
-}
-.meta-conf {
-  color: rgba(184,255,184,0.3);
-  font-size: 10px;
-}
-.contradiction-bar {
-  width: 80px;
-  height: 6px;
-  background: rgba(0,255,65,0.1);
-  border-radius: 3px;
-  overflow: hidden;
-  margin: 0 8px;
-}
-.contradiction-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #33aa55, #ff0040);
-  border-radius: 3px;
-  transition: width 0.6s ease;
-}
 </style>

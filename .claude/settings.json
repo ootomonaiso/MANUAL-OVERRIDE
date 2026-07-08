@@ -4,7 +4,14 @@
       "Bash(curl -s http://localhost:5178/)",
       "Bash(curl -s http://localhost:5174)",
       "Bash(start \"http://localhost:5174\")",
-      "Bash(tasklist)"
+      "Bash(tasklist)",
+      "Bash(python /tmp/resolve.py ours src/data/genres/hack_slash.json)",
+      "Bash(python /tmp/resolve.py ours src/data/genres/tetris.json)",
+      "Bash(python /tmp/resolve.py theirs tests/feature-tetris.test.mjs)",
+      "Bash(grep -rn *)",
+      "Bash(node scripts/genre-reach-sim.mjs)",
+      "Bash(node -e \"const s=require\\('./package.json'\\).scripts; console.log\\(Object.keys\\(s\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(node -e \"const s=require\\('./package.json'\\).scripts; ['test','ci','test:unit','test:features','test:choices'].forEach\\(k=>console.log\\(k,'=>',s[k]\\)\\)\")"
     ]
   },
   "hooks": {
@@ -13,10 +20,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "if ! OUTPUT=$(npm run typecheck 2>&1 && npm run lint 2>&1); then printf '%s' \"$OUTPUT\" | node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{console.log(JSON.stringify({decision:'block',reason:'typecheck/lint failed:\\n'+d}))})\"; else echo '{}'; fi",
             "shell": "bash",
             "timeout": 90,
-            "statusMessage": "typecheck + lint を実行中...",
-            "command": "if ! OUTPUT=$(npm run typecheck 2>&1 && npm run lint 2>&1); then printf '%s' \"$OUTPUT\" | node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{console.log(JSON.stringify({decision:'block',reason:'typecheck/lint failed:\\n'+d}))})\"; else echo '{}'; fi"
+            "statusMessage": "typecheck + lint を実行中..."
           }
         ]
       }
