@@ -71,6 +71,19 @@ export class JSONGenrePlugin implements PluginBase {
   readonly spawnTable: readonly SpawnEntry[]
   readonly spawnDensity?: import('../domain/types').SpawnDensityConfig
 
+  // 委譲先プラグインの視覚チューニング（省略可フィールド）をそのまま引き継ぐ。
+  // これを転送しないと、JSON専用ジャンルは委譲先の背景・パーティクル等の
+  // 演出設定が一切反映されず、汎用デフォルトのみの簡素な見た目になってしまう。
+  readonly parallax?: PluginBase['parallax']
+  readonly starConfig?: PluginBase['starConfig']
+  readonly hazardConfig?: PluginBase['hazardConfig']
+  readonly playerScale?: PluginBase['playerScale']
+  readonly particleColors?: PluginBase['particleColors']
+  readonly groundLineAlpha?: PluginBase['groundLineAlpha']
+  readonly groundDashAlpha?: PluginBase['groundDashAlpha']
+  readonly scrollSpeedBonus?: PluginBase['scrollSpeedBonus']
+  readonly verticalBackgroundLayers?: PluginBase['verticalBackgroundLayers']
+
   private readonly _delegate: PluginBase
 
   constructor(def: GenreJsonDef) {
@@ -106,6 +119,16 @@ export class JSONGenrePlugin implements PluginBase {
 
     this.spawnTable = this._delegate.spawnTable
     this.spawnDensity = def.spawnDensity
+
+    this.parallax = this._delegate.parallax
+    this.starConfig = this._delegate.starConfig
+    this.hazardConfig = this._delegate.hazardConfig
+    this.playerScale = this._delegate.playerScale
+    this.particleColors = this._delegate.particleColors
+    this.groundLineAlpha = this._delegate.groundLineAlpha
+    this.groundDashAlpha = this._delegate.groundDashAlpha
+    this.scrollSpeedBonus = this._delegate.scrollSpeedBonus
+    this.verticalBackgroundLayers = this._delegate.verticalBackgroundLayers
   }
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {

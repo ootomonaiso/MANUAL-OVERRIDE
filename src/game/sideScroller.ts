@@ -202,6 +202,12 @@ export class SideScroller {
     for (const sys of getActiveSystems(rules.features)) {
       sys.onManualUpdated?.(world, '')
     }
+    getGenre(rules.genre).onManualUpdated?.(world, '')
+  }
+
+  /** ジャンル確定直後に1回だけ呼ぶ（App.vue の lockedGenre watch から） */
+  notifyGenreLocked(): void {
+    getGenre(this.rules.genre).onGenreLocked?.(this._buildWorld())
   }
 
   /** フレーム内で _buildWorld() を1回だけ呼ぶためのキャッシュアクセサ */
@@ -495,6 +501,9 @@ export class SideScroller {
         if (!h.isSafe) {
           this._onPlayerHit(p)
           if (this.dead) return true
+          // 無敵時間が付与されたら、同一フレーム内で重なっている他のハザードによる
+          // 多重ヒットを防ぐため以降のハザードは処理しない
+          if (p.invincible > 0) break
         } else {
           for (const sys of getActiveSystems(r.features)) {
             sys.onSafeHazardTouch?.(this._getWorld(), h, h.x)
@@ -651,6 +660,9 @@ export class SideScroller {
         if (isHazardous) {
           this._onPlayerHit(p)
           if (this.dead) return true
+          // 無敵時間が付与されたら、同一フレーム内で重なっている他のハザードによる
+          // 多重ヒットを防ぐため以降のハザードは処理しない
+          if (p.invincible > 0) break
         } else {
           for (const sys of getActiveSystems(r.features)) {
             sys.onSafeHazardTouch?.(this._getWorld(), h, sx)

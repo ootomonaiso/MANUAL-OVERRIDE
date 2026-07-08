@@ -18,6 +18,8 @@ export class InputManager {
 
   private readonly _onKeyDown: (e: KeyboardEvent) => void
   private readonly _onKeyUp: (e: KeyboardEvent) => void
+  private readonly _onBlur: () => void
+  private readonly _onVisibilityChange: () => void
 
   constructor() {
     this._onKeyDown = (e) => {
@@ -30,8 +32,16 @@ export class InputManager {
       const key = InputManager._normalize(e)
       if (key !== null) this.keys.delete(key)
     }
+    // ウィンドウがフォーカスを失うと keyup が発火しないまま押しっぱなしのキーが
+    // 固着することがあるため、フォーカス喪失時にキー状態を強制的にクリアする
+    this._onBlur = () => this.keys.clear()
+    this._onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') this.keys.clear()
+    }
     window.addEventListener('keydown', this._onKeyDown)
     window.addEventListener('keyup', this._onKeyUp)
+    window.addEventListener('blur', this._onBlur)
+    document.addEventListener('visibilitychange', this._onVisibilityChange)
   }
 
   /** ゲームで使うキーを登録し、ブラウザのデフォルト動作を抑制する */
@@ -68,6 +78,8 @@ export class InputManager {
   dispose(): void {
     window.removeEventListener('keydown', this._onKeyDown)
     window.removeEventListener('keyup', this._onKeyUp)
+    window.removeEventListener('blur', this._onBlur)
+    document.removeEventListener('visibilitychange', this._onVisibilityChange)
   }
 
   /** IME 変換中キーを除外し、スペース・アルファベットを統一表記に正規化する */

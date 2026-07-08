@@ -36,7 +36,7 @@ const REQUIRED_NUMBER_FIELDS: Partial<Record<GameConfigSection, string[]>> = {
   difficulty: ['updateDistancesBaseInterval', 'updateDistancesCount', 'tempoSpeedBonus'],
   boss:    ['firstBossDist', 'bossHp', 'bossWidth', 'bossHeight'],
   rhythm_tuning: ['minBpm', 'maxBpm', 'justWindowSec', 'justMultiplier'],
-  stealth: ['stealthAlpha', 'stealthDurationSec', 'stealthCooldownSec', 'detectionRange'],
+  stealth: ['stealthAlpha', 'stealthDurationSec', 'stealthCooldownSec', 'detectionRange', 'stealthInvincibleSec'],
   genre_params: ['recommendedSingleChoice', 'recommendedMaxPerAxis'],
   game_balance: ['scoreRatioPlay', 'scoreRatioThrow', 'baseScrollSpeed'],
 }
@@ -93,6 +93,7 @@ const RANGE_CHECKS: Array<{
   { section: 'stealth',    field: 'stealthAlpha',   min: 0, max: 1 },
   { section: 'stealth',    field: 'stealthDurationSec', min: 0 },
   { section: 'stealth',    field: 'stealthCooldownSec', min: 0 },
+  { section: 'stealth',    field: 'stealthInvincibleSec', min: 0 },
   { section: 'game_balance', field: 'scoreRatioPlay', min: 0, max: 1 },
   { section: 'game_balance', field: 'scoreRatioThrow', min: 0, max: 1 },
   { section: 'game_balance', field: 'baseScrollSpeed', min: 0 },
