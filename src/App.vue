@@ -138,8 +138,9 @@ function beginSnapshotLoop() {
 
     // ジャンル確定後も選択は続行し、矛盾の蓄積次第でゲームが「壊れる」ことがある。
     // 最初のジャンプまで待つ
+    // 死亡フレームでは更新パネルを出さず、下の dead 判定で投擲へ移行させる
     const activePlay = ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
-    if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
+    if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay && !snapshot.value.dead) {
       scroller.setPaused(true)
       if (!gameState.triggerUpdate()) {
         // カードプールが枯渇した場合はスキップしてゲームを続行
@@ -324,7 +325,7 @@ onUnmounted(() => {
 
     <!-- ─── ローディング画面 ─── -->
     <Transition name="fade">
-      <LoadingScreen v-if="isLoading" />
+      <LoadingScreen v-if="isLoading" @done="isLoading = false" />
     </Transition>
 
     <!-- ─── タイトル画面 ─── -->

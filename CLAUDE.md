@@ -83,7 +83,7 @@
 直接的な表現を避け、横スクロールから縦、ステージを空にしたり海にしたりなど何の気なしに選べるものが望ましい
 
 収束システムは3方式を併用:
-- **genreParams 軸方式**: `tempo` / `range` / `enemy` / `combo` / `growth` / `rhythm` の累積値でジャンルを決定（後方互換）
+- **genreParams 軸方式**: `tempo` / `range` / `enemy` / `combo` / `growth` / `rhythm` / `stealth` / `vertical` / `aerial` / `survive` / `craft` / `speed` の12軸の累積値でジャンルを決定（軸の定義元は `schemas/genre.schema.json`。後方互換）
 - **genrePoints 直接方式**: カード選択で特定ジャンルに直接ポイントを加算（後方互換）
 - **ベイズ収束方式**: 各軸の閾値との乖離量から尤度 `L=exp(-decayRate×deviation)` を計算し事後確率で収束判定（主方式、`bayes.json` でハイパーパラメータを調整）
 

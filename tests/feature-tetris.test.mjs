@@ -46,11 +46,15 @@ const tetrisJson = JSON.parse(
   fs.readFileSync(path.join(root, 'src/data/genres/tetris.json'), 'utf-8')
 )
 
-// 閾値が適切であること（他のジャンルの閾値 10-18 と同等以上）
+// 閾値が「到達可能な」範囲であること。
+// combo/craft の 2 軸ジャンルなので genre_params.json の thresholdGuide.dualAxis(=3) を
+// 目安に、MAX_ROUNDS=5 で到達できる値にする。旧値 combo10/craft10 は puzzle(combo6)/
+// idle(craft7) の上位集合となりベイズ収束で常に負け、reach-sim 到達率 0.0% だった（C4）。
+// 逆に低すぎると puzzle/idle を食うため、共有軸の競合閾値未満・かつ 1 以上に収める。
 const combo = tetrisJson.thresholds?.combo ?? 0
 const craft = tetrisJson.thresholds?.craft ?? 0
-assert.ok(combo >= 8, `combo 閾値が低すぎます: ${combo} (8以上が必要です)`)
-assert.ok(craft >= 8, `craft 閾値が低すぎます: ${craft} (8以上が必要です)`)
+assert.ok(combo >= 1 && combo < 6, `combo 閾値が到達可能域を外れています: ${combo} (1..5 が必要です)`)
+assert.ok(craft >= 1 && craft < 7, `craft 閾値が到達可能域を外れています: ${craft} (1..6 が必要です)`)
 
 // scoreFormula に distance を使わない（distance は tetris モードで凍結する）
 assert.ok(!tetrisJson.scoreFormula.includes('distance'),

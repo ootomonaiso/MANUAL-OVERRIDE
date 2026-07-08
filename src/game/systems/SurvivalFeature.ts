@@ -21,6 +21,7 @@ interface SurvivalState {
   lastHungerDamage: number
   xp: number
   nextLevelXp: number
+  kills: number
 }
 
 export class SurvivalFeature implements FeatureSystem {
@@ -35,6 +36,7 @@ export class SurvivalFeature implements FeatureSystem {
       lastHungerDamage: 0,
       xp: 0,
       nextLevelXp: SURVIVAL.xpPerLevel,
+      kills: 0,
     }
   }
 
@@ -127,20 +129,24 @@ export class SurvivalFeature implements FeatureSystem {
     const range = SURVIVAL.meleeRange
     const damage = p.weaponDamage
 
-    // プレイヤー中心から左右両方向の攻撃範囲
+    // プレイヤー中心から左右両方向の攻撃範囲（プレイヤー座標＝画面座標）
     const meleeLeft = p.x - range
     const meleeRight = p.x + p.w + range
     const meleeTop = p.y - range * SURVIVAL.meleeVerticalRatio
     const meleeBottom = p.y + p.h + range * SURVIVAL.meleeVerticalRatio
     const meleeRect = { x: meleeLeft, y: meleeTop, w: meleeRight - meleeLeft, h: meleeBottom - meleeTop }
 
-    for (const h of world.hazards) {
+    // ハザードはワールド座標なので画面座標へ変換して比較する
+    // （変換しないと cameraX が増える＝スクロール後に近接が一切当たらなくなる）
+    for (let i = world.hazards.length - 1; i >= 0; i--) {
+      const h = world.hazards[i]
       if (h.isSafe || h.hp <= 0) continue
-      if (!rectsOverlap(meleeRect, h.rect, SURVIVAL.meleeCollisionGrace)) continue
+      const hScreenRect = { x: h.rect.x - world.cameraX, y: h.rect.y, w: h.w, h: h.h }
+      if (!rectsOverlap(meleeRect, hScreenRect, SURVIVAL.meleeCollisionGrace)) continue
 
       h.hp -= damage
       // 攻撃パーティクル
-      for (let i = 0; i < SURVIVAL.meleeHitParticleCount; i++) {
+      for (let j = 0; j < SURVIVAL.meleeHitParticleCount; j++) {
         const angle = Math.random() * Math.PI * 2
         const speed = SURVIVAL.meleeHitParticleSpeedMin + Math.random() * (SURVIVAL.meleeHitParticleSpeedMax - SURVIVAL.meleeHitParticleSpeedMin)
         world.addParticle(
@@ -150,8 +156,14 @@ export class SurvivalFeature implements FeatureSystem {
         )
       }
 
+      // 撃破した敵は配列から除去する。除去しないと hp<=0 でも
+      // メインループの被弾判定（!isSafe のみ参照）で当たり続け、倒した敵に殺される
       if (h.hp <= 0) {
         this._onEnemyKilled(world, h)
+        // scoreFormula の kills 項に反映（setKills は累計絶対値を受け取る）
+        this.state.kills++
+        world.setKills(this.state.kills)
+        world.hazards.splice(i, 1)
       }
     }
   }

@@ -44,11 +44,21 @@ export interface GenreJsonDef {
   }
 }
 
+/** JSON側で palette / starColor 未指定かつ委譲先も持たない場合の汎用フォールバック色 */
+const DEFAULT_STAR_COLOR = '#ffffff'
+const DEFAULT_PALETTE = {
+  danger:     '#ff6b6b',
+  dangerGlow: '#ff9999',
+  safe:       '#4ecdc4',
+  safeGlow:   '#80e8dd',
+} as const
+
 /** theme名またはtemplate名 → 委譲先プラグインID */
 const TO_DELEGATE_ID: Record<string, string> = {
   // template名
   runner:  'base',
   space:   'stg',
+  aerial:  'aerial_stg',  // 縦スクロールSTG（bullet_hell 等）。verticalBackgroundLayers を持つ
   dungeon: 'rpg',
   rhythm:  'rhythm',
   puzzle:  'puzzle',
@@ -58,6 +68,11 @@ const TO_DELEGATE_ID: Record<string, string> = {
   stg:     'stg',
   rpg:     'rpg',
   horror:  'base',
+  // glitch（壊れたゲーム演出）/ stealth（stealth_action）は専用の描画テンプレートを
+  // 持たないため base の地上横スク描画へ委譲する。bgColor は別途適用されるので
+  // 背景色でのジャンル差は残る。暗黙の ?? 'base' に頼らず意図を明示する。
+  glitch:  'base',
+  stealth: 'base',
 }
 
 export class JSONGenrePlugin implements PluginBase {
@@ -70,6 +85,17 @@ export class JSONGenrePlugin implements PluginBase {
   readonly palette: { danger: string; dangerGlow: string; safe: string; safeGlow: string }
   readonly spawnTable: readonly SpawnEntry[]
   readonly spawnDensity?: import('../domain/types').SpawnDensityConfig
+
+  // 描画メソッドだけでなく、エンジンが直接参照する視覚チューニング値も委譲先から継承する。
+  // これがないと bullet_hell（stg/aerial_stg へ委譲）等で背景レイヤーやパーティクル色が
+  // 失われ、TS 実装ジャンルとの見た目品質差が出る。
+  readonly parallax?: PluginBase['parallax']
+  readonly starConfig?: PluginBase['starConfig']
+  readonly hazardConfig?: PluginBase['hazardConfig']
+  readonly particleColors?: PluginBase['particleColors']
+  readonly groundLineAlpha?: PluginBase['groundLineAlpha']
+  readonly groundDashAlpha?: PluginBase['groundDashAlpha']
+  readonly verticalBackgroundLayers?: PluginBase['verticalBackgroundLayers']
 
   private readonly _delegate: PluginBase
 
@@ -95,17 +121,26 @@ export class JSONGenrePlugin implements PluginBase {
 
     this.farLayerColor = def.visual?.farLayerColor ?? this._delegate.farLayerColor
     this.midLayerColor = def.visual?.midLayerColor ?? this._delegate.midLayerColor
-    this.starColor     = def.visual?.starColor     ?? this._delegate.starColor ?? '#ffffff'
+    this.starColor     = def.visual?.starColor     ?? this._delegate.starColor ?? DEFAULT_STAR_COLOR
 
     this.palette = {
-      danger:     def.visual?.palette?.danger     ?? '#ff6b6b',
-      dangerGlow: def.visual?.palette?.dangerGlow ?? '#ff9999',
-      safe:       def.visual?.palette?.safe       ?? '#4ecdc4',
-      safeGlow:   def.visual?.palette?.safeGlow   ?? '#80e8dd',
+      danger:     def.visual?.palette?.danger     ?? DEFAULT_PALETTE.danger,
+      dangerGlow: def.visual?.palette?.dangerGlow ?? DEFAULT_PALETTE.dangerGlow,
+      safe:       def.visual?.palette?.safe       ?? DEFAULT_PALETTE.safe,
+      safeGlow:   def.visual?.palette?.safeGlow   ?? DEFAULT_PALETTE.safeGlow,
     }
 
     this.spawnTable = this._delegate.spawnTable
     this.spawnDensity = def.spawnDensity
+
+    // 委譲先の視覚チューニング値を継承（未指定フィールドはエンジン側のデフォルトが効く）
+    this.parallax                = this._delegate.parallax
+    this.starConfig              = this._delegate.starConfig
+    this.hazardConfig            = this._delegate.hazardConfig
+    this.particleColors          = this._delegate.particleColors
+    this.groundLineAlpha         = this._delegate.groundLineAlpha
+    this.groundDashAlpha         = this._delegate.groundDashAlpha
+    this.verticalBackgroundLayers = this._delegate.verticalBackgroundLayers
   }
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {

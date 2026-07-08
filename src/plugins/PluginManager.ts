@@ -154,11 +154,21 @@ export class PluginManager {
       throw new Error(`Invalid visual.template: ${visual.template}`)
     }
 
+    // thresholds は as キャストで素通しせず、object かつ全値が number であることを検証する
+    // （不正な閾値がベイズ尤度計算に流れ込むと NaN 汚染で収束が壊れるため）。
+    const thresholds = obj.thresholds
+    if (
+      typeof thresholds !== 'object' || thresholds === null || Array.isArray(thresholds) ||
+      !Object.values(thresholds as Record<string, unknown>).every(v => typeof v === 'number')
+    ) {
+      throw new Error('thresholds must be an object of number values')
+    }
+
     return {
       type: 'genre',
       id: String(obj.id),
       label: String(obj.label),
-      thresholds: obj.thresholds as Record<string, number>,
+      thresholds: thresholds as Record<string, number>,
       enableFeatures: Array.isArray(obj.enableFeatures) ? (obj.enableFeatures as string[]) : [],
       disableFeatures: Array.isArray(obj.disableFeatures) ? (obj.disableFeatures as string[]) : [],
       visual: visual as GenrePlugin['visual'],

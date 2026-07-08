@@ -134,37 +134,23 @@ return accumulated
 累積結果: { tempo: 3, enemy: 1, rhythm: 2 }
 ```
 
-#### `resolveGenre(accumulated: GenreParams, genres: GenreDef[]): GenreId`
+#### `resolveGenre(accumulated: GenreParams, genres: GenreDef[], config?: BayesConfig): GenreId`
 
-累積パラメータからジャンルを判定します。
+累積パラメータからベイズ事後確率でジャンルを判定します（未収束時は `'base'`）。
 
-**判定ロジック:**
+**判定ロジック（ベイズ収束）:**
 
-1. 各ジャンルの閾値（`thresholds`）をチェック
-2. すべての閾値を満たす（**AND 条件**）ジャンルを抽出
-3. 複数該当する場合は、**超過量の合計が最大** のジャンルを採用
+1. 各ジャンル G の尤度を `L(G) = exp(-decayRate × Σ max(0, threshold[a] − accumulated[a]))` で計算する（閾値を超過した軸はペナルティ 0、不足分のみ減点）
+2. 尤度を正規化して事後確率を得る（`base` は総累積量に応じて尤度が減衰し、`resolvable: false` の glitch 等は計算・ランキングから除外）
+3. 最尤ジャンルが `minProb` 以上、かつ 2 位を `dominanceRatio` 倍以上引き離していれば収束確定。満たさなければ `'base'` を返す
 
-```typescript
-// 例
-const accumulated = { tempo: 5, enemy: 4, range: 3 }
+ハイパーパラメータ（`decayRate` / `minProb` / `dominanceRatio` / `baseDecay`）は `src/data/config/bayes.json` で調整します。
 
-// runner: { tempo: 5 } → 満たしている（超過: tempo=0）
-// stg:    { range: 4, enemy: 4 } → range 不足（0 < 4）→ 不採用
-// rhythm: { tempo: 4, rhythm: 4 } → rhythm 不足 → 不採用
+**関連関数:**
 
-// 結果: runner
-```
-
-#### `resolveGenreProgress(accumulated: GenreParams, genres: GenreDef[]): GenreProgress`
-
-現在のジャンル確定状況を進捗率で返します。デバッグパネル用。
-
-```typescript
-{
-  closestGenre: 'stg',           // 最も接近したジャンル
-  progress: 0.75,                // 確定までの進捗（0-1）
-}
-```
+- `computeBayesianPosteriors(accumulated, genres, config?)` — 全ジャンルの事後確率分布を返す
+- `resolveHighestProbGenre(accumulated, genres, config?)` — 未収束でも「最も確率の高いジャンル」を返す（`MAX_ROUNDS` 到達時の強制解決用）
+- `updateBayesianState(prevState, accumulated, genres, config?)` — 1 選択ごとに事後分布と収束状態を更新する（収束後は凍結）
 
 ### パラメータ設計の思想
 

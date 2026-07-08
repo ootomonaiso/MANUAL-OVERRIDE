@@ -285,6 +285,7 @@ export interface RhythmTuningConfig {
 export interface StealthConfig {
   stealthAlpha: number
   stealthDurationSec: number
+  stealthInvincibleSec: number
   stealthCooldownSec: number
   stealthSafeBonus: number
   detectionRange: number

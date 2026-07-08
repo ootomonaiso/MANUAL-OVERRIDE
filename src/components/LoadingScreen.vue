@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 
+const emit = defineEmits<{ done: [] }>()
+
 const progress = ref(0)
 const statusText = ref('初期化中...')
 
@@ -30,6 +32,8 @@ onMounted(() => {
     if (progress.value >= 100) {
       if (statusInterval !== null) clearInterval(statusInterval)
       if (progressInterval !== null) clearInterval(progressInterval)
+      // 進捗完了でタイトル画面へ引き渡す（これがないとローディングが永久に残る）
+      emit('done')
     }
   }, 200)
 })

@@ -55,32 +55,22 @@
 
 ## `src/composables/useManual.ts`
 
-説明書 UI 状態管理 composable。
+説明書 UI の差分表示・更新アニメーション状態を管理する composable。ジャンル収束や選択履歴の状態は [`useGameState`](#srccomposablesusegamestatets) が保持する。
 
-### `useManual()`
+### `useManual(currentManual: () => ManualVersion)`
 
 | 戻り値プロパティ | 型 | 概要 |
 |---|---|---|
-| `currentKey` | `ref<string>` | 現在表示中のバージョンキー |
-| `currentVersion` | `ref<ManualVersion \| null>` | 現在の ManualVersion |
-| `deck` | `Record<string, ManualVersion>` | MANUAL_DECK（readonly） |
-| `versionIndex` | `ref<number>` | 選択履歴インデックス |
-| `genreProgress` | `ref<{ closestGenre: GenreId, progress: number } \| null>` | ジャンル収束進行状況 |
-| `metGenres` | `ref<GenreId[]>` | 収束済みジャンル一覧 |
-| `currentGenre` | `ref<GenreId \| null>` | 現在のジャンル |
-| `lockedGenre` | `ref<GenreId \| null>` | 確定済みジャンル |
-| `accumulatedParams` | `ref<GenreParams>` | 累積ジャンルパラメータ |
-| `genreParamMultiplier` | `ref<number>` | パラメータ倍率（選択ごと） |
-| `history` | `ref<ChoiceRecord[]>` | 選択履歴 |
-| `theme` | `ref<ManualTheme>` | 説明書テーマ |
-| `narrative` | `ref<string>` | ナラティブテキスト |
-| `tutorialHint` | `ref<string>` | チュートリアルヒント |
-| `isUpdating` | `ref<boolean>` | 説明書更新中フラグ |
-| `isCentered` | `ref<boolean>` | 説明書パネルが中央表示中（更新アニメーション時） |
-| `updateCount` | `ref<number>` | 更新回数 |
-| `advanceTo(key: string): void` | — | 指定キーのバージョンに移動（deck 参照） |
-| `selectChoice(choice: Choice, multiplier?: number): void` | — | 選択肢選択（履歴記録 + パラメータ累積） |
-| `reset(): void` | — | 全状態を初期化 |
+| `history` | `ref<ManualVersion[]>` | 直近の説明書バージョン履歴（最大 4 件） |
+| `diffLines` | `ref<DiffLine[]>` | 直前バージョンとの行単位差分（差分なしは空配列） |
+| `isAnimating` | `ref<boolean>` | 差分強調アニメーション中フラグ（約 1.5 秒で解除） |
+| `isCentered` | `ref<boolean>` | 説明書パネルが中央表示中（更新演出、約 2.8 秒で解除） |
+| `recordUpdate(next: ManualVersion): void` | — | 新バージョンを履歴に記録し、差分計算とアニメーションを開始 |
+
+### `computeLineDiff(prevLines: string[], nextLines: string[]): DiffLine[]`
+
+LCS（最長共通部分列）ベースの行単位差分。重複行も正しく扱い、差分がなければ空配列を返す。
+`DiffLine = { text: string; type: 'added' | 'removed' | 'unchanged' }`。
 
 ---
 
