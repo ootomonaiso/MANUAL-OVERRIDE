@@ -9,13 +9,16 @@ import { chromium } from '@playwright/test';
   console.log('✓ Title');
 
   // ゲーム開始
-  await page.click('button');
+  const startBtn = page.locator('button', { hasText: 'はじめる' })
+  if (await startBtn.isVisible().catch(() => false)) {
+    await startBtn.click();
+  }
   await page.waitForTimeout(1500);
 
   // チュートリアル画面があればスキップ
   const tutorialVisible = await page.locator('text=わかった、プレイする').isVisible().catch(() => false);
   if (tutorialVisible) {
-    await page.click('text=わかった、プレイする');
+    await page.locator('text=わかった、プレイする').click();
     await page.waitForTimeout(1000);
     console.log('✓ Skipped tutorial');
   }
