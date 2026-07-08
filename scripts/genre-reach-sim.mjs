@@ -28,9 +28,14 @@ const FALLBACK   = gb.defaultFallbackGenre
 const JITTER     = 0.4 // useGameState.PARAM_JITTER_RANGE
 
 // ── genreResolver.computeBayesianPosteriors の再現 ─────────
+// base は原点、resolvable:false（glitch 等）は矛盾トリガー専用の特殊ジャンル。
+// 後者は尤度計算・ランキングから完全に除外する（genreResolver と同じ扱い）。
+const isCandidate = g => g.id !== 'base' && g.resolvable !== false
+
 function posteriors(acc) {
   const un = {}
   for (const g of genres) {
+    if (g.resolvable === false) continue
     const entries = Object.entries(g.thresholds)
     if (entries.length === 0) {
       const total = Object.values(acc).reduce((s, v) => s + v, 0)
@@ -48,7 +53,7 @@ function posteriors(acc) {
 }
 
 function ranked(post) {
-  return genres.filter(g => g.id !== 'base')
+  return genres.filter(isCandidate)
     .map(g => ({ id: g.id, prob: post[g.id] ?? 0 }))
     .sort((a, b) => b.prob - a.prob)
 }
@@ -138,7 +143,7 @@ for (let i = 0; i < N_RANDOM; i++) {
   dist[g] = (dist[g] ?? 0) + 1
 }
 console.log(`■ ランダムプレイヤー ${N_RANDOM} 回の最終ジャンル分布:`)
-for (const g of genres.filter(g => g.id !== 'base')) {
+for (const g of genres.filter(isCandidate)) {
   const n = dist[g.id] ?? 0
   const pct = (n / N_RANDOM * 100).toFixed(1).padStart(5)
   console.log(`  ${g.id.padEnd(15)} ${pct}%  ${'#'.repeat(Math.round(n / N_RANDOM * 100))}`)
@@ -146,7 +151,7 @@ for (const g of genres.filter(g => g.id !== 'base')) {
 
 console.log(`\n■ 狙い撃ちプレイヤー（各ジャンル ${N_FOCUS} 回）の到達成功率:`)
 const weak = []
-for (const g of genres.filter(g => g.id !== 'base')) {
+for (const g of genres.filter(isCandidate)) {
   let hit = 0
   const picker = focusedPicker(g.id)
   for (let i = 0; i < N_FOCUS; i++) {

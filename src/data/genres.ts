@@ -14,6 +14,7 @@ export const GENRES: GenreDef[] = GAME_CONFIG.genres.genres.map(g => ({
   id:              g.id as GenreId,
   label:           g.label,
   thresholds:      g.thresholds,
+  resolvable:      g.resolvable,
   enableFeatures:  g.enableFeatures as FeatureId[],
   disableFeatures: g.disableFeatures as FeatureId[],
   scoreFormula:    g.scoreFormula,

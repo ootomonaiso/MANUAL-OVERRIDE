@@ -247,6 +247,10 @@
       "type": "string",
       "description": "エンディングで表示されるフレーバーテキスト"
     },
+    "resolvable": {
+      "type": "boolean",
+      "description": "ベイズ収束の候補に含めるか。省略時 true。false のジャンル（glitch 等）は通常プレイでは収束せず、矛盾トリガー等で forcedGenre として明示指定されたときだけ成立する。"
+    },
     "spawnDensity": {
       "type": "object",
       "description": "ジャンル固有のハザードスポーン密度設定。省略時は game_balance.json の HAZARD_SPAWN を使用する。",
