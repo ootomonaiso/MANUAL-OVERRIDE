@@ -136,9 +136,9 @@ function beginSnapshotLoop() {
     }
     snapshot.value = scroller.getSnapshot()
 
-    // genreLocked 後は説明書の自動更新を止める（フェーズの意図と矛盾するため）
+    // ジャンル確定後も選択は続行し、矛盾の蓄積次第でゲームが「壊れる」ことがある。
     // 最初のジャンプまで待つ
-    const activePlay = ['playing', 'tutorial'].includes(gameState.phase.value)
+    const activePlay = ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
     if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
       scroller.setPaused(true)
       if (!gameState.triggerUpdate()) {
@@ -360,11 +360,6 @@ onUnmounted(() => {
 
           <div class="title-controls">
             <span class="ctrl-group">
-              <kbd class="ctrl-key">←</kbd><kbd class="ctrl-key">→</kbd>
-              <span class="ctrl-desc">移動</span>
-            </span>
-            <span class="ctrl-sep">/</span>
-            <span class="ctrl-group">
               <kbd class="ctrl-key">SPACE</kbd>
               <span class="ctrl-desc">ジャンプ</span>
             </span>
@@ -425,8 +420,6 @@ onUnmounted(() => {
         v-if="gameState.phase.value === 'tutorial'"
         :survived-sec="snapshot.survivedSec"
         :jumps="snapshot.statJumps"
-        :moves-left="snapshot.statMoveLeft"
-        :moves-right="snapshot.statMoveRight"
         :distance="snapshot.distance"
       />
 

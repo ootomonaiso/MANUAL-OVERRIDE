@@ -2,6 +2,7 @@
   "id": "glitch",
   "label": "壊れたゲーム",
   "thresholds": {},
+  "resolvable": false,
   "enableFeatures": ["movement", "hp"],
   "disableFeatures": [],
   "scoreFormula": "distance * 0.1 + survivedSec * 2",

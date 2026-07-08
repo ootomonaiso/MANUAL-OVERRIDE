@@ -187,6 +187,12 @@ export interface GenreDef {
   label: string
   /** 軸パラメータの閾値。ベイズ尤度計算の基準点となる */
   thresholds: GenreParams
+  /**
+   * ベイズ収束の候補に含めるか。省略時は true。
+   * false のジャンル（glitch 等）は通常プレイでは収束せず、
+   * 矛盾トリガーなどで forcedGenre として明示的に設定されたときだけ成立する。
+   */
+  resolvable?: boolean
   enableFeatures: FeatureId[]
   disableFeatures: FeatureId[]
   /** 安全パーサで評価するスコア式。変数は ScoreVars のキーを使用 */

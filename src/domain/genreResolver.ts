@@ -12,6 +12,19 @@ export const DEFAULT_BAYES_CONFIG: BayesConfig = {
 }
 
 // ─────────────────────────────────────────────────────────────
+// 通常のベイズ収束で成立しうるジャンルか。
+// base は横スクロールの「原点」なので尤度計算には残す（累積が増えると減衰し、
+// 実ジャンルへ道を譲る）が、ランキング＝収束候補からは除外する。
+// resolvable:false のジャンル（glitch 等）は矛盾トリガーで forcedGenre として
+// 明示指定されたときだけ成立する特殊ジャンルなので、尤度計算にもランキングにも
+// 一切含めない（含めると空 thresholds ゆえ序盤の尤度が ≈1 になり、実ジャンルの
+// 事後確率を吸い取って一生収束しなくなる）。
+// ─────────────────────────────────────────────────────────────
+function isConvergenceCandidate(genre: GenreDef): boolean {
+  return genre.id !== 'base' && genre.resolvable !== false
+}
+
+// ─────────────────────────────────────────────────────────────
 // ベイズ更新: 累積パラメータから事後確率を計算
 //
 // 各ジャンル G に対して:
@@ -28,6 +41,9 @@ export function computeBayesianPosteriors(
   const unnormalized: Record<GenreId, number> = {}
 
   for (const genre of genres) {
+    // 特殊ジャンル(glitch 等)は尤度計算から除外（正規化の分母にも入れない）
+    if (genre.resolvable === false) continue
+
     const entries = Object.entries(genre.thresholds) as [GenreParam, number][]
 
     if (entries.length === 0) {
@@ -67,7 +83,7 @@ function _rankGenres(
   genres: GenreDef[],
 ): { id: GenreId; prob: number }[] {
   return genres
-    .filter(g => g.id !== 'base')
+    .filter(isConvergenceCandidate)
     .map(g => ({ id: g.id, prob: posteriors[g.id] ?? 0 }))
     .sort((a, b) => b.prob - a.prob)
 }

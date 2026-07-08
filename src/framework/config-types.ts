@@ -491,6 +491,8 @@ export interface GenreDefJSON {
   id: string
   label: string
   thresholds: Record<string, number>
+  /** ベイズ収束の候補に含めるか。省略時 true。false は forcedGenre 専用（glitch 等） */
+  resolvable?: boolean
   enableFeatures: string[]
   disableFeatures: string[]
   scoreFormula: string
