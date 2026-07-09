@@ -53,7 +53,7 @@ test.describe('テトリスジャンル', () => {
     await page.goto('/')
 
     // ゲーム起動前にジャンル定義を確認
-    const genreData = await page.evaluate(() => {
+    await page.evaluate(() => {
       // GAME_CONFIG.genres から tetris ジャンルを取得
       try {
         // @ts-expect-error runtime access
