@@ -1,26 +1,30 @@
 # バグ調査レポート
 
-- 調査対象: `main` ブランチ（調査開始時点で `origin/main` と一致、コミット `47e3fd0`）
+- 調査対象: `main` ブランチ
+  - 初回調査時点: コミット `47e3fd0`（`origin/main` と一致）
+  - **第2次調査（本更新）時点: コミット `cdc0196`（現在の `origin/main` 最新）**。初回調査後に `origin/main` へ3コミットが追加されており（依存関係バンプ2件 + `ChoicePanel.vue` の未使用 import 修正1件）、第2次調査ではこの最新コミットを対象に全項目を再検証したうえで、未調査だった領域（`scripts/`, `schemas/`, 未言及の `config/*.json`, 全22ジャンルの `scoreFormula`）を追加調査した
 - 調査範囲: `src/`, `scripts/`, `schemas/`, 設定JSON群（`src/data/config/*.json` 等）
-- 調査方法: 静的解析（`typecheck` / `lint` / `test:unit` / `validate` / `test:features` / `build` / `bundle-size` / `check-doc-links`）、プロジェクト付属のジャンル到達性シミュレータ（`npm run reach-sim`）、コードリーディング、一部は Playwright による実機（Chromium）動作確認、再現用ユニットテストの追加
+- 調査方法: 静的解析（`typecheck` / `lint` / `test:unit` / `validate` / `test:features` / `build` / `bundle-size` / `check-doc-links`）、プロジェクト付属のジャンル到達性シミュレータ（`npm run reach-sim`）、コードリーディング（全22ジャンルの `scoreFormula` と、それを構成する変数がどの `FeatureSystem` から書き込まれるかを1件ずつ突合）、一部は Playwright による実機（Chromium）動作確認、再現用ユニットテストの追加
+- 第2次調査は `origin/main` を独立した git worktree に checkout した上で全ツールチェーンを再実行しており、本レポート内の main ブランチに対する記述はすべてこの手順で再検証済み
 - 修正は行っていない（調査・レポートのみ）
 - 本レポート内の「確信度」表記の意味:
   - **確認済（実行確認）**: 実際にコマンド実行・ブラウザ操作で再現を確認した
   - **確認済（コードリーディング）**: コードの静的なトレースにより、条件が揃えば確実に発生すると判断できる
   - **推測**: コードから疑わしいが、実行時の挙動までは検証できていない
+- 参考: Critical(C1-C4)/High(H1-H6) は本レポート作成の元になった調査を基に `fix/critical-high-bugs` ブランチ（[PR #153](https://github.com/ootomonaiso/MANUAL-OVERRIDE/pull/153)、本レポート執筆時点で `main` 未マージ）で修正作業が行われているが、**`main` ブランチ自体には未反映**であるため、以下は現時点の `main` の状態として記載する
 
 ---
 
 ## サマリ
 
-| 優先度 | 件数 |
-|---|---|
-| Critical | 4 |
-| High | 6 |
-| Medium | 8 |
-| Low | 15 |
+| 優先度 | 件数 | 内訳 |
+|---|---|---|
+| Critical | 7 | 既存4件（C1-C4）+ 第2次調査で新規3件（C5-C7） |
+| High | 6 | 既存6件（H1-H6）、変化なし |
+| Medium | 9 | 既存8件（M1-M8）+ 第2次調査で新規1件（M9） |
+| Low | 19 | 既存15件中1件（L1）が調査中に `main` 側で解消済み、新規4件（L16-L19） |
 
-静的解析の結果: `typecheck` は問題なし、`lint` は警告1件のみ、`validate` / `check-doc-links` / `test:features` / `build` / `bundle-size` はすべて成功。一方で `test:unit`（`vitest run tests/unit`）は既存の `tests/unit/domain/genreResolver.test.ts` で **5件失敗**しており、CI の `test:unit:ci` はこのディレクトリを対象から除外しているため見逃されていた（詳細は Medium M7）。
+静的解析の結果（第2次調査、`origin/main` `cdc0196` で再実行）: `typecheck` は問題なし、`lint` は **0件**（初回調査時の警告1件は `main` 側で別PRにより解消済み。旧 L1 参照）、`validate` / `check-doc-links` / `test:features` / `build` / `bundle-size` はすべて成功。`reach-sim` は初回と同様の傾向（`hack_slash` 0.1%、`tetris` 0.0%、他多数のジャンルが25%未満）。一方で `test:unit`（`vitest run tests/unit`）は既存の `tests/unit/domain/genreResolver.test.ts` で **5件失敗**しており、CI の `test:unit:ci` はこのディレクトリを対象から除外しているため見逃されていた（詳細は Medium M7）。
 
 追加した再現用テストファイル: `tests/unit/domain/manualDeck-integrity.test.ts`（後述 Medium M8 の再現用。既存の `ManualValidator` の検証ロジックを実データに対して実行するだけで、production コードへの変更はなし）。
 
@@ -95,6 +99,46 @@
 - **優先度**: **Critical** — CLAUDE.md は「22ジャンルの完全実装」を完了項目として明記しているが、実際には22ジャンル中2ジャンルがゲームプレイを通じて実質到達不能であり、ゲームの中核コンセプト（「横スクロールから多様なジャンルが生まれる体験」）が一部破綻している。なお、これは実行時クラッシュやハードな進行不能ではなく、あくまで「特定コンテンツに到達できない」という設計上の欠陥である点は付記する（読み手によっては High 相当と判断してもよい）。
 - **確信度**: 確認済（実行確認 + コードリーディング）。シミュレータの実行結果自体は再現性のある事実。原因分析（閾値設計とベイズ尤度の競合）はコードリーディングによる推測。
 - **再現条件**: `node scripts/genre-reach-sim.mjs .`（または `npm run reach-sim`）を実行するだけで再現する。実プレイでの追試は行っていないが、シミュレータの忠実度から見て実プレイでも同様の傾向になる可能性が高い。
+
+---
+
+### C5.（第2次調査で新規発見）5ジャンルの `scoreFormula` が参照する `combo` 変数、2ジャンルが参照する `kills` 変数が、そのジャンルでは恒常的に0のまま変化しない
+
+- **該当箇所**:
+  - `combo` が常に0: [src/data/genres/platformer.json:6,8](../src/data/genres/platformer.json#L6)、[src/data/genres/racing.json:6,8](../src/data/genres/racing.json#L6)、[src/data/genres/rhythm.json:6,8](../src/data/genres/rhythm.json#L6)、[src/data/genres/runner.json:6,8](../src/data/genres/runner.json#L6)、[src/data/genres/sports.json:6,8](../src/data/genres/sports.json#L6)
+  - `kills` が常に0: [src/data/genres/dungeon.json:6,8](../src/data/genres/dungeon.json#L6)、[src/data/genres/rpg.json:6,8](../src/data/genres/rpg.json#L6)
+  - 根本原因: `world.setCombo(...)` を呼ぶのは [ShootFeature.ts:205](../src/game/systems/ShootFeature.ts#L205)（`shoot` 有効時のみ弾がヒットして呼ばれる）、[SpecialFeature.ts:222](../src/game/systems/SpecialFeature.ts#L222)（`tower` の自動撃破時）、[PuzzleFeature.ts:690](../src/game/systems/PuzzleFeature.ts#L690)（`lights_out` の正解時）、[TetrisFeature.ts:527](../src/game/systems/TetrisFeature.ts#L527)（`tetris_mode` のライン消去時）の4箇所のみ。`world.setKills(...)` を呼ぶのは [ShootFeature.ts:204](../src/game/systems/ShootFeature.ts#L204) と [SpecialFeature.ts:221](../src/game/systems/SpecialFeature.ts#L221) の2箇所のみ。
+- **概要**:
+  上記5ジャンル（platformer/racing/rhythm/runner/sports）の `enableFeatures` を確認すると、`shoot`/`enemy_hp`/`tower`/`lights_out`/`tetris_mode` のいずれも含まれていない（例: `rhythm.json` は `["beat_hazard", "just_input", "beat_dash"]`、`platformer.json` は `["double_jump", "long_air", "wall_jump"]`）。つまりこれらのジャンルでプレイしている間、`world.gameStats.combo` を書き換えるコードパスは一切実行されず、初期値の `0` から一度も変化しない。同様に dungeon/rpg は `enableFeatures: ["hp", "exp", "item_pickup", "slow_precise"]` であり `kills` を書き換えるコードパスが存在しない。
+  スコアは `src/game/sideScroller.ts` の `_recalculatePlayScore()`（ゲーム終了時に1回呼ばれ、`vars.combo` / `vars.kills` に `this._gameStats.combo` / `this._gameStats.kills` をそのまま渡して `scoreFormula` を評価する）で確定するため、`rhythm.json` の `"beatHits * 150 + combo * 100 + distance * 0.4"` のうち `combo * 100` の項、`dungeon.json` の `"exp * 3 + kills * 70 + ..."` のうち `kills * 70` の項は、**プレイヤーの腕前や運に関係なく、常に0**になる。乱数やタイミングに依存する話ではなく、コード上その値を書き込む経路自体が存在しないため、100%再現する。
+- **優先度**: **Critical** — スコア計算式の一項が特定ジャンルで恒常的に無効化されており、明確な「スコア不正計算」に該当する。5ジャンル（platformer/racing/rhythm/runner/sports）+2ジャンル（dungeon/rpg）= 22ジャンル中7ジャンルに影響する、既知の C3（hack_slash の exp）と同型のバグパターンが広範囲に存在している。
+- **確信度**: 確認済（コードリーディング）。`world.setCombo` / `world.setKills` の全呼び出し箇所を `grep` で洗い出し、各呼び出し元 `FeatureSystem.handles` が該当7ジャンルの `enableFeatures` に一つも含まれないことを直接突合して確認した。実プレイでの実測（スコア表示が実際に0のままであること）は未実施。
+- **再現条件**: 該当7ジャンルのいずれかに収束してプレイし、ゲームを終了する（ギブアップ／死亡）だけで常に発生する。
+
+---
+
+### C6.（第2次調査で新規発見）tower_def: `enemy_hp` を有効化しているだけで `shoot` を有効化していないため、ShootFeature が毎フレーム `kills`/`combo` を0へ巻き戻し、タワーによる撃破がスコアに一切反映されない
+
+- **該当箇所**: [src/data/genres/tower_def.json:6,8](../src/data/genres/tower_def.json#L6)（`enableFeatures: ["tower", "enemy_hp", "item_pickup"]`）、[src/game/systems/ShootFeature.ts:17,28-38,200-205](../src/game/systems/ShootFeature.ts#L17)（`handles` に `enemy_hp` を含み、`update()` 末尾で無条件に `_syncWorldStats` を呼ぶ）、[src/game/systems/SpecialFeature.ts:196-222](../src/game/systems/SpecialFeature.ts#L196)（`_updateTower` が撃破時に `world.setKills`/`setCombo` を加算）、[src/engine/GameRegistry.ts:80-87](../src/engine/GameRegistry.ts#L80)（`getActiveSystems` が `features` Set の挿入順＝JSON配列の記載順でシステムを返す）
+- **概要**:
+  `ShootFeature.handles` は `['shoot', 'three_way', 'charge_shot', 'spread_shot', 'enemy_hp', 'bomb']` であり、`enemy_hp` を含む。`GameRegistry.registerFeature` はこの配列の**各要素**に同一インスタンスを紐付けるため、`enemy_hp` だけを有効化した場合でも `ShootFeature` は「有効なシステム」として毎フレーム `update()` が呼ばれる。`ShootFeature.update()` は末尾で常に `_syncWorldStats(world)` を呼び、`world.setKills(s.kills)` / `world.setCombo(s.combo)` で `world.gameStats` を**無条件に上書き**する（`s.kills`/`s.combo` は `ShootFeature` 自身の内部状態で、`shoot` が無効なため弾が一切発射されず、常に `0` のまま）。
+  一方 `getActiveSystems()` は `world.rules.features`（`Set<FeatureId>`）を先頭から辿って対応システムを収集する。`tower_def.json` の `enableFeatures` は `["tower", "enemy_hp", "item_pickup"]` の順であり、`resolveFeatureSet()`（[src/domain/genreResolver.ts:172-178](../src/domain/genreResolver.ts#L172)）はこの配列順で `Set` を構築するため、`tower`（→`SpecialFeature`）が先、`enemy_hp`（→`ShootFeature`）が後にヒットする。結果、`sideScroller.ts` のメインループ（[sideScroller.ts:414-415](../src/game/sideScroller.ts#L414)）では **毎フレーム `SpecialFeature.update()` → `ShootFeature.update()` の順で実行**される。タワーが敵を1体倒すと `SpecialFeature._updateTower` が `world.setKills(kills+1)` / `world.setCombo(combo+1)` を呼ぶが、**同じフレーム内で直後に実行される** `ShootFeature.update()` の `_syncWorldStats` がその値を即座に `0` へ上書きしてしまう。
+  この巻き戻しは撃破のたびに毎フレーム発生するため、ゲーム終了時に `_recalculatePlayScore()` が読む `this._gameStats.kills` / `.combo` は、直前のフレームで必ず `ShootFeature` によって `0` にリセットされた後の値であり、**タワーが何体倒していても最終的な `kills` は実質常に0**になる。`tower_def.json` の `scoreFormula` は `"kills * 90 + combo * 110 + survivedSec * 8"` であり、`kills * 90` と `combo * 110` という重み最大の2項が両方無効化される。
+- **優先度**: **Critical** — Tower Defense の中核である「タワーが敵を倒す」行為がスコアに一切反映されない、明確なスコア不正計算。C2/C3 と同様のパターンだが、原因が「値を書き込むコードが存在しない」ではなく「別Featureが毎フレーム上書きする」という、より発見しにくい形の競合である点に注意。
+- **確信度**: 確認済（コードリーディング）。`GameRegistry.registerFeature`/`getActiveSystems` の実装、`resolveFeatureSet` の `Set` 構築順、`ShootFeature._syncWorldStats` の無条件上書き、`SpecialFeature._updateTower` の加算処理をすべて直接確認し、フレーム内の実行順が「SpecialFeature→ShootFeature」に確定することを追跡した。実プレイでの実測は未実施。
+- **再現条件**: tower_def ジャンルに収束し、タワーに敵を1体でも倒させるだけで常に発生する。
+
+---
+
+### C7.（第2次調査で新規発見）stealth_mode: 一定時間静止し続けるだけでスコアが無制限に増加し続ける（`stealthCooldownSec` が未実装で歯止めがない）
+
+- **該当箇所**: [src/game/systems/SpecialFeature.ts:177-194](../src/game/systems/SpecialFeature.ts#L177)（`_updateStealth`）、[src/data/config/stealth.json:6](../src/data/config/stealth.json#L6)（`stealthCooldownSec: 5.0`、定義されているが未使用）、[src/game/sideScroller.ts:1358](../src/game/sideScroller.ts#L1358)（`addScoreVarsStealthBonus` が無条件加算）、影響ジャンル: [src/data/genres/horror.json:8](../src/data/genres/horror.json#L8)（`stealthBonus * 0.8`）、[src/data/genres/stealth_action.json:8](../src/data/genres/stealth_action.json#L8)（`stealthBonus * 0.5`）
+- **概要**:
+  `_updateStealth` はプレイヤーが静止（`onGround && |vx|<1`）している間 `idleTimer` を加算し、`stealthDurationSec`（3.0秒）に達すると `hidden = true` にして、以後**その条件が真である限り毎フレーム** `world.addScoreVarsStealthBonus(dt)` を呼ぶ。これは `scoreVarsStealthBonus`（`sideScroller.ts:81`、コメント「ステルス継続フレーム数の累積」）に無条件・無上限で加算され続ける累積カウンタで、`_recalculatePlayScore()` の `vars.stealthBonus` としてそのまま `scoreFormula` に渡される。
+  `idleTimer` は一度 `stealthDurationSec` を超えると、プレイヤーが静止し続ける限りリセットされないため、**その場に立ち止まったまま何もしないだけで、ゲーム終了までスコアが際限なく積み上がる**。`stealth.json` には `stealthCooldownSec: 5.0` というフィールドが定義されており（`ConfigValidator.ts` で型チェック・範囲チェックまでされている）、名前から見て「一定間隔でしかボーナスを与えない」ためのクールダウンを意図していたと推測されるが、`grep` で確認した限り `STEALTH.stealthCooldownSec` は `src/` のどこからも参照されておらず、実装されていない。
+- **優先度**: **Critical** — 「スコアが不正計算される」の典型例。プレイスキル・運と無関係に、単に操作を止めるだけで再現でき、上限もないため、horror・stealth_action の両ジャンルで最終スコアを実質無限に吊り上げられる。
+- **確信度**: 確認済（コードリーディング）。`_updateStealth` の条件分岐、`addScoreVarsStealthBonus` の無条件累積、`scoreFormula` での参照、`stealthCooldownSec` が未参照であることを直接確認した。実際にブラウザで長時間放置してスコアが増加し続けることの実機確認は未実施。
+- **再現条件**: horror または stealth_action ジャンルに収束後、プレイヤーを3秒以上静止させ続ける（キー入力をしない）。
 
 ---
 
@@ -208,6 +252,17 @@
 - **優先度**: Medium（現状ゲームプレイへの影響はないと判断されるため Critical/High ではなく Medium としたが、コンテンツ量として非常に大きい欠陥データが放置されている点、および検証の仕組みがあるのに機能していない点は看過できない）
 - **確信度**: 確認済（実行確認）。追加テストの実行結果として30件のエラーを実際に確認。`MANUAL_DECK['1.0']` 以外が実行時に参照されないことは `useGameState.ts`/`useManual.ts` の全 `MANUAL_DECK` 参照箇所を `grep` して確認済み。
 
+### M9.（第2次調査で新規発見）`src/data/config/*.json` の過半数がフィールド単位の検証を一切受けておらず、C7 のような「定義されているが未実装のフィールド」が `npm run validate` を素通りする
+
+- **該当箇所**: [scripts/validate-json.mjs:17-27](../scripts/validate-json.mjs#L17)（`SCHEMAS` オブジェクト。9ファイルのみ個別の必須キーリストを持ち、他は `walkJson` のループ内で `SCHEMAS[name] ?? ['section']` により `section` キーの存在確認のみ）、[src/framework/ConfigValidator.ts:154-155](../src/framework/ConfigValidator.ts#L154)（`if (import.meta.env?.PROD) return` — 本番ビルドでは検証自体が丸ごとスキップされる）、`tests/` 配下に `ConfigValidator` を参照するテストが存在しない（`grep` で0件）
+- **概要**:
+  `src/data/config/` には23ファイルあるが、フィールド単位の必須チェックを持つのは `score.json` / `physics.json` / `game_balance.json` / `spawn.json` の4ファイルのみ（`difficulty.json`/`shoot.json`/`throw.json` は `section` キーのみ、`genres.json`/`genre_params.json` はノーチェック）。残る `camera.json` / `background.json` / `hazard_vfx.json` / `ui.json` / `vfx.json` / `boss.json` / `rhythm_tuning.json` / `stealth.json` / `bayes.json` / `special.json` / `puzzle.json` / `extra_movement.json` / `survival.json`（計13ファイル）は `npm run validate`（CIが呼ぶ `npm run ci` に含まれる）から一切フィールド検証を受けない。
+  もう一つの検証機構である `ConfigValidator.ts`（`devValidateConfig` 等）はフィールドの型・範囲チェックを持つが、`import.meta.env.PROD` で本番ビルド時は即 return する設計であり、かつこの検証結果を assert するテストが存在しないため、**ローカル開発中に `console.warn`/`console.error` を目視で見逃さない限り誰も検知できない**。
+  加えて `schemas/genre.schema.json` / `schemas/cards.schema.json` という JSON Schema ファイル自体は存在し `enum`/`additionalProperties: false` 等の制約を定義しているが、`scripts/` 内に AJV 等のスキーマバリデータを実行する処理は存在しない（`ajv` は依存関係にもない）。`scripts/validate-json.mjs` はこのスキーマファイルから `thresholds` の軸名と `theme` の enum だけを取り出して自前でチェックする独自実装であり、`enableFeatures` の enum 違反や `additionalProperties: false` 違反などスキーマの他の制約は一切検証されない（一例として `glitch.json` の `enableFeatures` に含まれる `"movement"` は `genre.schema.json` の enum に存在しないが、`validate-json.mjs` はこれを検知しない。この特定の事例自体は実害がない —— `movement` は `ruleEngine.ts` が全ジャンルへ自動追加するベース機能であり、二重記載してもエンジン側では単なる no-op であるため）。
+  この検証網の隙間が、C7（`stealthCooldownSec` が定義されているのに未実装のまま気づかれず残っていた）や L17（`ui.json` の `beatMarker*` が未使用のまま残っていた）といった個別バグを許容してしまう構造的な原因になっていると考えられる。
+- **優先度**: Medium（それ自体はクラッシュやスコア不正を引き起こさないが、他の Critical/Low バグが検証をすり抜けて本番まで残り続ける根本原因であるため、個別バグより一段階上の構造的リスクとして Medium とした）
+- **確信度**: 確認済（コードリーディング）。`validate-json.mjs` 全文、`ConfigValidator.ts` の該当箇所、`tests/` 内の `ConfigValidator` 参照有無（grep 0件）をすべて直接確認した。
+
 ---
 
 ## Low
@@ -216,12 +271,12 @@
 
 | # | 該当箇所 | 内容 | 確信度 |
 |---|---|---|---|
-| L1 | [src/components/ChoicePanel.vue:2](../src/components/ChoicePanel.vue#L2) | `computed` を import しているが未使用（ESLint警告として検出済み） | 確認済（実行確認、`eslint` 実行結果） |
+| L1 | ~~[src/components/ChoicePanel.vue:2](../src/components/ChoicePanel.vue#L2)~~ | **[解消済み]** `computed` を import しているが未使用（ESLint警告として検出済み）。第2次調査時点の `origin/main`（コミット `5ec4999`、PR #152）で既に修正済みであることを確認した。`eslint src --ext .ts,.vue` を再実行し警告0件になったことで確認 | 確認済（実行確認、`eslint` 実行結果。第2次調査で解消を確認） |
 | L2 | [src/framework/ConfigLoader.ts:60](../src/framework/ConfigLoader.ts#L60) | `genres` セクション重複警告が `console.warn` で常時（本番ビルドでも）出力される。`src/data/config.ts` が意図的に合成セクション `__genres__` を注入する設計だが、警告文言だけでは「意図的な上書き」か「本物のバグ」か判別できず、本番コンソールにノイズとして残る | 確認済（実行確認、テスト実行時のログで毎回出力を確認） |
 | L3 | [scripts/preprocess.mjs:56-82](../scripts/preprocess.mjs#L56)（`processGenres`） | `content/genres/*.json` の複数ファイルが同じ `id` を持っていた場合、出力ファイル名が `id` 由来のため後処理されたファイルが前のファイルを警告なしに上書きする（重複IDチェックがない）。現状 `content/genres/` には `_EXAMPLE.json` しかなく実害はないが、将来コンテスト参加者が複数ジャンルを追加する際の落とし穴になりうる | 確認済（コードリーディング）。現状のデータでは未発現 |
-| L4 | [src/game/systems/RhythmFeature.ts:72,106](../src/game/systems/RhythmFeature.ts#L72) | ビートマーカーの生存時間 `400` が2箇所にハードコードされ、CLAUDE.mdのマジックナンバー禁止規約に反する。片方だけ変更するとフェードアニメーションが実寿命とズレる | 確認済（コードリーディング） |
+| L4 | [src/game/systems/RhythmFeature.ts:72,106](../src/game/systems/RhythmFeature.ts#L72) | ビートマーカーの生存時間 `400` が2箇所にハードコードされ、CLAUDE.mdのマジックナンバー禁止規約に反する。片方だけ変更するとフェードアニメーションが実寿命とズレる（第2次調査でこの値が本来 `ui.json` の `beatMarker*` 系フィールドで一元管理されるべきだったことが判明。詳細は後述 L17） | 確認済（コードリーディング） |
 | L5 | [src/game/ParticleSystem.ts:54](../src/game/ParticleSystem.ts#L54) | `clear()` メソッドがデッドコード（呼び出し箇所なし） | 確認済（`grep` によるコードリーディング） |
-| L6 | [src/data/config/stealth.json](../src/data/config/stealth.json) | `stealthCooldownSec` / `detectionRange` がスキーマ検証はされるが `SpecialFeature.ts` からは一切参照されない設定項目 | 確認済（コードリーディング） |
+| L6 | [src/data/config/stealth.json](../src/data/config/stealth.json) | `stealthCooldownSec` / `detectionRange` がスキーマ検証はされるが `SpecialFeature.ts` からは一切参照されない設定項目。**第2次調査で判明**: この `stealthCooldownSec` 未実装こそが Critical C7（stealth_mode のスコア無限増殖）の直接の原因であることが確認できたため、この項目は当初の想定より深刻。詳細・再現条件は C7 を参照 | 確認済（コードリーディング。C7 で実際の実害を確認） |
 | L7 | [src/game/sideScroller.ts:1229-1238](../src/game/sideScroller.ts#L1229)（`_weightedRandom`） | `weights` が空配列の場合 `-1` を返し、呼び出し元で `table[-1]` の `undefined` アクセス経由でクラッシュしうる。現行データでは全ジャンルの `spawnTable` が非空のため未到達 | 確認済（コードリーディング）。現状データでは再現しない |
 | L8 | [src/game/systems/index.ts](../src/game/systems/index.ts)、`sideScroller.ts` コンストラクタ | `FeatureSystem` はモジュールレベルのシングルトンとして生成され、`new SideScroller()`（リスタート時含む）で明示的な再初期化が呼ばれない。現状は個々のフィーチャーが有効化時に自前でリセットしているため実害はないが、将来デフォルト有効なフィーチャーが状態を持つと問題化しうる | 確認済（コードリーディング） |
 | L9 | [src/game/systems/MovementFeature.ts:75-77](../src/game/systems/MovementFeature.ts#L75) | `slide`/`gravity_flip` が未実装スタブ（`console.warn` のみ）。既存ドキュメント（`docs/feature-ids.md` 等）で既知の制約として記載済みで、現状どのジャンルにも割り当てられていないため実害なし | 確認済（コードリーディング＋既存ドキュメントとの突合） |
@@ -231,31 +286,37 @@
 | L13 | `src/genres/StgPlugin.ts` と `src/genres/AerialStgPlugin.ts` | HPバー描画・コックピット風HUD装飾のロジックがほぼ同一のまま両ファイルに重複実装されている（共有ヘルパー化されていない） | 確認済（コードリーディング、直接比較） |
 | L14 | [src/composables/useManual.ts:62-92](../src/composables/useManual.ts#L62) | `animTimer`/`centerTimer` の `setTimeout` に対して `onUnmounted` によるクリーンアップがない。現状 `useManual` は `App.vue` ルートから一度しか呼ばれずアンマウントされないため実害はないが、同種の問題（`useScoreAnimation` 等）は既に対策済みであり、パターンとして一貫していない | 確認済（コードリーディング） |
 | L15 | `CLAUDE.md`（ジャンル分岐システムの節） | ドキュメント上「収束システムは `tempo`/`range`/`enemy`/`combo`/`growth`/`rhythm` の6軸」と説明しているが、実際の `schemas/genre.schema.json` は `stealth`/`vertical`/`aerial`/`survive`/`craft`/`speed` を含む12軸を定義しており、ドキュメントが古い | 確認済（スキーマとの突合） |
+| L16 | [src/data/gameBalance.ts:19-27](../src/data/gameBalance.ts#L19)（`_generateUpdateDistances`）、比較対象 [src/data/config/difficulty.json:4](../src/data/config/difficulty.json#L4) | 説明書更新距離の生成ロジックが `1100 + dc.updateDistancesBaseInterval * i` と、`difficulty.json` の `updateDistancesInitial[0]`（現在値 `1100`）と同じ値をソースコード側にもハードコードしている。現在の設定値（`updateDistancesInitial: [1100,2400,3900]`, `updateDistancesBaseInterval: 1500`）で実際に計算すると `...,3900,5600,7100,...` となり、`3900→5600` の間隔だけ `1700` と、他の区間（`1500`/`1300`）から外れた段差が生じる。`updateDistancesInitial[0]` を `difficulty.json` 側だけで変更すると、この場所の値と一致しなくなりさらに不整合な段差が発生する（CLAUDE.mdのマジックナンバー禁止規約にも反する） | 確認済（コードリーディング。現在の設定値で実際に数列を計算し段差を確認） |
+| L17 | [src/game/systems/RhythmFeature.ts:72,106-109](../src/game/systems/RhythmFeature.ts#L72)、比較対象 [src/data/config/ui.json:14-18](../src/data/config/ui.json#L14) | L4 の続報。ビートマーカーの寿命(`400`)・不透明度計算・線色(`#ff00ff`)・線幅(`2`)・破線パターン(`[6,4]`)がすべて `RhythmFeature.ts` にハードコードされている。`ui.json` には同じ値の `beatMarkerAlphaDivisor`/`beatMarkerMaxAlpha`/`beatMarkerColor`/`beatMarkerLineW`/`beatMarkerDash` が定義され型定義・`ConfigValidator` でも検証されているが、`RhythmFeature.ts` はこの設定オブジェクト（`UI`）を一切 import していないため、`ui.json` を編集してもビートマーカーの見た目には何の影響もない | 確認済（コードリーディング。ハードコード値と `ui.json` の値が完全一致することを直接比較） |
+| L18 | [src/data/config/bayes.json:4,9](../src/data/config/bayes.json#L4)、型定義 [src/framework/config-types.ts:293-299](../src/framework/config-types.ts#L293) | `bayes.json` の `convergenceThreshold`（0.30）と `candidateThreshold`（0.10）が `BayesConfig` 型に存在せず、唯一の消費元である `genreResolver.ts` のどこからも参照されていない。ベイズ収束のハイパーパラメータとして調整しても一切効果を持たないデッドな設定値 | 確認済（コードリーディング。`grep` で両フィールドが `bayes.json` 以外に一切出現しないことを確認） |
+| L19 | [scripts/genre-reach-sim.mjs:24-28](../scripts/genre-reach-sim.mjs#L24) | ジャンル到達性シミュレータが、実ゲームの `useGameState.ts` が使う `PARAM_JITTER_RANGE`（`game_balance.json` の `paramJitterRange: 0.4` を参照）と同じ値を `JITTER = 0.4 // useGameState.PARAM_JITTER_RANGE` としてハードコード複製している。すぐ上の2行（`MAX_ROUNDS`/`FALLBACK`）は同じ `game_balance.json` を正しく読み込んでいるにもかかわらず、この値だけ手動転記されており、将来 `paramJitterRange` がチューニングされた際にシミュレータの到達率算出（本レポートの C4 の根拠データ）が実際のゲーム挙動と無警告で乖離する | 確認済（コードリーディング。`useGameState.ts` の実消費箇所と該当行を直接比較） |
 
 ---
 
 ## 静的解析・自動チェック結果まとめ
 
-| コマンド | 結果 |
-|---|---|
-| `vue-tsc --noEmit`（typecheck） | ✅ エラーなし |
-| `eslint src --ext .ts,.vue`（lint） | ⚠️ 警告1件（L1参照）、エラー0件 |
-| `node scripts/validate-json.mjs`（validate） | ✅ 54 passed, 0 failed |
-| `node scripts/check-doc-links.mjs` | ✅ リンク切れなし |
-| `node scripts/run-feature-tests.mjs`（test:features） | ✅ 9/9 passed |
-| `vite build` | ✅ ビルド成功（166 modules, JS 390KB / CSS 79KB） |
-| `node scripts/check-bundle-size.mjs` | ✅ 全バジェット内（JS 381KB/800KB, CSS 77KB/100KB, dist 459KB/1.95MB） |
-| `vitest run tests/unit`（test:unit、全体） | ❌ **5 failed** / 80 passed（`tests/unit/domain/genreResolver.test.ts`、M7参照） |
-| `vitest run tests/unit/engine tests/unit/framework tests/unit/composables`（test:unit:ci、CIが実際に使う範囲） | ✅ 該当ディレクトリのみなら失敗なし（ただし M7 の通り `domain`/`game`/`data` 等を除外しているため見逃しが起きている） |
-| `node scripts/genre-reach-sim.mjs .`（reach-sim） | ⚠️ `hack_slash`/`tetris` 到達率 0.0%（C4参照）、17ジャンルが狙い撃ちでも到達率25%未満 |
+初回調査時点（`47e3fd0`）と第2次調査時点（`origin/main` 最新 `cdc0196`、独立 git worktree 上で再実行）の両方の結果を併記する。
 
-※ ローカル環境には `vitest`/`eslint` が `node_modules` に未インストールだったため、`npm install` で追加インストールして実行した（`package.json` の `devDependencies` に既存の記載通りのバージョンを取得したのみで、依存関係の変更は行っていない。`node_modules/` は元々 gitignore 対象）。
+| コマンド | 初回（`47e3fd0`） | 第2次（`cdc0196`） |
+|---|---|---|
+| `vue-tsc --noEmit`（typecheck） | ✅ エラーなし | ✅ エラーなし |
+| `eslint src --ext .ts,.vue`（lint） | ⚠️ 警告1件（旧L1） | ✅ **警告0件**（旧L1はPR #152で解消済み） |
+| `node scripts/validate-json.mjs`（validate） | ✅ 54 passed, 0 failed | ✅ 54 passed, 0 failed |
+| `node scripts/check-doc-links.mjs` | ✅ リンク切れなし | ✅ リンク切れなし |
+| `node scripts/run-feature-tests.mjs`（test:features） | ✅ 9/9 passed | ✅ 9/9 passed |
+| `vite build` | ✅ ビルド成功（166 modules, JS 390KB / CSS 79KB） | ✅ ビルド成功（166 modules, JS 390KB / CSS 79KB、変化なし） |
+| `node scripts/check-bundle-size.mjs` | ✅ 全バジェット内 | ✅ 全バジェット内（JS 381KB/800KB, CSS 77KB/100KB, dist 459KB/1.95MB） |
+| `vitest run tests/unit`（test:unit、全体） | ❌ 5 failed / 80 passed | ❌ **変化なし**：5 failed / 80 passed（`tests/unit/domain/genreResolver.test.ts`、M7参照） |
+| `vitest run tests/unit/engine tests/unit/framework tests/unit/composables`（test:unit:ci） | ✅ 失敗なし | ✅ 失敗なし（14/14 passed） |
+| `node scripts/genre-reach-sim.mjs .`（reach-sim） | ⚠️ `hack_slash`/`tetris` 到達率 0.0% | ⚠️ **ほぼ変化なし**：`hack_slash` 0.1%（3000回中3回）、`tetris` 0.0%、17ジャンルが狙い撃ちでも到達率25%未満（C4参照） |
+
+※ ローカル環境には `vitest`/`eslint` が `node_modules` に未インストールだったため、`npm install` で追加インストールして実行した（`package.json` の `devDependencies` に既存の記載通りのバージョンを取得したのみで、依存関係の変更は行っていない。`node_modules/` は元々 gitignore 対象）。第2次調査では `origin/main` を `git worktree add` で別ディレクトリに checkout し、その worktree に `node_modules` をコピーして全ツールを再実行した（作業ブランチの `node_modules` 自体は変更していない）。
 
 ---
 
 ## 追加したファイル
 
-- `tests/unit/domain/manualDeck-integrity.test.ts` — M8 の再現用。`ManualValidator` の既存検証ロジックを実データ（`MANUAL_DECK`）に対して実行し、`next` 参照切れ・到達不能エントリを検出するテスト。プロダクションコードの変更は含まない。
+- `tests/unit/domain/manualDeck-integrity.test.ts` — M8 の再現用。`ManualValidator` の既存検証ロジックを実データ（`MANUAL_DECK`）に対して実行し、`next` 参照切れ・到達不能エントリを検出するテスト。プロダクションコードの変更は含まない（初回調査で追加、第2次調査でも変更なし）。
 
 ---
 
@@ -263,3 +324,4 @@
 
 - ローカルの `node_modules`（gitignore対象）に `vitest`/`eslint` 等が未インストールだったため、調査用に `npm install` を実行して既存の `package-lock.json` 通りに補完した。`package.json` / `package-lock.json` に差分は生じていない（`git status` で未変更を確認済み）。
 - 開発サーバー（`vite`）と Playwright（Chromium）は C1 の実機検証のみに使用し、検証終了後に停止・一時ファイルは削除済み。
+- 第2次調査: `git worktree add ../MANUAL-OVERRIDE-main-audit origin/main --detach` で `cdc0196` を独立 checkout し、その worktree に対して全静的解析・ビルド・シミュレータを再実行した。worktree は本調査完了後に `git worktree remove` で片付け済み。本作業ブランチ（`fix/critical-high-bugs`）のファイルは一切変更していない。
