@@ -29,6 +29,21 @@ npm run lint         # コード品質チェック
 
 ---
 
+## リリースとデプロイ（CI/CD）
+
+main への push（PR マージ）で 2 つが自動で走ります。
+
+| トリガー | ワークフロー | 成果物 |
+|---|---|---|
+| `push: main` | `deploy.yml`（production） | `dist/` を GitHub Pages（`gh-pages`）へ本番デプロイ |
+| `push: main` かつ `package.json` の `version` が新しい | `auto-release.yml` → `release.yml` | タグ `v<version>` を発行し、`dist/` を zip / tar.gz にして GitHub Release に添付 |
+
+**Release を出す手順**: `package.json` の `version` を上げて main にマージするだけ。`auto-release.yml` が
+未発行の `v<version>` タグを検出したときだけタグを作成して `release.yml` を呼び出します（version 据え置きの
+コミットでは Release を作りません）。手動でタグ（`v*.*.*`）を push しても従来どおり `release.yml` が直接動きます。
+
+---
+
 ## 主要ドキュメント
 
 | 目的 | ドキュメント |
