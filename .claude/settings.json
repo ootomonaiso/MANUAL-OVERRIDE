@@ -11,7 +11,10 @@
       "Bash(grep -rn *)",
       "Bash(node scripts/genre-reach-sim.mjs)",
       "Bash(node -e \"const s=require\\('./package.json'\\).scripts; console.log\\(Object.keys\\(s\\).join\\('\\\\n'\\)\\)\")",
-      "Bash(node -e \"const s=require\\('./package.json'\\).scripts; ['test','ci','test:unit','test:features','test:choices'].forEach\\(k=>console.log\\(k,'=>',s[k]\\)\\)\")"
+      "Bash(node -e \"const s=require\\('./package.json'\\).scripts; ['test','ci','test:unit','test:features','test:choices'].forEach\\(k=>console.log\\(k,'=>',s[k]\\)\\)\")",
+      "Bash(git commit *)",
+      "Bash(echo \"WATCH_EXIT: $?\")",
+      "Bash(git ls-remote *)"
     ]
   },
   "hooks": {
