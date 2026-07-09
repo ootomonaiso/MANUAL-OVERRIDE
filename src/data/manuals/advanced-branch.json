@@ -373,13 +373,13 @@
       "choices": [
         {
           "label": "極限のミニマリズムへ",
-          "next": "13.0-b",
+          "next": "12.0-minimal",
           "genreParams": { "tempo": 1 },
           "hint": "minimal 方向"
         },
         {
           "label": "本質の反復へ",
-          "next": "13.0-c",
+          "next": "12.0-repetition",
           "genreParams": { "combo": 2 },
           "hint": "repetition 方向"
         }
@@ -400,13 +400,13 @@
       "choices": [
         {
           "label": "無限にビートを複雑化",
-          "next": "13.0-d",
+          "next": "12.0-polyrhythm",
           "genreParams": { "rhythm": 2, "tempo": 1 },
           "hint": "polyrhythm 方向"
         },
         {
           "label": "複数ジャンルの融合へ",
-          "next": "13.0-a",
+          "next": "12.0-fusion",
           "genreParams": { "rhythm": 1, "combo": 1 },
           "hint": "fusion 方向"
         }
@@ -427,13 +427,13 @@
       "choices": [
         {
           "label": "超感覚へ到達",
-          "next": "13.0-b",
+          "next": "12.0-hypersense",
           "genreParams": { "aerial": 2 },
           "hint": "hypersense 方向"
         },
         {
           "label": "音との合一へ",
-          "next": "13.0-c",
+          "next": "12.0-union",
           "genreParams": { "rhythm": 1, "growth": 1 },
           "hint": "union 方向"
         }
@@ -454,13 +454,13 @@
       "choices": [
         {
           "label": "最強ボスへ",
-          "next": "13.0-d",
+          "next": "12.0-ultimate",
           "genreParams": { "enemy": 2 },
           "hint": "ultimate boss 方向"
         },
         {
           "label": "変種ボスへ",
-          "next": "13.0-a",
+          "next": "12.0-variants",
           "genreParams": { "combo": 1, "enemy": 1 },
           "hint": "boss variants 方向"
         }
@@ -481,13 +481,13 @@
       "choices": [
         {
           "label": "魔界の底へ",
-          "next": "13.0-b",
+          "next": "12.0-abyss",
           "genreParams": { "survival": 2 },
           "hint": "abyss 方向"
         },
         {
           "label": "無限の宝へ",
-          "next": "13.0-c",
+          "next": "12.0-infinite-treasure",
           "genreParams": { "growth": 2 },
           "hint": "infinite treasure 方向"
         }
@@ -508,13 +508,13 @@
       "choices": [
         {
           "label": "シナジー爆発へ",
-          "next": "13.0-d",
+          "next": "12.0-synergy",
           "genreParams": { "growth": 2, "combo": 1 },
           "hint": "synergy 方向"
         },
         {
           "label": "ビルド破壊へ",
-          "next": "13.0-a",
+          "next": "12.0-chaos-build",
           "genreParams": { "survival": 1, "combo": 1 },
           "hint": "chaos 方向"
         }
@@ -535,13 +535,13 @@
       "choices": [
         {
           "label": "時間制約の極限へ",
-          "next": "13.0-b",
+          "next": "12.0-speedrun",
           "genreParams": { "tempo": 2 },
           "hint": "speedrun 方向"
         },
         {
           "label": "マルチスレッド計画へ",
-          "next": "13.0-c",
+          "next": "12.0-multitask",
           "genreParams": { "combo": 2 },
           "hint": "multitask 方向"
         }
@@ -562,13 +562,13 @@
       "choices": [
         {
           "label": "絶対破壊へ",
-          "next": "13.0-d",
+          "next": "12.0-omnipotence",
           "genreParams": { "range": 2, "enemy": 1 },
           "hint": "omnipotence 方向"
         },
         {
           "label": "多様な攻撃へ",
-          "next": "13.0-a",
+          "next": "12.0-arsenal",
           "genreParams": { "range": 1, "combo": 1 },
           "hint": "arsenal 方向"
         }
@@ -589,13 +589,13 @@
       "choices": [
         {
           "label": "完全な浮遊化へ",
-          "next": "13.0-b",
+          "next": "12.0-full-flight",
           "genreParams": { "aerial": 2, "tempo": 1 },
           "hint": "full flight 方向"
         },
         {
           "label": "次元移動へ",
-          "next": "13.0-c",
+          "next": "12.0-teleport",
           "genreParams": { "aerial": 1, "combo": 1 },
           "hint": "teleport 方向"
         }
@@ -616,13 +616,13 @@
       "choices": [
         {
           "label": "フレーム単位の完璧へ",
-          "next": "13.0-d",
+          "next": "12.0-frame-perfect",
           "genreParams": { "combo": 2, "tempo": 1 },
           "hint": "frame perfect 方向"
         },
         {
           "label": "連鎖パリィへ",
-          "next": "13.0-a",
+          "next": "12.0-chain-parry",
           "genreParams": { "combo": 2, "enemy": 1 },
           "hint": "chain parry 方向"
         }
@@ -643,13 +643,13 @@
       "choices": [
         {
           "label": "超兵器へ",
-          "next": "13.0-b",
+          "next": "12.0-megaweapon",
           "genreParams": { "enemy": 2, "range": 1 },
           "hint": "megaweapon 方向"
         },
         {
           "label": "複数武器の組み合わせへ",
-          "next": "13.0-c",
+          "next": "12.0-dual-wield",
           "genreParams": { "enemy": 1, "combo": 1 },
           "hint": "dual wield 方向"
         }
@@ -670,13 +670,13 @@
       "choices": [
         {
           "label": "超困難へ",
-          "next": "13.0-d",
+          "next": "12.0-inferno",
           "genreParams": { "tempo": 2, "enemy": 2 },
           "hint": "inferno 方向"
         },
         {
           "label": "狂気の領域へ",
-          "next": "13.0-a",
+          "next": "12.0-madness",
           "genreParams": { "tempo": 1, "combo": 2 },
           "hint": "madness 方向"
         }
@@ -697,13 +697,13 @@
       "choices": [
         {
           "label": "組み合わせ爆発へ",
-          "next": "13.0-b",
+          "next": "12.0-variations",
           "genreParams": { "combo": 2, "growth": 1 },
           "hint": "variations 方向"
         },
         {
           "label": "究極のサバイバルへ",
-          "next": "13.0-c",
+          "next": "12.0-apex",
           "genreParams": { "tempo": 1, "survival": 1 },
           "hint": "apex 方向"
         }
@@ -724,13 +724,13 @@
       "choices": [
         {
           "label": "全知への道へ",
-          "next": "13.0-d",
+          "next": "12.0-omniscience",
           "genreParams": { "growth": 2, "combo": 1 },
           "hint": "omniscience 方向"
         },
         {
           "label": "実践的知恵へ",
-          "next": "13.0-a",
+          "next": "12.0-wisdom",
           "genreParams": { "growth": 1, "survival": 1 },
           "hint": "wisdom 方向"
         }
@@ -751,13 +751,13 @@
       "choices": [
         {
           "label": "全世界統一へ",
-          "next": "13.0-b",
+          "next": "12.0-multiverse",
           "genreParams": { "survival": 2, "combo": 1 },
           "hint": "multiverse 方向"
         },
         {
           "label": "最高の分岐へ",
-          "next": "13.0-c",
+          "next": "12.0-perfect-path",
           "genreParams": { "growth": 2 },
           "hint": "perfect path 方向"
         }

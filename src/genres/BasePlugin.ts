@@ -108,6 +108,15 @@ export abstract class DarkThemePlugin extends GenrePluginBase {
     ctx.stroke()
   }
 
+  /** デフォルトのビネット・スキャンライン前景 */
+  drawForeground(ctx: CanvasRenderingContext2D, _offsetX: number, W: number, H: number, _gY: number): void {
+    // 画面四隅のビネット（没入感向上）
+    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.4, W / 2, H / 2, Math.max(W, H) * 0.75)
+    vg.addColorStop(0, 'rgba(0,0,0,0)')
+    vg.addColorStop(1, 'rgba(0,0,0,0.35)')
+    ctx.fillStyle = vg
+    ctx.fillRect(0, 0, W, H)
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────
