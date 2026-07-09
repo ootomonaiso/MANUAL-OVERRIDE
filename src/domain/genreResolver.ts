@@ -143,6 +143,32 @@ export function updateBayesianState(
 }
 
 // ─────────────────────────────────────────────────────────────
+// 収束進捗を計算: 最も確率の高いジャンルとその事後確率を返す
+// ─────────────────────────────────────────────────────────────
+export function resolveGenreProgress(
+  accumulated: GenreParams,
+  genres: GenreDef[],
+  _genrePoints?: Record<string, number>,
+  bayesConfig?: BayesConfig,
+): { closestGenre: GenreId; progress: number } {
+  const config = bayesConfig ?? DEFAULT_BAYES_CONFIG
+  const posteriors = computeBayesianPosteriors(accumulated, genres, config)
+
+  let bestGenre: GenreId = 'base'
+  let bestProb = 0
+
+  for (const genre of genres) {
+    if (genre.id === 'base') continue
+    const prob = posteriors[genre.id] ?? 0
+    if (prob > bestProb) {
+      bestProb = prob
+      bestGenre = genre.id
+    }
+  }
+  return { closestGenre: bestGenre, progress: bestProb }
+}
+
+// ─────────────────────────────────────────────────────────────
 // 累積パラメータからジャンルを決定（未収束なら 'base'）
 // ─────────────────────────────────────────────────────────────
 export function resolveGenre(

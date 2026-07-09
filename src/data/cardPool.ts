@@ -29,7 +29,6 @@ function _effectiveWeight(card: ManualCard, genreWeights?: Record<string, number
  * 重み付きランダムサンプリングで n 枚選ぶ。
  * excludeIds に含まれるカードは候補から除外する（直前の選択肢を再出現させない）。
  * genreWeights が渡された場合、affinity が合うカードの重みを最大 1.75x に増幅する。
- * splice で選出済み要素を除去することで毎回の filter 再生成を省く。
  */
 export function sampleCards(
   n: number,
@@ -42,18 +41,20 @@ export function sampleCards(
 
   if (available.length <= n) return [...available]
 
-  const pool = [...available]
+  // 各カードの実効重みを事前計算（複数回の _effectiveWeight 呼び出しを回避）
+  const weights = available.map(c => _effectiveWeight(c, genreWeights))
+  const pool = available.map((c, i) => ({ card: c, weight: weights[i] }))
   const result: ManualCard[] = []
 
   while (result.length < n && pool.length > 0) {
-    const totalWeight = pool.reduce((s, c) => s + _effectiveWeight(c, genreWeights), 0)
+    const totalWeight = pool.reduce((s, e) => s + e.weight, 0)
     let rand = Math.random() * totalWeight
-    let idx = pool.length - 1  // 浮動小数点誤差で rand > 0 のまま末尾到達した場合のガード
+    let idx = pool.length - 1
     for (let i = 0; i < pool.length; i++) {
-      rand -= _effectiveWeight(pool[i], genreWeights)
+      rand -= pool[i].weight
       if (rand <= 0) { idx = i; break }
     }
-    result.push(...pool.splice(idx, 1))
+    result.push(pool.splice(idx, 1)[0].card)
   }
 
   return result

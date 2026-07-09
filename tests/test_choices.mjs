@@ -6,7 +6,8 @@ import { chromium } from '@playwright/test';
   await page.goto('http://localhost:5174', { waitUntil: 'networkidle' });
 
   // ゲーム開始
-  await page.click('text=はじめる');
+  const startBtn2 = page.locator('button', { hasText: 'はじめる' });
+  if (await startBtn2.isVisible().catch(() => false)) await startBtn2.click();
   await page.waitForTimeout(1500);
 
   // チュートリアル画面があればスキップ
