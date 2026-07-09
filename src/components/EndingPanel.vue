@@ -611,47 +611,4 @@ onUnmounted(() => {
     transform var(--transition-fast);
   box-shadow: 0 0 8px var(--genre-glow, var(--green-glow));
 }
-.restart-btn:hover {
-  background: var(--genre-glow, rgba(0, 255, 65, 0.1));
-  box-shadow: 0 0 12px var(--genre-glow, var(--green-glow));
-}
-.restart-btn:active { transform: translateY(2px); box-shadow: 0 0 6px var(--genre-glow, var(--green-glow)); }
-
-/* ── Issue #24: サプライズエンド ── */
-.ending-surprise {
-  margin-bottom: 14px;
-  padding: 10px 12px;
-  border: 1px solid #ff0040;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 0, 64, 0.08);
-  animation: glitchPulse 2s infinite;
-}
-@keyframes glitchPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.85; }
-}
-.surprise-icon {
-  font-size: 18px;
-  margin-bottom: 4px;
-  animation: glitchShake 0.3s infinite;
-}
-@keyframes glitchShake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-2px); }
-  75% { transform: translateX(2px); }
-}
-.surprise-title {
-  font-size: 15px;
-  font-weight: bold;
-  color: #ff0040;
-  margin-bottom: 4px;
-  font-family: 'Courier New', monospace;
-  letter-spacing: 1px;
-}
-.surprise-desc {
-  font-size: 11px;
-  color: rgba(255, 100, 120, 0.7);
-  line-height: 1.6;
-  font-family: var(--font-main);
-}
 </style>
