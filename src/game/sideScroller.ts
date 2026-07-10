@@ -1201,14 +1201,22 @@ export class SideScroller {
     } else {
       // ─── 横スクロール: 画面右端からワールド座標で出現 ────────────
       const worldX = this.cameraX + W + SPAWN.hazardSpawnOffsetX
+      // gravity === 0（STG等の自由飛行ジャンル）はプレイヤーが画面全高を動けるため、
+      // 'air'/'float' 配置も地面基準ではなく画面全高に分布させる（そうしないと
+      // 地面付近にしか敵が出ず、画面上部に留まるだけで被弾しなくなる）
+      const freeFlight = r.gravity === 0
       let y: number
       let floatAmp = 0
       switch (entry.placement) {
         case 'air':
-          y = gY - h - SPAWN.airMinOffset - Math.random() * SPAWN.airRandOffset
+          y = freeFlight
+            ? SPAWN.airMinOffset + Math.random() * Math.max(0, gY - h - SPAWN.airMinOffset * 2)
+            : gY - h - SPAWN.airMinOffset - Math.random() * SPAWN.airRandOffset
           break
         case 'float': {
-          y = gY - h - SPAWN.floatMinOffset - Math.random() * SPAWN.floatRandOffset
+          y = freeFlight
+            ? SPAWN.floatMinOffset + Math.random() * Math.max(0, gY - h - SPAWN.floatMinOffset * 2)
+            : gY - h - SPAWN.floatMinOffset - Math.random() * SPAWN.floatRandOffset
           const ampRange = entry.floatAmpRange
           floatAmp = ampRange
             ? ampRange[0] + Math.random() * (ampRange[1] - ampRange[0])
