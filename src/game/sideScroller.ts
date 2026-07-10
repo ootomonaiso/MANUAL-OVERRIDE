@@ -614,6 +614,9 @@ export class SideScroller {
           this.jumpBufferTimer = 0
           this.jumpHeld = true
           this.stats.jumps++
+          this.firstJumpDone = true
+          this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
+          soundManager.onJump()
           const jw = this._getWorld()
           getGenre(r.genre).onPlayerJump?.(jw)
           for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
