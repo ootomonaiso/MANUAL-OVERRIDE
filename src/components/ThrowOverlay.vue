@@ -100,6 +100,11 @@ function onResize() {
   canvasH.value = window.innerHeight
 }
 
+// 発射方向プレビュー: onRelease と同じ angle = atan2(start - current) を可視化するため、
+// current を start に対して点対称に反転した点を終点とする（引っ張った逆方向へ飛ぶことを示す）
+const launchPreviewX = computed(() => state.value.startX + (state.value.startX - state.value.currentX))
+const launchPreviewY = computed(() => state.value.startY + (state.value.startY - state.value.currentY))
+
 // 弧の軌跡描画（SVG）
 const trailPoints = computed(() => {
   if (!isFlying.value) return ''
@@ -128,12 +133,18 @@ const trailPoints = computed(() => {
       <div v-for="line in manualText" :key="line" class="throw-manual-line">{{ line }}</div>
     </div>
 
-    <!-- ドラッグ中: 軌道予測線 + パワーゲージ -->
+    <!-- ドラッグ中: 発射方向プレビュー（引っ張った逆方向へ飛ぶスリングショット式のため、
+         矢印は start を起点に「引っ張った逆方向」を指す） + パワーゲージ -->
     <svg v-if="isDragging" class="throw-svg" :style="{ position: 'fixed', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }">
       <line
         :x1="state.startX" :y1="state.startY"
         :x2="state.currentX" :y2="state.currentY"
-        stroke="rgba(200,0,0,0.5)" stroke-width="2" stroke-dasharray="6,4"
+        stroke="rgba(255,255,255,0.35)" stroke-width="2" stroke-dasharray="4,4"
+      />
+      <line
+        :x1="state.startX" :y1="state.startY"
+        :x2="launchPreviewX" :y2="launchPreviewY"
+        stroke="rgba(200,0,0,0.7)" stroke-width="3" stroke-dasharray="6,4"
       />
     </svg>
 
@@ -152,8 +163,8 @@ const trailPoints = computed(() => {
 
     <!-- 指示テキスト -->
     <div v-if="!isDragging && !isFlying" class="throw-hint">
-      <div class="throw-hint-text">説明書をドラッグして投げる</div>
-      <div class="throw-hint-sub">弧を描くように投げると高スコア</div>
+      <div class="throw-hint-text">説明書を引っ張って離す</div>
+      <div class="throw-hint-sub">引っ張った逆方向へ飛ぶ。弧を描くと高スコア</div>
     </div>
   </div>
 </template>
