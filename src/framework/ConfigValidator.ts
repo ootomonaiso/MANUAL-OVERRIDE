@@ -25,7 +25,7 @@ const REQUIRED_NUMBER_FIELDS: Partial<Record<GameConfigSection, string[]>> = {
   physics: ['playerWidth', 'playerHeight', 'jumpVelocity', 'runSpeed',
             'coyoteFrames', 'jumpBufferFrames'],
   shoot:   ['bulletSpeed', 'bulletWidth', 'bulletHeight', 'shotCooldown', 'comboResetTime'],
-  throw:   ['gravity', 'maxPower', 'powerDistanceDivisor', 'speedMultiplier'],
+  throw:   ['gravity', 'maxPower', 'powerDistanceDivisor'],
   spawn:   ['firstSpawnDist', 'enemyHpAmount', 'itemDropChance', 'itemExpChance'],
   vfx:     ['hitShakeIntensity', 'deathShakeIntensity', 'particleGravity', 'runCycleRate'],
   camera:  ['leadOffset', 'parallaxStars', 'parallaxFar', 'parallaxMid', 'parallaxGround'],

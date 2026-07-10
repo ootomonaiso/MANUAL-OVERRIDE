@@ -59,7 +59,6 @@ export interface ThrowConfig {
   maxPower: number
   airFriction: number
   powerDistanceDivisor: number
-  speedMultiplier: number
   outOfBoundsRight: number
   outOfBoundsLeft: number
   landingMargin: number
@@ -447,6 +446,7 @@ export interface GameBalanceConfig {
   throwScoreWeightsAirTime: number
   throwScoreWeightsArcHeight: number
   throwScoreWeightsSpeedPenalty: number
+  throwScoreWeightsSpeedPenaltyThreshold: number
   baseScrollSpeed: number
   hazardSpawnBaseInterval: number
   hazardSpawnMinInterval: number
