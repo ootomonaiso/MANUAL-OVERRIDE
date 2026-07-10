@@ -95,7 +95,11 @@ export function useGameState() {
       // ジャンル確定後も choose() は続くため roundCount は MAX_ROUNDS を超えうる。
       // 表示上は上限でクランプし ver.7/5 のような破綻表示を防ぐ。
       version: `${Math.min(roundCount.value, MAX_ROUNDS)}/${MAX_ROUNDS}`,
-      manualText: accumulatedManualText.value,
+      // accumulatedManualText.value をそのまま渡すと、以降の選択で同じ配列を
+      // push/書き換えするため、useManual の履歴エントリが全て同一参照を共有し
+      // 差分計算（prev vs next）が常に「変化なし」になる。呼び出し時点の
+      // スナップショットとして独立したコピーを返す。
+      manualText: [...accumulatedManualText.value],
       choices: [],
       hazards: currentHazards.value,
       runtimeConfig: lastRuntimeConfig.value,

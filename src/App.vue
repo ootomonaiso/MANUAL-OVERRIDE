@@ -31,16 +31,19 @@ const debugCtl = useDebugSettings()
 /** ローディング状態（初期化完了まで表示） */
 const isLoading = ref(true)
 
-/** readonly() ラッパーを剥がして RuntimeRules として返す */
+/**
+ * readonly() ラッパーを剥がしてディープコピー（Set 参照も複製）した RuntimeRules を返す。
+ *
+ * gameState.rules は choose() のたびに Object.assign() でその場更新される単一の
+ * reactive オブジェクトなので、toRaw() の結果をそのまま SideScroller に渡すと
+ * scroller.rules と gameState.rules が同一参照になる。次の choose() で
+ * gameState.rules が書き換わると scroller 側の「旧ルール」も一緒に書き換わって
+ * しまい、updateRules() 内の新旧比較（gravity/scrollAxis変化判定・非アクティブ化
+ * された Feature の onDisable 呼び出し等）が常に「変化なし」と誤判定してしまう
+ * ため、呼び出しごとに独立したコピーを返す。
+ */
 function getRules(): RuntimeRules {
-  const raw = toRaw(gameState.rules)
-  // toRaw の戻り値型は DeepReadonly だが、実際のオブジェクトはミュータブル
-  return raw as RuntimeRules
-}
-
-/** getRules の結果をディープコピー（Set 参照も複製）して返す */
-function cloneRules(): RuntimeRules {
-  const raw = getRules()
+  const raw = toRaw(gameState.rules) as RuntimeRules
   return {
     ...raw,
     controls: { ...raw.controls },
@@ -295,8 +298,8 @@ watch(() => gameState.lockedGenre.value, (newGenre) => {
   // 前のタイマーをクリア（重複防止）
   if (genreLockedBoostTimer !== null) clearTimeout(genreLockedBoostTimer)
 
-  // cloneRules で Set 参照も複製し、元の rules に影響しないようにする
-  const rawRules = cloneRules()
+  // getRules() は毎回独立したコピーを返すため、元の rules に影響しない
+  const rawRules = getRules()
   rawRules.scrollSpeed = rawRules.scrollSpeed * GENRE_LOCKED_BOOST.mult
   scroller.updateRules(rawRules, gameState.currentManual())
   scroller.notifyGenreLocked()
