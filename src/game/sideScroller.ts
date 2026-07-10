@@ -73,6 +73,11 @@ export class SideScroller {
   private dead = false
   private paused = false
   private firstJumpDone = false
+  // 説明書更新の進行度。distance と違い初回ジャンプ後にのみ加算し、ジャンル確定後は
+  // postLockUpdatePace 倍で減速する。初回ジャンプ前に更新が溜まる問題(#169)と、
+  // 確定後もテンポが途切れ続ける問題(#104)をこの単一アキュムレータで解消する。
+  private updateProgress = 0
+  private genreLocked = false
 
   // ScoreVars 計算用フィールド
   private scoreVarsHits = 0           // 敵撃破時のヒット数（accuracy 計算用）
@@ -215,6 +220,7 @@ export class SideScroller {
 
   /** ジャンル確定直後に1回だけ呼ぶ（App.vue の lockedGenre watch から） */
   notifyGenreLocked(): void {
+    this.genreLocked = true
     getGenre(this.rules.genre).onGenreLocked?.(this._buildWorld())
   }
 
@@ -244,14 +250,17 @@ export class SideScroller {
   }
 
   getSnapshot(): GameSnapshot {
+    // distance ではなく updateProgress を基準にする（初回ジャンプ前は 0 のまま
+    // 溜まらない, 確定後は減速する）。#169 / #104
+    const prog = this.updateProgress
     let pending = UPDATE_DISTANCES.findIndex(
-      (d, i) => this.distance >= d && !this.updateTriggeredFor.has(i)
+      (d, i) => prog >= d && !this.updateTriggeredFor.has(i)
     )
     // UPDATE_DISTANCES の範囲外でも無限に更新を続ける
     if (pending < 0) {
       const lastDist = UPDATE_DISTANCES[UPDATE_DISTANCES.length - 1]
-      if (this.distance >= lastDist) {
-        const extraIdx = UPDATE_DISTANCES.length + Math.floor((this.distance - lastDist) / DIFFICULTY.infiniteUpdateInterval)
+      if (prog >= lastDist) {
+        const extraIdx = UPDATE_DISTANCES.length + Math.floor((prog - lastDist) / DIFFICULTY.infiniteUpdateInterval)
         if (!this.updateTriggeredFor.has(extraIdx)) {
           pending = extraIdx
         }
@@ -448,6 +457,14 @@ export class SideScroller {
 
     // ─── 距離スコア加算 ───────────────────────────────────────────
     this.playScore += effectiveScrollSpeed * dt * SCORE.distanceScoreRate
+
+    // ─── 説明書更新の進行度加算 ───────────────────────────────────
+    // 初回ジャンプ前は加算しない（溜め込み→まとめ発火の防止, #169）。
+    // ジャンル確定後は減速させ、確定後の割り込み頻度を下げる（#104）。
+    if (this.firstJumpDone) {
+      const pace = this.genreLocked ? DIFFICULTY.postLockUpdatePace : 1
+      this.updateProgress += effectiveScrollSpeed * dt * pace
+    }
   }
 
   // ─── 死亡演出更新 ────────────────────────────────────────────────
@@ -614,6 +631,11 @@ export class SideScroller {
           this.jumpBufferTimer = 0
           this.jumpHeld = true
           this.stats.jumps++
+          // 通常ジャンプ分岐と同じ副作用を揃える。欠落すると着地バッファジャンプ時に
+          // 初回ジャンプ判定・ジャンプ粒子・SE が出ない一貫性バグになる（#181）。
+          this.firstJumpDone = true
+          this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
+          soundManager.onJump()
           const jw = this._getWorld()
           getGenre(r.genre).onPlayerJump?.(jw)
           for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
