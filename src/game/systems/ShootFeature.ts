@@ -23,7 +23,12 @@ export class ShootFeature implements FeatureSystem {
   }
 
   onInit(): void { this.state = this._fresh() }
-  onManualUpdated(): void { this.state = this._fresh() }
+  // kills/combo は scoreFormula が参照する累積スコア変数のため、説明書更新
+  // （ジャンル確定後も続く選択のたび）をまたいで保持する。弾・クールダウン等の
+  // 一時状態のみリセットする。
+  onManualUpdated(): void {
+    this.state = { ...this._fresh(), kills: this.state.kills, combo: this.state.combo }
+  }
 
   update(world: MutableWorld, input: InputSnapshot, dt: number): void {
     this._tickTimers(dt)

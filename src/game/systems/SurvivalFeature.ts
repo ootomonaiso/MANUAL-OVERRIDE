@@ -45,9 +45,13 @@ export class SurvivalFeature implements FeatureSystem {
     this._resetPlayer(world)
   }
 
+  // kills/xp/レベル進行は scoreFormula・成長要素が参照する累積状態のため、
+  // 説明書更新（ジャンル確定後も続く選択のたび）をまたいで保持する。
+  // 空腹ゲージのみ満タンに戻す（餓死目前で選択直後に即死させないための救済）。
   onManualUpdated(world: MutableWorld, _versionKey: string): void {
-    this.state = this._fresh()
-    this._resetPlayer(world)
+    const { kills, xp, nextLevelXp } = this.state
+    this.state = { ...this._fresh(), kills, xp, nextLevelXp }
+    world.player.hunger = SURVIVAL.maxHunger
   }
 
   onDisable(world: MutableWorld): void {
