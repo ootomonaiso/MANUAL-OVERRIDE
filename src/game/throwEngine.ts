@@ -54,7 +54,8 @@ export function onRelease(state: ThrowState): void {
   const dist = Math.sqrt(dx * dx + dy * dy)
   const speed = Math.min(THROW.maxPower, dist * THROW.speedMultiplier)
 
-  const angle = Math.atan2(dy, dx)   // 引っ張った方向へ飛ぶ
+  // dx/dy = start - current。引っ張った逆方向へ飛ぶスリングショット式（#173）。
+  const angle = Math.atan2(dy, dx)
   state.vx = Math.cos(angle) * speed
   state.vy = Math.sin(angle) * speed
   state.phase = 'flying'

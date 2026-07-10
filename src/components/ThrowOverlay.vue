@@ -100,6 +100,12 @@ function onResize() {
   canvasH.value = window.innerHeight
 }
 
+// 発射方向プレビュー: 実際の飛翔はドラッグの逆方向（スリングショット式, onRelease
+// が start-current で角度を取る）。ドラッグ方向のまま線を引くと真逆を示すため、
+// start を中心に current を反転した点＝実際の発射方向を指す矢印にする（#173）。
+const launchX = computed(() => 2 * state.value.startX - state.value.currentX)
+const launchY = computed(() => 2 * state.value.startY - state.value.currentY)
+
 // 弧の軌跡描画（SVG）
 const trailPoints = computed(() => {
   if (!isFlying.value) return ''
@@ -128,12 +134,24 @@ const trailPoints = computed(() => {
       <div v-for="line in manualText" :key="line" class="throw-manual-line">{{ line }}</div>
     </div>
 
-    <!-- ドラッグ中: 軌道予測線 + パワーゲージ -->
+    <!-- ドラッグ中: 引っ張り線（薄）＋ 実際の発射方向の矢印（濃） + パワーゲージ -->
     <svg v-if="isDragging" class="throw-svg" :style="{ position: 'fixed', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }">
+      <defs>
+        <marker id="throw-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="rgba(255,220,0,0.95)" />
+        </marker>
+      </defs>
+      <!-- 引っ張っている向き（弱く表示。ここへ引くほどパワーが上がる） -->
       <line
         :x1="state.startX" :y1="state.startY"
         :x2="state.currentX" :y2="state.currentY"
-        stroke="rgba(200,0,0,0.5)" stroke-width="2" stroke-dasharray="6,4"
+        stroke="rgba(200,200,200,0.35)" stroke-width="2" stroke-dasharray="4,4"
+      />
+      <!-- 実際に飛ぶ向き（引っ張った逆方向） -->
+      <line
+        :x1="state.startX" :y1="state.startY"
+        :x2="launchX" :y2="launchY"
+        stroke="rgba(255,220,0,0.9)" stroke-width="3" marker-end="url(#throw-arrow)"
       />
     </svg>
 
@@ -152,8 +170,8 @@ const trailPoints = computed(() => {
 
     <!-- 指示テキスト -->
     <div v-if="!isDragging && !isFlying" class="throw-hint">
-      <div class="throw-hint-text">説明書をドラッグして投げる</div>
-      <div class="throw-hint-sub">弧を描くように投げると高スコア</div>
+      <div class="throw-hint-text">説明書を引っ張って離す</div>
+      <div class="throw-hint-sub">引っ張った逆方向へ飛ぶ・弧を描くほど高スコア</div>
     </div>
   </div>
 </template>
