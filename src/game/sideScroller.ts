@@ -73,6 +73,8 @@ export class SideScroller {
   private dead = false
   private paused = false
   private firstJumpDone = false
+  /** 初回ジャンプ時点の distance。説明書更新の閾値判定をこの値からの相対距離で行う */
+  private firstJumpDistance: number | null = null
 
   // ScoreVars 計算用フィールド
   private scoreVarsHits = 0           // 敵撃破時のヒット数（accuracy 計算用）
@@ -244,16 +246,23 @@ export class SideScroller {
   }
 
   getSnapshot(): GameSnapshot {
-    let pending = UPDATE_DISTANCES.findIndex(
-      (d, i) => this.distance >= d && !this.updateTriggeredFor.has(i)
-    )
-    // UPDATE_DISTANCES の範囲外でも無限に更新を続ける
-    if (pending < 0) {
-      const lastDist = UPDATE_DISTANCES[UPDATE_DISTANCES.length - 1]
-      if (this.distance >= lastDist) {
-        const extraIdx = UPDATE_DISTANCES.length + Math.floor((this.distance - lastDist) / DIFFICULTY.infiniteUpdateInterval)
-        if (!this.updateTriggeredFor.has(extraIdx)) {
-          pending = extraIdx
+    // 初回ジャンプ前は distance が進んでいても更新閾値を計算しない。
+    // 初回ジャンプ後は firstJumpDistance からの相対距離で判定し、
+    // ジャンプ前に溜まった距離分がまとめて発火するのを防ぐ
+    let pending = -1
+    if (this.firstJumpDone && this.firstJumpDistance !== null) {
+      const effectiveDistance = this.distance - this.firstJumpDistance
+      pending = UPDATE_DISTANCES.findIndex(
+        (d, i) => effectiveDistance >= d && !this.updateTriggeredFor.has(i)
+      )
+      // UPDATE_DISTANCES の範囲外でも無限に更新を続ける
+      if (pending < 0) {
+        const lastDist = UPDATE_DISTANCES[UPDATE_DISTANCES.length - 1]
+        if (effectiveDistance >= lastDist) {
+          const extraIdx = UPDATE_DISTANCES.length + Math.floor((effectiveDistance - lastDist) / DIFFICULTY.infiniteUpdateInterval)
+          if (!this.updateTriggeredFor.has(extraIdx)) {
+            pending = extraIdx
+          }
         }
       }
     }
@@ -578,7 +587,10 @@ export class SideScroller {
         this.jumpBufferTimer = 0
         this.coyoteTimer = 0
         this.stats.jumps++
-        this.firstJumpDone = true
+        if (!this.firstJumpDone) {
+          this.firstJumpDone = true
+          this.firstJumpDistance = this.distance
+        }
         this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
         soundManager.onJump()
         const jw = this._getWorld()
