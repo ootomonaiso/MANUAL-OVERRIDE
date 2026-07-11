@@ -242,6 +242,7 @@ export interface DifficultyConfig {
   enemyDensityRate: number
   globalDifficultyMult: number
   infiniteUpdateInterval: number
+  postLockUpdatePace: number
 }
 
 /** boss.json — ボス */

@@ -24,10 +24,13 @@ const distBar     = computed(() => Math.min(100, (props.distance / DIST_BAR_MAX)
 const COMBO_THRESHOLD_HIGH = 10
 const COMBO_THRESHOLD_MED  = 5
 
-const comboColor  = computed(() => {
-  if (props.combo >= COMBO_THRESHOLD_HIGH) return '#00ff41'
-  if (props.combo >= COMBO_THRESHOLD_MED)  return '#33aa55'
-  return '#88ff44'
+// コンボ量による強調は色ではなくグロー強度で表現する。色を緑固定にすると
+// idle など明背景ジャンルで可読性が落ちるため、色はジャンルテーマ(--genre-accent)
+// に委ね、コンボの伸びは text-shadow のぼかし半径で示す（#172）。
+const comboGlow = computed(() => {
+  if (props.combo >= COMBO_THRESHOLD_HIGH) return '48px'
+  if (props.combo >= COMBO_THRESHOLD_MED)  return '32px'
+  return '20px'
 })
 
 // スコア加算の演出は各 Feature が world.addScorePopup() で個別に発火する
@@ -87,7 +90,7 @@ const comboColor  = computed(() => {
 
     <!-- コンボ表示（大きく中央下） -->
     <Transition name="combo-pop">
-      <div v-if="combo >= 2" class="hud-combo" :style="{ color: comboColor }">
+      <div v-if="combo >= 2" class="hud-combo" :style="{ '--combo-glow': comboGlow }">
         <span class="hud-combo-num">×{{ combo }}</span>
         <span class="hud-combo-label">COMBO</span>
       </div>
@@ -208,13 +211,14 @@ const comboColor  = computed(() => {
   transform: translateX(-50%);
   text-align: center;
   pointer-events: none;
+  color: var(--genre-accent, var(--green));
 }
 .hud-combo-num {
   display: block;
   font-size: 42px;
   font-weight: 900;
   font-family: var(--genre-font, var(--font-mono));
-  text-shadow: 0 0 20px currentColor;
+  text-shadow: 0 0 var(--combo-glow, 20px) currentColor;
   line-height: 1;
 }
 .hud-combo-label {
