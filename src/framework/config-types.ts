@@ -59,7 +59,6 @@ export interface ThrowConfig {
   maxPower: number
   airFriction: number
   powerDistanceDivisor: number
-  speedMultiplier: number
   outOfBoundsRight: number
   outOfBoundsLeft: number
   landingMargin: number
@@ -243,6 +242,7 @@ export interface DifficultyConfig {
   enemyDensityRate: number
   globalDifficultyMult: number
   infiniteUpdateInterval: number
+  postLockUpdatePace: number
 }
 
 /** boss.json — ボス */
@@ -447,6 +447,7 @@ export interface GameBalanceConfig {
   throwScoreWeightsAirTime: number
   throwScoreWeightsArcHeight: number
   throwScoreWeightsSpeedPenalty: number
+  throwScoreWeightsSpeedPenaltyThreshold: number
   baseScrollSpeed: number
   hazardSpawnBaseInterval: number
   hazardSpawnMinInterval: number

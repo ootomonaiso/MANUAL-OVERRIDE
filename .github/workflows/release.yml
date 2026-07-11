@@ -4,12 +4,22 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  # auto-release.yml から呼び出す。タグ名を明示的に受け取る
+  # （workflow_call では github.ref_name が呼び出し元の main になり、タグを指さないため）
+  workflow_call:
+    inputs:
+      tag:
+        description: "リリース対象タグ（例: v1.2.3）"
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 env:
   NODE_VERSION: '20'
+  # push 起動ではタグ、workflow_call 起動では入力値を採用する
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
   release:
@@ -41,14 +51,14 @@ jobs:
 
       - name: Create dist archive
         run: |
-          TAG="${{ github.ref_name }}"
+          TAG="${RELEASE_TAG}"
           zip -r "manual-game-${TAG}.zip" dist/
           tar -czf "manual-game-${TAG}.tar.gz" dist/
 
       - name: Generate changelog
         id: changelog
         run: |
-          TAG="${{ github.ref_name }}"
+          TAG="${RELEASE_TAG}"
           PREV=$(git tag --sort=-version:refname | grep -v "^${TAG}$" | head -1)
           if [ -z "$PREV" ]; then
             RANGE="HEAD"
@@ -77,11 +87,11 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_TAG }}
           body: ${{ steps.changelog.outputs.notes }}
           draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
           files: |
-            manual-game-${{ github.ref_name }}.zip
-            manual-game-${{ github.ref_name }}.tar.gz
+            manual-game-${{ env.RELEASE_TAG }}.zip
+            manual-game-${{ env.RELEASE_TAG }}.tar.gz
