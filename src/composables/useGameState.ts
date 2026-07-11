@@ -211,6 +211,7 @@ export function useGameState() {
       choiceId: cardId,
       genreParams: _jitteredParams(card),
       paramMultiplier: card.paramMultiplier,
+      addFeatures: card.addFeatures,
     })
 
     _applyConflicts(card)
