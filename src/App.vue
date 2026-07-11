@@ -89,7 +89,7 @@ function startGame() {
     return
   }
   resizeCanvas()
-  scroller = new SideScroller(canvas, getRules())
+  scroller = new SideScroller(canvas, cloneRules())
   // 初期説明書を履歴に登録
   manualCtl.recordUpdate(gameState.currentManual())
   scroller.start()
@@ -185,8 +185,10 @@ function onChoose(cardId: string) {
   // 新しい説明書を記録（差分演出）
   const currentManual = gameState.currentManual()
   manualCtl.recordUpdate(currentManual)
-  // ルールをゲームエンジンへ反映
-  scroller.updateRules(getRules(), currentManual)
+  // ルールをゲームエンジンへ反映。SideScroller.this.rules が gameState.rules と
+  // 同一参照を共有すると updateRules() 内の新旧比較が常に「変化なし」になるため、
+  // 必ずコピーを渡す（#184）。
+  scroller.updateRules(cloneRules(), currentManual)
   // 更新完了を scroller に通知
   scroller.markUpdated(idx)
 }
@@ -303,7 +305,7 @@ watch(() => gameState.lockedGenre.value, (newGenre) => {
 
   genreLockedBoostTimer = window.setTimeout(() => {
     genreLockedBoostTimer = null
-    scroller?.updateRules(getRules(), gameState.currentManual())
+    scroller?.updateRules(cloneRules(), gameState.currentManual())
   }, GENRE_LOCKED_BOOST.durationMs)
 })
 
