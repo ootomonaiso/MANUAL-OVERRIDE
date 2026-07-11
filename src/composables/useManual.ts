@@ -52,11 +52,18 @@ export function computeLineDiff(prevLines: string[], nextLines: string[]): DiffL
   return hasDiff ? result : []
 }
 
+// 中央表示から自動的に隅へ戻るまでの時間。ManualPanel 側の残り時間バーの
+// アニメーション時間と一致させる必要があるため export する。
+export const CENTER_DURATION_MS = 2800
+
 export function useManual(_currentManual: () => ManualVersion) {
   const history = ref<ManualVersion[]>([])
   const diffLines = ref<DiffLine[]>([])
   const isAnimating = ref(false)
   const isCentered = ref(false)
+  // 中央表示のたびにインクリメントし、ManualPanel 側で :key として使うことで
+  // 残り時間バーのCSSアニメーションを毎回リスタートさせる
+  const centerToken = ref(0)
 
   // タイマーIDの追跡（連続更新時に前のタイマーをクリア）
   let animTimer: ReturnType<typeof setTimeout> | null = null
@@ -79,7 +86,6 @@ export function useManual(_currentManual: () => ManualVersion) {
     diffLines.value = computeLineDiff(prev.manualText, nextManual.manualText)
 
     const ANIM_DURATION_MS = 1500
-    const CENTER_DURATION_MS = 2800
 
     // 既存タイマーをクリア（連続更新時のアニメーション破綻防止）
     if (animTimer !== null) clearTimeout(animTimer)
@@ -87,6 +93,7 @@ export function useManual(_currentManual: () => ManualVersion) {
 
     isAnimating.value = true
     isCentered.value = true
+    centerToken.value++
 
     animTimer = setTimeout(() => { isAnimating.value = false }, ANIM_DURATION_MS)
     centerTimer = setTimeout(() => { isCentered.value = false }, CENTER_DURATION_MS)
@@ -99,5 +106,5 @@ export function useManual(_currentManual: () => ManualVersion) {
     if (centerTimer !== null) clearTimeout(centerTimer)
   })
 
-  return { history, diffLines, isAnimating, isCentered, recordUpdate }
+  return { history, diffLines, isAnimating, isCentered, centerToken, recordUpdate }
 }
