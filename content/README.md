@@ -114,6 +114,7 @@ GUI で試行錯誤したい場合は、`npm run dev` 起動中に
 **http://localhost:5173/tools/genre-lab.html** を開いてください（開発専用・本番ビルド非含有）。
 軸スライダーやカード選択で事後確率がリアルタイムに動き、試作ジャンルの
 JSON を貼って既存ジャンルとの競合や到達性をその場で確認できます。
+詳しい画面の見方は [docs/genre-lab.md](../docs/genre-lab.md) を参照。
 
 ---
 
