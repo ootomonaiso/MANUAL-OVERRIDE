@@ -123,7 +123,8 @@ export function calcThrowScore(result: ThrowResult): number {
   // 例: 2秒滞空 → 2000 × 0.5 = 1000点
   const airScore = result.airTime * 1000 * w.airTime
   const arcScore = result.arcHeight * w.arcHeight
-  const speedPenalty = Math.max(0, result.speed - 800) * w.speedPenalty
+  // 速すぎる投擲のみ軽く減点（閾値・重みは game_balance.json で調整）
+  const speedPenalty = Math.max(0, result.speed - w.speedPenaltyThreshold) * w.speedPenalty
   return Math.max(0, airScore + arcScore - speedPenalty)
 }
 
