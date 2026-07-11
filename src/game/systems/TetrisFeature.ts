@@ -362,9 +362,14 @@ export class TetrisFeature implements FeatureSystem {
   // M3: cache canvas dimensions to avoid per-frame recalculation
   private _lastCanvasW = 0
   private _lastCanvasH = 0
+  // gameOver 到達時にプレイヤーHPを削って通常の死亡フロー（投擲フェーズへの
+  // 自動遷移）へ橋渡しする。scrollSpeed=0 で distance も凍結するため、
+  // これがないとゲームオーバー後に進行手段が手動ギブアップしかなくなる。
+  private _gameOverHandled = false
 
   onInit(world: MutableWorld): void {
     this.state = initialState()
+    this._gameOverHandled = false
     // Invalidate dimension cache so _calcBoardPosition recalculates after state reset
     this._lastCanvasW = 0
     this._lastCanvasH = 0
@@ -423,7 +428,12 @@ export class TetrisFeature implements FeatureSystem {
     }
 
     if (this.state.gameOver) {
-      // ゲームオーバー時は何もしない
+      // 盤面ゲームオーバーは通常の被弾処理を経由しないため、ここでHPを0にして
+      // 標準の死亡フロー（投擲フェーズへの自動遷移）に一度だけ橋渡しする
+      if (!this._gameOverHandled) {
+        this._gameOverHandled = true
+        world.modifyPlayerHp(-world.player.maxHp)
+      }
       return
     }
 

@@ -76,7 +76,12 @@ export class SpecialFeature implements FeatureSystem {
     }
 
     if (r.features.has('boss') && this.boss.active && !world.hazards.includes(this.boss.active)) {
-      this._onBossDefeated(world, this.boss.active)
+      // hazards配列から消えた理由（撃破 / 画面外カル）を区別せず撃破扱いにすると、
+      // HPを削らず画面外へ流しただけでも撃破スコアが入ってしまう。
+      // hp<=0（実際に倒した）場合のみ撃破報酬を与える。
+      if (this.boss.active.hp <= 0) {
+        this._onBossDefeated(world, this.boss.active)
+      }
       this.boss.active = null
     }
 
