@@ -15,6 +15,7 @@
       "label": "障害物を撃って対処できるようにする",
       "manualText": ["Zキーで弾を撃てます。", "弾でオブジェクトを排除できます。"],
       "genreParams": { "range": 2, "enemy": 1 },
+      "addFeatures": ["shoot"],
       "weight": 3,
       "hint": "STG 方向",
       "genreAffinity": ["stg", "aerial_stg"]
@@ -104,8 +105,9 @@
     {
       "id": "c-tempo-dash",
       "label": "瞬間的な加速を使えるようにする",
-      "manualText": ["素早く移動できる操作が増えました。"],
+      "manualText": ["Shiftキーで瞬間的にダッシュできます。"],
       "genreParams": { "tempo": 1, "speed": 2 },
+      "addFeatures": ["dash"],
       "weight": 2,
       "hint": "racing/runner 方向",
       "genreAffinity": ["racing", "runner"]

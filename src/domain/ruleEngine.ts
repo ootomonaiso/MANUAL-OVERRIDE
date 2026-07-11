@@ -1,4 +1,4 @@
-import type { ManualVersion, RuntimeRules, GenreParams, GenreParam, GenreId } from './types'
+import type { ManualVersion, RuntimeRules, GenreParams, GenreParam, GenreId, FeatureId } from './types'
 import { resolveGenre, resolveFeatureSet } from './genreResolver'
 import { GENRES } from '../data/genres'
 import { BASE_SCROLL_SPEED, TEMPO_SPEED_BONUS, RULE_DEFAULTS } from '../data/gameBalance'
@@ -11,6 +11,8 @@ export interface ChoiceRecord {
   genreParams: GenreParams
   /** genreParams への乗数（デフォルト 1.0） */
   paramMultiplier?: number
+  /** この選択が付与するフィーチャー。buildRuntimeRules が履歴全体を union する（#105） */
+  addFeatures?: FeatureId[]
 }
 
 /**
@@ -34,6 +36,11 @@ export function buildRuntimeRules(
   const features = resolveFeatureSet(genre, GENRES)
   // 基本移動は常時有効（ジャンル・フェーズに関わらず左右移動を保証）
   features.add('movement')
+  // 選択で付与されたフィーチャーを履歴全体から累積 union する。ジャンル確定を待たず
+  // 「敵を撃つ」等の説明文どおりの挙動を即座に反映する（#105）。
+  for (const record of history) {
+    if (record.addFeatures) for (const f of record.addFeatures) features.add(f)
+  }
 
   const tempo = allParams.tempo ?? 0
   const scrollDirection = rc?.scrollDirection ?? genreDef?.scrollDirection ?? 'horizontal'
