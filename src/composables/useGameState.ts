@@ -92,8 +92,13 @@ export function useGameState() {
 
   function _buildFakeManual(): ManualVersion {
     return {
-      version: `${roundCount.value}/${MAX_ROUNDS}`,
-      manualText: accumulatedManualText.value,
+      // ジャンル確定後も choose() は続くため roundCount は MAX_ROUNDS を超えうる。
+      // 表示上は上限でクランプし ver.7/5 のような破綻表示を防ぐ。
+      version: `${Math.min(roundCount.value, MAX_ROUNDS)}/${MAX_ROUNDS}`,
+      // ライブ配列をそのまま渡すと currentManual() が返す全 ManualVersion が
+      // 同一配列を共有し、差分強調・更新履歴が常に「差分ゼロ／全文が現在値」に
+      // なる（#171-①）。呼び出しごとに不変スナップショットを切り出す。
+      manualText: [...accumulatedManualText.value],
       choices: [],
       hazards: currentHazards.value,
       runtimeConfig: lastRuntimeConfig.value,

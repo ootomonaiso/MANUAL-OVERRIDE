@@ -93,6 +93,17 @@ for (const id of tetrominoIds) {
     `TetrisFeature.ts に ${id} テトリミノ定義が見つかりません`)
 }
 
+// ─── T/J ミノの回転が SRS 標準（左向き状態が存在する）であること (#171-4) ──
+// 旧バグ: T/J の state3 が同一座標 [[0,0],[0,1],[1,1],[0,2]]（右向きT）で、
+// 左向き状態が欠落していた。修正で正しい左向き state を持つことを検証する。
+assert.ok(!src.includes('[[0, 0], [0, 1], [1, 1], [0, 2]]'),
+  'T/J の回転に旧バグの右向きT重複 state が残っています (#171-4)')
+assert.ok(src.includes('[[1, 0], [0, 1], [1, 1], [1, 2]]'),
+  'T ミノの左向き回転 state が見つかりません (#171-4)')
+assert.ok(src.includes('[[1, 0], [1, 1], [0, 2], [1, 2]]'),
+  'J ミノの左向き回転 state が見つかりません (#171-4)')
+console.log('✓ TetrisFeature: T/J ミノの回転に左向き state あり (#171-4)')
+
 // ─── 結果表示 ────────────────────────────────────────────────────
 console.log(`✓ tetris.json: thresholds.combo=${combo}, thresholds.craft=${craft}`)
 console.log(`✓ tetris.json: scoreFormula="${tetrisJson.scoreFormula}"`)

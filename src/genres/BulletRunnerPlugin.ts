@@ -72,7 +72,6 @@ export class BulletRunnerPlugin extends GenrePluginBase {
       ctx.lineTo(sx, gY - bh)
     }
     ctx.lineTo(W, gY); ctx.closePath(); ctx.fill()
-    ctx.globalAlpha = 1
 
     // ネオン縦ライン（ビル窓）
     ctx.globalAlpha = 0.06

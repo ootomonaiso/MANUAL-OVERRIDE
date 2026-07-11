@@ -274,7 +274,7 @@
 - [ ] 滞空時間の計算が正確か（秒単位で正しいか）
 - [ ] 弧の高さ（peak Y）の計算が正確か
 - [ ] 速度ペナルティの計算式が正確か
-- [ ] 最終投擲スコア = airTime × 0.5 + arcHeight × 0.4 + speedPenalty × 0.1 が正しく実装されているか
+- [ ] 最終投擲スコア = airTime × 0.6 + arcHeight × 0.7 - speedPenalty × 0.04（速度 1200 超過分）が正しく実装されているか
 
 **推定作業時間:** 1～2時間（テスト・デバッグ）  
 **対象ファイル:** `src/game/throwEngine.ts` 、 `src/domain/scoreCalc.ts`

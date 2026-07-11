@@ -67,7 +67,6 @@ export class HackSlashPlugin extends GenrePluginBase {
     ctx.lineTo(W + step, gY)
     ctx.closePath()
     ctx.fill()
-    ctx.globalAlpha = 1
 
     // 血の月（遠景に大きな赤い月）
     ctx.globalAlpha = 0.12

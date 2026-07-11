@@ -73,6 +73,11 @@ export class SideScroller {
   private dead = false
   private paused = false
   private firstJumpDone = false
+  // 説明書更新の進行度。distance と違い初回ジャンプ後にのみ加算し、ジャンル確定後は
+  // postLockUpdatePace 倍で減速する。初回ジャンプ前に更新が溜まる問題(#169)と、
+  // 確定後もテンポが途切れ続ける問題(#104)をこの単一アキュムレータで解消する。
+  private updateProgress = 0
+  private genreLocked = false
 
   // ScoreVars 計算用フィールド
   private scoreVarsHits = 0           // 敵撃破時のヒット数（accuracy 計算用）
@@ -209,6 +214,13 @@ export class SideScroller {
     for (const sys of getActiveSystems(rules.features)) {
       sys.onManualUpdated?.(world, '')
     }
+    getGenre(rules.genre).onManualUpdated?.(world, '')
+  }
+
+  /** ジャンル確定直後に1回だけ呼ぶ（App.vue の lockedGenre watch から） */
+  notifyGenreLocked(): void {
+    this.genreLocked = true
+    getGenre(this.rules.genre).onGenreLocked?.(this._buildWorld())
   }
 
   /** フレーム内で _buildWorld() を1回だけ呼ぶためのキャッシュアクセサ */
@@ -240,14 +252,17 @@ export class SideScroller {
   }
 
   getSnapshot(): GameSnapshot {
+    // distance ではなく updateProgress を基準にする（初回ジャンプ前は 0 のまま
+    // 溜まらない, 確定後は減速する）。#169 / #104
+    const prog = this.updateProgress
     let pending = UPDATE_DISTANCES.findIndex(
-      (d, i) => this.distance >= d && !this.updateTriggeredFor.has(i)
+      (d, i) => prog >= d && !this.updateTriggeredFor.has(i)
     )
     // UPDATE_DISTANCES の範囲外でも無限に更新を続ける
     if (pending < 0) {
       const lastDist = UPDATE_DISTANCES[UPDATE_DISTANCES.length - 1]
-      if (this.distance >= lastDist) {
-        const extraIdx = UPDATE_DISTANCES.length + Math.floor((this.distance - lastDist) / DIFFICULTY.infiniteUpdateInterval)
+      if (prog >= lastDist) {
+        const extraIdx = UPDATE_DISTANCES.length + Math.floor((prog - lastDist) / DIFFICULTY.infiniteUpdateInterval)
         if (!this.updateTriggeredFor.has(extraIdx)) {
           pending = extraIdx
         }
@@ -453,6 +468,14 @@ export class SideScroller {
 
     // ─── 距離スコア加算 ───────────────────────────────────────────
     this.playScore += effectiveScrollSpeed * dt * SCORE.distanceScoreRate
+
+    // ─── 説明書更新の進行度加算 ───────────────────────────────────
+    // 初回ジャンプ前は加算しない（溜め込み→まとめ発火の防止, #169）。
+    // ジャンル確定後は減速させ、確定後の割り込み頻度を下げる（#104）。
+    if (this.firstJumpDone) {
+      const pace = this.genreLocked ? DIFFICULTY.postLockUpdatePace : 1
+      this.updateProgress += effectiveScrollSpeed * dt * pace
+    }
   }
 
   // ─── 死亡演出更新 ────────────────────────────────────────────────
@@ -536,8 +559,11 @@ export class SideScroller {
     const tetrisMode = r.features.has('tetris_mode')
     const noControlMode = tetrisMode || r.features.has('lights_out')
 
-    if (!r.features.has('auto_run') && !r.features.has('tetris_mode') && this.input.keys.has(leftKey))  this.stats.moveLeft++
-    if ((r.features.has('auto_run') || this.input.keys.has(rightKey)) && !r.features.has('tetris_mode')) this.stats.moveRight++
+    // auto_run 由来の自動前進は「プレイヤーの移動操作」ではないため統計に数えない。
+    // 数えるとプレイスタイル判定が入力に関係なく常に explorer へ偏り、passive が
+    // 一度も検出できなくなる（#171-3）。実際に押されたキーだけを移動操作として数える。
+    if (!tetrisMode && this.input.keys.has(leftKey))  this.stats.moveLeft++
+    if (!tetrisMode && this.input.keys.has(rightKey)) this.stats.moveRight++
     if (p.onGround) {
       this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
     }
@@ -619,6 +645,11 @@ export class SideScroller {
           this.jumpBufferTimer = 0
           this.jumpHeld = true
           this.stats.jumps++
+          // 通常ジャンプ分岐と同じ副作用を揃える。欠落すると着地バッファジャンプ時に
+          // 初回ジャンプ判定・ジャンプ粒子・SE が出ない一貫性バグになる（#181）。
+          this.firstJumpDone = true
+          this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
+          soundManager.onJump()
           const jw = this._getWorld()
           getGenre(r.genre).onPlayerJump?.(jw)
           for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
@@ -983,8 +1014,11 @@ export class SideScroller {
     let color = h.color
     let glow = h.glowColor
     if (this._gameStats.beatHazardInverted && r.features.has('beat_hazard')) {
-      color = r.safeColors.has(h.color) ? '#e74c3c' : '#3498db'
-      glow = r.safeColors.has(h.color) ? '#ff6b6b' : '#74b9ff'
+      // safeColors はマニュアル由来の色名 Set、h.color はプラグインの HEX なので
+      // has() は常に false になり全ハザードが同色に潰れていた（#171-5）。
+      // 反転時に危険物となる側（衝突判定 line 679 と同じ h.isSafe 基準）を赤で示す。
+      color = h.isSafe ? '#e74c3c' : '#3498db'
+      glow  = h.isSafe ? '#ff6b6b' : '#74b9ff'
     }
 
     const y = h.y + floatY
@@ -1217,18 +1251,27 @@ export class SideScroller {
     } else {
       // ─── 横スクロール: 画面右端からワールド座標で出現 ────────────
       const worldX = this.cameraX + W + SPAWN.hazardSpawnOffsetX
+      // gravity === 0 は上下自由飛行ジャンル（STG 等）。プレイヤーが y=0 まで登れるため、
+      // air/float 敵を地面基準の帯に固めると画面上部が敵の届かない安全地帯になる（#177）。
+      // このモードでは air/float を可動域全高（0〜gY-h）に分布させる。
+      const freeFlight = r.gravity === 0
       let y: number
       let floatAmp = 0
       switch (entry.placement) {
         case 'air':
-          y = gY - h - SPAWN.airMinOffset - Math.random() * SPAWN.airRandOffset
+          y = freeFlight
+            ? Math.random() * (gY - h)
+            : gY - h - SPAWN.airMinOffset - Math.random() * SPAWN.airRandOffset
           break
         case 'float': {
-          y = gY - h - SPAWN.floatMinOffset - Math.random() * SPAWN.floatRandOffset
           const ampRange = entry.floatAmpRange
           floatAmp = ampRange
             ? ampRange[0] + Math.random() * (ampRange[1] - ampRange[0])
             : SPAWN.defaultFloatAmp
+          // 全高分布時は floatAmp 分の振動で画面外へ抜けないよう内側にクランプする
+          y = freeFlight
+            ? floatAmp + Math.random() * Math.max(0, gY - h - floatAmp * 2)
+            : gY - h - SPAWN.floatMinOffset - Math.random() * SPAWN.floatRandOffset
           break
         }
         default: // 'ground'
