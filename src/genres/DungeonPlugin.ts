@@ -118,7 +118,6 @@ export class DungeonPlugin extends GenrePluginBase {
       ctx.arc(px, gY - pillarH - 4, 3, 0, Math.PI * 2)
       ctx.fill()
     }
-    ctx.globalAlpha = 1
 
     // 石畳（地面パターン）
     ctx.globalAlpha = 0.12

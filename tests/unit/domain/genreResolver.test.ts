@@ -146,7 +146,6 @@ describe('genreResolver - convergence', () => {
 
   it('stg (range: 3, enemy: 6) が enemy 特化カードで収束する', () => {
     const params = buildParamsFromCards(cardPools.enemy)
-    const result = resolveGenre(params, GENRES, config)
     // enemy:11, range:3 が必要。enemy特化ではenemy=11になるがrange=0
     // rangeが不足しているため、STGには収束しない可能性がある
     // ただし、最も確率の高いジャンルになるはず
@@ -179,7 +178,6 @@ describe('genreResolver - convergence', () => {
       { rhythm: 2 },
     ])
     // rhythm=12, tempo=3。tempo:6が不足だが、rhythmが突出
-    const result = resolveGenre(params, GENRES, config)
     // rhythm方向に確率が上がるはず（収束しなくてもdirectionは正しい）
     const progress = resolveGenreProgress(params, GENRES, config)
     expect(['rhythm', 'runner', 'sports', 'glitch', 'base']).toContain(progress.closestGenre)

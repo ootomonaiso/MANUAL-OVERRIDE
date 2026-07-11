@@ -10,7 +10,7 @@
  */
 
 import { createInterface } from 'node:readline'
-import { writeFileSync, readFileSync, existsSync } from 'node:fs'
+import { writeFileSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -25,6 +25,19 @@ const _schema = JSON.parse(
 const THEMES = _schema.properties.theme.enum
 const PARAMS = Object.keys(_schema.properties.thresholds.properties)
 
+// existsSync→writeFileSync 間の TOCTOU を避けるため flag:'wx' で原子的に生成する
+function writeGenreFile(outPath, genre) {
+  try {
+    writeFileSync(outPath, JSON.stringify(genre, null, 2) + '\n', { encoding: 'utf-8', flag: 'wx' })
+  } catch (e) {
+    if (e.code === 'EEXIST') {
+      console.error(`エラー: ${outPath} は既に存在します`)
+      process.exit(1)
+    }
+    throw e
+  }
+}
+
 // ── 引数モード（対話なし）──────────────────────────────────────────────
 const [,, argId, argLabel] = process.argv
 if (argId && argLabel) {
@@ -33,17 +46,13 @@ if (argId && argLabel) {
     process.exit(1)
   }
   const outPath = resolve(OUT_DIR, `${argId}.json`)
-  if (existsSync(outPath)) {
-    console.error(`エラー: ${outPath} は既に存在します`)
-    process.exit(1)
-  }
   const genre = {
     $schema: SCHEMA_REF,
     id: argId,
     label: argLabel,
     thresholds: {},
   }
-  writeFileSync(outPath, JSON.stringify(genre, null, 2) + '\n', 'utf-8')
+  writeGenreFile(outPath, genre)
   console.log(`✓ content/genres/${argId}.json を作成しました`)
   console.log(`  thresholds を設定してから npm run build を実行してください`)
   process.exit(0)
@@ -65,10 +74,6 @@ if (!id || !/^[a-z][a-z0-9_]*$/.test(id)) {
 }
 
 const outPath = resolve(OUT_DIR, `${id}.json`)
-if (existsSync(outPath)) {
-  console.error(`エラー: content/genres/${id}.json は既に存在します`)
-  rl.close(); process.exit(1)
-}
 
 const label  = await ask('表示名 (例: 溶岩ワールド)')
 const threshRaw = await ask(
@@ -95,8 +100,8 @@ const genre = {
   theme,
 }
 
-writeFileSync(outPath, JSON.stringify(genre, null, 2) + '\n', 'utf-8')
 rl.close()
+writeGenreFile(outPath, genre)
 
 console.log(`\n✓ content/genres/${id}.json を作成しました`)
 console.log('\n次のステップ:')

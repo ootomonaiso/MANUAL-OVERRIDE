@@ -94,7 +94,6 @@ export class RacingPlugin extends GenrePluginBase {
     ctx.lineTo(W, gY - 18)
     ctx.stroke()
     ctx.setLineDash([])
-    ctx.globalAlpha = 1
 
     // 路肩のガードレールシルエット
     ctx.globalAlpha = 0.45
