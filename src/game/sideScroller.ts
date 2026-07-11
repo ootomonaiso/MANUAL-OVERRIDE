@@ -994,6 +994,14 @@ export class SideScroller {
     ctx.scale(squashX * stretchX, squashY * stretchY)
     ctx.translate(-p.w / 2, -p.h)
 
+    // 縦スクロール時は進行（射撃）方向が上になるため、右向き固定のスプライトを
+    // 中心周りに -90° 回して上を向かせる（撃つ向きと体の向きの食い違いを解消, #102）。
+    if (this.rules.scrollAxis === 'y') {
+      ctx.translate(p.w / 2, p.h / 2)
+      ctx.rotate(-Math.PI / 2)
+      ctx.translate(-p.w / 2, -p.h / 2)
+    }
+
     // ジャンルプラグインに描画を委譲（ここに if/else は一切不要）
     getGenre(this.rules.genre).drawPlayer(ctx, p.w, p.h, p.onGround, this.runCycle)
 
