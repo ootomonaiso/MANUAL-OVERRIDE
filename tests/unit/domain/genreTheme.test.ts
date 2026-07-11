@@ -20,7 +20,7 @@ describe('Genre Theme System (Issue #136)', () => {
   })
 
   it('各テーマカラーに必須プロパティがある', () => {
-    for (const [themeName, colors] of Object.entries(GENRE_THEME_COLORS)) {
+    for (const colors of Object.values(GENRE_THEME_COLORS)) {
       expect(colors.accent).toBeTruthy()
       expect(colors.border).toBeTruthy()
       expect(colors.bg).toBeTruthy()

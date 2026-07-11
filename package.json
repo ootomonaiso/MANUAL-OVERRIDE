@@ -24,7 +24,7 @@
     "test:choices": "node tests/test_choices.mjs",
     "test:infinite": "node tests/test_infinite_choices.mjs",
     "test:massive": "node tests/test_massive_choices.mjs",
-    "test:unit:ci": "vitest run tests/unit/engine tests/unit/framework tests/unit/composables",
+    "test:unit:ci": "vitest run tests/unit",
     "ci": "npm run typecheck && npm run lint && npm run validate && npm run check-doc-links && npm run test:features && npm run build && npm run bundle-size && npm run test:unit:ci"
   },
   "dependencies": {
@@ -37,9 +37,9 @@
     "eslint-plugin-vue": "^10.9.2",
     "happy-dom": "^20.10.6",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.19.0",
+    "typescript-eslint": "^8.62.1",
     "vite": "^8.1.3",
     "vitest": "^4.1.9",
-    "vue-tsc": "^2.2.8"
+    "vue-tsc": "^3.3.6"
   }
 }

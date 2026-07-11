@@ -31,6 +31,15 @@ const endingFlavor = genreDef?.endingFlavor ?? ''
 
 const otherGenres = GENRES.filter(g => g.id !== props.genre && g.id !== 'base')
 
+// ── Issue #24/#146: サプライズエンド種別ごとのアイコン ──────────
+const SURPRISE_ICONS: Record<string, string> = {
+  glitch: '⚠',
+  bad_ending: '💀',
+  hidden_genre: '🔑',
+  narrative_twist: '✨',
+}
+const surpriseIcon = computed(() => SURPRISE_ICONS[props.surpriseEnding?.type ?? ''] ?? '⚠')
+
 // ── Issue #24: プレイスタイルラベル ────────────────────────────
 const playStyleLabels: Record<string, string> = {
   aggressive: '攻撃的',
@@ -143,7 +152,7 @@ onUnmounted(() => {
       <div class="ending-genre-section">
         <!-- Issue #24: サプライズエンド表示 -->
         <div v-if="surpriseEnding" class="ending-surprise" :class="'surprise-' + surpriseEnding.type">
-          <div class="surprise-icon">⚠</div>
+          <div class="surprise-icon">{{ surpriseIcon }}</div>
           <div class="surprise-title">{{ surpriseEnding.title }}</div>
           <div class="surprise-desc">{{ surpriseEnding.description }}</div>
         </div>
@@ -653,89 +662,5 @@ onUnmounted(() => {
   color: rgba(255, 100, 120, 0.7);
   line-height: 1.6;
   font-family: var(--font-main);
-}
-.restart-btn:hover { background: rgba(0,255,65,0.1); box-shadow: 0 0 12px rgba(0,255,65,0.2); }
-.restart-btn:active { transform: translateY(2px); box-shadow: 0 0 6px rgba(0,255,65,0.1); }
-
-/* ── Issue #24: サプライズエンド ── */
-.ending-surprise {
-  margin-bottom: 14px;
-  padding: 10px 12px;
-  border: 1px solid #ff0040;
-  border-radius: 2px;
-  background: rgba(255, 0, 64, 0.08);
-  animation: glitchPulse 2s infinite;
-}
-@keyframes glitchPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.85; }
-}
-.surprise-icon {
-  font-size: 18px;
-  margin-bottom: 4px;
-  animation: glitchShake 0.3s infinite;
-}
-@keyframes glitchShake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-2px); }
-  75% { transform: translateX(2px); }
-}
-.surprise-title {
-  font-size: 15px;
-  font-weight: bold;
-  color: #ff0040;
-  margin-bottom: 4px;
-  font-family: 'Courier New', monospace;
-  letter-spacing: 1px;
-}
-.surprise-desc {
-  font-size: 11px;
-  color: rgba(255, 100, 120, 0.7);
-  line-height: 1.6;
-  font-family: 'M PLUS 1 Code', monospace;
-}
-
-/* ── Issue #24: メタ情報セクション ── */
-.ending-meta-section {
-  margin-bottom: 14px;
-  padding: 8px 12px;
-  border: 1px solid rgba(0,255,65,0.15);
-  border-radius: 1px;
-  background: rgba(0,255,65,0.03);
-}
-.meta-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 0;
-  font-size: 12px;
-  font-family: 'M PLUS 1 Code', monospace;
-}
-.meta-label {
-  color: rgba(184,255,184,0.45);
-  font-size: 11px;
-  letter-spacing: 0.5px;
-}
-.meta-value {
-  color: #b8ffb8;
-  font-size: 12px;
-}
-.meta-conf {
-  color: rgba(184,255,184,0.3);
-  font-size: 10px;
-}
-.contradiction-bar {
-  width: 80px;
-  height: 6px;
-  background: rgba(0,255,65,0.1);
-  border-radius: 3px;
-  overflow: hidden;
-  margin: 0 8px;
-}
-.contradiction-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #33aa55, #ff0040);
-  border-radius: 3px;
-  transition: width 0.6s ease;
 }
 </style>

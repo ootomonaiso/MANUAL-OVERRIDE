@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, toRef, onUnmounted } from 'vue'
+import { computed, toRef } from 'vue'
 import { GENRES } from '../data/genres'
 import { useScoreAnimation } from '../composables/useScoreAnimation'
 
@@ -24,57 +24,19 @@ const distBar     = computed(() => Math.min(100, (props.distance / DIST_BAR_MAX)
 const COMBO_THRESHOLD_HIGH = 10
 const COMBO_THRESHOLD_MED  = 5
 
-const comboColor  = computed(() => {
-  if (props.combo >= COMBO_THRESHOLD_HIGH) return '#00ff41'
-  if (props.combo >= COMBO_THRESHOLD_MED)  return '#33aa55'
-  return '#88ff44'
+// コンボ量による強調は色ではなくグロー強度で表現する。色を緑固定にすると
+// idle など明背景ジャンルで可読性が落ちるため、色はジャンルテーマ(--genre-accent)
+// に委ね、コンボの伸びは text-shadow のぼかし半径で示す（#172）。
+const comboGlow = computed(() => {
+  if (props.combo >= COMBO_THRESHOLD_HIGH) return '48px'
+  if (props.combo >= COMBO_THRESHOLD_MED)  return '32px'
+  return '20px'
 })
 
-// ── スコア加算ポップアップ ──────────────────────────────────────
-interface ScorePopup {
-  id: number
-  x: number
-  y: number
-  value: number
-  createdAt: number
-}
-
-const POPUP_X_MARGIN = 60
-const POPUP_Y_MIN = 40
-const POPUP_Y_RANGE = 60
-const POPUP_LIFETIME_MS = 700
-
-const popupIdCounter = ref(0)
-const popups = ref<ScorePopup[]>([])
-const prevScore = ref(props.playScore)
-const popupTimers = ref<ReturnType<typeof setTimeout>[]>([])
-
-// 前回のスコアを監視
-watch(() => props.playScore, (newScore) => {
-  if (newScore > prevScore.value) {
-    const delta = newScore - prevScore.value
-    const popupId = popupIdCounter.value++
-    // ポップアップを生成（ランダム位置）
-    popups.value.push({
-      id: popupId,
-      x: POPUP_X_MARGIN + Math.random() * (window.innerWidth - POPUP_X_MARGIN * 2),
-      y: POPUP_Y_MIN + Math.random() * POPUP_Y_RANGE,
-      value: delta,
-      createdAt: performance.now(),
-    })
-    // POPUP_LIFETIME_MS 後に削除
-    const timer = setTimeout(() => {
-      popups.value = popups.value.filter(p => p.id !== popupId)
-    }, POPUP_LIFETIME_MS)
-    popupTimers.value.push(timer)
-  }
-  prevScore.value = newScore
-})
-
-onUnmounted(() => {
-  for (const t of popupTimers.value) clearTimeout(t)
-  popupTimers.value.length = 0
-})
+// スコア加算の演出は各 Feature が world.addScorePopup() で個別に発火する
+// （ShootFeature の撃破 "+N" 等）。playScore の差分監視で汎用ポップアップを
+// 出す仕組みは、距離スコアなどの毎フレーム微小加算にも反応して大量発生する
+// ため廃止した。
 </script>
 
 <template>
@@ -89,18 +51,6 @@ onUnmounted(() => {
         <span class="hud-dist-text">{{ Math.floor(distance) }}m</span>
       </div>
     </div>
-
-    <!-- スコア加算ポップアップ -->
-    <TransitionGroup name="popup">
-      <div
-        v-for="popup in popups"
-        :key="popup.id"
-        class="score-popup"
-        :style="{ left: popup.x + 'px', top: popup.y + 'px' }"
-      >
-        +{{ popup.value.toLocaleString() }}
-      </div>
-    </TransitionGroup>
 
     <!-- ジャンルバッジ（中央上） -->
     <Transition name="badge-pop">
@@ -140,7 +90,7 @@ onUnmounted(() => {
 
     <!-- コンボ表示（大きく中央下） -->
     <Transition name="combo-pop">
-      <div v-if="combo >= 2" class="hud-combo" :style="{ color: comboColor }">
+      <div v-if="combo >= 2" class="hud-combo" :style="{ '--combo-glow': comboGlow }">
         <span class="hud-combo-num">×{{ combo }}</span>
         <span class="hud-combo-label">COMBO</span>
       </div>
@@ -195,36 +145,6 @@ onUnmounted(() => {
   font-size: 11px;
   color: var(--genre-text, var(--text-dim));
   font-family: var(--genre-font, var(--font-mono));
-}
-
-/* ─── スコア加算ポップアップ ─── */
-.score-popup {
-  position: absolute;
-  font-size: 16px;
-  font-weight: 900;
-  color: var(--genre-accent, var(--green));
-  font-family: var(--genre-font, var(--font-mono));
-  text-shadow: 0 0 8px var(--genre-glow, var(--green-glow));
-  pointer-events: none;
-  white-space: nowrap;
-  z-index: 11;
-}
-
-.popup-enter-active {
-  animation: popupIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.popup-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.popup-leave-to {
-  opacity: 0;
-  transform: translateY(-12px);
-}
-
-@keyframes popupIn {
-  0%   { opacity: 0; transform: translateY(8px) scale(0.8); }
-  60%  { transform: translateY(-4px) scale(1.05); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ─── ジャンルバッジ ─── */
@@ -291,13 +211,14 @@ onUnmounted(() => {
   transform: translateX(-50%);
   text-align: center;
   pointer-events: none;
+  color: var(--genre-accent, var(--green));
 }
 .hud-combo-num {
   display: block;
   font-size: 42px;
   font-weight: 900;
   font-family: var(--genre-font, var(--font-mono));
-  text-shadow: 0 0 20px currentColor;
+  text-shadow: 0 0 var(--combo-glow, 20px) currentColor;
   line-height: 1;
 }
 .hud-combo-label {

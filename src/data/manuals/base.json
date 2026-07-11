@@ -6,7 +6,6 @@
       "key": "1.0",
       "version": "1.0",
       "manualText": [
-        "← → キーで左右に移動できます。",
         "Spaceキーでジャンプします。",
         "赤いオブジェクトに触れると失敗です。",
         "青いオブジェクトは安全です。",
@@ -16,6 +15,13 @@
         "colors": ["red"],
         "safeColors": ["blue"]
       },
+      "learningRules": [
+        {
+          "id": "frequent-jumper-doublejump",
+          "trigger": { "type": "jumpRate", "threshold": 0.012, "triggerAbove": true },
+          "effect": { "type": "forceFeature", "payload": "double_jump" }
+        }
+      ],
       "choices": [
         {
           "label": "ステージに登場するものに個性を加える",

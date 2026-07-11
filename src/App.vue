@@ -89,7 +89,7 @@ function startGame() {
     return
   }
   resizeCanvas()
-  scroller = new SideScroller(canvas, getRules())
+  scroller = new SideScroller(canvas, cloneRules())
   // 初期説明書を履歴に登録
   manualCtl.recordUpdate(gameState.currentManual())
   scroller.start()
@@ -136,9 +136,9 @@ function beginSnapshotLoop() {
     }
     snapshot.value = scroller.getSnapshot()
 
-    // genreLocked 後は説明書の自動更新を止める（フェーズの意図と矛盾するため）
+    // ジャンル確定後も選択は続行し、矛盾の蓄積次第でゲームが「壊れる」ことがある。
     // 最初のジャンプまで待つ
-    const activePlay = ['playing', 'tutorial'].includes(gameState.phase.value)
+    const activePlay = ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
     if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
       scroller.setPaused(true)
       if (!gameState.triggerUpdate()) {
@@ -184,8 +184,10 @@ function onChoose(cardId: string) {
   // 新しい説明書を記録（差分演出）
   const currentManual = gameState.currentManual()
   manualCtl.recordUpdate(currentManual)
-  // ルールをゲームエンジンへ反映
-  scroller.updateRules(getRules(), currentManual)
+  // ルールをゲームエンジンへ反映。SideScroller.this.rules が gameState.rules と
+  // 同一参照を共有すると updateRules() 内の新旧比較が常に「変化なし」になるため、
+  // 必ずコピーを渡す（#184）。
+  scroller.updateRules(cloneRules(), currentManual)
   // 更新完了を scroller に通知
   scroller.markUpdated(idx)
 }
@@ -282,6 +284,9 @@ let genreLockedBoostTimer: ReturnType<typeof setTimeout> | null = null
 watch(() => gameState.lockedGenre.value, (newGenre) => {
   if (!newGenre || !scroller) return
 
+  // 画面フラッシュ演出
+  scroller.triggerGenreLockFlash()
+
   // 演出オーバーレイ表示
   revealActive.value = true
 
@@ -301,7 +306,7 @@ watch(() => gameState.lockedGenre.value, (newGenre) => {
 
   genreLockedBoostTimer = window.setTimeout(() => {
     genreLockedBoostTimer = null
-    scroller?.updateRules(getRules(), gameState.currentManual())
+    scroller?.updateRules(cloneRules(), gameState.currentManual())
   }, GENRE_LOCKED_BOOST.durationMs)
 })
 
@@ -359,11 +364,6 @@ onUnmounted(() => {
           </button>
 
           <div class="title-controls">
-            <span class="ctrl-group">
-              <kbd class="ctrl-key">←</kbd><kbd class="ctrl-key">→</kbd>
-              <span class="ctrl-desc">移動</span>
-            </span>
-            <span class="ctrl-sep">/</span>
             <span class="ctrl-group">
               <kbd class="ctrl-key">SPACE</kbd>
               <span class="ctrl-desc">ジャンプ</span>
@@ -425,8 +425,6 @@ onUnmounted(() => {
         v-if="gameState.phase.value === 'tutorial'"
         :survived-sec="snapshot.survivedSec"
         :jumps="snapshot.statJumps"
-        :moves-left="snapshot.statMoveLeft"
-        :moves-right="snapshot.statMoveRight"
         :distance="snapshot.distance"
       />
 

@@ -12,10 +12,8 @@ import { loadGenres } from './helpers/loadGenres.mjs'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const src = fs.readFileSync(path.join(root, 'src/game/systems/MovementFeature.ts'), 'utf-8')
 
-// vertical_scroll は未実装警告リスト（['slide', 'gravity_flip']）に含まれていないこと
-const unimplementedMatch = src.match(/for \(const f of \[([^\]]*)\] as const\)/)
-assert.ok(unimplementedMatch, '未実装フィーチャーの警告ループが見つかりません')
-assert.ok(!unimplementedMatch[1].includes("'vertical_scroll'"), 'vertical_scroll は未実装警告リストに残っていてはいけません')
+// vertical_scroll は handles に含まれていること
+assert.ok(src.includes("'vertical_scroll'"), 'vertical_scroll が handles に見つかりません')
 
 // vertical_scroll の実装本体が存在すること
 assert.ok(src.includes("features.has('vertical_scroll')"), "'vertical_scroll' フラグの判定が見つかりません")

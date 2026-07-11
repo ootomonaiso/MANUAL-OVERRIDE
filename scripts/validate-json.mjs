@@ -260,6 +260,40 @@ const genreIds = validateGenres()
 for (const file of walkJson('src/data/manuals')) {
   validateFile(file, MANUAL_REQUIRED)
 }
+validateManualDeckRefs()
+
+// 説明書ツリー（後方互換データ）の参照整合性: すべての choices[].next が
+// マージ後デッキ内の実在キーを指すか検証する。1.0 からの到達性は検査しない
+// （現行はカードプール方式で、旧ツリーはルート未接続の死にデータのため到達不能は正常）。
+function validateManualDeckRefs() {
+  const rel = 'src/data/manuals/*.json (next 参照整合性)'
+  const keys = new Set()
+  const refs = []
+  for (const file of walkJson('src/data/manuals')) {
+    const { data } = parseJson(file)
+    if (!data || !Array.isArray(data.entries)) continue
+    for (const e of data.entries) {
+      if (e && typeof e.key === 'string') keys.add(e.key)
+    }
+  }
+  for (const file of walkJson('src/data/manuals')) {
+    const { data } = parseJson(file)
+    if (!data || !Array.isArray(data.entries)) continue
+    for (const e of data.entries) {
+      for (const c of e.choices ?? []) {
+        if (typeof c.next === 'string') refs.push({ from: e.key, next: c.next })
+      }
+    }
+  }
+  const broken = refs.filter(r => !keys.has(r.next))
+  if (broken.length > 0) {
+    const list = broken.slice(0, 10).map(b => `${b.from} → ${b.next}`).join(', ')
+    const more = broken.length > 10 ? ` ほか${broken.length - 10}件` : ''
+    fail(rel, `存在しないキーを指す next が ${broken.length} 件: ${list}${more}`)
+  } else {
+    ok(rel)
+  }
+}
 
 // Card pool files (incl. generated user-cards.json)
 validateCards(genreIds)

@@ -4,6 +4,28 @@
 
 ---
 
+## 投擲フェーズの操作性・爽快感・スコア改善（2026-07-10）
+
+### 問題
+
+投擲フェーズが「投げにくい・爽快感がない・スコアが伸びない」という指摘。原因は3点:
+
+- 掴む判定が 220px の説明書内側限定で外すと無反応。ドラッグ中に説明書が動かず手応え・照準フィードバックがなかった。
+- 発射・着地の演出（パーティクル/シェイク/軌跡強調）が皆無。
+- `speed > 800` で減点する式（`scoreCalc.ts` に直書き）により、強く投げる＝気持ちいい動作がスコア上不利だった。
+
+### 修正
+
+- **操作**（`throwEngine.ts` / `ThrowOverlay.vue`）: 画面のどこを掴んでも説明書を「拾い上げ」て指に追従。ドラッグした方向へそのまま飛ぶ直感操作に変更（覚える必要のあるスリングショットを廃止）。パワーゲージと実速度を整合（`speedMultiplier` を撤去し `powerDistanceDivisor` に一本化）。
+- **演出**（`ThrowOverlay.vue`）: 発射時の赤い粒子バースト＋画面シェイク、着地時の衝撃リング＋シェイク、太く発光する軌跡、パワー連動の回転を追加。
+- **スコア**（`game_balance.json` / `scoreCalc.ts`）: 減点閾値をコード直書き（800）から `throwScoreWeightsSpeedPenaltyThreshold`（1200）へJSON化し緩和、減点重み 0.1→0.04。報酬を増強（滞空 0.5→0.6、弧の高さ 0.4→0.7）。全力の山なり投げが最高スコアになるよう調整。
+
+### 変更ファイル
+
+`src/game/throwEngine.ts` / `src/components/ThrowOverlay.vue` / `src/domain/scoreCalc.ts` / `src/data/config/throw.json` / `src/data/config/game_balance.json` / `src/data/gameBalance.ts` / `src/framework/config-types.ts` / `src/framework/ConfigValidator.ts`
+
+---
+
 ## ジャンル確定後の説明書自動更新停止修正（2026-07-01）
 
 ### 問題

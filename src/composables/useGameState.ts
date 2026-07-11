@@ -37,12 +37,16 @@ export function computeContradiction(history: ChoiceRecord[]): ContradictionStat
   return trackContradictions(history)
 }
 
+// プレイスタイル由来のサプライズエンドを出す最低信頼度（実装固有の判定境界）。
+// これ未満、または balanced のときは「予定調和エンド」として null を返す。
+const SURPRISE_MIN_CONFIDENCE = 0.5
+
 /** サプライズエンドを判定（矛盾・プレイスタイルから） */
 export function computeSurpriseEnding(
   contradiction: ContradictionState,
-  _playStyle: PlayStyleResult,
+  playStyle: PlayStyleResult,
 ): SurpriseEnding | null {
-  // 矛盾スコアが閾値を超えていれば glitch エンド
+  // 矛盾スコアが閾値を超えていれば glitch エンド（最優先）
   if (shouldTriggerGlitchEnd(contradiction)) {
     return {
       type: 'glitch',
@@ -51,8 +55,46 @@ export function computeSurpriseEnding(
       forcedGenre: 'glitch',
     }
   }
-  // TODO: hidden_genre / bad_ending / narrative_twist の判定ロジックを実装
-  return null
+
+  // プレイスタイルが十分に偏っているときだけ、その傾向に応じた意外な結末を出す。
+  // balanced / 低信頼は予定調和のまま（#24 の「全ルート予定調和」を、偏った遊び方
+  // ほど別の結末に分岐させることで崩す）。
+  if (playStyle.confidence < SURPRISE_MIN_CONFIDENCE) return null
+
+  switch (playStyle.style) {
+    case 'passive':
+      return {
+        type: 'bad_ending',
+        title: '何も起きなかった',
+        description: 'あなたは説明書をほとんど書き換えず、ただ流されていった。ゲームは横スクロールのまま静かに終わった。',
+      }
+    case 'chaotic':
+      return {
+        type: 'bad_ending',
+        title: '自滅エンド',
+        description: '衝突を恐れず突き進んだ結果、ゲームはあなたを置き去りにした。それでも走り続けた記録だけが残った。',
+      }
+    case 'explorer':
+      return {
+        type: 'hidden_genre',
+        title: '隠された道',
+        description: '寄り道を重ねたあなたは、説明書の余白に隠されたもう一つのゲームの入り口を見つけてしまった。',
+      }
+    case 'aggressive':
+      return {
+        type: 'narrative_twist',
+        title: '戦いの果て',
+        description: '撃ち続けたあなたに、説明書は最後の一文を書き足した——「これは、戦いの記録だった」。',
+      }
+    case 'defensive':
+      return {
+        type: 'narrative_twist',
+        title: '守り抜いた者',
+        description: '避け続けたあなたは、一度も自分から手を出さないままゲームを完成させた。それもまた、一つの正解だ。',
+      }
+    default:
+      return null // balanced
+  }
 }
 
 export function useGameState() {
@@ -92,8 +134,13 @@ export function useGameState() {
 
   function _buildFakeManual(): ManualVersion {
     return {
-      version: `${roundCount.value}/${MAX_ROUNDS}`,
-      manualText: accumulatedManualText.value,
+      // ジャンル確定後も choose() は続くため roundCount は MAX_ROUNDS を超えうる。
+      // 表示上は上限でクランプし ver.7/5 のような破綻表示を防ぐ。
+      version: `${Math.min(roundCount.value, MAX_ROUNDS)}/${MAX_ROUNDS}`,
+      // ライブ配列をそのまま渡すと currentManual() が返す全 ManualVersion が
+      // 同一配列を共有し、差分強調・更新履歴が常に「差分ゼロ／全文が現在値」に
+      // なる（#171-①）。呼び出しごとに不変スナップショットを切り出す。
+      manualText: [...accumulatedManualText.value],
       choices: [],
       hazards: currentHazards.value,
       runtimeConfig: lastRuntimeConfig.value,
@@ -206,6 +253,7 @@ export function useGameState() {
       choiceId: cardId,
       genreParams: _jitteredParams(card),
       paramMultiplier: card.paramMultiplier,
+      addFeatures: card.addFeatures,
     })
 
     _applyConflicts(card)
@@ -224,6 +272,15 @@ export function useGameState() {
       (roundCount.value >= MAX_ROUNDS || newState.converged)
     if (shouldLock) {
       _lockGenre(newState.convergedGenre ?? resolveHighestProbGenre(accumulated, GENRES))
+    }
+
+    // 矛盾の蓄積をリアルタイム監視: ジャンル確定後も選択は続くため、
+    // 度重なる矛盾が閾値を超えたらここで「壊れたゲーム」へ強制上書きする
+    // （投擲時の computeSurpriseEnding は選択を続けず即ギブアップした場合の保険として残す）
+    const contradictionState = computeContradiction(choiceHistory)
+    contradiction.value = contradictionState
+    if (shouldTriggerGlitchEnd(contradictionState) && lockedGenre.value !== 'glitch') {
+      _lockGenre('glitch')
     }
 
     _rebuildRules()

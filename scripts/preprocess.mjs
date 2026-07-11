@@ -62,8 +62,14 @@ function processGenres() {
   console.log(`\nジャンル処理 (${items.length}件)`)
   mkdirSync(outDir, { recursive: true })
 
+  // 出力ファイル名は id 由来。重複 id があると後勝ちで無警告に上書きされるため検出する。
+  const seenIds = new Set()
   for (const { file, data } of items) {
     if (!data.id) { error(`${file}: "id" が必要です`); continue }
+    if (seenIds.has(data.id)) {
+      error(`${file}: id "${data.id}" が他ファイルと重複しています（出力が上書きされます）`); continue
+    }
+    seenIds.add(data.id)
     if (!data.label) { error(`${file}: "label" が必要です`); continue }
     if (!data.thresholds || typeof data.thresholds !== 'object') {
       error(`${file}: "thresholds" が必要です（空でよければ {} と書いてください）`); continue

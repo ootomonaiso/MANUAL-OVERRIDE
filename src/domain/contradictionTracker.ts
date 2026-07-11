@@ -34,8 +34,7 @@ export function trackContradictions(history: ChoiceRecord[]): ContradictionState
     for (const conflictId of card.conflictsWith) {
       if (!selectedIds.has(conflictId)) continue
 
-      // ペアを一意に識別（順序无关）
-      // slice() でコピーしてから sort() する（破壊的操作を避ける）
+      // ペアキーを順序非依存にするため sort する（元配列は破壊しない）
       const pairKey = [record.choiceId, conflictId].slice().sort().join('|')
       if (seenPairs.has(pairKey)) continue
       seenPairs.add(pairKey)

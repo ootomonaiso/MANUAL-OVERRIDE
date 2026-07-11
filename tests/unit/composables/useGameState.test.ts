@@ -1,16 +1,25 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useGameState } from '../../../src/composables/useGameState'
 import { MAX_ROUNDS } from '../../../src/data/gameBalance'
+import { CARD_POOL } from '../../../src/data/cardPool'
 
 /**
  * ジャンル確定まで MAX_ROUNDS 回のカード選択を繰り返すヘルパー。
+ * 矛盾を意図せず引き起こさないよう、既に選んだカードと矛盾しない方を優先して選ぶ。
  */
 function _lockGenre(gameState: ReturnType<typeof useGameState>): void {
   for (let i = 0; i < MAX_ROUNDS; i++) {
     gameState.triggerUpdate()
-    const cardId = gameState.activeCards.value[0].id
+    const cardId = _pickNonConflicting(gameState)
     gameState.choose(cardId)
   }
+}
+
+/** activeCards の中から、既存の選択履歴と矛盾しないカードIDを選ぶ（なければ先頭） */
+function _pickNonConflicting(gameState: ReturnType<typeof useGameState>): string {
+  const chosenIds = new Set(gameState.choiceHistory.map(h => h.choiceId))
+  const safe = gameState.activeCards.value.find(c => !c.conflictsWith?.some(id => chosenIds.has(id)))
+  return (safe ?? gameState.activeCards.value[0]).id
 }
 
 /**
@@ -110,17 +119,43 @@ describe('useGameState', () => {
     expect(gameState.roundCount.value).toBe(initialCount + 1)
   })
 
-  it('lockedGenre 状態を維持したまま複数回説明書テキストのみ追記される', () => {
+  it('矛盾する選択をしていなければ、lockedGenre を維持したまま説明書が追記される', () => {
     _lockGenre(gameState)
     const lockedGenre = gameState.lockedGenre.value
 
     for (let i = 0; i < 3; i++) {
       gameState.triggerUpdate()
-      const cardId = gameState.activeCards.value[0].id
+      const cardId = _pickNonConflicting(gameState)
       gameState.choose(cardId)
       expect(gameState.lockedGenre.value).toBe(lockedGenre)
       expect(gameState.phase.value).toBe('genreLocked')
     }
+  })
+
+  // ── ジャンル確定後も選択は続き、矛盾の蓄積で「壊れたゲーム」になる ──
+
+  it('ジャンル確定後も triggerUpdate/choose を継続できる', () => {
+    _lockGenre(gameState)
+    expect(gameState.triggerUpdate()).toBe(true)
+    expect(gameState.phase.value).toBe('updating')
+  })
+
+  it('度重なる矛盾したカード選択で lockedGenre が glitch に上書きされる', () => {
+    // 既存の選択履歴と矛盾するカードが提示されたら優先的に選び、
+    // 矛盾の蓄積が閾値を超えると「壊れたゲーム」へ強制収束することを検証する。
+    const MAX_ATTEMPTS = 200
+    for (let i = 0; i < MAX_ATTEMPTS && gameState.lockedGenre.value !== 'glitch'; i++) {
+      gameState.triggerUpdate()
+      const chosenIds = new Set(gameState.choiceHistory.map(h => h.choiceId))
+      const conflicting = gameState.activeCards.value.find(c =>
+        c.conflictsWith?.some(id => chosenIds.has(id)) ||
+        [...chosenIds].some(id => CARD_POOL.find(p => p.id === id)?.conflictsWith?.includes(c.id))
+      )
+      gameState.choose((conflicting ?? gameState.activeCards.value[0]).id)
+    }
+
+    expect(gameState.lockedGenre.value).toBe('glitch')
+    expect(gameState.contradiction.value.hasEffect).toBe(true)
   })
 
   // ── リスタート ───────────────────────────────────────────

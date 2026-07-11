@@ -276,20 +276,22 @@ describe('SurvivalFeature', () => {
   })
 
   describe('onManualUpdated', () => {
-    it('状態とプレイヤー統計をリセットする', () => {
+    it('累積プレイヤー統計（hunger/level/weaponDamage/xp）を保持する (#179)', () => {
+      // 説明書更新のたびに level/weaponDamage/kills 等をリセットすると、
+      // 次の撃破時に world へ巻き戻った値が書き込まれ最終スコアが下がる。
       world.player.hunger = 10
       world.player.level = 5
       world.player.weaponDamage = 10
       world.player.currentLevelXp = 50
       world.player.nextLevelXp = 200
 
-      feature.onManualUpdated(world, 'test-v1')
+      feature.onManualUpdated()
 
-      expect(world.player.hunger).toBe(SURVIVAL.maxHunger)
-      expect(world.player.level).toBe(1)
-      expect(world.player.weaponDamage).toBe(SURVIVAL.meleeDamage)
-      expect(world.player.currentLevelXp).toBe(0)
-      expect(world.player.nextLevelXp).toBe(SURVIVAL.xpPerLevel)
+      expect(world.player.hunger).toBe(10)
+      expect(world.player.level).toBe(5)
+      expect(world.player.weaponDamage).toBe(10)
+      expect(world.player.currentLevelXp).toBe(50)
+      expect(world.player.nextLevelXp).toBe(200)
     })
   })
 

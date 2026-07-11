@@ -43,9 +43,13 @@ export class SurvivalFeature implements FeatureSystem {
     this._resetPlayer(world)
   }
 
-  onManualUpdated(world: MutableWorld, _versionKey: string): void {
-    this.state = this._fresh()
-    this._resetPlayer(world)
+  onManualUpdated(): void {
+    // 説明書更新（ジャンル確定後も続くカード選択）では一時的な攻撃タイマーのみ
+    // 初期化する。kills/xp/level/weaponDamage を初期化すると次の撃破時に
+    // world へ巻き戻った kills が書き込まれ、最終スコアが下がる（#179）。
+    this.state.meleeCooldown = 0
+    this.state.meleeActive = 0
+    this.state.lastHungerDamage = 0
   }
 
   onDisable(world: MutableWorld): void {
