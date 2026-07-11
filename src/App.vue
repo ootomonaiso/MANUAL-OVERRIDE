@@ -329,7 +329,7 @@ onUnmounted(() => {
 
     <!-- ─── ローディング画面 ─── -->
     <Transition name="fade">
-      <LoadingScreen v-if="isLoading" />
+      <LoadingScreen v-if="isLoading" @complete="isLoading = false" />
     </Transition>
 
     <!-- ─── タイトル画面 ─── -->
