@@ -10,7 +10,6 @@
   "theme": "stg",
   "bgColor": "#000010",
   "environment": "space",
-  "visual": { "template": "aerial" },
   "scrollDirection": "vertical",
   "controls": {
     "jump": "Space",

@@ -234,12 +234,9 @@ export function useGameState() {
     // 矛盾の蓄積をリアルタイム監視: ジャンル確定後も選択は続くため、
     // 度重なる矛盾が閾値を超えたらここで「壊れたゲーム」へ強制上書きする
     // （投擲時の computeSurpriseEnding は選択を続けず即ギブアップした場合の保険として残す）
-    // このラウンドで通常ロックした直後は上書きしない（同一 choose 内で _lockGenre が
-    // 二重発火し、確定文の重複追記と効果音の二重再生が起きるのを防ぐ。glitch 化は
-    // 確定後さらに矛盾が積み増した後続ラウンドで発火する）。
     const contradictionState = computeContradiction(choiceHistory)
     contradiction.value = contradictionState
-    if (!shouldLock && shouldTriggerGlitchEnd(contradictionState) && lockedGenre.value !== 'glitch') {
+    if (shouldTriggerGlitchEnd(contradictionState) && lockedGenre.value !== 'glitch') {
       _lockGenre('glitch')
     }
 

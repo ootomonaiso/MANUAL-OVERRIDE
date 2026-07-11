@@ -138,9 +138,8 @@ function beginSnapshotLoop() {
 
     // ジャンル確定後も選択は続行し、矛盾の蓄積次第でゲームが「壊れる」ことがある。
     // 最初のジャンプまで待つ
-    // 死亡フレームでは更新パネルを出さず、下の dead 判定で投擲へ移行させる
     const activePlay = ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
-    if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay && !snapshot.value.dead) {
+    if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
       scroller.setPaused(true)
       if (!gameState.triggerUpdate()) {
         // カードプールが枯渇した場合はスキップしてゲームを続行
@@ -285,6 +284,9 @@ let genreLockedBoostTimer: ReturnType<typeof setTimeout> | null = null
 watch(() => gameState.lockedGenre.value, (newGenre) => {
   if (!newGenre || !scroller) return
 
+  // 画面フラッシュ演出
+  scroller.triggerGenreLockFlash()
+
   // 演出オーバーレイ表示
   revealActive.value = true
 
@@ -301,7 +303,6 @@ watch(() => gameState.lockedGenre.value, (newGenre) => {
   const rawRules = cloneRules()
   rawRules.scrollSpeed = rawRules.scrollSpeed * GENRE_LOCKED_BOOST.mult
   scroller.updateRules(rawRules, gameState.currentManual())
-  scroller.notifyGenreLocked()
 
   genreLockedBoostTimer = window.setTimeout(() => {
     genreLockedBoostTimer = null
@@ -328,7 +329,7 @@ onUnmounted(() => {
 
     <!-- ─── ローディング画面 ─── -->
     <Transition name="fade">
-      <LoadingScreen v-if="isLoading" @complete="isLoading = false" />
+      <LoadingScreen v-if="isLoading" />
     </Transition>
 
     <!-- ─── タイトル画面 ─── -->

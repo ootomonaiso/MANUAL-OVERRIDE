@@ -98,7 +98,8 @@ export function updateThrow(state: ThrowState, dt: number, canvasHeight: number)
 
 function _finalize(state: ThrowState): void {
   const speed = Math.sqrt(state.vx * state.vx + state.vy * state.vy)
-  const arcHeight = Math.max(0, state.startY - state.peakY)
+  // ドラッグなしで離された場合も最低限の弧高を保証（スコア0回避）
+  const arcHeight = Math.max(30, state.startY - state.peakY)
   state.result = { airTime: state.airTime, arcHeight, speed }
   state.score = calcThrowScore(state.result)
   state.phase = 'done'
