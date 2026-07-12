@@ -12,6 +12,7 @@ import EndingPanel from './components/EndingPanel.vue'
 import TutorialHints from './components/TutorialHints.vue'
 import PluginLoader from './components/PluginLoader.vue'
 import GenreRevealOverlay from './components/GenreRevealOverlay.vue'
+import ControlsLegend from './components/ControlsLegend.vue'
 import { GENRES, GENRE_THEME_COLORS } from './data/genres'
 import { GENRE_LOCKED_BOOST } from './data/gameBalance'
 import type { ThrowResult, RuntimeRules } from './domain/types'
@@ -30,6 +31,23 @@ const debugCtl = useDebugSettings()
 
 /** ローディング状態（初期化完了まで表示） */
 const isLoading = ref(true)
+
+/** 一時停止して説明書をじっくり確認するモード（P / 説明書クリックでトグル） */
+const reviewPaused = ref(false)
+
+/** アクティブにプレイ中のフェーズ（一時停止レビューや死亡判定の対象） */
+function isActivePlayPhase(): boolean {
+  return ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
+}
+
+function toggleReviewPause() {
+  if (reviewPaused.value) {
+    reviewPaused.value = false
+    return
+  }
+  if (!scroller || !isActivePlayPhase()) return
+  reviewPaused.value = true
+}
 
 /** readonly() ラッパーを剥がして RuntimeRules として返す */
 function getRules(): RuntimeRules {
@@ -126,6 +144,9 @@ function startTutorial() {
 }
 
 // ─── スナップショット監視ループ ──────────────────────────────────
+// 死亡から投擲フェーズへ移るまでの猶予（GAME OVER 演出を見せる一拍）
+const DEATH_BEAT_MS = 950
+let deathBeatTimer: ReturnType<typeof setTimeout> | null = null
 let snapRaf = 0
 function beginSnapshotLoop() {
   function loop() {
@@ -148,10 +169,17 @@ function beginSnapshotLoop() {
       }
     }
 
-    // ゲームオーバー → 投擲フェーズへ自動移行
+    // ゲームオーバー → 一拍おいてから投擲フェーズへ自動移行
+    // 即時遷移すると Canvas の "GAME OVER" 演出が見えないため DEATH_BEAT_MS 待つ
     const p = gameState.phase.value
-    if (snapshot.value.dead && p !== 'throwing' && p !== 'ending' && p !== 'updating') {
-      gameState.startThrowing()
+    if (snapshot.value.dead && p !== 'throwing' && p !== 'ending' && p !== 'updating'
+        && deathBeatTimer === null) {
+      reviewPaused.value = false  // 死亡時はレビューを解除
+      deathBeatTimer = window.setTimeout(() => {
+        deathBeatTimer = null
+        const cur = gameState.phase.value
+        if (cur !== 'throwing' && cur !== 'ending') gameState.startThrowing()
+      }, DEATH_BEAT_MS)
     }
 
     // LearningSystem エフェクト通知
@@ -217,6 +245,11 @@ function restart() {
     clearTimeout(genreLockedBoostTimer)
     genreLockedBoostTimer = null
   }
+  if (deathBeatTimer !== null) {
+    clearTimeout(deathBeatTimer)
+    deathBeatTimer = null
+  }
+  reviewPaused.value = false
   cancelAnimationFrame(snapRaf)
   scroller?.stop()
   scroller = null
@@ -266,10 +299,28 @@ const shouldPause = computed(() => {
   const p = gameState.phase.value
   if (p === 'updating') return true
   if (p === 'tutorialIntro') return true
+  if (reviewPaused.value) return true
   // 説明書非表示時はセンタリング演出が見えないため停止もしない
   if (manualCtl.isCentered.value && debugCtl.debugSettings.showManual) return true
   return false
 })
+
+// レビュー用に説明書を中央拡大するか（更新演出中 or 一時停止レビュー中）
+const manualCentered = computed(() =>
+  manualCtl.isCentered.value || reviewPaused.value
+)
+
+// ─── キー操作: P で一時停止レビュー / Esc で解除 ───────────────────
+function onKeyDown(e: KeyboardEvent) {
+  if (e.key === 'p' || e.key === 'P') {
+    if (isActivePlayPhase() || reviewPaused.value) {
+      e.preventDefault()
+      toggleReviewPause()
+    }
+  } else if (e.key === 'Escape' && reviewPaused.value) {
+    reviewPaused.value = false
+  }
+}
 
 
 watch(shouldPause, (paused) => {
@@ -312,13 +363,16 @@ watch(() => gameState.lockedGenre.value, (newGenre) => {
 
 onMounted(() => {
   window.addEventListener('resize', resizeCanvas)
+  window.addEventListener('keydown', onKeyDown)
 })
 onUnmounted(() => {
   cancelAnimationFrame(snapRaf)
   scroller?.stop()
   if (genreLockedBoostTimer !== null) clearTimeout(genreLockedBoostTimer)
   if (toastTimer !== null) clearTimeout(toastTimer)
+  if (deathBeatTimer !== null) clearTimeout(deathBeatTimer)
   window.removeEventListener('resize', resizeCanvas)
+  window.removeEventListener('keydown', onKeyDown)
 })
 </script>
 
@@ -401,30 +455,54 @@ onUnmounted(() => {
         :features="gameState.rules.features"
       />
 
+      <!-- 操作説明レジェンド（常時表示・変更は赤で注記） -->
+      <ControlsLegend
+        v-if="['playing','tutorial','genreLocked'].includes(gameState.phase.value)"
+        :controls="gameState.rules.controls"
+        :features="gameState.rules.features"
+        :scroll-axis="gameState.rules.scrollAxis"
+      />
+
       <!-- 説明書パネル（投擲中は ThrowOverlay が代替） -->
+      <!-- クリックで一時停止レビューをトグル -->
       <ManualPanel
         v-if="gameState.phase.value !== 'throwing' && debugCtl.debugSettings.showManual"
+        style="cursor: pointer"
         :manual="gameState.currentManual()"
         :theme="currentTheme"
         :diff-lines="manualCtl.diffLines.value"
         :is-animating="manualCtl.isAnimating.value"
-        :is-centered="manualCtl.isCentered.value"
+        :is-centered="manualCentered"
         :history="manualCtl.history.value"
         :features="gameState.rules.features"
         :controls="gameState.rules.controls"
         :highlight="gameState.phase.value === 'tutorial'"
+        @click="toggleReviewPause"
       />
 
-      <!-- 説明書更新時のフォーカスオーバーレイ -->
+      <!-- 説明書更新時 / レビュー中のフォーカスオーバーレイ -->
       <Transition name="fade">
-        <div v-if="manualCtl.isCentered.value && debugCtl.debugSettings.showManual" class="manual-focus-overlay" />
+        <div
+          v-if="manualCentered && debugCtl.debugSettings.showManual"
+          class="manual-focus-overlay"
+          :class="{ interactive: reviewPaused }"
+          @click="reviewPaused = false"
+        />
+      </Transition>
+
+      <!-- 一時停止レビュー中バナー -->
+      <Transition name="fade">
+        <div v-if="reviewPaused" class="review-banner">
+          <span class="review-banner-icon">⏸</span>
+          一時停止中 — 説明書を確認できます
+          <span class="review-banner-hint">P / クリックで再開</span>
+        </div>
       </Transition>
 
       <!-- チュートリアルヒント（序盤のみ表示） -->
       <TutorialHints
         v-if="gameState.phase.value === 'tutorial'"
         :survived-sec="snapshot.survivedSec"
-        :jumps="snapshot.statJumps"
         :distance="snapshot.distance"
       />
 
@@ -826,5 +904,39 @@ onUnmounted(() => {
   background: rgba(0, 0, 0, 0.4);
   z-index: 40;
   pointer-events: none;
+}
+/* レビュー中はクリックで再開できるよう操作を受け付ける */
+.manual-focus-overlay.interactive {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* ── 一時停止レビュー中バナー ── */
+.review-banner {
+  position: absolute;
+  top: 16%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-panel, rgba(10, 15, 10, 0.92));
+  border: 1px solid var(--genre-accent, var(--green-dim));
+  color: var(--genre-accent, var(--green));
+  padding: 8px 20px;
+  border-radius: var(--radius-md, 6px);
+  font-family: var(--genre-font, var(--font-mono));
+  font-size: 13px;
+  letter-spacing: 1px;
+  z-index: 55;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px var(--genre-glow, var(--green-glow));
+  pointer-events: none;
+  white-space: nowrap;
+}
+.review-banner-icon { font-size: 15px; }
+.review-banner-hint {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
 }
 </style>
