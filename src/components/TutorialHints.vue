@@ -3,17 +3,15 @@ import { ref, watch } from 'vue'
 
 const props = defineProps<{
   survivedSec: number
-  jumps: number
   distance: number
 }>()
 
-// ── 各ヒントが「こなされた」かを追跡 ──────────────────
-const jumpedDone = ref(false)
+// ── ヒントが「こなされた」かを追跡 ──────────────────
+// ジャンプキー・色ルールの案内は常時表示の ControlsLegend に集約したため、
+// ここでは「右下の説明書を読む」誘導だけを担当する（重複排除）。
 const manualDone = ref(false)
 const allDone    = ref(false)
 
-// 操作が行われたら対応ヒントを消す
-watch(() => props.jumps, v => { if (v > 0) jumpedDone.value = true })
 watch(() => props.distance, v => {
   if (v > 300) manualDone.value = true  // 説明書ヒントを300pxまで表示
   if (v > 500) allDone.value = true     // 500px でオーバーレイ全消し
@@ -27,17 +25,6 @@ watch(() => props.survivedSec, v => {
   <Transition name="hints-fade">
     <div v-if="!allDone" class="tutorial-overlay">
 
-      <!-- ジャンプヒント -->
-      <Transition name="hint-pop">
-        <div v-if="!jumpedDone" class="hint hint-jump">
-          <div class="hint-step">① ジャンプ</div>
-          <div class="hint-keys">
-            <kbd class="hint-key hint-key-wide">SPACE キー</kbd>
-          </div>
-          <div class="hint-pulse" />
-        </div>
-      </Transition>
-
       <!-- 説明書ヒント（右下の説明書を指す矢印） -->
       <Transition name="hint-pop">
         <div v-if="!manualDone" class="hint hint-manual">
@@ -49,15 +36,6 @@ watch(() => props.survivedSec, v => {
           <div class="hint-manual-arrow">↘</div>
         </div>
       </Transition>
-
-      <!-- 色ルール -->
-      <div class="hint-colors">
-        <span class="color-dot danger" />
-        <span class="color-label">触れると失敗</span>
-        <span class="color-sep">/</span>
-        <span class="color-dot safe" />
-        <span class="color-label">安全</span>
-      </div>
 
     </div>
   </Transition>
@@ -77,49 +55,6 @@ watch(() => props.survivedSec, v => {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-}
-
-/* ── ジャンプヒント（プレイヤー上） ── */
-.hint-jump {
-  bottom: 110px;
-  left: 120px;
-}
-
-.hint-keys { display: flex; gap: 4px; }
-
-.hint-key {
-  background: rgba(0,255,65,0.1);
-  border: 1.5px solid rgba(0,255,65,0.3);
-  border-bottom: 3px solid rgba(0,255,65,0.3);
-  color: #00ff41;
-  padding: 4px 8px;
-  border-radius: 2px;
-  font-size: 12px;
-  font-family: 'M PLUS 1 Code', monospace;
-  min-width: 28px;
-  text-align: center;
-}
-.hint-key-wide { min-width: 64px; }
-
-.hint-step {
-  font-size: 12px;
-  font-weight: bold;
-  color: #00ff41;
-  font-family: 'M PLUS 1 Code', monospace;
-  letter-spacing: 1px;
-  margin-bottom: 4px;
-}
-
-/* キーが脈動 */
-.hint-pulse {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: #00ff41;
-  animation: pulseDot 1.2s ease-in-out infinite;
-}
-@keyframes pulseDot {
-  0%, 100% { opacity: 0.3; transform: scale(0.8); }
-  50%       { opacity: 1.0; transform: scale(1.3); }
 }
 
 /* ── 説明書ヒント（右下寄り） ── */
@@ -165,32 +100,6 @@ watch(() => props.survivedSec, v => {
   0%, 100% { transform: translate(0,0); }
   50%       { transform: translate(4px, 4px); }
 }
-
-/* ── 色ルール（上中央） ── */
-.hint-colors {
-  position: absolute;
-  top: 52px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(0,255,65,0.08);
-  border: 1px solid rgba(0,255,65,0.2);
-  padding: 5px 14px;
-  border-radius: 2px;
-  font-size: 11px;
-  font-family: 'M PLUS 1 Code', monospace;
-}
-.color-dot {
-  display: inline-block;
-  width: 10px; height: 10px;
-  border-radius: 50%;
-}
-.color-dot.danger { background: #ff3333; box-shadow: 0 0 6px #ff3333; }
-.color-dot.safe   { background: #00ff41; box-shadow: 0 0 6px #00ff41; }
-.color-label { color: rgba(184,255,184,0.45); }
-.color-sep   { color: rgba(0,255,65,0.2); }
 
 /* ── トランジション ── */
 .hints-fade-leave-active { transition: opacity 0.8s ease; }

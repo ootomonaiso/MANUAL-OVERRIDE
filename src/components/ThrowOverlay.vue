@@ -176,7 +176,15 @@ const spinDeg = computed(() => state.value.airTime * state.value.spin)
     >
       <div class="throw-manual-header">取扱説明書 ver.{{ manualVersion }}</div>
       <div v-for="line in manualText" :key="line" class="throw-manual-line">{{ line }}</div>
+
+      <!-- 掴める手がかり（アイドル時のみ） -->
+      <div v-if="!isDragging && !isFlying" class="throw-grab-badge">
+        <span class="throw-grab-dots">⋮⋮</span>つまんで投げる
+      </div>
     </div>
+
+    <!-- 上方向ガイド（アイドル時のみ・掴む前の誘導） -->
+    <div v-if="!isDragging && !isFlying" class="throw-guide-arrow">↑</div>
 
     <!-- パワーゲージ（掴んだ位置の上に表示） -->
     <div v-if="isDragging" class="power-gauge" :style="{ left: state.startX + 'px', top: state.startY - 64 + 'px' }">
@@ -247,9 +255,59 @@ const spinDeg = computed(() => state.value.airTime * state.value.spin)
   transition: box-shadow 0.1s;
 }
 .throw-manual:active { cursor: grabbing; }
+/* アイドル時: 掴める合図として点線輪郭を脈動 + ふわっと上下 */
+.throw-manual:not(.dragging):not(.flying) {
+  outline: 2px dashed rgba(255, 90, 60, 0.55);
+  outline-offset: 5px;
+  animation: throwIdleBob 2.4s ease-in-out infinite;
+}
+/* ホバーで少し浮かせて「掴める」感を出す */
+.throw-manual:not(.dragging):not(.flying):hover {
+  box-shadow: 8px 12px 0 #222;
+  outline-color: rgba(255, 90, 60, 0.9);
+  transform: translate(-50%, calc(-50% - 6px));
+}
+@keyframes throwIdleBob {
+  0%, 100% { transform: translate(-50%, -50%); }
+  50%      { transform: translate(-50%, calc(-50% - 5px)); }
+}
 .throw-manual.dragging {
   box-shadow: 8px 8px 0 #222;
   transition: none;
+  outline: none;
+  animation: none;
+}
+
+/* 掴める手がかりバッジ */
+.throw-grab-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #ccc;
+  font-size: 10px;
+  color: #c0392b;
+  letter-spacing: 0.5px;
+}
+.throw-grab-dots { letter-spacing: -2px; opacity: 0.7; }
+
+/* 上方向ガイド矢印（振る方向の誘導） */
+.throw-guide-arrow {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - 165px);
+  transform: translateX(-50%);
+  font-size: 30px;
+  color: rgba(255, 120, 80, 0.9);
+  text-shadow: 0 0 12px rgba(255, 90, 60, 0.6);
+  pointer-events: none;
+  animation: throwGuideArrow 1.3s ease-in-out infinite;
+}
+@keyframes throwGuideArrow {
+  0%, 100% { transform: translate(-50%, 6px); opacity: 0.4; }
+  50%      { transform: translate(-50%, -6px); opacity: 1; }
 }
 .throw-manual.flying {
   cursor: default;
