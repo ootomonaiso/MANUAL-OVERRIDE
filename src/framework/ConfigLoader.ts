@@ -56,9 +56,7 @@ export function loadConfigFromGlob(
         filtered[key] = val
       }
     }
-    // 合成セクション（src/data/config.ts が注入する __genres__ 等）の意図的な上書きでも
-    // 発火するため、本番コンソールのノイズにしない。設定作者向けの開発時診断に限定する。
-    if (partial[section as GameConfigSection] && !import.meta.env?.PROD) {
+    if (partial[section as GameConfigSection]) {
       console.warn(`[ConfigLoader] セクション "${section}" が重複しています (${filePath})。上書きします。`)
     }
     partial[section as GameConfigSection] = filtered as never

@@ -123,6 +123,11 @@ export interface ManualCard {
   weight?: number
   hazards?: { colors: string[]; safeColors: string[] }
   runtimeConfig?: ManualRuntimeConfig
+  /**
+   * この選択で即時付与するフィーチャー。ジャンル確定を待たずに追加され、選択履歴で
+   * 累積する。「敵を撃つ」等の説明文と実挙動を一致させるための経路（#105）。
+   */
+  addFeatures?: FeatureId[]
   hint?: string
   /** このカードが向かうジャンルID群。選択履歴の傾向と合うとサンプリング重みが上がる */
   genreAffinity?: string[]

@@ -1,8 +1,13 @@
 import type { LearningRule, LearningTrigger, LearningEffect, ActionStats } from './types'
 
-// ticks=0 ガード: ゲーム開始直後（統計未蓄積）で誤発動しないよう先頭でチェック
+// 統計が十分に溜まるまで発火させない（約5秒 @60fps）。rate は count/ticks の
+// 「フレームあたり」レートで、開始直後は分母が小さく単発の操作でも rate が跳ね上がる。
+// triggerAbove:false のルールが初回評価で即発動する（例: jumpRate<0.05）のを防ぐ。
+const MIN_EVAL_TICKS = 300
+
+// ticks ガード: 統計が MIN_EVAL_TICKS 未満のうちは評価しない
 function _evaluateTrigger(trigger: LearningTrigger, stats: ActionStats): boolean {
-  if (stats.ticks === 0) return false
+  if (stats.ticks < MIN_EVAL_TICKS) return false
 
   let rate = 0
   switch (trigger.type) {

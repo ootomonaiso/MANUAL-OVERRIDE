@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>genre-lab — ジャンル設計ツール</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 16px;
+      background: #14161c; color: #d8dce6;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 13px;
+    }
+    h1 { font-size: 16px; margin: 0 0 4px; }
+    h2 { font-size: 13px; margin: 0 0 8px; color: #8fa3c8; border-bottom: 1px solid #2a2f3a; padding-bottom: 4px; }
+    .note { color: #6b7280; margin-bottom: 16px; }
+    .layout { display: grid; grid-template-columns: 380px 1fr; gap: 16px; align-items: start; }
+    .panel { background: #1b1e27; border: 1px solid #2a2f3a; border-radius: 6px; padding: 12px; margin-bottom: 16px; }
+    .sticky { position: sticky; top: 16px; }
+
+    /* 2択モード */
+    #pair { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .pair-btn {
+      background: #232f47; color: #e6ebf5; border: 1px solid #3d5075; border-radius: 6px;
+      padding: 10px 12px; cursor: pointer; text-align: left; font: inherit;
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .pair-btn:hover { background: #2c3c5c; border-color: #5b8def; }
+    .pair-label { font-size: 14px; }
+    .banner { margin-top: 8px; padding: 8px 10px; border-radius: 4px; font-weight: bold; }
+    .banner-locked { background: #14351f; color: #35c26e; border: 1px solid #35c26e; }
+    .banner-forced { background: #1b2a4a; color: #7aa5f7; border: 1px solid #5b8def; }
+
+    /* スライダー */
+    .slider-row { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+    .slider-label { width: 64px; color: #8fa3c8; }
+    .slider-row input { flex: 1; accent-color: #5b8def; }
+    .slider-value { width: 36px; text-align: right; }
+
+    /* カード検索・フィルタ */
+    #card-search {
+      width: 100%; background: #12141b; color: #d8dce6;
+      border: 1px solid #2a2f3a; border-radius: 4px; padding: 6px 8px; font: inherit;
+    }
+    #axis-filter { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+    .chip {
+      background: #232838; color: #8fa3c8; border: 1px solid #2f3648; border-radius: 10px;
+      padding: 2px 8px; cursor: pointer; font: inherit; font-size: 11px;
+    }
+    .chip.active { background: #2c3c5c; color: #cfe0ff; border-color: #5b8def; }
+
+    /* カード一覧 */
+    #cards { max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+    .card-btn {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+      background: #232838; color: #d8dce6; border: 1px solid #2f3648; border-radius: 4px;
+      padding: 6px 8px; cursor: pointer; text-align: left; font: inherit;
+    }
+    .card-btn:hover { background: #2c3349; }
+    .card-params { color: #7d8aa8; font-size: 11px; }
+
+    /* 履歴 */
+    #history { max-height: 110px; overflow-y: auto; color: #9aa4b8; }
+    .toolbar { display: flex; gap: 8px; margin: 8px 0; align-items: center; flex-wrap: wrap; }
+    button.small { background: #2c3349; color: #d8dce6; border: 1px solid #3a4258; border-radius: 4px; padding: 4px 10px; cursor: pointer; font: inherit; }
+    button.small:hover { background: #38415c; }
+    button.primary { background: #2c3c5c; border-color: #5b8def; }
+
+    /* 事後確率 */
+    .post-row { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+    .post-name { width: 120px; color: #b7c2d8; }
+    .post-bar-wrap { flex: 1; background: #232838; border-radius: 3px; height: 14px; overflow: hidden; }
+    .post-bar { height: 100%; background: #5b8def; transition: width 0.15s; }
+    .post-bar-locked { background: #35c26e; }
+    .post-pct { width: 52px; text-align: right; }
+    #judgment { margin-top: 10px; padding: 8px; background: #232838; border-radius: 4px; }
+    #guide { margin-top: 6px; padding: 8px; background: #20263a; border-radius: 4px; color: #b7c2d8; }
+    .ok { color: #35c26e; }
+    .ng { color: #e05661; }
+
+    /* 試作ジャンル */
+    #proto-json { width: 100%; height: 96px; background: #12141b; color: #d8dce6; border: 1px solid #2a2f3a; border-radius: 4px; font: inherit; padding: 8px; }
+
+    /* シミュレーション */
+    .sim-row { display: flex; gap: 8px; margin: 1px 0; white-space: pre; }
+    .sim-header { color: #8fa3c8; }
+    .sim-col { width: 46%; overflow: hidden; }
+    #sim-status { color: #8fa3c8; margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <h1>genre-lab <span style="color:#5b8def">▸</span> ジャンル設計ツール</h1>
+  <p class="note">
+    開発専用（本番ビルドには含まれない）。ジャンル <span id="genre-count">?</span> 種・カード <span id="card-count">?</span> 枚を実データから読込中。
+  </p>
+
+  <div class="layout">
+    <div>
+      <div class="panel">
+        <h2>実プレイ再現（ラウンド <span id="round-count">0</span>/<span id="max-rounds">?</span>）</h2>
+        <div class="toolbar">
+          <button class="small primary" id="draw">2枚引く</button>
+          <label><input type="checkbox" id="jitter" checked /> ±20% ジッター</label>
+          <button class="small" id="undo">1つ戻す</button>
+          <button class="small" id="reset">リセット</button>
+        </div>
+        <div id="pair"></div>
+        <div id="deal-status"></div>
+        <div id="history"></div>
+      </div>
+
+      <div class="panel">
+        <h2>軸パラメータ（直接操作）</h2>
+        <div id="sliders"></div>
+      </div>
+
+      <div class="panel">
+        <h2>カード一覧から直接選ぶ</h2>
+        <input id="card-search" type="search" placeholder="ラベル・hint・ID で検索..." />
+        <div id="axis-filter"></div>
+        <div id="cards"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel sticky">
+        <h2>ジャンル事後確率（ホバーで閾値の充足状況）</h2>
+        <div id="posteriors"></div>
+        <div id="judgment"></div>
+        <div id="guide"></div>
+      </div>
+
+      <div class="panel">
+        <h2>試作ジャンルを一時追加（id / label / thresholds だけでOK）</h2>
+        <textarea id="proto-json" spellcheck="false"></textarea>
+        <div class="toolbar">
+          <button class="small" id="proto-apply">反映</button>
+          <button class="small" id="proto-copy">正規化JSONをコピー</button>
+          <span id="proto-status"></span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>カードプール到達性シミュレーション</h2>
+        <div class="toolbar">
+          <button class="small primary" id="run-sim">実行</button>
+          <span id="sim-status">試作ジャンルを反映中ならそれも含めて計算される</span>
+        </div>
+        <div id="sim-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/tools/genreLab.ts"></script>
+</body>
+</html>

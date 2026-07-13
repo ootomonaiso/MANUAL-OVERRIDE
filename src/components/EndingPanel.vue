@@ -31,6 +31,15 @@ const endingFlavor = genreDef?.endingFlavor ?? ''
 
 const otherGenres = GENRES.filter(g => g.id !== props.genre && g.id !== 'base')
 
+// ── Issue #24/#146: サプライズエンド種別ごとのアイコン ──────────
+const SURPRISE_ICONS: Record<string, string> = {
+  glitch: '⚠',
+  bad_ending: '💀',
+  hidden_genre: '🔑',
+  narrative_twist: '✨',
+}
+const surpriseIcon = computed(() => SURPRISE_ICONS[props.surpriseEnding?.type ?? ''] ?? '⚠')
+
 // ── Issue #24: プレイスタイルラベル ────────────────────────────
 const playStyleLabels: Record<string, string> = {
   aggressive: '攻撃的',
@@ -143,7 +152,7 @@ onUnmounted(() => {
       <div class="ending-genre-section">
         <!-- Issue #24: サプライズエンド表示 -->
         <div v-if="surpriseEnding" class="ending-surprise" :class="'surprise-' + surpriseEnding.type">
-          <div class="surprise-icon">⚠</div>
+          <div class="surprise-icon">{{ surpriseIcon }}</div>
           <div class="surprise-title">{{ surpriseEnding.title }}</div>
           <div class="surprise-desc">{{ surpriseEnding.description }}</div>
         </div>

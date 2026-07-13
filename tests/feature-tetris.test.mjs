@@ -46,19 +46,11 @@ const tetrisJson = JSON.parse(
   fs.readFileSync(path.join(root, 'src/data/genres/tetris.json'), 'utf-8')
 )
 
-// 閾値が genre_params.json の thresholdGuide.dualAxis（2軸ジャンルの目安値）以上であること。
-// 旧来 combo/craft とも 10 という、他ジャンル（最大でも 8: bullet_hell.enemy / rpg.growth /
-// rhythm.tempo）と比べて突出して高い値が設定されており、scripts/genre-reach-sim.mjs で検証すると
-// 狙い撃ちプレイでも到達率 0.0% だった（bug-report.md C4）。dualAxis の目安値（3）を満たしつつ、
-// 他ジャンルと同程度の到達性を持つ値であることを検証する。
+// 閾値が適切であること（他のジャンルの閾値 10-18 と同等以上）
 const combo = tetrisJson.thresholds?.combo ?? 0
 const craft = tetrisJson.thresholds?.craft ?? 0
-const genreParamsGuide = JSON.parse(
-  fs.readFileSync(path.join(root, 'src/data/config/genre_params.json'), 'utf-8')
-)
-const dualAxisGuide = genreParamsGuide.thresholdGuide.dualAxis
-assert.ok(combo >= dualAxisGuide, `combo 閾値が低すぎます: ${combo} (${dualAxisGuide}以上が必要です)`)
-assert.ok(craft >= dualAxisGuide, `craft 閾値が低すぎます: ${craft} (${dualAxisGuide}以上が必要です)`)
+assert.ok(combo >= 8, `combo 閾値が低すぎます: ${combo} (8以上が必要です)`)
+assert.ok(craft >= 8, `craft 閾値が低すぎます: ${craft} (8以上が必要です)`)
 
 // scoreFormula に distance を使わない（distance は tetris モードで凍結する）
 assert.ok(!tetrisJson.scoreFormula.includes('distance'),
@@ -100,6 +92,17 @@ for (const id of tetrominoIds) {
   assert.ok(src.includes(`id: '${id}'`),
     `TetrisFeature.ts に ${id} テトリミノ定義が見つかりません`)
 }
+
+// ─── T/J ミノの回転が SRS 標準（左向き状態が存在する）であること (#171-4) ──
+// 旧バグ: T/J の state3 が同一座標 [[0,0],[0,1],[1,1],[0,2]]（右向きT）で、
+// 左向き状態が欠落していた。修正で正しい左向き state を持つことを検証する。
+assert.ok(!src.includes('[[0, 0], [0, 1], [1, 1], [0, 2]]'),
+  'T/J の回転に旧バグの右向きT重複 state が残っています (#171-4)')
+assert.ok(src.includes('[[1, 0], [0, 1], [1, 1], [1, 2]]'),
+  'T ミノの左向き回転 state が見つかりません (#171-4)')
+assert.ok(src.includes('[[1, 0], [1, 1], [0, 2], [1, 2]]'),
+  'J ミノの左向き回転 state が見つかりません (#171-4)')
+console.log('✓ TetrisFeature: T/J ミノの回転に左向き state あり (#171-4)')
 
 // ─── 結果表示 ────────────────────────────────────────────────────
 console.log(`✓ tetris.json: thresholds.combo=${combo}, thresholds.craft=${craft}`)
