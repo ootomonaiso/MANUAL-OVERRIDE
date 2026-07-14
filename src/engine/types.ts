@@ -96,6 +96,8 @@ export interface MutableWorld {
   addBeatHit(): void
   /** beat_hazard の色反転フラグを更新（RhythmFeature が使用） */
   setBeatHazardInverted(v: boolean): void
+  /** 発射（1斉射）を統計にカウント。accuracy = hits/shots 計算用（ShootFeature が使用） */
+  addShot(): void
 
   // ─ ScoreVars 書き込み（FeatureSystem が scoreFormula 計算用に更新）
   /** accuracy 計算用：敵撃破時のヒット数をインクリメント（ShootFeature が使用） */

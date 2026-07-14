@@ -495,7 +495,6 @@ export class SideScroller {
     const H = this.canvas.height
     const leftKey  = r.controls.moveLeft
     const rightKey = r.controls.moveRight
-    const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
 
     if (this.input.keys.has(leftKey))  this.stats.moveLeft++
     if (this.input.keys.has(rightKey)) this.stats.moveRight++
@@ -540,7 +539,7 @@ export class SideScroller {
       }
     }
 
-    if (this.input.justPressed.has(shootKey)) this.stats.shots++
+    // 発射数の統計は実発射する ShootFeature 側で addShot() により計上する（#209）
     return false
   }
 
@@ -554,7 +553,6 @@ export class SideScroller {
     const jumpKey  = r.controls.jump
     const leftKey  = r.controls.moveLeft
     const rightKey = r.controls.moveRight
-    const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
     // tetris_mode: jump key is repurposed for hard drop; lights_out: パズル中は操作不要
     const tetrisMode = r.features.has('tetris_mode')
     const noControlMode = tetrisMode || r.features.has('lights_out')
@@ -712,7 +710,7 @@ export class SideScroller {
       return h.x - this.cameraX > SPAWN.hazardCullLeft
     })
 
-    if (this.input.justPressed.has(shootKey)) this.stats.shots++
+    // 発射数の統計は実発射する ShootFeature 側で addShot() により計上する（#209）
     return false
   }
 
@@ -1427,6 +1425,7 @@ export class SideScroller {
       },
       addBeatHit()             { self._gameStats.beatHits++ },
       setBeatHazardInverted(v) { self._gameStats.beatHazardInverted = v },
+      addShot()                { self.stats.shots++ },
 
       addScoreVarsHit()        { self.scoreVarsHits++ },
       addScoreVarsItemCollected() { self.scoreVarsItemsCollected++ },
