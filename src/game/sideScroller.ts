@@ -1,7 +1,7 @@
 import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect, FeatureId } from '../domain/types'
 import type { MutableWorld, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup } from './entities'
-import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL } from '../data/gameBalance'
+import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL, BASE_SCROLL_SPEED } from '../data/gameBalance'
 import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY } from '../data/tunables'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
 import { resolveWeight } from '../engine/types'
@@ -472,9 +472,11 @@ export class SideScroller {
     // ─── 説明書更新の進行度加算 ───────────────────────────────────
     // 初回ジャンプ前は加算しない（溜め込み→まとめ発火の防止, #169）。
     // ジャンル確定後は減速させ、確定後の割り込み頻度を下げる（#104）。
+    // 進行度はスクロール速度・距離加速に依存させず、固定基準速度で正規化した
+    // 経過時間ベースで加算する（説明書出現を速度非依存にする, #213）。
     if (this.firstJumpDone) {
       const pace = this.genreLocked ? DIFFICULTY.postLockUpdatePace : 1
-      this.updateProgress += effectiveScrollSpeed * dt * pace
+      this.updateProgress += BASE_SCROLL_SPEED * dt * pace
     }
   }
 
