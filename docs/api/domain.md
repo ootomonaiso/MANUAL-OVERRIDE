@@ -100,3 +100,26 @@
 |---|---|
 | `evaluateLearningRules(rules: LearningRule[], stats: ActionStats): LearningEffect[]` | 未発動ルールを評価し、新たに発動したエフェクトを返す（in-place で triggered を true に書き換え） |
 | `describeEffect(effect: LearningEffect): string` | エフェクトの人間可読ラベルを返す（デバッグ用） |
+
+---
+
+## `hudLayout.ts`
+
+HUD レイアウトの分類とセーフゾーン幾何。engine（`sideScroller.ts`）と Vue（`Hud` / `ManualPanel` / `ControlHintBadge` 等）の双方から参照する純粋モジュール。STG系の3系統レイアウトを RuntimeRules から一意に導出し、自機が入れないUIゾーン境界を算出する。比率は `config/hud_safezone.json` で調整する。
+
+### 型
+
+| 型 | 概要 |
+|---|---|
+| `HudLayout` | レイアウト種別（`hstg` 横STG=上下ゾーン / `vstg` 縦STG=左右ゾーン / `hbase` 横スクロール原点 / `other` 対象外） |
+| `HudLayoutInput` | `classifyHudLayout` が必要とする最小の RuntimeRules サブセット（`scrollAxis`, `gravity`, `genre`, `features`） |
+| `SafeZone` | セーフゾーン境界px（`top`, `bottom`, `left`, `right`） |
+| `SafeZoneRatios` | 各レイアウトのゾーン比率（`hud_safezone` 由来） |
+
+### エクスポート関数・定数
+
+| 関数/定数 | 概要 |
+|---|---|
+| `classifyHudLayout(r: HudLayoutInput): HudLayout` | RuntimeRules から3系統＋対象外を分類（`shoot` フィーチャーの有無で STG系を判定し、aquatic/tetris 等を自然に除外） |
+| `computeSafeZone(layout, w, h, ratios): SafeZone` | レイアウトと画面サイズからUIゾーン境界（px）を算出（hstg=上下 / vstg=左右 / hbase=上部のみ） |
+| `ZERO_SAFE_ZONE` | すべて 0 のセーフゾーン定数 |

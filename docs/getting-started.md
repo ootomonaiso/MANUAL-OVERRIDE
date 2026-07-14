@@ -145,7 +145,7 @@ src/
     ├── gameBalance.ts            ゲームバランス値
     ├── tunables.ts               調整可能なパラメータ
     ├── manualDeck.ts             説明書データベース
-    ├── config/                   ← JSON 設定ファイル群（21個）
+    ├── config/                   ← JSON 設定ファイル群（23個）
     │   ├── genres.json           ジャンル定義（20+ ジャンル）
     │   ├── game_balance.json     敵の密度・スポーン・難易度
     │   ├── score.json            スコア計算の重み

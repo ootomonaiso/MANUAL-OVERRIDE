@@ -176,6 +176,10 @@ drawHazard(ctx, hazard, sx, world): boolean {
 
 縦スクロール（`scrollAxis === 'y'`）では既定で空グラデーション＋星フィールドのみが描かれ、`drawFarLayer` / `drawMidLayer` は呼ばれない。縦モードでも遠景・中景を描きたいジャンルは `readonly verticalBackgroundLayers = true` を宣言する。true のときエンジンは `distance * parallax`（far / mid）を `offsetX` として両レイヤーに渡す。`aerial_stg`（都市上空のトップビュー）が利用例で、`offsetX` を横ではなく Y 方向スクロール量として使う。
 
+### 縦スクロールモードのスプライト向き
+
+縦スクロール（`scrollAxis === 'y'`）では進行（射撃）方向が上になるため、エンジンは右向き前提の `drawPlayer` スプライトを中心周りに -90° 回転させて上を向かせる。最初から機首＝上でスプライトを描くプラグイン（`AerialStgPlugin` 等）は `readonly spriteFacesUp = true` を宣言し、この回転を無効化して二重回転を防ぐ。
+
 ---
 
 ## DarkThemePlugin 継承

@@ -74,7 +74,7 @@ src/
     gameBalance.ts            # 距離/スコア比率/投擲重み/難易度カーブ（config から再エクスポート）
     tunables.ts               # VFX・カメラ・スコアの調整値（config から再エクスポート）
     config.ts                 # GAME_CONFIG エントリポイント
-    config/                   # JSON設定ファイル群（21個）
+    config/                   # JSON設定ファイル群（23個）
       genres.json             # テーマカラー等。ジャンル定義本体は genres/*.json（22種、base 含む）
       game_balance.json       # スコア比率/投擲重み/基本速度
       difficulty.json         # 難易度カーブ/アップデート距離
