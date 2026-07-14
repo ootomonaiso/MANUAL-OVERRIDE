@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import type { ChoiceRecord } from '../../../src/domain/ruleEngine'
 import type { ContradictionState } from '../../../src/domain/types'
 
