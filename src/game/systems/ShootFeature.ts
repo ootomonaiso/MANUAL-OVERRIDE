@@ -205,6 +205,14 @@ export class ShootFeature implements FeatureSystem {
   }
 
   private _syncWorldStats(world: MutableWorld): void {
+    // handles には enemy_hp 等も含むため、shoot 未有効（自機は撃てない）でも
+    // このメソッドは毎フレーム呼ばれる。shoot 未有効時は kills/combo は常に0で
+    // 変化しないが、無条件に world.setKills(0)/setCombo(0) すると tower_def 等
+    // 「enemy_hp はあるが shoot は使わない」ジャンルで他Featureの加算（例:
+    // SpecialFeature のタワー撃破）を毎フレーム上書きしてしまう。shoot 未有効
+    // 時はこのFeatureが kills/combo に一切寄与しないため同期自体をスキップする。
+    if (!world.rules.features.has('shoot')) return
+
     const s = this.state
     const prevCombo = world.gameStats.combo
 
