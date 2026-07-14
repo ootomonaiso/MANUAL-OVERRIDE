@@ -996,7 +996,8 @@ export class SideScroller {
 
     // 縦スクロール時は進行（射撃）方向が上になるため、右向き固定のスプライトを
     // 中心周りに -90° 回して上を向かせる（撃つ向きと体の向きの食い違いを解消, #102）。
-    if (this.rules.scrollAxis === 'y') {
+    // 既に上向きで描くプラグイン（spriteFacesUp）は二重回転になるため回さない。
+    if (this.rules.scrollAxis === 'y' && !getGenre(this.rules.genre).spriteFacesUp) {
       ctx.translate(p.w / 2, p.h / 2)
       ctx.rotate(-Math.PI / 2)
       ctx.translate(-p.w / 2, -p.h / 2)

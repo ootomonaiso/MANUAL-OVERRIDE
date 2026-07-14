@@ -43,6 +43,14 @@ export interface GenrePlugin {
   // ─── 視覚チューニング（省略可） ──────────────────────────────────
 
   /**
+   * drawPlayer が「上向き」を正面としてスプライトを描くか。
+   * 既定（false/未設定）は「右向き」を正面とみなし、縦スクロール（scrollAxis='y'）
+   * では engine が -90° 回転して上を向かせる。既に上向きで描くプラグイン
+   * （AerialStgPlugin 等）はこれを true にして二重回転を防ぐ。
+   */
+  readonly spriteFacesUp?: boolean
+
+  /**
    * 背景の視差スクロール係数。省略時は CAMERA.parallax* を使用。
    * 小さいほど遠景がゆっくり動く。
    */
