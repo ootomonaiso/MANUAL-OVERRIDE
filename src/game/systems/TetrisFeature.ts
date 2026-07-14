@@ -368,7 +368,7 @@ export class TetrisFeature implements FeatureSystem {
   private _lastCanvasW = 0
   private _lastCanvasH = 0
   // gameOver 到達時にプレイヤーHPを削って通常の死亡フロー（投擲フェーズへの
-  // 自動遷移）へ橋渡しする。scrollSpeed=0 で distance も凍結するため、
+  // 自動遷移）へ橋渡しする。scrollSpeed=0 で走行距離も凍結するため、
   // これがないとゲームオーバー後に進行手段が手動ギブアップしかなくなる。
   private _gameOverHandled = false
 
