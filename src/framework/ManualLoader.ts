@@ -16,7 +16,6 @@
 
 import type { ManualVersion } from '../domain/types'
 import type { ManualDeckFile, ManualEntryJSON } from './types'
-import { RULE_DEFAULTS } from '../data/gameBalance'
 
 
 const DEFAULT_HAZARDS = { colors: ['red'], safeColors: ['blue'] } as const
