@@ -29,8 +29,12 @@ export class MovementFeature implements FeatureSystem {
     this.driftTime = 0
   }
 
-  onManualUpdated(_world: MutableWorld, _versionKey: string): void {
+  onManualUpdated(world: MutableWorld, _versionKey: string): void {
     this.dash = { cooldown: 0, timer: 0, dir: 1 }
+    // スライド中ならヒットボックスを復元
+    if (this.slide.active) {
+      world.player.h = PLAYER_PHYSICS.height
+    }
     this.slide = { timer: 0, cooldown: 0, active: false }
     this.driftTime = 0
   }

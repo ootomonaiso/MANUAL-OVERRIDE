@@ -108,6 +108,8 @@ export interface MutableWorld {
   addScoreVarsStealthBonus(amount: number): void
   /** 安全色タッチ回数をインクリメント（color_touch Feature が使用） */
   addScoreVarsColorTouch(): void
+  /** テトリスライン消去数を加算（TetrisFeature が使用） */
+  addScoreVarsLinesCleared(amount: number): void
 }
 
 // ──────────────────────────────────────────────────────────────────────

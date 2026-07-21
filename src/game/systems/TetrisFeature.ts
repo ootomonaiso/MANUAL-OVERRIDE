@@ -344,6 +344,7 @@ function clearLines(state: TetrisState, world?: MutableWorld): number {
     // world.addScore でスコアを報告（他のFeatureと一貫性）
     if (world) {
       world.addScore(score)
+      world.addScoreVarsLinesCleared(lines)
     }
   }
   return lines

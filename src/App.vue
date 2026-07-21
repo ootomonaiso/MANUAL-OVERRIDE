@@ -323,8 +323,12 @@ function onKeyDown(e: KeyboardEvent) {
 }
 
 
-watch(shouldPause, (paused) => {
+watch(shouldPause, (paused, was) => {
   scroller?.setPaused(paused)
+  // #212: 一時停止解除直後に無敵時間を付与（復帰直後の被弾防止）
+  if (!paused && was) {
+    scroller?.grantResumeInvincibility(0.5)
+  }
 })
 
 // ─── ジャンル確定オーバーレイ ────

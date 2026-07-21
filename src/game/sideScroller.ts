@@ -1,7 +1,7 @@
 import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect, FeatureId } from '../domain/types'
 import type { MutableWorld, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup } from './entities'
-import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL } from '../data/gameBalance'
+import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL, BASE_SCROLL_SPEED } from '../data/gameBalance'
 import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY } from '../data/tunables'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
 import { resolveWeight } from '../engine/types'
@@ -85,6 +85,7 @@ export class SideScroller {
   private scoreVarsBossKills = 0      // ボス撃破数
   private scoreVarsStealthBonus = 0   // ステルス継続フレーム数の累積
   private scoreVarsColorTouches = 0   // 安全色タッチ回数
+  private scoreVarsLinesCleared = 0   // テトリスライン消去数
   private deaths = 0                  // 死亡回数（hp 有効時は複数回あり得る）
 
   // カメラ
@@ -158,6 +159,11 @@ export class SideScroller {
     const gY = canvas.height - PHYSICS.groundYOffset
     this.player = new Player(PLAYER_PHYSICS.startX, gY)
     this.player.jumpsLeft = rules.features.has('double_jump') ? 2 : 1
+    // playerMaxHp が明示的に設定されている場合、Player 既定値 (3) を上書きする
+    if (rules.playerMaxHp !== undefined) {
+      this.player.maxHp = rules.playerMaxHp
+      this.player.hp = Math.min(this.player.hp, rules.playerMaxHp)
+    }
 
     this.input.setGameKeys(rules.controls)
   }
@@ -195,6 +201,11 @@ export class SideScroller {
       // double_jump が削除された場合、最大ジャンプ回数を1に制限
       this.player.jumpsLeft = Math.min(this.player.jumpsLeft, 1)
     }
+    // playerMaxHp の変更を player に反映
+    if (rules.playerMaxHp !== undefined && rules.playerMaxHp !== this.player.maxHp) {
+      this.player.maxHp = rules.playerMaxHp
+      this.player.hp = Math.min(this.player.hp, rules.playerMaxHp)
+    }
     // LearningSystem の副作用状態をリセット（ルール差し替えで古いエフェクトが残らないよう）
     this._disabledActions.clear()
     this._invertHazardUntil = -Infinity
@@ -221,6 +232,8 @@ export class SideScroller {
   notifyGenreLocked(): void {
     this.genreLocked = true
     getGenre(this.rules.genre).onGenreLocked?.(this._buildWorld())
+    // #208: ジャンル確定時に次のアクションを案内
+    this._pendingLearningMsg = 'ジャンルが確定しました！スコアを伸ばすか、投擲でギブアップできます。'
   }
 
   /** フレーム内で _buildWorld() を1回だけ呼ぶためのキャッシュアクセサ */
@@ -240,6 +253,10 @@ export class SideScroller {
   }
 
   setPaused(v: boolean): void { this.paused = v }
+  /** 説明書更新からの復帰時などに無敵時間を付与する（#212） */
+  grantResumeInvincibility(sec = 0.5): void {
+    this.player.invincible = Math.max(this.player.invincible, sec)
+  }
 
   /** ジャンル確定時の画面フラッシュを発火 */
   triggerGenreLockFlash(): void { this.genreLockFlash = 1.0 }
@@ -258,12 +275,15 @@ export class SideScroller {
     let pending = UPDATE_DISTANCES.findIndex(
       (d, i) => prog >= d && !this.updateTriggeredFor.has(i)
     )
-    // UPDATE_DISTANCES の範囲外でも無限に更新を続ける
+    // UPDATE_DISTANCES の範囲外でも一定間隔で更新を続ける
+    // #210: 最大更新回数（UPDATE_DISTANCES の初期件数 + 追加上限）を設け、
+    // 無限に続かないようにする。
+    const MAX_EXTRA_UPDATES = 20
     if (pending < 0) {
       const lastDist = UPDATE_DISTANCES[UPDATE_DISTANCES.length - 1]
       if (prog >= lastDist) {
         const extraIdx = UPDATE_DISTANCES.length + Math.floor((prog - lastDist) / DIFFICULTY.infiniteUpdateInterval)
-        if (!this.updateTriggeredFor.has(extraIdx)) {
+        if (!this.updateTriggeredFor.has(extraIdx) && extraIdx < UPDATE_DISTANCES.length + MAX_EXTRA_UPDATES) {
           pending = extraIdx
         }
       }
@@ -337,6 +357,7 @@ export class SideScroller {
       bossKills: this.scoreVarsBossKills,
       stealthBonus: this.scoreVarsStealthBonus,
       colorTouches: this.scoreVarsColorTouches,
+      linesCleared: this.scoreVarsLinesCleared,
     }
 
     const genre = GENRES.find(g => g.id === this.rules.genre)
@@ -470,11 +491,13 @@ export class SideScroller {
     this.playScore += effectiveScrollSpeed * dt * SCORE.distanceScoreRate
 
     // ─── 説明書更新の進行度加算 ───────────────────────────────────
+    // #213: 速度非依存の経過時間ベースに変更（スクロール速度が上がっても
+    // 実時間あたりの出現頻度が変わらないよう、BASE_SCROLL_SPEED で正規化）。
     // 初回ジャンプ前は加算しない（溜め込み→まとめ発火の防止, #169）。
     // ジャンル確定後は減速させ、確定後の割り込み頻度を下げる（#104）。
     if (this.firstJumpDone) {
       const pace = this.genreLocked ? DIFFICULTY.postLockUpdatePace : 1
-      this.updateProgress += effectiveScrollSpeed * dt * pace
+      this.updateProgress += BASE_SCROLL_SPEED * dt * pace
     }
   }
 
@@ -529,7 +552,10 @@ export class SideScroller {
       for (let i = this.hazards.length - 1; i >= 0; i--) {
         const h = this.hazards[i]
         if (!rectsOverlap(p.rect, h.rect)) continue
-        if (!h.isSafe) {
+        const isHazardous = this._gameStats.beatHazardInverted && r.features.has('beat_hazard')
+          ? h.isSafe
+          : !h.isSafe
+        if (isHazardous) {
           this._onPlayerHit(p)
           if (this.dead) return true
         } else {
@@ -725,8 +751,10 @@ export class SideScroller {
     for (const sys of getActiveSystems(this.rules.features)) {
       sys.onPlayerHit?.(world)
     }
-    // どのシステムも死亡を処理しなかった場合（hp feature なし）は即死
-    if (!this.dead) {
+    // hp feature がある場合、RpgFeature が HP 減算を担当する。
+    // HP が残っていれば生存（modifyPlayerHp が hp<=0 でのみ _die を呼ぶ）。
+    // hp feature がなければ即死させる。
+    if (!this.rules.features.has('hp') && !this.dead) {
       this._die(p)
     }
   }
@@ -1037,12 +1065,6 @@ export class SideScroller {
     const pulse = Math.sin(h.pulse * pulseSpd) * pulseAmp + 1
 
     ctx.save()
-
-    // ジャンル固有のハザード描画フック。true ならデフォルト描画（形状・HPバー）をスキップ
-    if (pluginH.drawHazard?.(ctx, h, sx, this._getWorld())) {
-      ctx.restore()
-      return
-    }
 
     // グロー効果
     ctx.shadowColor = glow
@@ -1433,6 +1455,7 @@ export class SideScroller {
       addScoreVarsBossKill()   { self.scoreVarsBossKills++ },
       addScoreVarsStealthBonus(amount: number) { self.scoreVarsStealthBonus += amount },
       addScoreVarsColorTouch() { self.scoreVarsColorTouches++ },
+      addScoreVarsLinesCleared(amount: number) { self.scoreVarsLinesCleared += amount },
     }
   }
 

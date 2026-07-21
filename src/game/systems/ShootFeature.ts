@@ -75,7 +75,8 @@ export class ShootFeature implements FeatureSystem {
     const { rules } = world
     const shootKey = rules.controls.shoot?.toLowerCase() ?? 'z'
 
-    if (!input.justPressed.has(shootKey)) return
+    // 長押しでの連続発射に対応するため、justPressed ではなく keys（押下継続）を使用
+    if (!input.keys.has(shootKey)) return
     if (this.state.shotCooldown > 0) return
     if (!rules.features.has('shoot')) return
 
@@ -153,7 +154,7 @@ export class ShootFeature implements FeatureSystem {
     for (const b of s.bullets) {
       if (!b.alive) continue
       for (const h of world.hazards) {
-        if (h.isSafe || !rectsOverlap(b.rect, h.rect, 0)) continue
+        if (h.isSafe || h.hp <= 0 || !rectsOverlap(b.rect, h.rect, 0)) continue
         b.alive = false
         if (hasEnemyHp) {
           h.hp--

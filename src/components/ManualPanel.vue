@@ -59,12 +59,12 @@ function keyLabel(key: string): string {
       <div v-if="showHistory" class="manual-history">
         <div v-if="history.length <= 1" class="history-empty">まだ更新はありません</div>
         <div
-          v-for="h in [...history].reverse().slice(1)"
-          :key="h.version"
+          v-for="(h, i) in [...history].reverse().slice(1)"
+          :key="'h-' + i"
           class="history-item"
         >
           <div class="history-ver">ver.{{ h.version }}</div>
-          <div v-for="line in h.manualText" :key="line" class="history-line">{{ line }}</div>
+          <div v-for="(line, li) in h.manualText" :key="'l-' + i + '-' + li" class="history-line">{{ line }}</div>
         </div>
       </div>
     </Transition>

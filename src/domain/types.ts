@@ -426,4 +426,5 @@ export interface ScoreVars {
   bossKills: number        // ボス撃破数
   stealthBonus: number     // ステルス継続フレーム数（隠密評価）
   colorTouches: number     // 安全色に触れた回数（color_touch 評価）
+  linesCleared: number     // テトリスライン消去数
 }

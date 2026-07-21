@@ -5,7 +5,7 @@
   "thresholds": { "combo": 6 },
   "enableFeatures": ["lights_out", "hp"],
   "disableFeatures": ["auto_run", "shoot", "beat_hazard"],
-  "scoreFormula": "combo * 200 + survivedSec * 3",
+  "scoreFormula": "maxCombo * 200 + survivedSec * 3",
   "manualReveal": "これはパズルゲームになりました。正解を考えてください。",
   "theme": "puzzle",
   "bgColor": "#f0f0f0",

@@ -141,7 +141,7 @@ function _parseEntry(entry: ManualEntryJSON): ManualVersion {
     const ov = entry.runtimeOverrides
     runtimeConfig = {
       scrollSpeed:    ov.scrollSpeed,
-      gravity:        ov.gravity ?? ov.physics?.gravity ?? RULE_DEFAULTS.gravity,
+      gravity:        ov.gravity ?? ov.physics?.gravity,
       bpm:            ov.bpm,
       scrollDirection: ov.scrollDirection,
       environment:    ov.environment,

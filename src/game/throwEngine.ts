@@ -78,7 +78,7 @@ export function onRelease(state: ThrowState): void {
 export function updateThrow(state: ThrowState, dt: number, canvasHeight: number): void {
   if (state.phase !== 'flying') return
 
-  state.vx *= THROW.airFriction
+  state.vx *= Math.pow(THROW.airFriction, dt * 60)
   state.vy += THROW.gravity * dt
 
   state.manualX += state.vx * dt

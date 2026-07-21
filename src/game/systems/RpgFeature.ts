@@ -71,6 +71,8 @@ export class RpgFeature implements FeatureSystem {
       item.pulse += dt * SPAWN.itemPulseRate
       const iRect = { ...item.rect, x: item.rect.x - world.cameraX }
       if (!rectsOverlap(p.rect, iRect, 0)) continue
+      // food/weapon は SurvivalFeature が処理するため、ここでは exp/hp のみ扱う
+      if (item.type !== 'exp' && item.type !== 'hp') continue
       item.alive = false
       world.addScoreVarsItemCollected()
       if (item.type === 'exp') {
