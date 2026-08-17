@@ -24,6 +24,10 @@ const SCHEMAS = {
   'difficulty.json':   ['section'],
   'shoot.json':        ['section'],
   'throw.json':        ['section'],
+  'sound.json':        ['section', 'masterVolume', 'sfxVolume', 'bgmVolume', 'bgmBpm', 'muteStorageKey'],
+  'juice.json':        ['section', 'hitStopScale', 'hitStopDurationSec', 'killShakeIntensity', 'killFlashParticles',
+                         'comboMilestoneShake', 'comboMilestones', 'nearMissGapPx', 'nearMissScore', 'nearMissMinIntervalSec',
+                         'nearMissPopupColor', 'milestoneInterval', 'milestoneTextSize', 'speedLines'],
 }
 
 // Required keys for manual branch files

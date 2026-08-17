@@ -13,6 +13,14 @@ export interface SoundHooks {
   onThrowLand(): void
   onBeat(bpm: number): void
   onCombo(count: number): void
+
+  // P0 ドーパミン: 任意フック（未実装でも no-op）
+  onMilestone?(distance: number): void
+  onNearMiss?(): void
+  startBgm?(bpm: number): void
+  stopBgm?(): void
+  setMuted?(muted: boolean): void
+  readonly muted?: boolean
 }
 
 class SoundManager implements SoundHooks {
@@ -29,6 +37,9 @@ class SoundManager implements SoundHooks {
    */
   playBgm(config: BgmConfig): void {
     const { src, loop = true, volume = 0.5, fadeInMs = 1200 } = config
+
+    // ファイル BGM 開始時は手続き生成 BGM（WebAudioSound）を停止させ、同時再生を防ぐ
+    this._impl.stopBgm?.()
 
     // 進行中のフェードインをキャンセル
     this._cancelFadeIn?.()
@@ -64,6 +75,9 @@ class SoundManager implements SoundHooks {
    * BGMをフェードアウトして停止する。
    */
   stopBgm(fadeOutMs = 800): void {
+    // 手続き生成 BGM はファイル BGM が無効でも停止する必要がある（早期 return 前に呼ぶ）
+    // public/ に BGM ファイルがない環境では _bgmAudio が null だが、WebAudioSound のシーケンサは別経路で動く
+    this._impl.stopBgm?.()
     if (!this._bgmAudio) return
     this._cancelFadeIn?.()
     this._cancelFadeIn = null
@@ -120,6 +134,13 @@ class SoundManager implements SoundHooks {
   onThrowLand() { this._impl.onThrowLand?.() }
   onBeat(bpm: number) { this._impl.onBeat?.(bpm) }
   onCombo(count: number) { this._impl.onCombo?.(count) }
+
+  // P0 ドーパミン: 拡張フック（すべて .optional で安全に no-op）
+  onMilestone(distance: number) { this._impl.onMilestone?.(distance) }
+  onNearMiss() { this._impl.onNearMiss?.() }
+  startBgm(bpm: number) { this._impl.startBgm?.(bpm) }
+  setMuted(muted: boolean) { this._impl.setMuted?.(muted) }
+  get muted(): boolean { return this._impl.muted ?? false }
 }
 
 export const soundManager = new SoundManager()

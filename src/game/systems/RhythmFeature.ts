@@ -2,6 +2,7 @@ import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import type { BeatMarker } from '../entities'
 import { RHYTHM_TUNING } from '../../data/tunables'
+import { soundManager } from '../../plugins/SoundManager'
 
 interface RhythmState {
   beatInterval: number
@@ -66,6 +67,9 @@ export class RhythmFeature implements FeatureSystem {
     if (s.nextBeat <= 0) {
       s.nextBeat += s.beatInterval
       s.beatCount++
+      // ビート発生時にサウンドに通知（bpm = 60000 / beatIntervalMs）
+      const currentBpm = Math.round(60000 / s.beatInterval)
+      soundManager.onBeat(currentBpm)
 
       if (beatHazardActive) {
         s.beatHazardInverted = s.beatCount % 2 === 0

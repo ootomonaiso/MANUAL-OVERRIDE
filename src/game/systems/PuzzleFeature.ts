@@ -707,7 +707,6 @@ export class PuzzleFeature implements FeatureSystem {
     const newCombo = world.gameStats.combo + 1
     world.setCombo(newCombo)
     this._state.solvedCount++
-    soundManager.onCombo(newCombo)
 
     const cx = world.canvas.width / 2
     const cy = world.canvas.height / 2

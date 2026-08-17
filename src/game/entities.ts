@@ -123,6 +123,7 @@ export interface ScorePopup {
   color: string
   life: number   // 1→0 で消える
   vy: number
+  size?: number  // フォントサイズ。省略時 15
 }
 
 // ──────────────────────────────────────────────────────────────────────

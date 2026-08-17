@@ -15,9 +15,11 @@ import GenreRevealOverlay from './components/GenreRevealOverlay.vue'
 import ControlsLegend from './components/ControlsLegend.vue'
 import { GENRES, GENRE_THEME_COLORS } from './data/genres'
 import { GENRE_LOCKED_BOOST } from './data/gameBalance'
-import type { ThrowResult, RuntimeRules } from './domain/types'
+import { SOUND } from './data/tunables'
+import type { ThrowResult, RuntimeRules, BayesianState } from './domain/types'
 import { TUTORIAL_ENABLED, TutorialScreen } from './tutorial'
 import { soundManager } from './plugins/SoundManager'
+import { WebAudioSound } from './plugins/WebAudioSound'
 import LoadingScreen from './components/LoadingScreen.vue'
 import { DEBUG_MODE } from './debug/const'
 import { useDebugSettings } from './debug/useDebugSettings'
@@ -86,7 +88,11 @@ const snapshot = ref<GameSnapshot>({
   statJumps: 0, statMoveLeft: 0, statMoveRight: 0, firstJumpDone: false,
   learningNotification: null, scoreFormulaError: null,
   statCollisions: 0, statItemsCollected: 0, statShots: 0, statDashes: undefined,
+  speed: 0, updateProgress: 0, updateWindowStart: 0, updateWindowEnd: 0,
 })
+
+// ミュート状態（soundManager は非リアクティブなシングルトンのため HUD 表示用に ref で保持）
+const muted = ref(false)
 
 // ─── Canvas サイズをウィンドウに合わせる ───────────────────────────
 function resizeCanvas() {
@@ -111,6 +117,10 @@ function startGame() {
   // 初期説明書を履歴に登録
   manualCtl.recordUpdate(gameState.currentManual())
   scroller.start()
+  // BGM 開始
+  soundManager.startBgm(SOUND.bgmBpm)
+  // startBgm の ctx 生成時に localStorage から復元されるため、ここで同期する
+  muted.value = soundManager.muted
   // 初期化完了 → ローディング非表示
   isLoading.value = false
   // チュートリアル有効時は一時停止（チュートリアル画面の背後で静止）
@@ -267,6 +277,22 @@ const currentTheme = computed(() => {
   return GENRES.find(g => g.id === genre)?.theme ?? 'plain'
 })
 
+// ─── 収束メーター用トップジャンル ─────────────────────────────────
+const topGenre = computed(() => {
+  if (gameState.lockedGenre.value) return null
+  const bayes = gameState.bayesState as BayesianState
+  if (!bayes || !bayes.posteriors) return null
+  const post = bayes.posteriors as Record<string, number>
+  let best: { label: string; prob: number } | null = null
+  for (const [id, prob] of Object.entries(post)) {
+    if (prob < 0.12) continue
+    const def = GENRES.find(g => g.id === id)
+    if (!def || def.resolvable === false) continue
+    if (!best || prob > best.prob) best = { label: def.label, prob }
+  }
+  return best
+})
+
 // ─── ゲームプレイ中UIの表示判定（フェーズ追加時の保守性向上） ─────
 const showGameUI = computed(() => {
   const p = gameState.phase.value
@@ -312,7 +338,11 @@ const manualCentered = computed(() =>
 
 // ─── キー操作: P で一時停止レビュー / Esc で解除 ───────────────────
 function onKeyDown(e: KeyboardEvent) {
-  if (e.key === 'p' || e.key === 'P') {
+  if (e.key === 'm' || e.key === 'M') {
+    e.preventDefault()
+    muted.value = !muted.value
+    soundManager.setMuted(muted.value)
+  } else if (e.key === 'p' || e.key === 'P') {
     if (isActivePlayPhase() || reviewPaused.value) {
       e.preventDefault()
       toggleReviewPause()
@@ -362,6 +392,9 @@ watch(() => gameState.lockedGenre.value, (newGenre) => {
 })
 
 onMounted(() => {
+  // WebAudioSound を初回マウント時に登録（AudioContext は _ensureCtx で遅延生成されるため autoplay 制限に抵触しない）
+  // startGame() での register はリスタート毎に新しい AudioContext が生成されるためリークする（#M3）
+  soundManager.register(new WebAudioSound())
   window.addEventListener('resize', resizeCanvas)
   window.addEventListener('keydown', onKeyDown)
 })
@@ -453,6 +486,13 @@ onUnmounted(() => {
         :beat-hits="snapshot.beatHits"
         :genre="gameState.rules.genre"
         :features="gameState.rules.features"
+        :speed="snapshot.speed"
+        :update-progress="snapshot.updateProgress"
+        :update-window-start="snapshot.updateWindowStart"
+        :update-window-end="snapshot.updateWindowEnd"
+        :top-genre="topGenre"
+        :muted="muted"
+        :should-update="snapshot.shouldUpdate"
       />
 
       <!-- 操作説明レジェンド（常時表示・変更は赤で注記） -->

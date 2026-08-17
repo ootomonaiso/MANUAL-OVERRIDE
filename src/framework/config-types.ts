@@ -334,6 +334,49 @@ export interface PuzzleConfig {
   timeHalfLifeSteps: number
 }
 
+/** sound.json — サウンド（WebAudio 手続き生成） */
+export interface SoundConfig {
+  masterVolume: number
+  sfxVolume: number
+  bgmVolume: number
+  bgmBpm: number
+  muteStorageKey: string
+}
+
+/** juice.json — 演出（Juice）パラメータ */
+export interface SpeedLinesConfig {
+  enabled: boolean
+  minSpeed: number
+  fullSpeed: number
+  count: number
+  alpha: number
+  width: number
+  lenMin: number
+  lenMax: number
+  speedMult: number
+}
+
+export interface ComboMilestoneDef {
+  at: number
+  label: string
+}
+
+export interface JuiceConfig {
+  hitStopScale: number
+  hitStopDurationSec: number
+  killShakeIntensity: number
+  killFlashParticles: number
+  comboMilestoneShake: number
+  comboMilestones: ComboMilestoneDef[]
+  nearMissGapPx: number
+  nearMissScore: number
+  nearMissMinIntervalSec: number
+  nearMissPopupColor: string
+  milestoneInterval: number
+  milestoneTextSize: number
+  speedLines: SpeedLinesConfig
+}
+
 /** survival.json — サバイバルゲーム固有パラメータ */
 export interface SurvivalConfig {
   maxHunger: number
@@ -557,6 +600,8 @@ export interface GameConfigMap {
   puzzle: PuzzleConfig
   extra_movement: ExtraMovementConfig
   survival: SurvivalConfig
+  sound: SoundConfig
+  juice: JuiceConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap
