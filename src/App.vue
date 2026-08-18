@@ -13,10 +13,11 @@ import TutorialHints from './components/TutorialHints.vue'
 import PluginLoader from './components/PluginLoader.vue'
 import GenreRevealOverlay from './components/GenreRevealOverlay.vue'
 import ControlsLegend from './components/ControlsLegend.vue'
+import SkinSelector from './components/SkinSelector.vue'
 import { GENRES, GENRE_THEME_COLORS } from './data/genres'
 import { GENRE_LOCKED_BOOST } from './data/gameBalance'
-import { SOUND } from './data/tunables'
-import type { ThrowResult, RuntimeRules, BayesianState } from './domain/types'
+import { SOUND, RECORDS } from './data/tunables'
+import type { ThrowResult, RuntimeRules, BayesianState, GameResult, SaveRecords } from './domain/types'
 import { TUTORIAL_ENABLED, TutorialScreen } from './tutorial'
 import { soundManager } from './plugins/SoundManager'
 import { WebAudioSound } from './plugins/WebAudioSound'
@@ -25,11 +26,19 @@ import { DEBUG_MODE } from './debug/const'
 import { useDebugSettings } from './debug/useDebugSettings'
 import DebugPanel from './debug/DebugPanel.vue'
 import type { DebugSettings } from './debug/types'
+import { useRecords } from './composables/useRecords'
+import { useGoals } from './composables/useGoals'
+import { useSkins } from './composables/useSkins'
 
 // ─── 状態 ─────────────────────────────────────────────────────────
 const gameState = useGameState()
 const manualCtl = useManual(gameState.currentManual)
 const debugCtl = useDebugSettings()
+
+// P1: 記録 / 目標 / スキン
+const recordsCtl = useRecords()
+const goalsCtl = useGoals()
+const skinsCtl = useSkins(recordsCtl.records as unknown as import('vue').Ref<SaveRecords>)
 
 /** ローディング状態（初期化完了まで表示） */
 const isLoading = ref(true)
@@ -114,6 +123,13 @@ function startGame() {
   }
   resizeCanvas()
   scroller = new SideScroller(canvas, cloneRules())
+  // P1: プレイヤースキンを設定
+  const playerSkin = skinsCtl.toPlayerSkin(skinsCtl.selectedId.value)
+  if (playerSkin) {
+    scroller.setPlayerSkin(playerSkin)
+  }
+  // P1: ゴールを初期化
+  goalsCtl.start(recordsCtl.records.value)
   // 初期説明書を履歴に登録
   manualCtl.recordUpdate(gameState.currentManual())
   scroller.start()
@@ -166,6 +182,16 @@ function beginSnapshotLoop() {
       return
     }
     snapshot.value = scroller.getSnapshot()
+
+    // P1: ゴール進捗監視
+    if (!goalsCtl.achieved.value && goalsCtl.currentGoal.value) {
+      const prog = goalsCtl.progressFor(snapshot.value)
+      if (prog >= 1) {
+        goalsCtl.markAchieved()
+        soundManager.onGoalAchieved()
+        showToast(`🎯 GOAL! ${goalsCtl.currentGoal.value.label}`)
+      }
+    }
 
     // ジャンル確定後も選択は続行し、矛盾の蓄積次第でゲームが「壊れる」ことがある。
     // 最初のジャンプまで待つ
@@ -242,10 +268,35 @@ function onThrown(result: ThrowResult) {
   // getStats() を stop() より先に呼ぶ（stop() で内部状態がクリアされるため）
   const gameStats = scroller?.getStats()
   scroller?.stop()  // 投擲後はscrollerループを停止
+
+  // P1: ゴールボーナスを playScore に加算
+  const playScoreWithBonus = snapshot.value.playScore + goalsCtl.bonus()
+
   if (gameStats) {
-    gameState.finalizeThrowing(result, snapshot.value.playScore, gameStats)
+    gameState.finalizeThrowing(result, playScoreWithBonus, gameStats)
   } else {
-    gameState.finalizeThrowing(result, snapshot.value.playScore)
+    gameState.finalizeThrowing(result, playScoreWithBonus)
+  }
+
+  // P1: 記録に保存
+  const gameResult = buildGameResult()
+  if (gameResult) {
+    recordsCtl.recordGame(gameResult)
+  }
+}
+
+// P1: GameResult を組み立てるヘルパー
+function buildGameResult(): GameResult | null {
+  const genre = gameState.lockedGenre.value ?? 'base'
+  const finalScore = gameState.finalScore.value
+  if (!finalScore) return null
+  return {
+    genre,
+    total: finalScore.total,
+    play: finalScore.play,
+    throw: finalScore.throw,
+    distance: snapshot.value.distance,
+    survivedSec: snapshot.value.survivedSec,
   }
 }
 
@@ -266,6 +317,8 @@ function restart() {
   revealActive.value = false
   soundManager.stopBgm(600)
   gameState.restart()
+  // P1: ゴールをリセット
+  goalsCtl.reset()
   // タイトルへ戻る際にデバッグ設定をクリア（DebugPanel 再マウント時の表示と一致させる）
   debugCtl.resetDebug()
 }
@@ -450,6 +503,20 @@ onUnmounted(() => {
             <span class="title-btn-bracket">]</span>
           </button>
 
+          <!-- P1: ベストスコア -->
+          <div v-if="recordsCtl.records.value.overallBest" class="title-best-score">
+            {{ RECORDS.display.titleBestLabel }}: {{ recordsCtl.records.value.overallBest.total.toLocaleString() }}
+          </div>
+
+          <!-- P1: スキンセレクター -->
+          <SkinSelector
+            :skins="skinsCtl.skins.value"
+            :selected-id="skinsCtl.selectedId.value"
+            :unlocked="skinsCtl.unlocked.value"
+            :records="recordsCtl.records.value"
+            @select="skinsCtl.select"
+          />
+
           <div class="title-controls">
             <span class="ctrl-group">
               <kbd class="ctrl-key">SPACE</kbd>
@@ -493,6 +560,8 @@ onUnmounted(() => {
         :top-genre="topGenre"
         :muted="muted"
         :should-update="snapshot.shouldUpdate"
+        :goal-label="goalsCtl.currentGoal.value?.label"
+        :goal-progress="goalsCtl.currentGoal.value ? goalsCtl.progressFor(snapshot) : 0"
       />
 
       <!-- 操作説明レジェンド（常時表示・変更は赤で注記） -->
@@ -604,6 +673,8 @@ onUnmounted(() => {
         :play-style="gameState.playStyle.value"
         :contradiction="gameState.contradiction.value"
         :surprise-ending="gameState.surpriseEnding.value"
+        :records="recordsCtl.records.value"
+        :is-new-record="recordsCtl.lastUpdate.value?.newOverall ?? false"
         @restart="restart"
       />
     </Transition>
@@ -748,6 +819,15 @@ onUnmounted(() => {
 }
 .title-btn:active { transform: translateY(1px); }
 .title-btn-bracket { color: var(--green-dim); }
+
+/* P1: ベストスコア */
+.title-best-score {
+  font-size: 11px;
+  color: var(--genre-accent, var(--green));
+  font-family: var(--genre-font, var(--font-mono));
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
 
 /* 操作説明 */
 .title-controls {

@@ -119,12 +119,12 @@ export class RacingPlugin extends GenrePluginBase {
     ctx.fill()
 
     // 車体（スポーツカー）
-    ctx.fillStyle = '#cc4400'
+    ctx.fillStyle = this.playerSkin.body
     this._roundRect(ctx, 4, h * 0.45, w - 8, h * 0.38, 5)
     ctx.fill()
 
     // ルーフ
-    ctx.fillStyle = '#aa3300'
+    ctx.fillStyle = this.playerSkin.limb
     this._roundRect(ctx, w * 0.22, h * 0.22, w * 0.56, h * 0.26, 4)
     ctx.fill()
 

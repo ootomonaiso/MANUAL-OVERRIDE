@@ -13,7 +13,8 @@
 import type { GenrePlugin as PluginBase } from '../engine/GenrePlugin'
 import type { MutableWorld, SpawnEntry } from '../engine/types'
 import type { Hazard } from '../game/entities'
-import type { GenreId } from '../domain/types'
+import type { GenreId, PlayerSkin } from '../domain/types'
+import { DEFAULT_PLAYER_SKIN } from '../engine/GenrePluginBase'
 import { getGenre } from '../engine/GameRegistry'
 
 /** JSONGenrePlugin が受け取る入力インターフェース */
@@ -70,6 +71,8 @@ export class JSONGenrePlugin implements PluginBase {
   readonly palette: { danger: string; dangerGlow: string; safe: string; safeGlow: string }
   readonly spawnTable: readonly SpawnEntry[]
   readonly spawnDensity?: import('../domain/types').SpawnDensityConfig
+  /** P1: 現在のプレイヤースキン（SideScroller から毎フレーム設定される） */
+  playerSkin: PlayerSkin = DEFAULT_PLAYER_SKIN
 
   private readonly _delegate: PluginBase
 

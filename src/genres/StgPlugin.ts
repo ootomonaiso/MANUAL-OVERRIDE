@@ -150,7 +150,7 @@ export class StgPlugin extends GenrePluginBase {
     }
 
     // 後部ウィング
-    ctx.fillStyle = '#3a6ea5'
+    ctx.fillStyle = this.playerSkin.limb
     ctx.beginPath()
     ctx.moveTo(w * 0.05, cy)
     ctx.lineTo(w * 0.35, h * 0.02)
@@ -161,9 +161,9 @@ export class StgPlugin extends GenrePluginBase {
 
     // 機体本体（前方に尖った楔形）
     const body = ctx.createLinearGradient(0, h * 0.1, 0, h * 0.9)
-    body.addColorStop(0, '#cfeaff')
-    body.addColorStop(0.5, '#88ccff')
-    body.addColorStop(1, '#4a90c8')
+    body.addColorStop(0, this.playerSkin.head)
+    body.addColorStop(0.5, this.playerSkin.body)
+    body.addColorStop(1, this.playerSkin.limb)
     ctx.fillStyle = body
     ctx.beginPath()
     ctx.moveTo(w, cy)

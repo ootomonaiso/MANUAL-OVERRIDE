@@ -59,13 +59,13 @@ export class PuzzlePlugin extends DarkThemePlugin {
   }
 
   override drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, _onGround: boolean, _runCycle: number): void {
-    ctx.fillStyle = '#444488'
+    ctx.fillStyle = this.playerSkin.body
     ctx.fillRect(4, 0, w - 8, h)
-    ctx.fillStyle = '#6666aa'
+    ctx.fillStyle = this.playerSkin.head
     ctx.fillRect(8, 4, w - 16, h * 0.4)
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(w * 0.5, h * 0.15, 8, 8)
-    ctx.fillStyle = '#222'
+    ctx.fillStyle = this.playerSkin.eye
     ctx.fillRect(w * 0.52, h * 0.17, 4, 4)
   }
 }

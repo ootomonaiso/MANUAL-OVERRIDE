@@ -1,4 +1,4 @@
-import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect, FeatureId } from '../domain/types'
+import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect, FeatureId, PlayerSkin } from '../domain/types'
 import type { MutableWorld, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup } from './entities'
 import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL } from '../data/gameBalance'
@@ -80,6 +80,8 @@ export class SideScroller {
   private ctx: CanvasRenderingContext2D
   private rules: RuntimeRules
   private player: Player
+  /** P1: 現在のプレイヤースキン（setPlayerSkin で設定） */
+  playerSkin: PlayerSkin
   private hazards: Hazard[] = []
   private items: Item[] = []
   private _bullets: Bullet[] = []
@@ -186,12 +188,19 @@ export class SideScroller {
     if (!ctx2d) throw new Error('Canvas 2D context unavailable')
     this.ctx = ctx2d
     this.rules = rules
+    // P1: スキンはデフォルト値で初期化（undefined 防止）
+    this.playerSkin = { id: 'default', name: 'デフォルト', body: '#e8e8f8', head: '#f0f0ff', limb: '#aaaacc', eye: '#222244', accent: '#8888ff' }
 
     const gY = canvas.height - PHYSICS.groundYOffset
     this.player = new Player(PLAYER_PHYSICS.startX, gY)
     this.player.jumpsLeft = rules.features.has('double_jump') ? 2 : 1
 
     this.input.setGameKeys(rules.controls)
+  }
+
+  /** P1: プレイヤースキンを設定する */
+  setPlayerSkin(skin: PlayerSkin): void {
+    this.playerSkin = skin
   }
 
   // ルール更新（ManualVersion があれば learningRules を同期）
@@ -1266,6 +1275,8 @@ export class SideScroller {
     }
 
     // ジャンルプラグインに描画を委譲（ここに if/else は一切不要）
+    // P1: 毎フレーム playerSkin をプラグインへ反映（ジャンル切り替え時も正しいスキンが適用される）
+    getGenre(this.rules.genre).playerSkin = this.playerSkin
     getGenre(this.rules.genre).drawPlayer(ctx, p.w, p.h, p.onGround, this.runCycle)
 
     ctx.restore()

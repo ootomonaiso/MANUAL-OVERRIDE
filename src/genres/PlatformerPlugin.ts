@@ -108,7 +108,7 @@ export class PlatformerPlugin extends DarkThemePlugin {
     ctx.fill()
 
     // ボディ（赤いジャンパー）
-    ctx.fillStyle = '#cc2222'
+    ctx.fillStyle = this.playerSkin.body
     this._roundRect(ctx, 3, h * 0.38, w - 6, h * 0.38, 4)
     ctx.fill()
 
@@ -120,7 +120,7 @@ export class PlatformerPlugin extends DarkThemePlugin {
     ctx.textAlign = 'left'
 
     // 頭
-    ctx.fillStyle = '#f5c080'
+    ctx.fillStyle = this.playerSkin.head
     ctx.beginPath()
     ctx.arc(w * 0.55, h * 0.22, h * 0.21, 0, Math.PI * 2)
     ctx.fill()
@@ -139,12 +139,12 @@ export class PlatformerPlugin extends DarkThemePlugin {
     ctx.beginPath(); ctx.arc(w * 0.655, h * 0.21, 1.2, 0, Math.PI * 2); ctx.fill()
 
     // 腕
-    ctx.strokeStyle = '#f5c080'; ctx.lineWidth = 5; ctx.lineCap = 'round'
+    ctx.strokeStyle = this.playerSkin.head; ctx.lineWidth = 5; ctx.lineCap = 'round'
     ctx.beginPath(); ctx.moveTo(w * 0.3, h * 0.46); ctx.lineTo(w * 0.1 + armSwing * 0.5, h * 0.68); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(w * 0.7, h * 0.46); ctx.lineTo(w * 0.9 - armSwing * 0.5, h * 0.68); ctx.stroke()
 
     // 脚（青いパンツ）
-    ctx.lineWidth = 6; ctx.strokeStyle = '#2244cc'
+    ctx.lineWidth = 6; ctx.strokeStyle = this.playerSkin.limb
     ctx.beginPath(); ctx.moveTo(w * 0.38, h * 0.75); ctx.lineTo(w * 0.28 - legSwing * 0.4, h * 0.98); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(w * 0.60, h * 0.75); ctx.lineTo(w * 0.72 + legSwing * 0.4, h * 0.98); ctx.stroke()
   }

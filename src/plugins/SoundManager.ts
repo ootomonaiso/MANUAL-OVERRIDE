@@ -21,6 +21,11 @@ export interface SoundHooks {
   stopBgm?(): void
   setMuted?(muted: boolean): void
   readonly muted?: boolean
+
+  // P1: 目標・記録・スキン
+  onGoalAchieved?(): void
+  onRecordUpdate?(): void
+  onSkinSelect?(): void
 }
 
 class SoundManager implements SoundHooks {
@@ -141,6 +146,11 @@ class SoundManager implements SoundHooks {
   startBgm(bpm: number) { this._impl.startBgm?.(bpm) }
   setMuted(muted: boolean) { this._impl.setMuted?.(muted) }
   get muted(): boolean { return this._impl.muted ?? false }
+
+  // P1: 目標・記録・スキン
+  onGoalAchieved() { this._impl.onGoalAchieved?.() }
+  onRecordUpdate() { this._impl.onRecordUpdate?.() }
+  onSkinSelect() { this._impl.onSkinSelect?.() }
 }
 
 export const soundManager = new SoundManager()

@@ -21,6 +21,9 @@ const props = defineProps<{
   topGenre: { label: string; prob: number } | null
   muted: boolean
   shouldUpdate: number | null
+  // P1: 目標
+  goalLabel?: string
+  goalProgress?: number
 }>()
 
 const displayScore = useScoreAnimation(toRef(props, 'playScore'))
@@ -76,6 +79,14 @@ const comboGlow = computed(() => {
         <span class="hud-next-label">NEXT</span>
         <div class="hud-next-bar">
           <div class="hud-next-fill" :style="{ width: (nextProgress * 100) + '%' }" />
+        </div>
+      </div>
+
+      <!-- P1: 目標進捗バー -->
+      <div v-if="goalLabel" class="hud-goal" :class="{ achieved: (goalProgress ?? 0) >= 1 }">
+        <span class="hud-goal-label">{{ goalLabel }}</span>
+        <div class="hud-goal-bar">
+          <div class="hud-goal-fill" :style="{ width: ((goalProgress ?? 0) * 100) + '%' }" />
         </div>
       </div>
     </div>
@@ -221,6 +232,43 @@ const comboGlow = computed(() => {
   background: var(--genre-accent, var(--green));
   border-radius: 2px;
   transition: width 0.3s ease;
+}
+
+/* ─── P1: 目標進捗バー ─── */
+.hud-goal {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+}
+.hud-goal-label {
+  font-size: 10px;
+  color: var(--genre-accent, var(--green));
+  font-family: var(--genre-font, var(--font-mono));
+  letter-spacing: 1px;
+  min-width: 50px;
+  transition: color 0.3s ease;
+}
+.hud-goal-bar {
+  width: 100px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.hud-goal-fill {
+  height: 100%;
+  background: var(--genre-accent, var(--green));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.hud-goal.achieved .hud-goal-label {
+  color: var(--genre-accent, var(--green));
+  font-weight: bold;
+}
+.hud-goal.achieved .hud-goal-fill {
+  background: var(--genre-accent, var(--green));
+  box-shadow: 0 0 6px var(--genre-glow, var(--green-glow));
 }
 
 /* ─── P0: 収束メーター ─── */

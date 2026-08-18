@@ -144,7 +144,7 @@ export class DungeonPlugin extends GenrePluginBase {
     ctx.fill()
 
     // ローブ（ダンジョン探索者）
-    ctx.fillStyle = '#3a2200'
+    ctx.fillStyle = this.playerSkin.body
     this._roundRect(ctx, 4, h * 0.38, w - 8, h * 0.56, 4)
     ctx.fill()
 
@@ -158,7 +158,7 @@ export class DungeonPlugin extends GenrePluginBase {
     ctx.stroke()
 
     // 頭（フード）
-    ctx.fillStyle = '#2a1800'
+    ctx.fillStyle = this.playerSkin.head
     ctx.beginPath()
     ctx.arc(w * 0.55, h * 0.22, h * 0.2, 0, Math.PI * 2)
     ctx.fill()
@@ -185,7 +185,7 @@ export class DungeonPlugin extends GenrePluginBase {
     ctx.globalAlpha = 1
 
     // 脚
-    ctx.lineWidth = 5.5; ctx.strokeStyle = '#2a1800'; ctx.lineCap = 'round'
+    ctx.lineWidth = 5.5; ctx.strokeStyle = this.playerSkin.limb; ctx.lineCap = 'round'
     ctx.beginPath(); ctx.moveTo(w * 0.38, h * 0.9); ctx.lineTo(w * 0.28 - legSwing * 0.35, h + 2); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(w * 0.62, h * 0.9); ctx.lineTo(w * 0.72 + legSwing * 0.35, h + 2); ctx.stroke()
   }

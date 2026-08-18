@@ -508,4 +508,64 @@ export class WebAudioSound implements SoundHooks {
   get muted(): boolean {
     return this._muted
   }
+
+  // ─── P1: 目標達成音（明るい上昇音・3ノートのアセンディング） ──
+  onGoalAchieved(): void {
+    const ctx = this._ensureCtx()
+    if (!ctx || !this._sfxGain) return
+    try {
+      const freqs = [523, 659, 784] // C5, E5, G5
+      const sfx = this._sfxGain
+      if (!sfx) return
+      freqs.forEach((freq, i) => {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'sine'
+        const t = ctx.currentTime + i * 0.1
+        osc.frequency.value = freq
+        gain.gain.setValueAtTime(0.2, t)
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15)
+        osc.connect(gain)
+        gain.connect(sfx)
+        osc.start(t)
+        osc.stop(t + 0.16)
+      })
+    } catch {
+      // no-op
+    }
+  }
+
+  // ─── P1: 新記録音（ファンファーレ風・短め） ──────────────────
+  onRecordUpdate(): void {
+    const ctx = this._ensureCtx()
+    if (!ctx || !this._sfxGain) return
+    try {
+      const freqs = [523, 659, 784, 1047] // C5, E5, G5, C6
+      const sfx = this._sfxGain
+      if (!sfx) return
+      freqs.forEach((freq, i) => {
+        const osc = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'square'
+        const t = ctx.currentTime + i * 0.12
+        osc.frequency.value = freq
+        gain.gain.setValueAtTime(0.15, t)
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14)
+        osc.connect(gain)
+        gain.connect(sfx)
+        osc.start(t)
+        osc.stop(t + 0.15)
+      })
+    } catch {
+      // no-op
+    }
+  }
+
+  // ─── P1: スキン選択音（クリック + 短いピッチ） ──────────────
+  onSkinSelect(): void {
+    this._blip(880, 'sine', 40, 0.3)
+    setTimeout(() => {
+      this._blip(1100, 'sine', 30, 0.2)
+    }, 50)
+  }
 }

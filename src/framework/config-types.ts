@@ -343,6 +343,39 @@ export interface SoundConfig {
   muteStorageKey: string
 }
 
+/** records.json — 記録設定 */
+export interface RecordsConfig {
+  storageKey: string
+  skinStorageKey: string
+  goalBonusEnabled: boolean
+  newRecordSound: boolean
+  display: {
+    titleBestLabel: string
+    recordLabel: string
+    newRecordLabel: string
+  }
+}
+
+/** goals.json — 目標設定 */
+export interface GoalDefJSON {
+  id: string
+  label: string
+  metric: 'distance' | 'score' | 'survivedSec'
+  target: number
+  bonus: number
+}
+
+export interface GoalSelectionConfig {
+  strategy: 'stretch'
+  stretchFactor: number
+  starterGoalId: string
+}
+
+export interface GoalsConfig {
+  goals: GoalDefJSON[]
+  selection: GoalSelectionConfig
+}
+
 /** juice.json — 演出（Juice）パラメータ */
 export interface SpeedLinesConfig {
   enabled: boolean
@@ -602,6 +635,8 @@ export interface GameConfigMap {
   survival: SurvivalConfig
   sound: SoundConfig
   juice: JuiceConfig
+  records: RecordsConfig
+  goals: GoalsConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap

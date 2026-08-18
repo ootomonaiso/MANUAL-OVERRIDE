@@ -120,12 +120,12 @@ export class ArenaPlugin extends GenrePluginBase {
     ctx.fill()
 
     // 鎧の脚
-    ctx.lineWidth = 6; ctx.strokeStyle = '#554433'; ctx.lineCap = 'round'
+    ctx.lineWidth = 6; ctx.strokeStyle = this.playerSkin.limb; ctx.lineCap = 'round'
     ctx.beginPath(); ctx.moveTo(w * 0.36, h * 0.75); ctx.lineTo(w * 0.24 - legSwing * 0.4, h); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(w * 0.60, h * 0.75); ctx.lineTo(w * 0.74 + legSwing * 0.4, h); ctx.stroke()
 
     // 胸鎧（グラディエーター）
-    ctx.fillStyle = '#884422'
+    ctx.fillStyle = this.playerSkin.body
     this._roundRect(ctx, 4, h * 0.38, w - 8, h * 0.4, 3)
     ctx.fill()
 
@@ -142,7 +142,7 @@ export class ArenaPlugin extends GenrePluginBase {
     ctx.stroke()
 
     // 頭（ヘルメット）
-    ctx.fillStyle = '#774411'
+    ctx.fillStyle = this.playerSkin.head
     ctx.beginPath()
     ctx.arc(w * 0.55, h * 0.22, h * 0.19, 0, Math.PI * 2)
     ctx.fill()

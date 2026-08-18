@@ -237,9 +237,9 @@ export class AerialStgPlugin extends GenrePluginBase {
 
     // 機体グラデーション（中央が明るい金属光沢）
     const bodyGrad = ctx.createLinearGradient(0, 0, w, 0)
-    bodyGrad.addColorStop(0, jc.bodyDark)
-    bodyGrad.addColorStop(0.5, jc.bodyLight)
-    bodyGrad.addColorStop(1, jc.bodyDark)
+    bodyGrad.addColorStop(0, this.playerSkin.limb)
+    bodyGrad.addColorStop(0.5, this.playerSkin.body)
+    bodyGrad.addColorStop(1, this.playerSkin.limb)
 
     // 主翼（後退翼）
     ctx.fillStyle = bodyGrad
@@ -253,7 +253,7 @@ export class AerialStgPlugin extends GenrePluginBase {
     ctx.closePath(); ctx.fill()
 
     // 尾翼
-    ctx.fillStyle = jc.bodyDark
+    ctx.fillStyle = this.playerSkin.limb
     ctx.beginPath()
     ctx.moveTo(cx, h * 0.72)
     ctx.lineTo(w * 0.30, h * 0.96)
