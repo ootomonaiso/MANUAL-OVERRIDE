@@ -30,14 +30,33 @@ export function loadRecords(key: string): SaveRecords {
     const raw = localStorage.getItem(key)
     if (!raw) return { ...DEFAULT_RECORDS }
     const parsed = JSON.parse(raw) as SaveRecords
-    // 最低限の形状チェック
-    if (parsed && typeof parsed.playCount === 'number' && typeof parsed.totalDistance === 'number') {
+    // JSON.parse が成功しても形状が不正な破損データ（overallBest.total 欠落等）は
+    // 表示側がクラッシュ・記録が永久に更新不能になるため、形状を検証して棄却する
+    if (isValidRecords(parsed)) {
       return parsed
     }
     return { ...DEFAULT_RECORDS }
   } catch {
     return { ...DEFAULT_RECORDS }
   }
+}
+
+/** SaveRecords の形状を検証する（破損データは呼び出し側が DEFAULT_RECORDS にフォールバック） */
+function isValidRecords(r: unknown): r is SaveRecords {
+  if (!r || typeof r !== 'object') return false
+  const rec = r as Partial<SaveRecords>
+  if (typeof rec.playCount !== 'number' || typeof rec.totalDistance !== 'number') return false
+  if (typeof rec.totalPlayTime !== 'number') return false
+  if (rec.overallBest !== null && !isValidBestEntry(rec.overallBest)) return false
+  const pg = rec.perGenre
+  if (!pg || typeof pg !== 'object' || Array.isArray(pg)) return false
+  return Object.values(pg).every(isValidBestEntry)
+}
+
+function isValidBestEntry(b: unknown): b is BestEntry {
+  if (!b || typeof b !== 'object') return false
+  const e = b as Partial<BestEntry>
+  return typeof e.total === 'number' && typeof e.play === 'number' && typeof e.throw === 'number'
 }
 
 /**

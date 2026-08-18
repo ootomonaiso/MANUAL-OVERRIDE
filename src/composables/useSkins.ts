@@ -8,15 +8,13 @@
 
 import { ref, computed, readonly, type Ref } from 'vue'
 import type { SaveRecords, SkinDef, PlayerSkin } from '../domain/types'
-import { loadSkins, getSkinById, loadSelectedSkinId, saveSelectedSkinId, isSkinUnlocked } from '../domain/skins'
+import { loadSkins, getSkinById, loadSelectedSkinId, saveSelectedSkinId, isSkinUnlocked, toPlayerSkin } from '../domain/skins'
 import { RECORDS } from '../data/tunables'
 import { soundManager } from '../plugins/SoundManager'
 
-export function useSkins(recordsRef: Ref<SaveRecords>) {
+export function useSkins(recordsRef: Readonly<Ref<SaveRecords>>) {
   const skins = ref<SkinDef[]>(loadSkins())
   const selectedId = ref<string>(loadSelectedSkinId(RECORDS.skinStorageKey))
-
-  const selectedSkin = computed<SkinDef>(() => getSkinById(selectedId.value) ?? skins.value[0])
 
   const unlocked = computed(() =>
     new Set(skins.value.filter(s => isSkinUnlocked(s, recordsRef.value)).map(s => s.id)),
@@ -30,26 +28,17 @@ export function useSkins(recordsRef: Ref<SaveRecords>) {
     return true
   }
 
-  function toPlayerSkin(id: string): PlayerSkin | null {
-    const skin = getSkinById(id)
-    if (!skin) return null
-    return {
-      id: skin.id,
-      name: skin.name,
-      body: skin.body,
-      head: skin.head,
-      limb: skin.limb,
-      eye: skin.eye,
-      accent: skin.accent,
-    }
+  /** 選択中のスキンを PlayerSkin 形式で返す（未設定時は null） */
+  function getPlayerSkin(): PlayerSkin | null {
+    const skin = getSkinById(selectedId.value)
+    return skin ? toPlayerSkin(skin) : null
   }
 
   return {
     skins: readonly(skins),
     selectedId: readonly(selectedId),
-    selectedSkin,
     unlocked,
     select,
-    toPlayerSkin,
+    getPlayerSkin,
   }
 }

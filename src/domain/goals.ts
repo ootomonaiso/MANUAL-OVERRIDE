@@ -19,7 +19,7 @@ import type { GoalDef, GoalSelectionConfig, SaveRecords } from './types'
 export function pickGoal(
   records: SaveRecords,
   cfg: { goals: GoalDef[]; selection: GoalSelectionConfig },
-): GoalDef {
+): GoalDef | undefined {
   const { goals, selection } = cfg
   const distanceGoals = goals.filter(g => g.metric === 'distance')
   const starter = goals.find(g => g.id === selection.starterGoalId)

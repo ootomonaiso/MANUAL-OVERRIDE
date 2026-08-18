@@ -17,7 +17,7 @@ import SkinSelector from './components/SkinSelector.vue'
 import { GENRES, GENRE_THEME_COLORS } from './data/genres'
 import { GENRE_LOCKED_BOOST } from './data/gameBalance'
 import { SOUND, RECORDS } from './data/tunables'
-import type { ThrowResult, RuntimeRules, BayesianState, GameResult, SaveRecords } from './domain/types'
+import type { ThrowResult, RuntimeRules, BayesianState, GameResult } from './domain/types'
 import { TUTORIAL_ENABLED, TutorialScreen } from './tutorial'
 import { soundManager } from './plugins/SoundManager'
 import { WebAudioSound } from './plugins/WebAudioSound'
@@ -38,7 +38,7 @@ const debugCtl = useDebugSettings()
 // P1: 記録 / 目標 / スキン
 const recordsCtl = useRecords()
 const goalsCtl = useGoals()
-const skinsCtl = useSkins(recordsCtl.records as unknown as import('vue').Ref<SaveRecords>)
+const skinsCtl = useSkins(recordsCtl.records)
 
 /** ローディング状態（初期化完了まで表示） */
 const isLoading = ref(true)
@@ -124,7 +124,7 @@ function startGame() {
   resizeCanvas()
   scroller = new SideScroller(canvas, cloneRules())
   // P1: プレイヤースキンを設定
-  const playerSkin = skinsCtl.toPlayerSkin(skinsCtl.selectedId.value)
+  const playerSkin = skinsCtl.getPlayerSkin()
   if (playerSkin) {
     scroller.setPlayerSkin(playerSkin)
   }

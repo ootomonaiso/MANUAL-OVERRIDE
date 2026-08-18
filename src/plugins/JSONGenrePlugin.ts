@@ -120,6 +120,9 @@ export class JSONGenrePlugin implements PluginBase {
   }
 
   drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, onGround: boolean, runCycle: number): void {
+    // SideScroller はこの JSONGenrePlugin の playerSkin を設定するが、
+    // 描画は委譲先プラグインが読むため委譲先に伝播させる（6 JSON ジャンルでスキン反映）
+    this._delegate.playerSkin = this.playerSkin
     this._delegate.drawPlayer(ctx, w, h, onGround, runCycle)
   }
 

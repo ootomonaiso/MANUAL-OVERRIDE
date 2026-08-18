@@ -3,11 +3,7 @@
   "section": "records",
   "storageKey": "mo_records_v1",
   "skinStorageKey": "mo_skin_v1",
-  "goalBonusEnabled": true,
-  "newRecordSound": true,
   "display": {
-    "titleBestLabel": "ベストスコア",
-    "recordLabel": "記録",
-    "newRecordLabel": "NEW RECORD!"
+    "titleBestLabel": "ベストスコア"
   }
 }

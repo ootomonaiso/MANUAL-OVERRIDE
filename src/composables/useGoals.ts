@@ -9,14 +9,14 @@ import { ref, readonly } from 'vue'
 import { pickGoal, goalProgress, goalBonus } from '../domain/goals'
 import type { GoalDef, SaveRecords } from '../domain/types'
 import { GOALS } from '../data/tunables'
-import { soundManager } from '../plugins/SoundManager'
 
 export function useGoals() {
   const currentGoal = ref<GoalDef | null>(null)
   const achieved = ref(false)
 
   function start(records: SaveRecords): void {
-    currentGoal.value = pickGoal(records, GOALS)
+    const goal = pickGoal(records, GOALS)
+    currentGoal.value = goal ?? null
     achieved.value = false
   }
 
@@ -45,6 +45,5 @@ export function useGoals() {
     markAchieved,
     bonus,
     reset,
-    onGoalAchieved: () => { soundManager.onGoalAchieved() },
   }
 }

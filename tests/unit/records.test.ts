@@ -112,4 +112,57 @@ describe('loadRecords', () => {
     const result = loadRecords('mo_nonexistent_key_xyz')
     expect(result).toEqual(DEFAULT_RECORDS)
   })
+
+  it('overallBest が空オブジェクト（total 欠落）の場合、DEFAULT_RECORDS を返す', () => {
+    const key = 'mo_test_missing_total_v1'
+    try {
+      localStorage.setItem(key, JSON.stringify({
+        overallBest: {},
+        perGenre: {},
+        playCount: 1,
+        totalDistance: 100,
+        totalPlayTime: 60,
+      }))
+      const result = loadRecords(key)
+      expect(result).toEqual(DEFAULT_RECORDS)
+    } finally {
+      localStorage.removeItem(key)
+    }
+  })
+
+  it('perGenre の値が total 欠落の場合、DEFAULT_RECORDS を返す', () => {
+    const key = 'mo_test_bad_per_genre_v1'
+    try {
+      localStorage.setItem(key, JSON.stringify({
+        overallBest: { total: 500, play: 300, throw: 200, genre: 'base', distance: 200, date: '2024-01-01' },
+        perGenre: { base: { play: 300, throw: 200 } },
+        playCount: 1,
+        totalDistance: 200,
+        totalPlayTime: 60,
+      }))
+      const result = loadRecords(key)
+      expect(result).toEqual(DEFAULT_RECORDS)
+    } finally {
+      localStorage.removeItem(key)
+    }
+  })
+
+  it('正常なデータはそのまま返す', () => {
+    const key = 'mo_test_valid_v1'
+    const expected = {
+      ...DEFAULT_RECORDS,
+      overallBest: { total: 1000, play: 700, throw: 300, genre: 'stg', distance: 500, date: '2024-06-01' },
+      perGenre: { stg: { total: 1000, play: 700, throw: 300, genre: 'stg', distance: 500, date: '2024-06-01' } },
+      playCount: 5,
+      totalDistance: 2500,
+      totalPlayTime: 300,
+    }
+    try {
+      localStorage.setItem(key, JSON.stringify(expected))
+      const result = loadRecords(key)
+      expect(result).toEqual(expected)
+    } finally {
+      localStorage.removeItem(key)
+    }
+  })
 })

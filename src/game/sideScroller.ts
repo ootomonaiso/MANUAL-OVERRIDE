@@ -5,6 +5,7 @@ import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL } from '
 import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY } from '../data/tunables'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
 import { resolveWeight } from '../engine/types'
+import { DEFAULT_PLAYER_SKIN } from '../engine/GenrePluginBase'
 import { soundManager } from '../plugins/SoundManager'
 import { evalScoreFormula, getLastFormulaError } from '../domain/scoreCalc'
 import { evaluateLearningRules, describeEffect } from '../domain/LearningSystem'
@@ -189,7 +190,7 @@ export class SideScroller {
     this.ctx = ctx2d
     this.rules = rules
     // P1: スキンはデフォルト値で初期化（undefined 防止）
-    this.playerSkin = { id: 'default', name: 'デフォルト', body: '#e8e8f8', head: '#f0f0ff', limb: '#aaaacc', eye: '#222244', accent: '#8888ff' }
+    this.playerSkin = DEFAULT_PLAYER_SKIN
 
     const gY = canvas.height - PHYSICS.groundYOffset
     this.player = new Player(PLAYER_PHYSICS.startX, gY)

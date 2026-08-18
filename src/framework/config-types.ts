@@ -347,12 +347,8 @@ export interface SoundConfig {
 export interface RecordsConfig {
   storageKey: string
   skinStorageKey: string
-  goalBonusEnabled: boolean
-  newRecordSound: boolean
   display: {
     titleBestLabel: string
-    recordLabel: string
-    newRecordLabel: string
   }
 }
 

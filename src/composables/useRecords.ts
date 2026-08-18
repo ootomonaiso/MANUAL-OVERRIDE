@@ -6,7 +6,7 @@
  */
 
 import { ref, readonly } from 'vue'
-import { recordGame as recordGamePure, loadRecords, saveRecords, DEFAULT_RECORDS } from '../domain/records'
+import { recordGame as recordGamePure, loadRecords, saveRecords } from '../domain/records'
 import type { SaveRecords, GameResult, RecordUpdateResult } from '../domain/types'
 import { RECORDS } from '../data/tunables'
 import { soundManager } from '../plugins/SoundManager'
@@ -26,15 +26,9 @@ export function useRecords() {
     return res
   }
 
-  function reset(): void {
-    records.value = { ...DEFAULT_RECORDS }
-    lastUpdate.value = null
-  }
-
   return {
     records: readonly(records),
     lastUpdate: readonly(lastUpdate),
     recordGame,
-    reset,
   }
 }
