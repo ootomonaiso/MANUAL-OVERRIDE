@@ -244,6 +244,65 @@ function validateContentChoices(genreIds) {
   }
 }
 
+// ── SFX definitions (src/data/sfx/*.json) ────────────────────────────────
+function validateSfx() {
+  const VALID_WAVES = ['sine', 'triangle', 'square', 'sawtooth']
+  const VALID_FILTER_TYPES = ['lowpass', 'highpass', 'bandpass']
+  const seenIds = new Set()
+
+  for (const file of walkJson('src/data/sfx')) {
+    const rel = relPath(file)
+    const { data, error } = parseJson(file)
+    if (data === null) { fail(rel, `JSON parse error: ${error}`); continue }
+
+    const problems = []
+
+    // id とファイル名の一致: jump.json → id: "jump"
+    const expectedId = basename(file, extname(file))
+    if (typeof data.id !== 'string' || data.id.trim().length === 0) {
+      problems.push('id が空文字列または未指定です')
+    } else if (data.id !== expectedId) {
+      problems.push(`id "${data.id}" がファイル名 "${expectedId}" と一致しません`)
+    }
+
+    // id 重複検出
+    if (seenIds.has(data.id)) {
+      problems.push(`id "${data.id}" が重複しています`)
+    }
+    if (typeof data.id === 'string' && data.id.length > 0) {
+      seenIds.add(data.id)
+    }
+
+    if (!Array.isArray(data.tracks) || data.tracks.length === 0) {
+      problems.push('tracks が空配列です')
+    }
+    for (let i = 0; i < (data.tracks ?? []).length; i++) {
+      const t = data.tracks[i]
+      if (t.kind === 'osc') {
+        if (!VALID_WAVES.includes(t.wave)) problems.push(`tracks[${i}]: 不正な wave "${t.wave}"`)
+        if (typeof t.freq !== 'number' || t.freq <= 0) problems.push(`tracks[${i}]: freq が正の数ではありません`)
+        if (typeof t.durationSec !== 'number' || t.durationSec <= 0) problems.push(`tracks[${i}]: durationSec が正の数ではありません`)
+        if (typeof t.volume !== 'number' || t.volume < 0 || t.volume > 1) problems.push(`tracks[${i}]: volume が 0〜1 の範囲にありません`)
+        if (t.freqEnd !== undefined && (typeof t.freqEnd !== 'number' || t.freqEnd <= 0)) problems.push(`tracks[${i}]: freqEnd が正の数ではありません`)
+      } else if (t.kind === 'noise') {
+        if (typeof t.durationSec !== 'number' || t.durationSec <= 0) problems.push(`tracks[${i}]: durationSec が正の数ではありません`)
+        if (typeof t.volume !== 'number' || t.volume < 0 || t.volume > 1) problems.push(`tracks[${i}]: volume が 0〜1 の範囲にありません`)
+      } else {
+        problems.push(`tracks[${i}]: 不正な kind "${t.kind}"`)
+      }
+      if (t.filter) {
+        if (!VALID_FILTER_TYPES.includes(t.filter.type)) problems.push(`tracks[${i}].filter: 不正な type "${t.filter.type}"`)
+        if (typeof t.filter.freq !== 'number' || t.filter.freq <= 0) problems.push(`tracks[${i}].filter: freq が正の数ではありません`)
+        if (t.filter.freqEnd !== undefined && (typeof t.filter.freqEnd !== 'number' || t.filter.freqEnd <= 0)) problems.push(`tracks[${i}].filter.freqEnd: 正の数ではありません`)
+        if (t.filter.q !== undefined && (typeof t.filter.q !== 'number' || t.filter.q < 0)) problems.push(`tracks[${i}].filter.q: 0 以上ではありません`)
+      }
+      if (t.delaySec !== undefined && (typeof t.delaySec !== 'number' || t.delaySec < 0)) problems.push(`tracks[${i}]: delaySec は 0 以上ではありません`)
+    }
+    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    else ok(rel)
+  }
+}
+
 // ── Run ──────────────────────────────────────────────────────────────────
 console.log('\n🔍  JSON Integrity Check\n')
 
@@ -261,6 +320,9 @@ for (const file of walkJson('src/data/manuals')) {
   validateFile(file, MANUAL_REQUIRED)
 }
 validateManualDeckRefs()
+
+// SFX definitions
+validateSfx()
 
 // 説明書ツリー（後方互換データ）の参照整合性: すべての choices[].next が
 // マージ後デッキ内の実在キーを指すか検証する。1.0 からの到達性は検査しない

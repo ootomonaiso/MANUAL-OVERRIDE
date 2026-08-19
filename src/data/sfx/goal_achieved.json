@@ -1,0 +1,9 @@
+{
+  "$comment": "目標達成 — 3音の上昇ファンファーレ（C5/E5/G5）",
+  "id": "goal_achieved",
+  "tracks": [
+    { "kind": "osc", "wave": "sine", "freq": 523, "durationSec": 0.15, "volume": 0.2, "delaySec": 0 },
+    { "kind": "osc", "wave": "sine", "freq": 659, "durationSec": 0.15, "volume": 0.2, "delaySec": 0.1 },
+    { "kind": "osc", "wave": "sine", "freq": 784, "durationSec": 0.15, "volume": 0.2, "delaySec": 0.2 }
+  ]
+}

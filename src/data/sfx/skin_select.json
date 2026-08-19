@@ -1,0 +1,8 @@
+{
+  "$comment": "スキン選択 — 2連の短いサインビープ",
+  "id": "skin_select",
+  "tracks": [
+    { "kind": "osc", "wave": "sine", "freq": 880, "durationSec": 0.04, "volume": 0.3, "delaySec": 0 },
+    { "kind": "osc", "wave": "sine", "freq": 1100, "durationSec": 0.03, "volume": 0.2, "delaySec": 0.05 }
+  ]
+}

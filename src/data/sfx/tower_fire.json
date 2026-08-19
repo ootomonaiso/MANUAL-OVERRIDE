@@ -1,0 +1,7 @@
+{
+  "id": "tower_fire",
+  "$comment": "タワー発射音（ピッチ降下）",
+  "tracks": [
+    { "kind": "osc", "wave": "square", "freq": 600, "freqEnd": 200, "durationSec": 0.08, "volume": 0.25 }
+  ]
+}

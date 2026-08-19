@@ -13,6 +13,7 @@ import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import { rectsOverlap } from '../entities'
 import { VFX, SPAWN } from '../../data/tunables'
 import { getActiveSystems } from '../../engine/GameRegistry'
+import { soundManager } from '../../plugins/SoundManager'
 
 export class RpgFeature implements FeatureSystem {
   readonly handles = ['hp', 'exp', 'item_pickup', 'shield'] as const
@@ -24,6 +25,7 @@ export class RpgFeature implements FeatureSystem {
 
     // shield feature: ダメージを1回ガード（クールダウンなし、連続被弾時は消費後即無効）
     if (world.rules.features.has('shield') && p.hp > 0) {
+      soundManager.onShieldAbsorb()
       // シールド発動: ダメージを軽減（HP 減算なし）、演出のみ
       p.invincible = VFX.invincibleDuration
       world.triggerShake(VFX.hitShakeIntensity * 0.5)
@@ -73,6 +75,7 @@ export class RpgFeature implements FeatureSystem {
       if (!rectsOverlap(p.rect, iRect, 0)) continue
       item.alive = false
       world.addScoreVarsItemCollected()
+      soundManager.onItemPickup()
       if (item.type === 'exp') {
         p.exp += SPAWN.expItemExpGain
         world.addScore(SPAWN.expItemScore)

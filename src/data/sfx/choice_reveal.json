@@ -1,0 +1,8 @@
+{
+  "$comment": "説明書公開 — ノイズ2連（ページめくり風）",
+  "id": "choice_reveal",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.08, "volume": 0.2, "delaySec": 0 },
+    { "kind": "noise", "durationSec": 0.08, "volume": 0.15, "delaySec": 0.09 }
+  ]
+}

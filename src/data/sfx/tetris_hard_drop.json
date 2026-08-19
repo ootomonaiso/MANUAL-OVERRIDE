@@ -1,0 +1,8 @@
+{
+  "id": "tetris_hard_drop",
+  "$comment": "テトリスハードドロップ音",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.08, "volume": 0.3 },
+    { "kind": "osc", "wave": "sine", "freq": 100, "durationSec": 0.06, "volume": 0.3 }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "id": "boss_spawn",
+  "$comment": "ボス出現音（低周波ドーン + ノイズ）",
+  "tracks": [
+    { "kind": "osc", "wave": "sawtooth", "freq": 100, "freqEnd": 50, "durationSec": 0.4, "volume": 0.35 },
+    { "kind": "noise", "durationSec": 0.3, "volume": 0.2, "filter": { "type": "lowpass", "freq": 400 } }
+  ]
+}

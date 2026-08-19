@@ -1,0 +1,8 @@
+{
+  "$comment": "着地音 — ノイズ + 低域サイン",
+  "id": "land",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.06, "volume": 0.3 },
+    { "kind": "osc", "wave": "sine", "freq": 150, "durationSec": 0.05, "volume": 0.3 }
+  ]
+}
