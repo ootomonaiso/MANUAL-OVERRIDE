@@ -34,7 +34,7 @@ src/
 | `thresholds`      | `range: 5`, `enemy: 5`                      |
 | `enableFeatures`  | `shoot`, `three_way`, `enemy_hp`            |
 | `disableFeatures` | `grid_stop`, `puzzle_solve`                 |
-| `scoreFormula`    | `kills * 120 + distance * 0.5 + combo * 80` |
+| `scoreFormula`    | `kills * 120 + distance * 0.8 + maxCombo * 80` |
 | `theme`           | `stg`                                       |
 | `bgColor`         | `#0d0d1a`                                   |
 | `environment`     | `space`                                     |
@@ -89,6 +89,11 @@ src/
 `weightStart` 低め・`weightEnd` 高めにすることで、距離が進むほど敵の密度が増す難易度曲線を形成する。
 float エントリは `floatAmpRange` を広めに取り、敵が上下に揺れながら迫る。
 
+出現間隔は `spawnDensity`（`baseInterval: 1500 / minInterval: 500 / decayRate: 0.00025`）で、
+同じ射撃系の `arena` と同水準まで密度を上げている。旧設定（1800/600/0.0002）は同系統の
+`arena`（1500）/`bullet_hell`（1200）と比べて最も疎で、敵が倒しづらくキル数が伸びない一因だった
+（詳細は [spawn-density.md](../spawn-density.md)）。
+
 ### 射撃システム（ShootFeature）
 
 `ShootFeature` は `shoot` / `three_way` / `enemy_hp` などのフィーチャーを担当する。STGでは3つすべてが有効。
@@ -101,10 +106,16 @@ float エントリは `floatAmpRange` を広めに取り、敵が上下に揺れ
 
 ### スコア・コンボ
 
-- 1キルあたり `baseScorePerKill(200) × combo` を加算。連続キルでコンボ倍率が伸びる
+- 1キルあたり `baseScorePerKill(200) × combo` を加算。連続キルでコンボ倍率が伸びる（この加算はプレイ中のライブ表示用で、最終スコアには使われない）
 - `comboTimer`（`comboResetTime` = 3.0秒）以内に次のキルがないとコンボは0にリセット
 - スコアポップアップを自機右上に表示
-- 最終スコア式（`scoreFormula`）: `kills * 120 + distance * 0.5 + combo * 80`
+- 最終スコア式（`scoreFormula`）: `kills * 120 + distance * 0.8 + maxCombo * 80`
+
+> **`combo` ではなく `maxCombo` を使う理由**: STGは `hp` フィーチャーを持たず被弾即死のため、
+> 死因の大半は「直近キルから `comboResetTime`（3秒）以上経ってから被弾する」場面であり、死亡確定
+> の瞬間には `combo` が0付近まで減衰していることが多い。式内で最大重みを持つコンボ項が実質機能
+> しなくなるため、セッション中のピーク値を保持する `maxCombo` を使う。`distance` の重みも
+> `0.5 → 0.8` に引き上げ、キル数が伸びなくても距離進行だけで一定のスコアが確保できるようにした。
 
 ### shoot.json の主なチューニング値
 
@@ -167,4 +178,5 @@ float エントリは `floatAmpRange` を広めに取り、敵が上下に揺れ
 - チャージショット（`charge_shot`）・拡散ショット（`spread_shot`）・ボム（`bomb`）の本格運用
 - ボス戦の導入（`boss.json` 連携）
 - 弾の貫通・連鎖などの上位フィーチャー
-- スコア式の `distance` 項の重み調整（横スクロール継続による稼ぎ要素）
+- ~~スコア式の `distance` 項の重み調整（横スクロール継続による稼ぎ要素）~~ → 対応済み。
+  `distance` 重み `0.5 → 0.8`、`combo → maxCombo`、`spawnDensity` を `arena` 相当まで密度アップ

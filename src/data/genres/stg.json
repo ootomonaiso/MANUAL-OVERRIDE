@@ -5,7 +5,7 @@
   "thresholds": { "range": 4, "enemy": 4 },
   "enableFeatures": ["shoot", "three_way", "enemy_hp"],
   "disableFeatures": ["grid_stop", "puzzle_solve"],
-  "scoreFormula": "kills * 120 + distance * 0.5 + combo * 80",
+  "scoreFormula": "kills * 120 + distance * 0.8 + maxCombo * 80",
   "manualReveal": "これはシューティングゲームになりました。敵を倒してください。",
   "theme": "stg",
   "bgColor": "#0d0d1a",
@@ -21,8 +21,8 @@
   "gravity": 0,
   "endingFlavor": "あなたはすべてを撃ち抜いた。説明書は弾除けにでも使えばよかった。",
   "spawnDensity": {
-    "baseInterval": 1800,
-    "minInterval": 600,
-    "decayRate": 0.0002
+    "baseInterval": 1500,
+    "minInterval": 500,
+    "decayRate": 0.00025
   }
 }
