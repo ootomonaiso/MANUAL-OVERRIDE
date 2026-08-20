@@ -504,6 +504,7 @@ onUnmounted(() => {
         v-if="gameState.phase.value === 'tutorial'"
         :survived-sec="snapshot.survivedSec"
         :distance="snapshot.distance"
+        :first-jump-done="snapshot.firstJumpDone"
       />
 
       <!-- ギブアップボタン（600m 以降 & genreLocked 時のみ） -->
