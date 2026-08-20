@@ -23,7 +23,14 @@ export class ShootFeature implements FeatureSystem {
   }
 
   onInit(): void { this.state = this._fresh() }
-  onManualUpdated(): void { this.state = this._fresh() }
+
+  onManualUpdated(): void {
+    // 説明書更新（ジャンル確定後も続くカード選択）では弾・クールダウンの
+    // 一時状態のみ初期化する。kills/combo を初期化すると _syncWorldStats() が
+    // 次フレームで world へ 0 を書き戻し、最終スコアが巻き戻る（#179）。
+    this.state.bullets = []
+    this.state.shotCooldown = 0
+  }
 
   update(world: MutableWorld, input: InputSnapshot, dt: number): void {
     this._tickTimers(dt)
@@ -198,6 +205,14 @@ export class ShootFeature implements FeatureSystem {
   }
 
   private _syncWorldStats(world: MutableWorld): void {
+    // handles には enemy_hp 等も含むため、shoot 未有効（自機は撃てない）でも
+    // このメソッドは毎フレーム呼ばれる。shoot 未有効時は kills/combo は常に0で
+    // 変化しないが、無条件に world.setKills(0)/setCombo(0) すると tower_def 等
+    // 「enemy_hp はあるが shoot は使わない」ジャンルで他Featureの加算（例:
+    // SpecialFeature のタワー撃破）を毎フレーム上書きしてしまう。shoot 未有効
+    // 時はこのFeatureが kills/combo に一切寄与しないため同期自体をスキップする。
+    if (!world.rules.features.has('shoot')) return
+
     const s = this.state
     const prevCombo = world.gameStats.combo
 

@@ -134,6 +134,8 @@ function _generateBoard(cfg: PuzzleGridConfig): GeneratedBoard {
   const n = cfg.n
   let best: GeneratedBoard | null = null
   let bestDeviation = Infinity
+  // best が解ける盤面かどうか。全試行が解なしだった場合に詰み盤面を返さないための番兵。
+  let bestSolvable = false
   for (let attempt = 0; attempt < PUZZLE.maxGenAttempts; attempt++) {
     const walls = _randomWalls(n, PUZZLE.wallRatio)
     const free: Cell[] = []
@@ -159,9 +161,12 @@ function _generateBoard(cfg: PuzzleGridConfig): GeneratedBoard {
     if (deviation < bestDeviation) {
       bestDeviation = deviation
       best = { walls, start, goal }
+      bestSolvable = moves !== Infinity
     }
   }
-  return best ?? _fallbackBoard(n)
+  // best が解ける盤面のときのみ採用する。全試行が解なし（best が詰み盤面）だった場合は
+  // 保証済みフォールバックへ差し替え、プレイヤーへ詰み盤面を絶対に渡さない。
+  return best !== null && bestSolvable ? best : _fallbackBoard(n)
 }
 
 // 生成が全滅した場合の安全網（実用上ほぼ到達しない）。
@@ -184,6 +189,13 @@ function _gridOffset(canvasW: number, canvasH: number, n: number, cellPx: number
 
 function _easeOut(t: number): number {
   return 1 - (1 - t) * (1 - t)
+}
+
+// 盤面生成まわりの純粋関数をユニットテストから検証するための公開口。実行コードからは使用しない。
+export const puzzleTestInternals = {
+  generateBoard: _generateBoard,
+  bfsMinMoves: _bfsMinMoves,
+  fallbackBoard: _fallbackBoard,
 }
 
 // ─── FeatureSystem 実装 ───────────────────────────────────────────────────────
@@ -239,12 +251,6 @@ export class PuzzleFeature implements FeatureSystem {
 
   private _state: SlidePuzzleState = this._initialState()
 
-  // 復元用スクロール速度は _state の外に持つ。onManualUpdated→onInit で _state は
-  // 毎回リセットされるため、_state に置くと 2 回目以降に scrollSpeed=0 を「元の値」として
-  // 保存してしまい、onDisable で 0 に固定される（TetrisFeature H7 と同型の対策）。
-  private _firstInit = true
-  private _savedScrollSpeed = 0
-
   private _initialState(): SlidePuzzleState {
     return {
       active: false,
@@ -270,12 +276,7 @@ export class PuzzleFeature implements FeatureSystem {
 
   onInit(world: MutableWorld): void {
     this._state = this._initialState()
-    // 初回のみ現在のスクロール速度を復元用に退避（2回目以降は既に 0 なので上書きしない）
-    if (this._firstInit) {
-      this._savedScrollSpeed = world.rules.scrollSpeed
-      this._firstInit = false
-    }
-    this._state.baseScrollSpeed = this._savedScrollSpeed
+    this._state.baseScrollSpeed = world.rules.scrollSpeed
     world.rules.scrollSpeed = 0
     this._state.active = true
     // 入力キー名はジャンル確定後に変化しないため初期化時にキャッシュする。
@@ -291,10 +292,8 @@ export class PuzzleFeature implements FeatureSystem {
   }
 
   onDisable(world: MutableWorld): void {
-    world.rules.scrollSpeed = this._savedScrollSpeed
+    world.rules.scrollSpeed = this._state.baseScrollSpeed
     this._state.active = false
-    // 次に有効化されたとき初回退避をやり直せるようリセット
-    this._firstInit = true
   }
 
   // 物理計算前にプレイヤーを静止させ、横スクロールの慣性を打ち消す。
@@ -632,7 +631,13 @@ export class PuzzleFeature implements FeatureSystem {
 
   private _startPuzzle(): void {
     const cfg = _selectGridConfig(this._state.puzzleCount)
-    const board = _generateBoard(cfg)
+    let board = _generateBoard(cfg)
+    // _generateBoard は解ける盤面を返す契約だが、将来の回帰・想定外経路に対する最終防衛線として
+    // ここで解けることを再検証する。万一詰み盤面が来たら保証済みフォールバックへ差し替え、
+    // プレイヤーが絶対にクリア不能な盤面を見ないようにする。
+    if (_bfsMinMoves(board.walls, cfg.n, board.start, board.goal) === Infinity) {
+      board = _fallbackBoard(cfg.n)
+    }
     this._state.gridN = cfg.n
     // 出題が進むほど制限時間を逓減させる（第50問で半分、第100問で1/4で下げ止まり）。
     const timeLimit = cfg.timeSec * _timeScale(this._state.puzzleCount)

@@ -50,4 +50,6 @@ export class ParticleSystem {
     }
     ctx.globalAlpha = 1
   }
+
+  clear(): void { this.particles = [] }
 }

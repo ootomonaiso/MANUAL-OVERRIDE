@@ -42,6 +42,7 @@ export const THROW_SCORE_WEIGHTS = {
   airTime: _gb.throwScoreWeightsAirTime,
   arcHeight: _gb.throwScoreWeightsArcHeight,
   speedPenalty: _gb.throwScoreWeightsSpeedPenalty,
+  speedPenaltyThreshold: _gb.throwScoreWeightsSpeedPenaltyThreshold,
 } as const
 
 // ─────────────────────────────────────────────────────────────

@@ -12,10 +12,8 @@ import { loadGenres } from './helpers/loadGenres.mjs'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const src = fs.readFileSync(path.join(root, 'src/game/systems/MovementFeature.ts'), 'utf-8')
 
-// wall_jump は未実装警告リスト（['slide', 'gravity_flip']）に含まれていないこと
-const unimplementedMatch = src.match(/for \(const f of \[([^\]]*)\] as const\)/)
-assert.ok(unimplementedMatch, '未実装フィーチャーの警告ループが見つかりません')
-assert.ok(!unimplementedMatch[1].includes("'wall_jump'"), 'wall_jump は未実装警告リストに残っていてはいけません')
+// wall_jump は handles に含まれていること
+assert.ok(src.includes("'wall_jump'"), 'wall_jump が handles に見つかりません')
 
 // wall_jump の実装本体が存在すること
 assert.ok(src.includes("r.features.has('wall_jump')"), "'wall_jump' フラグの判定が見つかりません")

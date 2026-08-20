@@ -59,11 +59,13 @@ const TETROMINOS: TetrominoDef[] = [
   },
   {
     id: 'T', color: TETRIS_COLORS.T,
+    // SRS 標準4状態。旧定義は state3 が右向きT（state1 と重複）で左向きが欠落し、
+    // state2 が1行上にずれて接地回転で床から浮いていた（#171-4）。
     rotations: [
-      [[1, 0], [0, 1], [1, 1], [2, 1]],
-      [[1, 0], [1, 1], [2, 1], [1, 2]],
-      [[0, 0], [1, 0], [2, 0], [1, 1]],
-      [[0, 0], [0, 1], [1, 1], [0, 2]],
+      [[1, 0], [0, 1], [1, 1], [2, 1]],   // 0 上向き
+      [[1, 0], [1, 1], [2, 1], [1, 2]],   // 1 右向き
+      [[0, 1], [1, 1], [2, 1], [1, 2]],   // 2 下向き
+      [[1, 0], [0, 1], [1, 1], [1, 2]],   // 3 左向き
     ],
   },
   {
@@ -88,20 +90,23 @@ const TETROMINOS: TetrominoDef[] = [
   },
   {
     id: 'J', color: TETRIS_COLORS.J,
+    // SRS 標準4状態。旧定義は state3 が T 型（J ではない）で左向きが欠落し、
+    // state2 が1行上にずれていた（#171-4）。
     rotations: [
-      [[0, 0], [0, 1], [1, 1], [2, 1]],
-      [[1, 0], [2, 0], [1, 1], [1, 2]],
-      [[0, 0], [1, 0], [2, 0], [2, 1]],
-      [[0, 0], [0, 1], [1, 1], [0, 2]],
+      [[0, 0], [0, 1], [1, 1], [2, 1]],   // 0 スポーン
+      [[1, 0], [2, 0], [1, 1], [1, 2]],   // 1 右向き
+      [[0, 1], [1, 1], [2, 1], [2, 2]],   // 2 下向き
+      [[1, 0], [1, 1], [0, 2], [1, 2]],   // 3 左向き
     ],
   },
   {
     id: 'L', color: TETRIS_COLORS.L,
+    // state2 を SRS 標準の下段揃えに修正（旧定義は1行上にずれ接地回転で浮いた, #171-4）。
     rotations: [
-      [[2, 0], [0, 1], [1, 1], [2, 1]],
-      [[1, 0], [1, 1], [1, 2], [2, 2]],
-      [[0, 0], [1, 0], [2, 0], [0, 1]],
-      [[0, 0], [1, 0], [1, 1], [1, 2]],
+      [[2, 0], [0, 1], [1, 1], [2, 1]],   // 0 スポーン
+      [[1, 0], [1, 1], [1, 2], [2, 2]],   // 1 右向き
+      [[0, 1], [1, 1], [2, 1], [0, 2]],   // 2 下向き
+      [[0, 0], [1, 0], [1, 1], [1, 2]],   // 3 左向き
     ],
   },
 ]
@@ -362,9 +367,14 @@ export class TetrisFeature implements FeatureSystem {
   // M3: cache canvas dimensions to avoid per-frame recalculation
   private _lastCanvasW = 0
   private _lastCanvasH = 0
+  // gameOver 到達時にプレイヤーHPを削って通常の死亡フロー（投擲フェーズへの
+  // 自動遷移）へ橋渡しする。scrollSpeed=0 で走行距離も凍結するため、
+  // これがないとゲームオーバー後に進行手段が手動ギブアップしかなくなる。
+  private _gameOverHandled = false
 
   onInit(world: MutableWorld): void {
     this.state = initialState()
+    this._gameOverHandled = false
     // Invalidate dimension cache so _calcBoardPosition recalculates after state reset
     this._lastCanvasW = 0
     this._lastCanvasH = 0
@@ -423,7 +433,12 @@ export class TetrisFeature implements FeatureSystem {
     }
 
     if (this.state.gameOver) {
-      // ゲームオーバー時は何もしない
+      // 盤面ゲームオーバーは通常の被弾処理を経由しないため、ここでHPを0にして
+      // 標準の死亡フロー（投擲フェーズへの自動遷移）に一度だけ橋渡しする
+      if (!this._gameOverHandled) {
+        this._gameOverHandled = true
+        world.modifyPlayerHp(-world.player.maxHp)
+      }
       return
     }
 

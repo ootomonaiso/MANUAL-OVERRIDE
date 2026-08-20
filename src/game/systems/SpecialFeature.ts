@@ -76,7 +76,12 @@ export class SpecialFeature implements FeatureSystem {
     }
 
     if (r.features.has('boss') && this.boss.active && !world.hazards.includes(this.boss.active)) {
-      this._onBossDefeated(world, this.boss.active)
+      // hazards配列から消えた理由（撃破 / 画面外カル）を区別せず撃破扱いにすると、
+      // HPを削らず画面外へ流しただけでも撃破スコアが入ってしまう。
+      // hp<=0（実際に倒した）場合のみ撃破報酬を与える。
+      if (this.boss.active.hp <= 0) {
+        this._onBossDefeated(world, this.boss.active)
+      }
       this.boss.active = null
     }
 
@@ -187,10 +192,7 @@ export class SpecialFeature implements FeatureSystem {
 
     if (this.stealth.idleTimer >= STEALTH.stealthDurationSec) {
       this.stealth.hidden = true
-      // 潜伏中は毎フレーム無敵時間を上限まで補充する。dt（1フレーム分）だと
-      // 当たり判定・無敵減算が _updateStealth より前に走るため次フレームには実質0へ戻り、
-      // 無敵が機能しない。フレーム間隔を十分に超える固定値で上書きする。
-      p.invincible = Math.max(p.invincible, STEALTH.stealthInvincibleSec)
+      p.invincible = Math.max(p.invincible, dt)
       world.addScoreVarsStealthBonus(dt)
       world.addScore(STEALTH.stealthSafeBonus)
     }
