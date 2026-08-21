@@ -75,11 +75,14 @@ export class ShootFeature implements FeatureSystem {
     const { rules } = world
     const shootKey = rules.controls.shoot?.toLowerCase() ?? 'z'
 
-    if (!input.justPressed.has(shootKey)) return
+    // 押下中は連射する（#209）。発射間隔は SHOOT.shotCooldown が律速するため
+    // justPressed ではなく keys（押しっぱなし）で判定する。
+    if (!input.keys.has(shootKey)) return
     if (this.state.shotCooldown > 0) return
     if (!rules.features.has('shoot')) return
 
     this.state.shotCooldown = SHOOT.shotCooldown
+    world.addShot()
     soundManager.onShoot()
 
     if (rules.scrollAxis === 'y') {
