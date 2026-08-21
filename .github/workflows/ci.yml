@@ -103,7 +103,7 @@ jobs:
         run: node scripts/check-bundle-size.mjs
 
       - name: Upload dist artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist-${{ github.sha }}
           path: dist/
@@ -173,7 +173,7 @@ jobs:
           NODE_ENV: development
 
       - name: Upload E2E dist artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist-e2e-${{ github.sha }}
           path: dist/
@@ -236,7 +236,7 @@ jobs:
           CI_SERVE_DIST: 'true'
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: pw-report-${{ matrix.project }}-${{ github.run_id }}
