@@ -36,12 +36,13 @@ src/
 | `thresholds`      | `vertical: 4`, `range: 4`, `enemy: 4`            |
 | `enableFeatures`  | `shoot`, `vertical_scroll`, `enemy_hp`, `spread_shot` |
 | `disableFeatures` | `grid_stop`, `puzzle_solve`, `auto_run`          |
-| `scoreFormula`    | `kills * 130 + combo * 90 + survivedSec * 3`    |
+| `scoreFormula`    | `kills * 130 + maxCombo * 90 + survivedSec * 3 + distance * 0.7` |
 | `theme`           | `stg`                                            |
 | `bgColor`         | `#000015`                                        |
 | `environment`     | `sky`                                            |
 | `scrollDirection` | `vertical`（`scrollAxis === 'y'` に変換される） |
 | `gravity`         | `1600`（縦スクロールモードでは適用されない）     |
+| `spawnDensity`    | `baseInterval: 1500, minInterval: 500, decayRate: 0.00025`（`stg` と同一） |
 
 ### 操作方法
 
@@ -118,11 +119,14 @@ aerial_stgでは `shoot` / `spread_shot` / `enemy_hp` の3フィーチャーが�
 
 | 項目          | 式                                             |
 | ------------- | ---------------------------------------------- |
-| スコア式      | `kills * 130 + combo * 90 + survivedSec * 3`  |
-| キルごと基礎点 | `baseScorePerKill(200) × combo`               |
+| スコア式      | `kills * 130 + maxCombo * 90 + survivedSec * 3 + distance * 0.7` |
+| キルごと基礎点 | `baseScorePerKill(200) × combo`（プレイ中のライブ表示用。最終スコアには不使用） |
 | コンボリセット | `comboResetTime(3.0)` 秒以内に次のキルがなければ0 |
 
-横スクロール系（distance依存）と異なり、生存時間・コンボも大きくスコアに寄与する。
+横スクロール系ほど `distance` に依存しないが、`0.7` の重みで進行度もスコアに反映される。
+`hp` フィーチャーを持たず被弾即死のため、死亡確定の瞬間は直近キルから時間が経ち `combo` が
+0付近まで減衰していることが多い。式では常にリセットされる `combo` ではなく、セッション中の
+ピークを保持する `maxCombo` を使うことで、そのつど死亡直前の偶然に左右されないようにしている。
 
 ### shoot.json の主なチューニング値
 
@@ -163,6 +167,7 @@ aerial_stgでは `shoot` / `spread_shot` / `enemy_hp` の3フィーチャーが�
 3. 斜め弾（spread_shot の左右成分）は画面外に出たときX方向カリングで除去される（Y方向だけでなくX方向境界も判定）
 4. 弾の発射位置はプレイヤーの水平中心 `p.x + p.w / 2` から発射される
 5. `vertical_scroll` フィーチャーのdrift処理（`MovementFeature.update`）はハザードの X 座標を毎フレーム微変動させるが、画面幅でクランプするため画面外へは出ない
+6. `spawnDensity` は元々未設定で、`sideScroller._getSpawnParams()` がグローバル既定値（2400ms、`idle`/`runner` 並みの疎さ）にフォールバックしていた。射撃系ジャンルとしては疎すぎ、敵を倒しづらくキル数が伸びない一因だったため、`stg`/`arena` と同水準（1500/500/0.00025）を明示的に設定した
 
 ## 関連ジャンル
 
@@ -179,4 +184,5 @@ aerial_stgでは `shoot` / `spread_shot` / `enemy_hp` の3フィーチャーが�
 - フォーメーション出現（複数の敵が整列して降下）
 - ボス戦の導入（`boss.json` 連携）
 - 移動速度のジャンル別チューニング（現在は `PLAYER_PHYSICS.runSpeed` を流用）
-- スコア式の `distance` 項追加（縦スクロール距離の評価）
+- ~~スコア式の `distance` 項追加（縦スクロール距離の評価）~~ → 対応済み。`distance * 0.7` を追加し、
+  `combo → maxCombo`、`spawnDensity` も新設して敵の疎さを解消

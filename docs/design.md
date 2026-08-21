@@ -286,7 +286,7 @@ export interface FinalScore { play: number; throw: number; total: number; }
 利用可能変数: distance, kills, combo, exp, beatHits, survivedSec,
               accuracy, maxCombo, deaths, itemsCollected, bossKills,
               stealthBonus, colorTouches
-例: stg  → "kills * 120 + distance * 0.5 + combo * 80"
+例: stg  → "kills * 120 + distance * 0.8 + maxCombo * 80"
     runner → "distance * 1.2 + survivedSec * 8 + combo * 50"
 ```
 

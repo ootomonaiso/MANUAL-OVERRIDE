@@ -4,6 +4,48 @@
 
 ---
 
+## stg / aerial_stg / puzzle のスコア式・敵密度改善（2026-08-19）
+
+### 問題
+
+`stg`（横スクロールSTG）・`aerial_stg`（縦スクロールSTG）・`puzzle` の3ジャンルで、最終スコアが
+極端に低くなるという指摘。
+
+### 原因
+
+1. **puzzle**: `PuzzleFeature._handleTimeUp()` が `world.resetCombo()` を `modifyPlayerHp(-1)` の
+   **前**に呼んでいた。残機0によるゲームオーバーは必ずこの経路のみで発生するため、`_die()` 内
+   `_recalculatePlayScore()` が読む `combo` は死亡確定の瞬間に常に0。`scoreFormula` の
+   `combo * 200`（式の主要項）が何問正解していても実質常に無効化されていた。
+2. **stg / aerial_stg**: どちらも `hp` フィーチャー未有効で被弾即死。`ShootFeature` の `combo` は
+   最後のキルから `comboResetTime`（3.0秒）で0に戻る仕組みのため、死因の大半（＝直近キルから
+   時間が経ってからの被弾）で式内最大重みの `combo` 項がほぼ機能していなかった。加えて
+   `aerial_stg` は `scoreFormula` に `distance` 相当の進行度項が一切なく、`spawnDensity` 自体が
+   未設定でグローバル既定値（2400ms、`idle`/`runner` 並みの疎さ）にフォールバックしていた。
+   `stg` 自身の `spawnDensity`（1800ms）も同系統の `arena`（1500ms）/`bullet_hell`（1200ms）と
+   比べて最も疎で、敵を倒しづらくキル数が伸びない一因になっていた。
+
+### 修正
+
+- **スコア式**（`src/data/genres/{puzzle,stg,aerial_stg}.json`）: 3ジャンルとも `combo` を
+  `maxCombo`（セッション中のピーク値、死亡直前にリセットされない）へ変更。
+  - `stg`: `distance` の重みを `0.5 → 0.8` に引き上げ
+  - `aerial_stg`: `distance * 0.7` 項を新設
+- **敵出現密度**（`spawnDensity`）: `stg` を `arena` 相当（1500/500/0.00025）まで密集化。
+  `aerial_stg` にも同水準の `spawnDensity` を新規追加（従来は未設定でグローバル既定値に依存）
+- コード変更なし。すべてJSON設定側で完結（`evalScoreFormula` は既存の安全パーサをそのまま使用）
+
+代表的なプレイ統計値で新旧式を比較した結果（実際の `evalScoreFormula` で計算）:
+`puzzle` 180→1380点（×7.67）/ `stg` 2960→4560点（×1.54）/ `aerial_stg` 834→4974点（×5.96）
+
+### 変更ファイル
+
+`src/data/genres/puzzle.json` / `src/data/genres/stg.json` / `src/data/genres/aerial_stg.json`
+（ドキュメント: `docs/genre/puzzle-genre.md` / `docs/genre/stg-genre.md` / `docs/genre/aerial-stg.md` /
+`docs/spawn-density.md` / `docs/design.md`）
+
+---
+
 ## 投擲フェーズの操作性・爽快感・スコア改善（2026-07-10）
 
 ### 問題

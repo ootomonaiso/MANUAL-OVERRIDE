@@ -149,12 +149,18 @@ scale = max(timeScaleMin, 0.5 ^ (puzzleCount / timeHalfLifeSteps))
 最終スコア式（`src/data/genres/puzzle.json`）:
 
 ```
-combo * 200 + survivedSec * 3
+maxCombo * 200 + survivedSec * 3
 ```
 
 - 正解（ゴール到達）でコンボ +1。
 - 時間切れでコンボはリセット（`world.resetCombo()`）し、残機 −1。
 - パズル中は `scrollSpeed = 0` のため `distance` 項は使用しません。
+
+> **`combo` ではなく `maxCombo` を使う理由**: 残機0によるゲームオーバーは必ず
+> `_handleTimeUp()`（時間切れ）経由でのみ発生し、この関数は `world.resetCombo()` を
+> `modifyPlayerHp(-1)` より**前**に呼ぶ。つまり最終スコア計算（`_recalculatePlayScore()`）が
+> 走る瞬間、`combo` は必ず0になっている。セッション中に何問正解していても `combo * 200` の項が
+> 常に無効化されてしまうため、リセットされない `maxCombo`（セッション中のピーク値）を使う。
 
 ### ゲームフロー
 
@@ -240,6 +246,9 @@ combo * 200 + survivedSec * 3
    背景が紺色になる不具合（暗オーバーレイが原因）の修正。
 3. **時間逓減**: 出題数に応じて制限時間を半減期型で逓減（第50問=50%、第100問=25%で下げ止まり）。
 4. **E2E更新**: `puzzle-advance.spec.ts` を旧 LightsOut（セルクリック）前提から矢印キー操作のスライド版へ更新。
+5. **スコア式修正**: `scoreFormula` の `combo` を `maxCombo` に変更。残機0での終了は必ず
+   `_handleTimeUp()` の `resetCombo()` 直後に発生するため、旧式では `combo * 200` が常に0点に
+   なっていた（何問正解していてもスコアに反映されない不具合）。
 
 ## 今後の改善候補
 
