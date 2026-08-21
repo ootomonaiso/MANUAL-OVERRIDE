@@ -14,8 +14,9 @@
 // ManualLoader.ts → data/gameBalance.ts → data/config.ts → framework(barrel) の循環importに
 // なるため、ここでは実体モジュールから直接importして循環を回避する。
 import { loadConfigFromGlob, normalizeGenreDef } from '../framework/ConfigLoader'
-import { devValidateConfig } from '../framework/ConfigValidator'
+import { devValidateConfig, devValidateSfx } from '../framework/ConfigValidator'
 import type { GenreDefJSON, GenreDefJSONInput } from '../framework/config-types'
+import { SFX_DEFS } from '../framework/SfxLoader'
 
 const _rawModules = import.meta.glob('./config/*.json', { eager: true })
 
@@ -46,3 +47,4 @@ const _merged: Record<string, unknown> = {
 export const GAME_CONFIG = loadConfigFromGlob(_merged)
 
 devValidateConfig(GAME_CONFIG)
+devValidateSfx(SFX_DEFS)

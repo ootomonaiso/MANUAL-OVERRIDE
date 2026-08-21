@@ -2,6 +2,7 @@ import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import type { BeatMarker } from '../entities'
 import { RHYTHM_TUNING } from '../../data/tunables'
+import { soundManager } from '../../plugins/SoundManager'
 
 interface RhythmState {
   beatInterval: number
@@ -66,6 +67,7 @@ export class RhythmFeature implements FeatureSystem {
     if (s.nextBeat <= 0) {
       s.nextBeat += s.beatInterval
       s.beatCount++
+      soundManager.onBeat(r.bpm)
 
       if (beatHazardActive) {
         s.beatHazardInverted = s.beatCount % 2 === 0
@@ -93,6 +95,7 @@ export class RhythmFeature implements FeatureSystem {
         const p = world.player
         world.addScorePopup(p.x + p.w, p.y + RHYTHM_TUNING.justInputPopupOffsetY, `JUST! +${bonus}`, '#ff00ff')
         world.addParticle(p.x + p.w / 2, p.y, 0, RHYTHM_TUNING.justInputParticleVy, RHYTHM_TUNING.justInputParticleLife, '#ff00ff', RHYTHM_TUNING.justInputParticleSize)
+        soundManager.onJustHit()
       }
     }
   }

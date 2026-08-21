@@ -1,0 +1,7 @@
+{
+  "id": "melee_attack",
+  "$comment": "近接攻撃音（帯域スweep）",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.1, "volume": 0.2, "filter": { "type": "bandpass", "freq": 600, "freqEnd": 1500, "q": 2 } }
+  ]
+}

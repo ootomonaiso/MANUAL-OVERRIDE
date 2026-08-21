@@ -1,0 +1,7 @@
+{
+  "$comment": "コンボ音 — 矩形波（freqScale でピッチ変化）",
+  "id": "combo",
+  "tracks": [
+    { "kind": "osc", "wave": "square", "freq": 440, "durationSec": 0.05, "volume": 0.25 }
+  ]
+}

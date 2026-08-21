@@ -1,0 +1,7 @@
+{
+  "$comment": "ニアミス — 帯域フィルタ付きノイズのスweep",
+  "id": "near_miss",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.2, "volume": 0.2, "filter": { "type": "bandpass", "freq": 800, "freqEnd": 2000, "q": 3 } }
+  ]
+}

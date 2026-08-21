@@ -1,0 +1,8 @@
+{
+  "id": "melee_hit",
+  "$comment": "近接命中音（打撃感）",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.08, "volume": 0.3 },
+    { "kind": "osc", "wave": "sine", "freq": 120, "durationSec": 0.06, "volume": 0.3 }
+  ]
+}

@@ -184,6 +184,7 @@ export function useGameState() {
     if (cards.length === 0) return false
     activeCards.value = cards
     lastShownCardIds.value = new Set(cards.map(c => c.id))
+    soundManager.onChoiceReveal()
     phase.value = 'updating'
     return true
   }

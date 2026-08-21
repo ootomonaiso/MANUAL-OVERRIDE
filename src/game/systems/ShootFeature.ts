@@ -156,13 +156,18 @@ export class ShootFeature implements FeatureSystem {
     for (const b of s.bullets) {
       if (!b.alive) continue
       for (const h of world.hazards) {
-        if (h.isSafe || !rectsOverlap(b.rect, h.rect, 0)) continue
+        // 死亡済みハザードをスキップ。同一フレームで複数弾が同一ハザードに命中する場合（three_way / spread_shot 等）、
+        // hp<=0 のハザードへの追加ヒットで kills/combo/score/SE が多重発生するのを防ぐ。
+        if (h.isSafe || h.hp <= 0 || !rectsOverlap(b.rect, h.rect, 0)) continue
         b.alive = false
         if (hasEnemyHp) {
           h.hp--
           if (h.hp <= 0) {
+            soundManager.onEnemyDestroyed()
             s.kills++; s.combo++; s.comboTimer = SHOOT.comboResetTime
             scoreGain += SHOOT.baseScorePerKill * s.combo
+          } else {
+            soundManager.onEnemyHit()
           }
         } else {
           h.hp = 0

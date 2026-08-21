@@ -23,14 +23,13 @@ export type { ManualDeckFile, ManualEntryJSON, ChoiceJSON } from './types'
 
 // Config API (new)
 export { loadConfigFromGlob, normalizeGenreDef } from './ConfigLoader'
-export { validateGameConfig, devValidateConfig } from './ConfigValidator'
+export { validateGameConfig, devValidateConfig, devValidateSfx } from './ConfigValidator'
 export type {
   GameConfigMap,
   GameConfigSection,
   PhysicsConfig,
   ShootConfig,
   ThrowConfig,
-  SpawnConfig,
   VfxConfig,
   CameraConfig,
   BackgroundConfig,
@@ -46,4 +45,9 @@ export type {
   GenresConfig,
   GenreDefJSON,
   GenreDefJSONInput,
+  SpawnConfig,
 } from './config-types'
+
+// SFX API
+export { SFX_DEFS } from './SfxLoader'
+export type { SfxDef, SfxTrack, SfxOscTrack, SfxNoiseTrack, SfxFilter, WaveType } from './sfx-types'
