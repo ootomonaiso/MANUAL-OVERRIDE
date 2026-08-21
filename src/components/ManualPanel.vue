@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { ManualVersion, ManualTheme, Controls } from '../domain/types'
+import { CENTER_DURATION_MS } from '../composables/useManual'
 
 const props = defineProps<{
   manual: ManualVersion
@@ -8,11 +9,18 @@ const props = defineProps<{
   diffLines: Array<{ text: string; type: 'added' | 'removed' | 'unchanged' }>
   isAnimating: boolean
   isCentered: boolean
+  /** 中央表示のたびにインクリメントされるトークン。残り時間バーの:keyに使い、
+   *  連続更新時にCSSアニメーションを確実にリスタートさせる */
+  centerToken?: number
   history: ManualVersion[]
   features?: Set<string> | ReadonlySet<string>
   controls: Controls
   highlight?: boolean
 }>()
+
+// 残り時間バーのCSSアニメーション時間（ms → s文字列）。useManualの自動復帰
+// タイマーと一致させることで、バーが0になるタイミング＝ゲームに戻るタイミングになる
+const centerDurationStyle = `${CENTER_DURATION_MS / 1000}s`
 
 const showHistory = ref(false)
 const themeClass = computed(() => `theme-${props.theme}`)
@@ -123,6 +131,15 @@ function keyLabel(key: string): string {
         </template>
       </div>
     </div>
+
+    <!-- 中央表示中の残り時間バー（ここが0になるとゲームに戻る） -->
+    <div v-if="isCentered" class="manual-return-bar-track">
+      <div
+        :key="centerToken"
+        class="manual-return-bar-fill"
+        :style="{ animationDuration: centerDurationStyle }"
+      />
+    </div>
   </div>
 </template>
 
@@ -172,6 +189,29 @@ function keyLabel(key: string): string {
 @keyframes panelCenterIn {
   0%   { opacity: 0; transform: translate(50%, 50%) scale(0.85); }
   100% { opacity: 1; transform: translate(50%, 50%) scale(1); }
+}
+
+/* ── 中央表示中の残り時間バー（0になるタイミング＝ゲームに戻るタイミング） ── */
+.manual-return-bar-track {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+  border-radius: 0 0 1px 1px;
+}
+.manual-return-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--genre-accent, #00ff41);
+  transform-origin: left center;
+  animation-name: manualReturnBarShrink;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes manualReturnBarShrink {
+  0%   { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
 }
 
 /* 中央表示解除時のトランジション（position/z-index はアニメーション不可のため除外） */
