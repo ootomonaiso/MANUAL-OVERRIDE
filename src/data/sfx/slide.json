@@ -1,0 +1,7 @@
+{
+  "id": "slide",
+  "$comment": "スライディング音",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.2, "volume": 0.2, "filter": { "type": "lowpass", "freq": 500 } }
+  ]
+}

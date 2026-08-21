@@ -1,0 +1,7 @@
+{
+  "id": "throw_release",
+  "$comment": "投擲離手音（風切りスweep）",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.15, "volume": 0.25, "filter": { "type": "bandpass", "freq": 500, "freqEnd": 2500, "q": 2 } }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "id": "manual_update",
+  "$comment": "説明書更新音（ハイパスノイズ二連）",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.1, "volume": 0.2, "filter": { "type": "bandpass", "freq": 2000, "q": 1 } },
+    { "kind": "noise", "durationSec": 0.08, "volume": 0.15, "delaySec": 0.12, "filter": { "type": "bandpass", "freq": 2500, "q": 1 } }
+  ]
+}

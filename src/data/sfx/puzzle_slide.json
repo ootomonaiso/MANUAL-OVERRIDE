@@ -1,0 +1,7 @@
+{
+  "id": "puzzle_slide",
+  "$comment": "パズルピーススライド音",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.06, "volume": 0.15, "filter": { "type": "bandpass", "freq": 1200, "q": 1 } }
+  ]
+}

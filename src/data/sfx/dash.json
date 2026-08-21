@@ -1,0 +1,7 @@
+{
+  "id": "dash",
+  "$comment": "ダッシュ音（風切り）",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.15, "volume": 0.25, "filter": { "type": "bandpass", "freq": 400, "freqEnd": 2000, "q": 2 } }
+  ]
+}

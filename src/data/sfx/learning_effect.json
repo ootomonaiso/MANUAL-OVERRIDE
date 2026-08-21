@@ -1,0 +1,7 @@
+{
+  "id": "learning_effect",
+  "$comment": "ラーニングエフェクト音（ピッチ上昇）",
+  "tracks": [
+    { "kind": "osc", "wave": "sine", "freq": 500, "freqEnd": 700, "durationSec": 0.08, "volume": 0.2 }
+  ]
+}

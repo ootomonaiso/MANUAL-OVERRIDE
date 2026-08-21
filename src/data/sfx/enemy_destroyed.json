@@ -1,0 +1,8 @@
+{
+  "id": "enemy_destroyed",
+  "$comment": "敵撃破音（ノイズ爆発 + 低周波減衰）",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.2, "volume": 0.35, "filter": { "type": "lowpass", "freq": 800 } },
+    { "kind": "osc", "wave": "sawtooth", "freq": 200, "freqEnd": 50, "durationSec": 0.2, "volume": 0.3 }
+  ]
+}
