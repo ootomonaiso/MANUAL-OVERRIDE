@@ -68,16 +68,16 @@ export abstract class DarkThemePlugin extends GenrePluginBase {
     ctx.ellipse(w / 2, h + 2, w * 0.4, 4, 0, 0, Math.PI * 2)
     ctx.fill()
 
-    ctx.fillStyle = '#e8e8f8'
+    ctx.fillStyle = this.playerSkin.body
     this._roundRect(ctx, 4, h * 0.38, w - 8, h * 0.38, 4)
     ctx.fill()
 
-    ctx.fillStyle = '#f0f0ff'
+    ctx.fillStyle = this.playerSkin.head
     ctx.beginPath()
     ctx.arc(w * 0.55, h * 0.22, h * 0.22, 0, Math.PI * 2)
     ctx.fill()
 
-    ctx.fillStyle = '#222244'
+    ctx.fillStyle = this.playerSkin.eye
     ctx.beginPath()
     ctx.arc(w * 0.64, h * 0.20, 3.5, 0, Math.PI * 2)
     ctx.fill()
@@ -86,7 +86,7 @@ export abstract class DarkThemePlugin extends GenrePluginBase {
     ctx.arc(w * 0.65, h * 0.19, 1.2, 0, Math.PI * 2)
     ctx.fill()
 
-    ctx.strokeStyle = '#cccce0'; ctx.lineWidth = 5; ctx.lineCap = 'round'
+    ctx.strokeStyle = this.playerSkin.limb; ctx.lineWidth = 5; ctx.lineCap = 'round'
     const armSwing = onGround ? Math.sin(t + Math.PI) * 14 : 0
     ctx.beginPath()
     ctx.moveTo(w * 0.3, h * 0.45)
@@ -97,7 +97,7 @@ export abstract class DarkThemePlugin extends GenrePluginBase {
     ctx.lineTo(w * 0.9 - armSwing * 0.5, h * 0.65 + Math.abs(armSwing) * 0.2)
     ctx.stroke()
 
-    ctx.lineWidth = 6; ctx.strokeStyle = '#aaaacc'
+    ctx.lineWidth = 6; ctx.strokeStyle = this.playerSkin.limb
     ctx.beginPath()
     ctx.moveTo(w * 0.38, h * 0.75)
     ctx.lineTo(w * 0.28 - legSwing * 0.4, h * 0.98)

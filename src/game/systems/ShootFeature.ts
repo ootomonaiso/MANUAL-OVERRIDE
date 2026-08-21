@@ -1,7 +1,7 @@
 import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import { Bullet, Hazard, rectsOverlap } from '../entities'
-import { SHOOT, HAZARD_VFX } from '../../data/tunables'
+import { SHOOT, HAZARD_VFX, JUICE } from '../../data/tunables'
 import { getGenre, getActiveSystems } from '../../engine/GameRegistry'
 import { soundManager } from '../../plugins/SoundManager'
 
@@ -196,6 +196,18 @@ export class ShootFeature implements FeatureSystem {
     }
 
     if (destroyedHazards.length > 0) {
+      // P0: ヒットストップ + シェイク + 白フラッシュ粒子
+      world.setTimescale(JUICE.hitStopScale, JUICE.hitStopDurationSec)
+      world.triggerShake(JUICE.killShakeIntensity)
+      for (const h of destroyedHazards) {
+        const sx = world.getHazardScreenX(h)
+        for (let i = 0; i < JUICE.killFlashParticles; i++) {
+          const vx = (Math.random() - 0.5) * 200
+          const vy = (Math.random() - 0.5) * 200
+          world.addParticle(sx + h.w / 2, h.y + h.h / 2, vx, vy, 0.3, '#ffffff', 3)
+        }
+      }
+
       const plugin = getGenre(world.rules.genre)
       for (const h of destroyedHazards) {
         plugin.onHazardDestroyed?.(world, h)

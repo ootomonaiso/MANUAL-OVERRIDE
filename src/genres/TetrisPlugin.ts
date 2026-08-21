@@ -52,11 +52,11 @@ export class TetrisPlugin extends GenrePluginBase {
     const cy = h * 0.3
 
     // 上段: 3ブロック横並び
-    ctx.fillStyle = '#a000f0'
+    ctx.fillStyle = this.playerSkin.body
     ctx.fillRect(0, cy, w, blockSize)
 
     // 下段: 中央ブロック
-    ctx.fillStyle = '#c040ff'
+    ctx.fillStyle = this.playerSkin.head
     ctx.fillRect(blockSize, cy + blockSize, blockSize, blockSize)
 
     // ハイライト
@@ -68,7 +68,7 @@ export class TetrisPlugin extends GenrePluginBase {
     ctx.fillStyle = '#ffffff'
     ctx.fillRect(w * 0.3, cy + blockSize * 0.2, blockSize * 0.3, blockSize * 0.3)
     ctx.fillRect(w * 0.7, cy + blockSize * 0.2, blockSize * 0.3, blockSize * 0.3)
-    ctx.fillStyle = '#220033'
+    ctx.fillStyle = this.playerSkin.eye
     ctx.fillRect(w * 0.35, cy + blockSize * 0.25, blockSize * 0.2, blockSize * 0.2)
     ctx.fillRect(w * 0.75, cy + blockSize * 0.25, blockSize * 0.2, blockSize * 0.2)
   }

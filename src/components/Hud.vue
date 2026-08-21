@@ -13,6 +13,17 @@ const props = defineProps<{
   beatHits: number
   genre: string
   features: Set<string> | ReadonlySet<string>
+  // P0 ドーパミン
+  speed: number
+  updateProgress: number
+  updateWindowStart: number
+  updateWindowEnd: number
+  topGenre: { label: string; prob: number } | null
+  muted: boolean
+  shouldUpdate: number | null
+  // P1: 目標
+  goalLabel?: string
+  goalProgress?: number
 }>()
 
 const displayScore = useScoreAnimation(toRef(props, 'playScore'))
@@ -23,6 +34,15 @@ const genreLabel  = computed(() => GENRES.find(g => g.id === props.genre)?.label
 const distBar     = computed(() => Math.min(100, (props.distance / DIST_BAR_MAX) * 100))
 const COMBO_THRESHOLD_HIGH = 10
 const COMBO_THRESHOLD_MED  = 5
+
+// P0: 次回更新までの進捗率
+const nextProgress = computed(() => {
+  const start = props.updateWindowStart
+  const end = props.updateWindowEnd
+  if (end <= start) return 0
+  const clamped = Math.max(start, Math.min(end, props.updateProgress))
+  return (clamped - start) / (end - start)
+})
 
 // コンボ量による強調は色ではなくグロー強度で表現する。色を緑固定にすると
 // idle など明背景ジャンルで可読性が落ちるため、色はジャンルテーマ(--genre-accent)
@@ -50,6 +70,25 @@ const comboGlow = computed(() => {
         </div>
         <span class="hud-dist-text">{{ Math.floor(distance) }}m</span>
       </div>
+
+      <!-- P0: SPD 表示 -->
+      <div class="hud-spd">SPD {{ Math.floor(speed) }}</div>
+
+      <!-- P0: NEXT 進捗バー -->
+      <div class="hud-next" v-if="updateWindowEnd > updateWindowStart && shouldUpdate === null">
+        <span class="hud-next-label">NEXT</span>
+        <div class="hud-next-bar">
+          <div class="hud-next-fill" :style="{ width: (nextProgress * 100) + '%' }" />
+        </div>
+      </div>
+
+      <!-- P1: 目標進捗バー -->
+      <div v-if="goalLabel" class="hud-goal" :class="{ achieved: (goalProgress ?? 0) >= 1 }">
+        <span class="hud-goal-label">{{ goalLabel }}</span>
+        <div class="hud-goal-bar">
+          <div class="hud-goal-fill" :style="{ width: ((goalProgress ?? 0) * 100) + '%' }" />
+        </div>
+      </div>
     </div>
 
     <!-- ジャンルバッジ（中央上） -->
@@ -61,6 +100,17 @@ const comboGlow = computed(() => {
 
     <!-- 右上: HP / コンボ / 統計 -->
     <div class="hud-right">
+      <!-- P0: 収束メーター -->
+      <div v-if="topGenre" class="hud-convergence">
+        <span class="hud-convergence-label">→ {{ topGenre.label }} {{ Math.round(topGenre.prob * 100) }}%</span>
+        <div class="hud-convergence-bar">
+          <div class="hud-convergence-fill" :style="{ width: (topGenre.prob * 100) + '%' }" />
+        </div>
+      </div>
+
+      <!-- P0: ミュート表示 -->
+      <div v-if="muted" class="hud-muted">MUTE</div>
+
       <!-- HP バー（hp feature あり時） -->
       <div v-if="features.has('hp')" class="hud-hp-row">
         <span
@@ -145,6 +195,117 @@ const comboGlow = computed(() => {
   font-size: 11px;
   color: var(--genre-text, var(--text-dim));
   font-family: var(--genre-font, var(--font-mono));
+}
+
+/* ─── P0: SPD 表示 ─── */
+.hud-spd {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+}
+
+/* ─── P0: NEXT 進捗バー ─── */
+.hud-next {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+}
+.hud-next-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: var(--genre-font, var(--font-mono));
+  letter-spacing: 1px;
+  min-width: 28px;
+}
+.hud-next-bar {
+  width: 100px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.hud-next-fill {
+  height: 100%;
+  background: var(--genre-accent, var(--green));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* ─── P1: 目標進捗バー ─── */
+.hud-goal {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+}
+.hud-goal-label {
+  font-size: 10px;
+  color: var(--genre-accent, var(--green));
+  font-family: var(--genre-font, var(--font-mono));
+  letter-spacing: 1px;
+  min-width: 50px;
+  transition: color 0.3s ease;
+}
+.hud-goal-bar {
+  width: 100px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.hud-goal-fill {
+  height: 100%;
+  background: var(--genre-accent, var(--green));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+.hud-goal.achieved .hud-goal-label {
+  color: var(--genre-accent, var(--green));
+  font-weight: bold;
+}
+.hud-goal.achieved .hud-goal-fill {
+  background: var(--genre-accent, var(--green));
+  box-shadow: 0 0 6px var(--genre-glow, var(--green-glow));
+}
+
+/* ─── P0: 収束メーター ─── */
+.hud-convergence {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+.hud-convergence-label {
+  font-size: 12px;
+  color: var(--genre-accent, var(--green));
+  font-family: var(--genre-font, var(--font-mono));
+  letter-spacing: 0.5px;
+}
+.hud-convergence-bar {
+  width: 80px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.hud-convergence-fill {
+  height: 100%;
+  background: var(--genre-accent, var(--green));
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+/* ─── P0: ミュート表示 ─── */
+.hud-muted {
+  font-size: 10px;
+  color: #e74c3c;
+  font-family: var(--genre-font, var(--font-mono));
+  letter-spacing: 1px;
+  margin-bottom: 2px;
 }
 
 /* ─── ジャンルバッジ ─── */

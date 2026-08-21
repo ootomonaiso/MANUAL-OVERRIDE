@@ -1,16 +1,21 @@
-import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect, FeatureId } from '../domain/types'
+import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect, FeatureId, PlayerSkin } from '../domain/types'
 import type { MutableWorld, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup } from './entities'
 import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL } from '../data/gameBalance'
 import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY } from '../data/tunables'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
 import { resolveWeight } from '../engine/types'
+import { DEFAULT_PLAYER_SKIN } from '../engine/GenrePluginBase'
 import { soundManager } from '../plugins/SoundManager'
 import { evalScoreFormula, getLastFormulaError } from '../domain/scoreCalc'
 import { evaluateLearningRules, describeEffect } from '../domain/LearningSystem'
 import { GENRES } from '../data/genres'
 import { InputManager } from './InputManager'
 import { ParticleSystem } from './ParticleSystem'
+import { comboMilestone, type ComboMilestone } from '../domain/comboMilestones'
+import { computeUpdateWindow } from '../domain/updateWindow'
+import { isNearMiss, type Rect as DomainRect } from '../domain/nearMiss'
+import { JUICE } from '../data/tunables'
 // ジャンルプラグインとフィーチャーシステムを一括登録
 import '../genres/index'
 import '../game/systems/index'
@@ -42,6 +47,11 @@ export interface GameSnapshot {
   statItemsCollected: number
   statShots: number
   statDashes: number | undefined
+  // P0 ドーパミン: 速度・更新ウィンドウ
+  speed: number
+  updateProgress: number
+  updateWindowStart: number
+  updateWindowEnd: number
 }
 
 // ループ内 dt のクランプ上限（フレーム落ち時に物理が発散するのを防ぐ）
@@ -53,6 +63,16 @@ const INITIAL_LEARNING_DELAY_SEC = 0.5
 // ミリ秒 → 秒換算（spawnDensity の interval は ms、スクロール計算は px/s で一致させるため）
 const MS_TO_SEC = 1000
 
+// ─── マイルストーン演出パラメータ ────────────────────────────────────────
+// 設計: 0.05/フレーム（60fps 基準）
+const MILESTONE_FLASH_DECAY_PER_SEC = 3
+// ポップ開始タイミング: fx.timer がこの値を超えてからスケールアニメーション開始
+const MILESTONE_POP_START = 1.4
+// ポップアニメーションの持続秒
+const MILESTONE_POP_DURATION_SEC = 0.2
+// ポップ最大拡大率（1.0 → 1.3）
+const MILESTONE_POP_SCALE = 0.3
+
 // ──────────────────────────────────────────────────────────────────────
 // SideScroller — Canvas ゲームエンジン本体
 // ──────────────────────────────────────────────────────────────────────
@@ -61,6 +81,8 @@ export class SideScroller {
   private ctx: CanvasRenderingContext2D
   private rules: RuntimeRules
   private player: Player
+  /** P1: 現在のプレイヤースキン（setPlayerSkin で設定） */
+  playerSkin: PlayerSkin
   private hazards: Hazard[] = []
   private items: Item[] = []
   private _bullets: Bullet[] = []
@@ -113,6 +135,19 @@ export class SideScroller {
   private hitFlash = 0
   /** ジャンルロック画面フラッシュ（0〜1、減衰） */
   private genreLockFlash = 0
+  /** コンボマイルストーン白フラッシュ（0〜1、減衰） */
+  private _milestoneFlash = 0
+
+  // P0: コンボ前値（増加検出用）
+  private _prevCombo = 0
+  // P0: ニアミス
+  private _nearMissDone = new Set<Hazard>()
+  private _lastNearMissTime = 0
+  // P0: 距離マイルストーン
+  private _nextMilestone = JUICE.milestoneInterval
+  private _milestoneFx: { text: string; timer: number } | null = null
+  // P0: スピードラインプール
+  private _speedLines: { x: number; y: number; len: number; speed: number }[] = []
 
   // 死亡演出
   private deathTimer = 0
@@ -154,12 +189,19 @@ export class SideScroller {
     if (!ctx2d) throw new Error('Canvas 2D context unavailable')
     this.ctx = ctx2d
     this.rules = rules
+    // P1: スキンはデフォルト値で初期化（undefined 防止）
+    this.playerSkin = DEFAULT_PLAYER_SKIN
 
     const gY = canvas.height - PHYSICS.groundYOffset
     this.player = new Player(PLAYER_PHYSICS.startX, gY)
     this.player.jumpsLeft = rules.features.has('double_jump') ? 2 : 1
 
     this.input.setGameKeys(rules.controls)
+  }
+
+  /** P1: プレイヤースキンを設定する */
+  setPlayerSkin(skin: PlayerSkin): void {
+    this.playerSkin = skin
   }
 
   // ルール更新（ManualVersion があれば learningRules を同期）
@@ -275,6 +317,13 @@ export class SideScroller {
     const scoreFormulaError = this._pendingFormulaError
     this._pendingFormulaError = null
 
+    // 有効スクロール速度（距離加速反映）
+    const distanceAccelFactor = 1 + Math.min(this.distance / DISTANCE_ACCEL.fullDist, DISTANCE_ACCEL.maxBonus)
+    const speed = this.rules.scrollSpeed * distanceAccelFactor
+
+    // 更新ウィンドウ
+    const window = computeUpdateWindow(this.updateProgress, UPDATE_DISTANCES, DIFFICULTY.infiniteUpdateInterval)
+
     return {
       distance: this.distance,
       playScore: this.playScore,
@@ -297,6 +346,10 @@ export class SideScroller {
       statItemsCollected: this.stats.itemsCollected,
       statShots: this.stats.shots,
       statDashes: this.stats.dashes,
+      speed,
+      updateProgress: this.updateProgress,
+      updateWindowStart: window.start,
+      updateWindowEnd: window.end,
     }
   }
 
@@ -465,6 +518,30 @@ export class SideScroller {
     // ─── 演出フラッシュ減衰 ───────────────────────────────────────
     if (this.hitFlash > 0) this.hitFlash = Math.max(0, this.hitFlash - dt * 4)
     if (this.genreLockFlash > 0) this.genreLockFlash = Math.max(0, this.genreLockFlash - dt * 1.5)
+    if (this._milestoneFlash > 0) this._milestoneFlash = Math.max(0, this._milestoneFlash - dt * MILESTONE_FLASH_DECAY_PER_SEC) // 設計: 0.05/フレーム（60fps 基準）
+
+    // ─── コンボ検出（全ジャンル共通） ──────────────────────────────
+    const combo = this._gameStats.combo
+    if (combo > this._prevCombo) {
+      soundManager.onCombo(combo)
+      const m = comboMilestone(combo, JUICE.comboMilestones)
+      if (m) this._fireComboMilestone(combo, m)
+    }
+    this._prevCombo = combo
+
+    // ─── 距離マイルストーン ────────────────────────────────────────
+    if (this.distance >= this._nextMilestone) {
+      this._milestoneFx = { text: `${this._nextMilestone}m!`, timer: 1.6 }
+      soundManager.onMilestone(this._nextMilestone)
+      this._nextMilestone += JUICE.milestoneInterval
+    }
+    if (this._milestoneFx) {
+      this._milestoneFx.timer -= dt
+      if (this._milestoneFx.timer <= 0) this._milestoneFx = null
+    }
+
+    // ─── スピードライン更新 ────────────────────────────────────────
+    this._updateSpeedLines(dt, effectiveScrollSpeed, isVertical, this.canvas.width)
 
     // ─── 距離スコア加算 ───────────────────────────────────────────
     this.playScore += effectiveScrollSpeed * dt * SCORE.distanceScoreRate
@@ -541,6 +618,14 @@ export class SideScroller {
     }
 
     if (this.input.justPressed.has(shootKey)) this.stats.shots++
+
+    // ─── ニアミス判定（縦モード: mode 'y'） ────────────────────────
+    this._checkNearMiss(p, 'y', speed)
+    // cull 後の _nearMissDone prune
+    for (const nm of this._nearMissDone) {
+      if (!this.hazards.includes(nm)) this._nearMissDone.delete(nm)
+    }
+
     return false
   }
 
@@ -712,8 +797,126 @@ export class SideScroller {
       return h.x - this.cameraX > SPAWN.hazardCullLeft
     })
 
+    // ─── ニアミス判定（横モード: mode 'x'） ────────────────────────
+    this._checkNearMiss(p, 'x', speed)
+    // cull 後の _nearMissDone prune（リーク防止）
+    for (const nm of this._nearMissDone) {
+      if (!this.hazards.includes(nm)) this._nearMissDone.delete(nm)
+    }
+
     if (this.input.justPressed.has(shootKey)) this.stats.shots++
     return false
+  }
+
+  // ─── P0: ニアミス検出 ────────────────────────────────────────────
+  private _checkNearMiss(p: Player, mode: 'x' | 'y', _speed: number): void {
+    if (p.invincible > 0) return
+
+    for (const h of this.hazards) {
+      if (h.isSafe || this._nearMissDone.has(h)) continue
+
+      // 衝突判定（598行目）と同一の h.rect を使用。floatAmp 加算済みの y を使うことで
+      // STG 等の浮遊ハザードでもニアミス位置が実際の描画位置と一致する（#189）
+      let hazardScreen: DomainRect
+      if (mode === 'x') {
+        hazardScreen = { x: h.rect.x - this.cameraX, y: h.rect.y, w: h.rect.w, h: h.rect.h }
+      } else {
+        // 縦モード: hazard 座標は画面座標（cameraX=0）。floatAmp 加算済みの h.rect を使う
+        hazardScreen = { x: h.rect.x, y: h.rect.y, w: h.rect.w, h: h.rect.h }
+      }
+
+      if (!isNearMiss(p.rect, hazardScreen, mode, JUICE.nearMissGapPx)) continue
+
+      this._nearMissDone.add(h)
+
+      // 最小間隔チェック
+      if (this.survivedSec - this._lastNearMissTime < JUICE.nearMissMinIntervalSec) continue
+      this._lastNearMissTime = this.survivedSec
+
+      // 発火: 「CLOSE!」ポップアップ + 小スコア + サウンド
+      const popX = mode === 'x' ? p.x + p.w + 4 : p.x + p.w / 2
+      const popY = p.y - 20
+      this.scorePopups.push({
+        x: popX, y: popY,
+        text: 'CLOSE!',
+        color: JUICE.nearMissPopupColor,
+        life: UI.popupLifeSec,
+        vy: UI.popupRiseVy,
+        size: 16,
+      })
+      this.playScore += JUICE.nearMissScore
+      soundManager.onNearMiss()
+    }
+  }
+
+  // ─── P0: コンボマイルストーン演出 ────────────────────────────────
+  private _fireComboMilestone(combo: number, m: ComboMilestone): void {
+    const p = this.player
+    // 大ポップアップ（サイズ 22）
+    this.scorePopups.push({
+      x: p.x + p.w / 2,
+      y: p.y - 30,
+      text: `×${combo} ${m.label}`,
+      color: '#ffffff',
+      life: 1.2,
+      vy: UI.popupRiseVy * 0.7,
+      size: 22,
+    })
+    this.shakeIntensity = Math.max(this.shakeIntensity, JUICE.comboMilestoneShake)
+    this._milestoneFlash = 0.5
+  }
+
+  // ─── P0: スピードライン更新（プール方式） ─────────────────────────
+  private _updateSpeedLines(dt: number, speed: number, isVertical: boolean, W: number): void {
+    const sl = JUICE.speedLines
+    if (!sl.enabled) return
+
+    const targetCount = speed >= sl.minSpeed ? sl.count : 0
+    const currentCount = this._speedLines.length
+
+    // 増減は毎フレーム数本ずつ（急激な変化を防ぐ）
+    const step = Math.ceil(Math.abs(targetCount - currentCount) * 0.3)
+    if (targetCount > currentCount) {
+      const H = this.canvas.height
+      for (let i = 0; i < step && this._speedLines.length < targetCount; i++) {
+        if (isVertical) {
+          this._speedLines.push({
+            x: Math.random() * W,
+            y: -Math.random() * 200,
+            len: sl.lenMin + Math.random() * (sl.lenMax - sl.lenMin),
+            speed: 1 + Math.random() * 0.5,
+          })
+        } else {
+          this._speedLines.push({
+            x: W,
+            y: Math.random() * H,
+            len: sl.lenMin + Math.random() * (sl.lenMax - sl.lenMin),
+            speed: 1 + Math.random() * 0.5,
+          })
+        }
+      }
+    } else if (targetCount < currentCount) {
+      this._speedLines.splice(0, Math.min(step, currentCount - targetCount))
+    }
+
+    // 各ラインを更新
+    const H = this.canvas.height
+    const moveAmount = speed * sl.speedMult * dt
+    for (const line of this._speedLines) {
+      if (isVertical) {
+        line.y += moveAmount * line.speed
+        if (line.y > H + line.len) {
+          line.y = -line.len
+          line.x = Math.random() * W
+        }
+      } else {
+        line.x -= moveAmount * line.speed
+        if (line.x < -line.len) {
+          line.x = W
+          line.y = Math.random() * H
+        }
+      }
+    }
   }
 
   // ─── 被弾処理 ────────────────────────────────────────────────────
@@ -765,6 +968,9 @@ export class SideScroller {
     // ─── 背景（パラレックス） ─────────────────────────────────────
     this._drawBackground(W, H, gY)
 
+    // ─── スピードライン ───────────────────────────────────────────
+    this._drawSpeedLines(ctx, W, H, r.scrollAxis === 'y')
+
     // ─── アイテム ─────────────────────────────────────────────────
     for (const item of this.items) {
       const sx = item.x - this.cameraX
@@ -801,13 +1007,19 @@ export class SideScroller {
     for (const sp of this.scorePopups) {
       ctx.globalAlpha = sp.life
       ctx.fillStyle = sp.color
-      ctx.font = 'bold 15px "Courier New", monospace'
+      ctx.font = `bold ${sp.size ?? 15}px "Courier New", monospace`
       ctx.fillText(sp.text, sp.x, sp.y)
     }
     ctx.globalAlpha = 1
 
     // ─── プレイヤー ───────────────────────────────────────────────
     if (!this.dead) this._drawPlayer()
+
+    // ─── コンボマイルストーン白フラッシュ ─────────────────────────
+    if (this._milestoneFlash > 0) {
+      ctx.fillStyle = `rgba(255, 255, 255, ${this._milestoneFlash})`
+      ctx.fillRect(0, 0, W, H)
+    }
 
     // ─── ジャンル固有HUD（シェイクの影響を受けるレイヤー） ─────
     getGenre(r.genre).drawGenreHUD?.(ctx, this._getWorld(), W, H)
@@ -817,6 +1029,9 @@ export class SideScroller {
     // ─── 前景レイヤー（シェイクの影響を受けない画面固定レイヤー） ──
     // ビネット・スキャンライン・HUDフレーム等の画面固定装飾はここで1回だけ描画
     getGenre(r.genre).drawForeground?.(ctx, this.cameraX, W, H, gY)
+
+    // ─── 距離マイルストーン表示 ───────────────────────────────────
+    this._drawMilestoneFx(ctx, W, H)
 
     // ─── 死亡オーバーレイ ─────────────────────────────────────────
     if (this.dead) {
@@ -850,6 +1065,64 @@ export class SideScroller {
       ctx.fillStyle = `rgba(255, 255, 255, ${this.genreLockFlash * 0.15})`
       ctx.fillRect(0, 0, W, H)
     }
+  }
+
+  // ─── P0: スピードライン描画 ──────────────────────────────────────
+  private _drawSpeedLines(ctx: CanvasRenderingContext2D, W: number, H: number, isVertical: boolean): void {
+    const sl = JUICE.speedLines
+    if (!sl.enabled || this._speedLines.length === 0) return
+
+    const speed = this.rules.scrollSpeed * (1 + Math.min(this.distance / DISTANCE_ACCEL.fullDist, DISTANCE_ACCEL.maxBonus))
+    const alpha = sl.alpha * Math.max(0, Math.min(1, (speed - sl.minSpeed) / (sl.fullSpeed - sl.minSpeed)))
+    if (alpha <= 0) return
+
+    ctx.save()
+    ctx.globalAlpha = alpha
+    ctx.strokeStyle = '#ffffff'
+    ctx.lineWidth = sl.width
+    for (const line of this._speedLines) {
+      if (isVertical) {
+        ctx.beginPath()
+        ctx.moveTo(line.x, line.y)
+        ctx.lineTo(line.x, line.y + line.len)
+        ctx.stroke()
+      } else {
+        ctx.beginPath()
+        ctx.moveTo(line.x, line.y)
+        ctx.lineTo(line.x + line.len, line.y)
+        ctx.stroke()
+      }
+    }
+    ctx.restore()
+  }
+
+  // ─── P0: 距離マイルストーン描画 ──────────────────────────────────
+  private _drawMilestoneFx(ctx: CanvasRenderingContext2D, W: number, H: number): void {
+    const fx = this._milestoneFx
+    if (!fx) return
+    const t = fx.timer
+    const alpha = Math.min(1, t)
+    // 出現時（t > 1.4）はスケール 1.3→1.0 のポップ
+    const popT = Math.max(0, Math.min(1, (t - MILESTONE_POP_START) / MILESTONE_POP_DURATION_SEC))
+    const scale = 1 + popT * MILESTONE_POP_SCALE
+    const size = JUICE.milestoneTextSize
+
+    ctx.save()
+    ctx.globalAlpha = alpha
+    ctx.fillStyle = '#ffffff'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.font = `bold ${size}px "Courier New", monospace`
+    ctx.shadowColor = 'rgba(255,255,255,0.6)'
+    ctx.shadowBlur = 20
+    ctx.save()
+    ctx.translate(W / 2, H / 2)
+    ctx.scale(scale, scale)
+    ctx.fillText(fx.text, 0, 0)
+    ctx.restore()
+    ctx.restore()
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'alphabetic'
   }
 
   // ─── 背景描画（プラグイン委譲） ──────────────────────────────────
@@ -1003,6 +1276,8 @@ export class SideScroller {
     }
 
     // ジャンルプラグインに描画を委譲（ここに if/else は一切不要）
+    // P1: 毎フレーム playerSkin をプラグインへ反映（ジャンル切り替え時も正しいスキンが適用される）
+    getGenre(this.rules.genre).playerSkin = this.playerSkin
     getGenre(this.rules.genre).drawPlayer(ctx, p.w, p.h, p.onGround, this.runCycle)
 
     ctx.restore()

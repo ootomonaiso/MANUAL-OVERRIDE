@@ -60,14 +60,14 @@ export class RpgPlugin extends GenrePluginBase {
 
   drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, _onGround: boolean, _runCycle: number): void {
     // 騎士
-    ctx.fillStyle = '#7777bb'
+    ctx.fillStyle = this.playerSkin.body
     this._roundRect(ctx, 2, h * 0.4, w - 4, h * 0.55, 3)
     ctx.fill()
-    ctx.fillStyle = '#9999cc'
+    ctx.fillStyle = this.playerSkin.head
     ctx.fillRect(w * 0.2, h * 0.05, w * 0.6, h * 0.35)
     ctx.fillStyle = '#ffdd00'
     ctx.fillRect(w * 0.28, h * 0.18, w * 0.44, 5)
-    ctx.strokeStyle = '#e0e0ff'; ctx.lineWidth = 4
+    ctx.strokeStyle = this.playerSkin.limb; ctx.lineWidth = 4
     ctx.beginPath()
     ctx.moveTo(w * 0.85, h * 0.3)
     ctx.lineTo(w * 0.85, h * 0.85)

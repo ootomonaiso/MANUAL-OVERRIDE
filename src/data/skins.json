@@ -1,0 +1,19 @@
+{
+  "skins": [
+    { "id": "default", "name": "デフォルト",
+      "body": "#e8e8f8", "head": "#f0f0ff", "limb": "#aaaacc", "eye": "#222244", "accent": "#8888ff",
+      "unlock": { "type": "free" } },
+    { "id": "neon", "name": "ネオン",
+      "body": "#00ffcc", "head": "#66ffee", "limb": "#00cc99", "eye": "#003322", "accent": "#00ffcc",
+      "unlock": { "type": "record", "metric": "totalDistance", "threshold": 3000 } },
+    { "id": "fire", "name": "ファイア",
+      "body": "#ff6633", "head": "#ffaa66", "limb": "#cc4422", "eye": "#331100", "accent": "#ffcc00",
+      "unlock": { "type": "record", "metric": "overallBestTotal", "threshold": 2000 } },
+    { "id": "ghost", "name": "ゴースト",
+      "body": "#ccccdd", "head": "#eeeeff", "limb": "#9999bb", "eye": "#444466", "accent": "#ffffff",
+      "unlock": { "type": "record", "metric": "playCount", "threshold": 5 } },
+    { "id": "gold", "name": "ゴールド",
+      "body": "#ffd700", "head": "#ffeb99", "limb": "#cc9900", "eye": "#443300", "accent": "#fff200",
+      "unlock": { "type": "record", "metric": "overallBestTotal", "threshold": 5000 } }
+  ]
+}

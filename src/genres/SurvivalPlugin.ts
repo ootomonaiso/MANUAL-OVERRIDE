@@ -133,22 +133,22 @@ export class SurvivalPlugin extends GenrePluginBase {
     ctx.fill()
 
     // 体（サバイバー・ダークカラー）
-    ctx.fillStyle = '#3a5228'
+    ctx.fillStyle = this.playerSkin.body
     this._roundRect(ctx, 3, h * 0.4, w - 6, h * 0.38, 3)
     ctx.fill()
 
     // リュック
-    ctx.fillStyle = '#2a3c1a'
+    ctx.fillStyle = this.playerSkin.limb
     ctx.fillRect(w * 0.1, h * 0.35, w * 0.22, h * 0.36)
 
     // 頭
-    ctx.fillStyle = '#c4945a'
+    ctx.fillStyle = this.playerSkin.head
     ctx.beginPath()
     ctx.arc(w * 0.58, h * 0.22, h * 0.2, 0, Math.PI * 2)
     ctx.fill()
 
     // ヘルメット
-    ctx.fillStyle = '#2a4a18'
+    ctx.fillStyle = this.playerSkin.limb
     ctx.beginPath()
     ctx.arc(w * 0.58, h * 0.17, h * 0.16, Math.PI, 0)
     ctx.fill()
@@ -161,7 +161,7 @@ export class SurvivalPlugin extends GenrePluginBase {
     ctx.fill()
 
     // 脚
-    ctx.lineWidth = 5.5; ctx.strokeStyle = '#2a3c1a'; ctx.lineCap = 'round'
+    ctx.lineWidth = 5.5; ctx.strokeStyle = this.playerSkin.limb; ctx.lineCap = 'round'
     ctx.beginPath(); ctx.moveTo(w * 0.38, h * 0.76); ctx.lineTo(w * 0.28 - legSwing * 0.4, h * 0.98); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(w * 0.60, h * 0.76); ctx.lineTo(w * 0.72 + legSwing * 0.4, h * 0.98); ctx.stroke()
   }

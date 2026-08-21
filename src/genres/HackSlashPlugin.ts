@@ -136,12 +136,12 @@ export class HackSlashPlugin extends GenrePluginBase {
     ctx.fill()
 
     // 脚（黒鎧）
-    ctx.lineWidth = 6; ctx.strokeStyle = '#220000'; ctx.lineCap = 'round'
+    ctx.lineWidth = 6; ctx.strokeStyle = this.playerSkin.limb; ctx.lineCap = 'round'
     ctx.beginPath(); ctx.moveTo(w * 0.38, h * 0.75); ctx.lineTo(w * 0.26 - legSwing * 0.4, h + 1); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(w * 0.60, h * 0.75); ctx.lineTo(w * 0.74 + legSwing * 0.4, h + 1); ctx.stroke()
 
     // 胴体（ダークアーマー）
-    ctx.fillStyle = '#1a0000'
+    ctx.fillStyle = this.playerSkin.body
     this._roundRect(ctx, 3, h * 0.36, w - 6, h * 0.42, 3)
     ctx.fill()
 
@@ -155,7 +155,7 @@ export class HackSlashPlugin extends GenrePluginBase {
     ctx.stroke()
 
     // 頭（ダークヘルム）
-    ctx.fillStyle = '#180000'
+    ctx.fillStyle = this.playerSkin.head
     ctx.beginPath()
     ctx.arc(w * 0.55, h * 0.2, h * 0.2, 0, Math.PI * 2)
     ctx.fill()

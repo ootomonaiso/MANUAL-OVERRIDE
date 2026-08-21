@@ -1,0 +1,17 @@
+{
+  "$comment": "目標設定",
+  "section": "goals",
+  "goals": [
+    { "id": "dist_300",   "label": "300m 到達",   "metric": "distance",    "target": 300,  "bonus": 100 },
+    { "id": "dist_500",   "label": "500m 到達",   "metric": "distance",    "target": 500,  "bonus": 200 },
+    { "id": "dist_1000",  "label": "1000m 到達",  "metric": "distance",    "target": 1000, "bonus": 400 },
+    { "id": "score_1000", "label": "スコア 1000", "metric": "score",       "target": 1000, "bonus": 150 },
+    { "id": "score_3000", "label": "スコア 3000", "metric": "score",       "target": 3000, "bonus": 300 },
+    { "id": "survive_60", "label": "60秒サバイブ","metric": "survivedSec", "target": 60,   "bonus": 200 }
+  ],
+  "selection": {
+    "strategy": "stretch",
+    "stretchFactor": 1.25,
+    "starterGoalId": "dist_300"
+  }
+}

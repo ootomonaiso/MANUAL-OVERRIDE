@@ -1,0 +1,9 @@
+{
+  "$comment": "サウンド（WebAudio 手続き生成）",
+  "section": "sound",
+  "masterVolume": 0.5,
+  "sfxVolume": 0.8,
+  "bgmVolume": 0.18,
+  "bgmBpm": 112,
+  "muteStorageKey": "mo_muted"
+}

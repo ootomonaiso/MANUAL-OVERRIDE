@@ -10,13 +10,15 @@
  *    → src/genres/index.ts に1行追加するだけ
  */
 
-import type { GenreId } from '../domain/types'
+import type { GenreId, PlayerSkin } from '../domain/types'
 import type { MutableWorld, SpawnEntry } from './types'
 
 export interface GenrePlugin {
   readonly id: GenreId
 
   // ─── 視覚テーマ（必須） ───────────────────────────────────────────
+  /** P1: 現在のプレイヤースキン（SideScroller._drawPlayer から毎フレーム設定） */
+  playerSkin: PlayerSkin
   /** 空のグラデーション [上端色, 下端色] */
   readonly skyColors: readonly [string, string]
   /** 地面のグラデーション [上端色, 下端色] */

@@ -1,0 +1,34 @@
+{
+  "$comment": "演出（Juice）パラメータ",
+  "section": "juice",
+  "hitStopScale": 0.2,
+  "hitStopDurationSec": 0.04,
+  "killShakeIntensity": 6,
+  "killFlashParticles": 14,
+  "comboMilestoneShake": 8,
+  "comboMilestones": [
+    { "at": 5, "label": "GOOD" },
+    { "at": 10, "label": "GREAT" },
+    { "at": 20, "label": "EXCELLENT" },
+    { "at": 30, "label": "UNSTOPPABLE" },
+    { "at": 50, "label": "LEGENDARY" },
+    { "at": 100, "label": "GODLIKE" }
+  ],
+  "nearMissGapPx": 42,
+  "nearMissScore": 15,
+  "nearMissMinIntervalSec": 0.35,
+  "nearMissPopupColor": "#e8590c",
+  "milestoneInterval": 500,
+  "milestoneTextSize": 48,
+  "speedLines": {
+    "enabled": true,
+    "minSpeed": 300,
+    "fullSpeed": 450,
+    "count": 14,
+    "alpha": 0.14,
+    "width": 2,
+    "lenMin": 40,
+    "lenMax": 140,
+    "speedMult": 2.5
+  }
+}

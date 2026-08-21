@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import type { FinalScore, GenreId, PlayStyleResult, SurpriseEnding } from '../domain/types'
+import type { FinalScore, GenreId, PlayStyleResult, SurpriseEnding, SaveRecords } from '../domain/types'
 import { GENRES } from '../data/genres'
 import { SCORE } from '../data/tunables'
 
@@ -21,6 +21,10 @@ const props = defineProps<{
   contradiction?: ContradictionDisplay | null
   /** Issue #24: サプライズエンド情報 */
   surpriseEnding?: SurpriseEnding | null
+  /** P1: 記録データ */
+  records?: SaveRecords | null
+  /** P1: 新記録更新フラグ */
+  isNewRecord?: boolean
 }>()
 
 const emit = defineEmits<{ (e: 'restart'): void }>()
@@ -224,6 +228,31 @@ onUnmounted(() => {
       <Transition name="fade-up">
         <div v-if="flavorVisible && endingFlavor" class="ending-flavor">
           {{ endingFlavor }}
+        </div>
+      </Transition>
+
+      <!-- P1: 記録セクション -->
+      <Transition name="fade-up">
+        <div v-if="records" class="ending-records-box">
+          <div v-if="isNewRecord" class="new-record-badge">
+            NEW RECORD!
+          </div>
+          <div class="records-row">
+            <span class="records-label">プレイ回数</span>
+            <span class="records-value">{{ records.playCount }} 回</span>
+          </div>
+          <div class="records-row">
+            <span class="records-label">総距離</span>
+            <span class="records-value">{{ Math.floor(records.totalDistance) }}m</span>
+          </div>
+          <div v-if="records.overallBest" class="records-row">
+            <span class="records-label">ベストスコア</span>
+            <span class="records-value">{{ records.overallBest.total.toLocaleString() }}</span>
+          </div>
+          <div v-if="records.overallBest" class="records-row">
+            <span class="records-label">ベスト距離</span>
+            <span class="records-value">{{ Math.floor(records.overallBest.distance) }}m</span>
+          </div>
         </div>
       </Transition>
 
@@ -599,6 +628,56 @@ onUnmounted(() => {
   text-align: left;
   font-family: var(--genre-font, var(--font-mono));
   transition: border-color 0.4s ease, color 0.4s ease;
+}
+
+/* ── 記録セクション（P1） ── */
+.ending-records-box {
+  background: transparent;
+  border: 1px solid var(--genre-border, var(--green-dim));
+  border-radius: var(--radius-sm);
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  text-align: left;
+  position: relative;
+  transition: border-color 0.4s ease;
+}
+.new-record-badge {
+  position: absolute;
+  top: -10px;
+  right: 16px;
+  background: var(--genre-accent, var(--green));
+  color: var(--genre-bg, var(--bg-panel));
+  font-size: 10px;
+  font-weight: bold;
+  font-family: var(--genre-font, var(--font-mono));
+  letter-spacing: 1.5px;
+  padding: 2px 10px;
+  border-radius: var(--radius-sm);
+  animation: newRecordPulse 1.5s ease-in-out infinite;
+}
+@keyframes newRecordPulse {
+  0%, 100% { box-shadow: 0 0 6px var(--genre-glow, var(--green-glow)); }
+  50% { box-shadow: 0 0 16px var(--genre-glow, var(--green-glow)); }
+}
+.records-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 2px 0;
+  font-size: 12px;
+  font-family: var(--genre-font, var(--font-mono));
+}
+.records-label {
+  color: var(--genre-text, var(--text-dim));
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+.records-value {
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: var(--genre-accent, var(--green));
 }
 
 /* ── リスタートボタン ── */

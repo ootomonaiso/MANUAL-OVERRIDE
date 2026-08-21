@@ -1,0 +1,9 @@
+{
+  "$comment": "記録設定",
+  "section": "records",
+  "storageKey": "mo_records_v1",
+  "skinStorageKey": "mo_skin_v1",
+  "display": {
+    "titleBestLabel": "ベストスコア"
+  }
+}

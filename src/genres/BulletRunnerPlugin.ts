@@ -132,7 +132,7 @@ export class BulletRunnerPlugin extends GenrePluginBase {
     ctx.fill()
 
     // ボディ（サイバースーツ）
-    ctx.fillStyle = '#1a0040'
+    ctx.fillStyle = this.playerSkin.body
     this._roundRect(ctx, 2, h * 0.36, w - 4, h * 0.4, 4)
     ctx.fill()
 
@@ -149,7 +149,7 @@ export class BulletRunnerPlugin extends GenrePluginBase {
     ctx.shadowBlur = 0
 
     // 頭（ヘルメット）
-    ctx.fillStyle = '#0a0020'
+    ctx.fillStyle = this.playerSkin.head
     ctx.beginPath()
     ctx.arc(w * 0.55, h * 0.2, h * 0.21, 0, Math.PI * 2)
     ctx.fill()
@@ -164,7 +164,7 @@ export class BulletRunnerPlugin extends GenrePluginBase {
     ctx.globalAlpha = 1
 
     // 脚
-    ctx.lineWidth = 5.5; ctx.strokeStyle = '#2a0050'; ctx.lineCap = 'round'
+    ctx.lineWidth = 5.5; ctx.strokeStyle = this.playerSkin.limb; ctx.lineCap = 'round'
     ctx.beginPath(); ctx.moveTo(w * 0.38, h * 0.74); ctx.lineTo(w * 0.28 - legSwing * 0.4, h * 0.98); ctx.stroke()
     ctx.beginPath(); ctx.moveTo(w * 0.60, h * 0.74); ctx.lineTo(w * 0.72 + legSwing * 0.4, h * 0.98); ctx.stroke()
 

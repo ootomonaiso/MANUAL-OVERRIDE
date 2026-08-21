@@ -161,7 +161,7 @@ export class AquaticPlugin extends GenrePluginBase {
     ctx.fill()
 
     // ダイバースーツ（青）
-    ctx.fillStyle = '#0044aa'
+    ctx.fillStyle = this.playerSkin.body
     this._roundRect(ctx, 3, h * 0.36, w - 6, h * 0.44, 4)
     ctx.fill()
 
@@ -170,7 +170,7 @@ export class AquaticPlugin extends GenrePluginBase {
     ctx.fillRect(w * 0.08, h * 0.34, w * 0.2, h * 0.38)
 
     // 頭（マスク）
-    ctx.fillStyle = '#003377'
+    ctx.fillStyle = this.playerSkin.head
     ctx.beginPath()
     ctx.arc(w * 0.58, h * 0.2, h * 0.2, 0, Math.PI * 2)
     ctx.fill()
@@ -184,7 +184,7 @@ export class AquaticPlugin extends GenrePluginBase {
     ctx.globalAlpha = 1
 
     // フィン（足ひれ）
-    ctx.fillStyle = '#0055cc'
+    ctx.fillStyle = this.playerSkin.limb
     ctx.beginPath()
     ctx.moveTo(w * 0.32, h + swim)
     ctx.lineTo(w * 0.08, h + 10 + swim)

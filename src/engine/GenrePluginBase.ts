@@ -14,10 +14,24 @@
 
 import type { GenrePlugin } from './GenrePlugin'
 import type { MutableWorld, SpawnEntry } from './types'
-import type { GenreId } from '../domain/types'
+import type { GenreId, PlayerSkin } from '../domain/types'
 import type { Hazard } from '../game/entities'
 
+/** デフォルトのプレイヤースキン色（skin が未設定時のフォールバック） */
+export const DEFAULT_PLAYER_SKIN: PlayerSkin = {
+  id: 'default',
+  name: 'デフォルト',
+  body: '#e8e8f8',
+  head: '#f0f0ff',
+  limb: '#aaaacc',
+  eye: '#222244',
+  accent: '#8888ff',
+}
+
 export abstract class GenrePluginBase implements GenrePlugin {
+  // ─── スキン（P1） ────────────────────────────────────────────
+  /** 現在のプレイヤースキン。SideScroller._drawPlayer() が毎フレーム設定する */
+  playerSkin: PlayerSkin = DEFAULT_PLAYER_SKIN
   // ─── 必須フィールド（サブクラスで具体値を提供） ───────────────────
   abstract readonly id: GenreId
   abstract readonly skyColors: readonly [string, string]

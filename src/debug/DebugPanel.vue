@@ -43,11 +43,12 @@ function onOk() {
 </template>
 
 <style scoped>
+/* 中央固定だとタイトル画面の「はじめる」ボタン（中央配置）を pointer 遮断するため、
+   操作を妨げない左上に配置する（dev 専用 UI） */
 .debug-panel {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 16px;
+  left: 16px;
   z-index: 9999;
   background: rgba(0, 0, 0, 0.82);
   border: 1px solid #555;

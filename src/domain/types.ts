@@ -427,3 +427,81 @@ export interface ScoreVars {
   stealthBonus: number     // ステルス継続フレーム数（隠密評価）
   colorTouches: number     // 安全色に触れた回数（color_touch 評価）
 }
+
+// ─────────────────────────────────────────────────────────────
+// P1: 記録（Records）
+// ─────────────────────────────────────────────────────────────
+
+export interface BestEntry {
+  total: number
+  play: number
+  throw: number
+  genre: GenreId
+  distance: number
+  date: string            // ISO 8601
+}
+
+export interface SaveRecords {
+  overallBest: BestEntry | null
+  perGenre: Record<string, BestEntry>   // genreId -> BestEntry
+  playCount: number
+  totalDistance: number
+  totalPlayTime: number                 // 秒
+}
+
+export interface GameResult {
+  genre: GenreId
+  total: number
+  play: number
+  throw: number
+  distance: number
+  survivedSec: number
+}
+
+export interface RecordUpdateResult {
+  records: SaveRecords
+  newOverall: boolean
+  newGenre: boolean
+}
+
+// ─────────────────────────────────────────────────────────────
+// P1: 目標（Goals）
+// ─────────────────────────────────────────────────────────────
+
+export type GoalMetric = 'distance' | 'score' | 'survivedSec'
+
+export interface GoalDef {
+  id: string
+  label: string
+  metric: GoalMetric
+  target: number
+  bonus: number
+}
+
+export interface GoalSelectionConfig {
+  strategy: 'stretch'
+  stretchFactor: number
+  starterGoalId: string
+}
+
+// ─────────────────────────────────────────────────────────────
+// P1: スキン（Skins）
+// ─────────────────────────────────────────────────────────────
+
+export interface PlayerSkin {
+  id: string
+  name: string
+  body: string
+  head: string
+  limb: string
+  eye: string
+  accent: string
+}
+
+export type SkinUnlock =
+  | { type: 'free' }
+  | { type: 'record'; metric: 'totalDistance' | 'overallBestTotal' | 'playCount' | 'totalPlayTime'; threshold: number }
+
+export interface SkinDef extends PlayerSkin {
+  unlock: SkinUnlock
+}
