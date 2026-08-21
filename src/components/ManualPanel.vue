@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { ManualVersion, ManualTheme, Controls } from '../domain/types'
+import type { ManualVersion, ManualTheme } from '../domain/types'
+import type { HudLayout } from '../domain/hudLayout'
 
 const props = defineProps<{
   manual: ManualVersion
@@ -10,12 +11,14 @@ const props = defineProps<{
   isCentered: boolean
   history: ManualVersion[]
   features?: Set<string> | ReadonlySet<string>
-  controls: Controls
   highlight?: boolean
+  layout?: HudLayout
 }>()
 
 const showHistory = ref(false)
 const themeClass = computed(() => `theme-${props.theme}`)
+// レイアウト別の配置クラス（仕様 2-H）。中央表示中は panel-centered が優先。
+const posClass = computed(() => `pos-${props.layout ?? 'other'}`)
 
 // auto_run が有効な場合、左右移動の説明を除外
 const filteredManualText = computed(() => {
@@ -32,17 +35,10 @@ const filteredDiffLines = computed(() => {
     !line.text.includes('←') && !line.text.includes('→') && !line.text.includes('左右')
   )
 })
-
-function keyLabel(key: string): string {
-  const map: Record<string, string> = {
-    Space: 'SPACE', ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓',
-  }
-  return map[key] ?? key.toUpperCase()
-}
 </script>
 
 <template>
-  <div class="manual-panel" :class="[themeClass, { 'panel-centered': isCentered, 'manual-highlight': highlight }]">
+  <div class="manual-panel" :class="[themeClass, posClass, { 'panel-centered': isCentered, 'manual-highlight': highlight }]">
     <!-- ヘッダー -->
     <div class="manual-header">
       <div class="manual-ver-badge">
@@ -104,25 +100,7 @@ function keyLabel(key: string): string {
       </template>
     </div>
 
-    <!-- 操作キー -->
-    <div class="manual-controls">
-      <div class="controls-title">操作</div>
-      <div class="controls-grid">
-        <!-- auto_run が有効な場合は左右キーを非表示 -->
-        <template v-if="!features?.has('auto_run')">
-          <span class="key-badge">{{ keyLabel(controls.moveLeft) }}</span>
-          <span class="key-action">左移動</span>
-          <span class="key-badge">{{ keyLabel(controls.moveRight) }}</span>
-          <span class="key-action">右移動</span>
-        </template>
-        <span class="key-badge">{{ keyLabel(controls.jump) }}</span>
-        <span class="key-action">ジャンプ</span>
-        <template v-if="controls.shoot">
-          <span class="key-badge">{{ keyLabel(controls.shoot) }}</span>
-          <span class="key-action">ショット</span>
-        </template>
-      </div>
-    </div>
+    <!-- 操作キーの一覧は専用UI（ControlHintBadge）へ移管したため説明書からは削除 -->
   </div>
 </template>
 
@@ -148,6 +126,26 @@ function keyLabel(key: string): string {
   user-select: none;
   max-height: 380px;
   overflow-y: auto;
+}
+
+/* ──────────────────────────────────────
+   レイアウト別配置（仕様 2-H）。panel-centered 時は下の !important が優先。
+   pos-other / pos-hbase 以外の未対象ジャンルは既定（右下）のまま。
+────────────────────────────────────── */
+/* 横スクロール原点・横STG: 左上（普通の横スクロールと同じ配置。UIゾーンに縛られない） */
+.manual-panel.pos-hbase:not(.panel-centered),
+.manual-panel.pos-hstg:not(.panel-centered) {
+  top: 14px; left: 18px; right: auto; bottom: auto;
+  width: 270px;
+  font-size: 12px;
+  max-height: 60vh;
+}
+/* 縦STG: 左側UIゾーン内（左端・下寄せで上部の操作レジェンドを避ける） */
+.manual-panel.pos-vstg:not(.panel-centered) {
+  top: auto; bottom: 14px; left: 12px; right: auto;
+  width: min(21vw, 260px);
+  font-size: 12px;
+  max-height: 60vh;
 }
 
 /* ── 中央表示（説明書更新時） ── */

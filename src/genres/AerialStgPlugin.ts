@@ -14,6 +14,9 @@ import type { GenreId } from '../domain/types'
 export class AerialStgPlugin extends GenrePluginBase {
   readonly id: GenreId = 'aerial_stg'
 
+  // 機体を機首=上で描くため、縦スクロール時の engine 側 -90° 回転を無効化する（#102 の二重回転回避）
+  readonly spriteFacesUp = true
+
   readonly skyColors    = ['#050a18', '#0d1f3c'] as const
   readonly groundColors = ['#091520', '#091520'] as const
   readonly farLayerColor  = '#0a1830'

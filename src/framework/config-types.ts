@@ -427,6 +427,28 @@ export interface ExtraMovementConfig {
   dashTrailAlphaMax: number
 }
 
+/** hud_safezone.json — HUD再配置 & 可動域セーフゾーン化 */
+export interface HudSafezoneConfig {
+  /** 横スクロール原点: 上側UIゾーン高さの画面高に対する割合（HUD配置用・可動域clampなし） */
+  hbaseTopRatio: number
+  /** 横STG: 上側UIゾーン高さの画面高に対する割合 */
+  hstgTopRatio: number
+  /** 横STG: 下側UIゾーン高さの画面高に対する割合 */
+  hstgBottomRatio: number
+  /** 縦STG: 左側UIゾーン幅の画面幅に対する割合 */
+  vstgLeftRatio: number
+  /** 縦STG: 右側UIゾーン幅の画面幅に対する割合 */
+  vstgRightRatio: number
+  /** 縦STG: ジャンル確定時の初期垂直位置（可動域上端0〜下端1。大きいほど下寄り） */
+  vstgInitialYRatio: number
+  /** ジャンル遷移演出の所要時間（秒） */
+  transitionSec: number
+  /** UIゾーンの半透明フィルの不透明度（0〜1） */
+  boundaryFadeAlpha: number
+  /** ゾーン内側境界に引く区切り線の不透明度（0〜1） */
+  boundaryLineAlpha: number
+}
+
 /** genre_params.json — ジャンルパラメータ設計支援 */
 export interface GenreParamsConfig {
   recommendedSingleChoice: number
@@ -550,6 +572,7 @@ export interface GameConfigMap {
   rhythm_tuning: RhythmTuningConfig
   stealth: StealthConfig
   genre_params: GenreParamsConfig
+  hud_safezone: HudSafezoneConfig
   game_balance: GameBalanceConfig
   genres: GenresConfig
   bayes: BayesConfig

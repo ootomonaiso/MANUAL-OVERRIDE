@@ -93,6 +93,7 @@ src/
     │   ├── genreResolver.ts  resolveGenre() — 収束アルゴリズム
     │   ├── scoreCalc.ts      最終スコア計算(投擲込み)
     │   ├── LearningSystem.ts 行動統計 → 追加ルール発火
+    │   ├── hudLayout.ts      HUDレイアウト分類・セーフゾーン幾何（engine と Vue が共有）
     │   └── defaults.ts       デフォルト値定義
 │
 ├── engine/
@@ -137,7 +138,7 @@ src/
 │
 ├── data/
     │   ├── config.ts          GAME_CONFIG エントリポイント
-    │   ├── config/            JSON設定ファイル群（21個）
+    │   ├── config/            JSON設定ファイル群（23個）
     │   │   ├── genres.json    22 種の GenreDef
     │   │   ├── game_balance.json   スコア比率/投擲重み/基本速度
     │   │   ├── difficulty.json     難易度カーブ/アップデート距離
