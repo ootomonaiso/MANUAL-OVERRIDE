@@ -30,6 +30,9 @@ defineEmits<{
             説明書が更新されるたびに、ゲームのルール・見た目・ジャンルが変化します。<br>
             あなたが選ぶ選択肢の積み重ねで、どんなゲームになるかが決まります。
           </p>
+          <p class="tutorial-text tutorial-text-sub">
+            むずかしいことは考えなくて大丈夫。最初はジャンプだけの練習からです。
+          </p>
         </section>
 
         <!-- コアループ -->
@@ -66,6 +69,9 @@ defineEmits<{
               <span class="tutorial-ctrl-desc">ジャンプ</span>
             </div>
           </div>
+          <p class="tutorial-text tutorial-text-sub">
+            覚えることはこれだけ。タイミングは体で慣れていけば大丈夫です。
+          </p>
         </section>
 
         <!-- 色のルール -->
@@ -81,15 +87,27 @@ defineEmits<{
               <span class="color-label">青 — 安全（触れても大丈夫）</span>
             </div>
           </div>
+          <p class="tutorial-text tutorial-text-sub">
+            赤だけ気をつけていれば十分です。失敗してもすぐやり直せます。
+          </p>
         </section>
 
         <!-- ジャンル収束 -->
-        <section class="tutorial-section tutorial-section-last">
+        <section class="tutorial-section">
           <h2 class="tutorial-section-title">ジャンルの収束</h2>
           <p class="tutorial-text">
             各選択肢は裏で「ジャンルパラメータ」を蓄積しています。<br>
             一定以上蓄積されると、ゲームのジャンルが確定します。<br>
             <span class="tutorial-text-dim">例：攻撃系を選択 → STG / 成長系を選択 → RPG</span>
+          </p>
+        </section>
+
+        <!-- 困ったとき -->
+        <section class="tutorial-section tutorial-section-last">
+          <h2 class="tutorial-section-title">困ったら</h2>
+          <p class="tutorial-text">
+            <kbd class="tutorial-ctrl-key">P</kbd>キーでいつでも一時停止して、上の内容と説明書を見返せます。<br>
+            <span class="tutorial-text-dim">正解はありません。気楽に選んでいきましょう。</span>
           </p>
         </section>
       </div>
