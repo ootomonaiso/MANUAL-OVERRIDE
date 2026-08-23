@@ -476,6 +476,7 @@ onUnmounted(() => {
         :diff-lines="manualCtl.diffLines.value"
         :is-animating="manualCtl.isAnimating.value"
         :is-centered="manualCentered"
+        :center-token="manualCtl.centerToken.value"
         :history="manualCtl.history.value"
         :features="gameState.rules.features"
         :controls="gameState.rules.controls"
