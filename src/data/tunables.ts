@@ -124,3 +124,8 @@ export const EXTRA_MOVEMENT = _c.extra_movement
 // SURVIVAL — サバイバルゲーム（hunger / melee / level）
 // ─────────────────────────────────────────────────────────────
 export const SURVIVAL = _c.survival
+
+// ─────────────────────────────────────────────────────────────
+// PIXELART — PixelArt化レンダリング設定
+// ─────────────────────────────────────────────────────────────
+export const PIXELART = _c.pixelart

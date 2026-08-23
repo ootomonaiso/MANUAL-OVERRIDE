@@ -182,6 +182,19 @@ export interface BackgroundConfig {
   buildingRandW: number
 }
 
+/** pixelart.json — PixelArt化レンダリング設定 */
+export interface PixelartConfig {
+  size: number
+  gradientSteps: number
+  haloSteps: number
+  haloAlphaFalloff: number
+  alphaSteps: number
+  ditherRatioSteps: number
+  textScale: number
+  spriteCacheMax: number
+  textCacheMax: number
+}
+
 /** hazard_vfx.json — ハザード描画 */
 export interface HazardVfxConfig {
   glowBlur: number
@@ -557,6 +570,7 @@ export interface GameConfigMap {
   puzzle: PuzzleConfig
   extra_movement: ExtraMovementConfig
   survival: SurvivalConfig
+  pixelart: PixelartConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap

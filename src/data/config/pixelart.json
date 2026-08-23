@@ -1,0 +1,13 @@
+{
+  "$comment": "PixelArt化レンダリング設定（docs/pixelart-rebuild/00-rendering-system.md 参照）",
+  "section": "pixelart",
+  "size": 4,
+  "gradientSteps": 6,
+  "haloSteps": 2,
+  "haloAlphaFalloff": 0.45,
+  "alphaSteps": 8,
+  "ditherRatioSteps": 4,
+  "textScale": 3,
+  "spriteCacheMax": 256,
+  "textCacheMax": 128
+}

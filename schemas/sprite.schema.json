@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "sprite.schema.json",
+  "title": "PixelArt スプライト定義",
+  "description": "src/data/sprites/ 内のスプライトファイルのスキーマ。docs/pixelart-rebuild/00-rendering-system.md §5 参照。",
+  "type": "object",
+  "required": ["id", "w", "h", "palette", "frames"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSONスキーマへの参照（自動補完のため）"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "スプライトの一意なID。ファイル名（拡張子除く）と一致させる。"
+    },
+    "w": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "スプライトの幅（セル数）。frames の各行の文字数と一致させる。"
+    },
+    "h": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "スプライトの高さ（セル数）。frames の各配列の行数と一致させる。"
+    },
+    "palette": {
+      "type": "object",
+      "description": "1文字 → 色のマッピング。値は #rrggbb、または動的色スロットを表す @ 始まりの名前。",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|@[a-zA-Z][a-zA-Z0-9_]*)$"
+      },
+      "propertyNames": {
+        "pattern": "^[^.]$"
+      }
+    },
+    "frames": {
+      "type": "object",
+      "description": "フレーム名 → ピクセル行配列。'.' は透明、それ以外の1文字は palette のキー。",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "items": { "type": "string" }
+      }
+    }
+  }
+}

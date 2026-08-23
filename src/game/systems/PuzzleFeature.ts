@@ -24,8 +24,12 @@
 import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import type { PuzzleGridConfig } from '../../framework/config-types'
-import { PUZZLE } from '../../data/tunables'
+import { PUZZLE, PIXELART } from '../../data/tunables'
 import { soundManager } from '../../plugins/SoundManager'
+import { PixelCanvas } from '../render'
+
+// 角落とし矩形の切り欠き量（セル数）。ドット絵の角丸表現として全パネル/セルで共通使用
+const CUT_CELLS = 1
 
 // ─── 型・定数 ─────────────────────────────────────────────────────────────────
 
@@ -351,29 +355,26 @@ export class PuzzleFeature implements FeatureSystem {
     const cellPx = PUZZLE.cellPx
     const [ox, oy] = _gridOffset(W, H, gridN, cellPx)
     const gridPx = gridN * cellPx
+    const px = new PixelCanvas(ctx)
 
     const gap = this._cellGap
     const inner = cellPx - gap * 2
 
-    ctx.save()
-
     // ─── 方眼紙の背景（白系 + 罫線）─────────────────────────────
     // 旧来の暗オーバーレイをやめ、puzzle テーマの白背景＋薄いグリッド罫線を敷く。
     // これが横スクロール本体（base プレイヤー・地面）も覆い隠す。
-    this._drawPaperBackground(ctx, W, H)
+    this._drawPaperBackground(px, W, H)
 
     // ─── 盤面パネル（外周の装飾枠） ─────────────────────────────
-    this._drawBoardPanel(ctx, ox, oy, gridPx, animTime)
+    this._drawBoardPanel(px, ox, oy, gridPx, animTime)
 
     // ─── ヘッダー（問題番号・正解数） ───────────────────────────
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'alphabetic'
-    ctx.fillStyle = this._inkColor
-    ctx.font = 'bold 30px "Courier New", monospace'
-    ctx.fillText(`第 ${this._state.puzzleCount + 1} 問`, W / 2, oy - this._headerAboveGrid)
-    ctx.fillStyle = this._inkSubColor
-    ctx.font = 'bold 16px "Courier New", monospace'
-    ctx.fillText(`ゴールへ滑り込め   正解数 ${this._state.solvedCount}`, W / 2, oy - this._subHeaderAboveGrid)
+    px.text(`第 ${this._state.puzzleCount + 1} 問`, W / 2, oy - this._headerAboveGrid, {
+      font: 'bold 30px "Courier New", monospace', fill: this._inkColor, align: 'center',
+    })
+    px.text(`ゴールへ滑り込め   正解数 ${this._state.solvedCount}`, W / 2, oy - this._subHeaderAboveGrid, {
+      font: 'bold 16px "Courier New", monospace', fill: this._inkSubColor, align: 'center',
+    })
 
     // ─── セル描画（空きマス・壁） ───────────────────────────────
     for (let r = 0; r < gridN; r++) {
@@ -381,244 +382,158 @@ export class PuzzleFeature implements FeatureSystem {
         const x = ox + c * cellPx + gap
         const y = oy + r * cellPx + gap
         if (walls[r][c]) {
-          this._drawWall(ctx, x, y, inner)
+          this._drawWall(px, x, y, inner)
         } else {
-          ctx.fillStyle = this._cellEmptyColor
-          this._roundRect(ctx, x, y, inner, inner, this._cellRadius)
-          ctx.fill()
-          ctx.strokeStyle = this._cellEmptyBorder
-          ctx.lineWidth = 1.5
-          this._roundRect(ctx, x, y, inner, inner, this._cellRadius)
-          ctx.stroke()
+          px.roundedRect(x, y, inner, inner, this._cellEmptyColor, CUT_CELLS)
+          this._strokeRoundedRect(px, x, y, inner, inner, this._cellEmptyBorder, 1)
         }
       }
     }
 
     // ─── ゴールマス（脈動するターゲット） ───────────────────────
-    this._drawGoal(ctx, ox + goalCell[1] * cellPx + cellPx / 2, oy + goalCell[0] * cellPx + cellPx / 2, inner, animTime)
+    this._drawGoal(px, ox + goalCell[1] * cellPx + cellPx / 2, oy + goalCell[0] * cellPx + cellPx / 2, inner, animTime)
 
     // ─── プレイヤー駒（スライド中は補間位置） ───────────────────
+    // 補間移動の計算式（_renderCell）は無変更。描画時の座標のみ px.roundedRect 側でスナップされる
     {
       const [pr, pc] = this._renderCell()
-      this._drawPiece(ctx, ox + pc * cellPx + cellPx / 2, oy + pr * cellPx + cellPx / 2, inner, animTime)
+      this._drawPiece(px, ox + pc * cellPx + cellPx / 2, oy + pr * cellPx + cellPx / 2, inner, animTime)
     }
 
     // ─── タイマーバー（グリッド上部） ───────────────────────────
     const ratio = Math.max(0, timer / timeLimit)
     const barY = oy - this._timerBarAboveGrid
-    ctx.fillStyle = '#d2d2e0'
-    this._roundRect(ctx, ox, barY, gridPx, this._timerBarH, this._timerBarH / 2)
-    ctx.fill()
-    ctx.fillStyle = ratio > 0.33 ? '#2bb36a' : '#e23b3b'
-    this._roundRect(ctx, ox, barY, Math.max(0, gridPx * ratio), this._timerBarH, this._timerBarH / 2)
-    ctx.fill()
+    px.roundedRect(ox, barY, gridPx, this._timerBarH, '#d2d2e0', CUT_CELLS)
+    px.roundedRect(ox, barY, Math.max(0, gridPx * ratio), this._timerBarH, ratio > 0.33 ? '#2bb36a' : '#e23b3b', CUT_CELLS)
 
     // タイマー秒数
-    ctx.fillStyle = ratio > 0.33 ? this._inkColor : '#c62828'
-    ctx.font = 'bold 16px monospace'
-    ctx.textAlign = 'left'
-    ctx.textBaseline = 'bottom'
-    ctx.fillText(`${Math.ceil(Math.max(0, timer))}s`, ox, barY - 4)
+    px.text(`${Math.ceil(Math.max(0, timer))}s`, ox, barY - 4, {
+      font: 'bold 16px monospace', fill: ratio > 0.33 ? this._inkColor : '#c62828', align: 'left', baseline: 'bottom',
+    })
 
     // ─── 残機ハート（グリッド下部・中央） ──────────────────────
     const hp = world.player.hp
     const maxHp = world.player.maxHp
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'top'
-    ctx.font = 'bold 24px monospace'
     let hearts = ''
     for (let i = 0; i < maxHp; i++) hearts += i < hp ? '♥' : '♡'
-    ctx.fillStyle = '#e2395a'
-    ctx.fillText(hearts, W / 2, oy + gridPx + this._heartsBelowGrid)
+    px.text(hearts, W / 2, oy + gridPx + this._heartsBelowGrid, {
+      font: 'bold 24px monospace', fill: '#e2395a', align: 'center', baseline: 'top',
+    })
 
     // ─── 操作ヒント ─────────────────────────────────────────────
-    ctx.fillStyle = this._inkSubColor
-    ctx.font = 'bold 14px "Courier New", monospace'
-    ctx.fillText('↑ ↓ ← → : 移動      SPACE : リセット', W / 2, oy + gridPx + this._hintBelowGrid)
+    px.text('↑ ↓ ← → : 移動      SPACE : リセット', W / 2, oy + gridPx + this._hintBelowGrid, {
+      font: 'bold 14px "Courier New", monospace', fill: this._inkSubColor, align: 'center', baseline: 'top',
+    })
 
     // ─── クリア演出（フラッシュ + CLEAR!） ─────────────────────
     if (this._state.solveFx > 0) {
       const a = this._state.solveFx / this._solveFxDuration
-      ctx.fillStyle = `rgba(46, 204, 113, ${0.28 * a})`
-      ctx.fillRect(0, 0, W, H)
-      ctx.save()
-      ctx.globalAlpha = Math.min(1, a * 1.5)
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.font = `bold ${Math.round(56 + (1 - a) * 24)}px "Courier New", monospace`
-      ctx.lineWidth = 6
-      ctx.strokeStyle = '#0f5132'
-      ctx.strokeText('CLEAR!', W / 2, oy + gridPx / 2)
-      ctx.fillStyle = '#1ea96b'
-      ctx.fillText('CLEAR!', W / 2, oy + gridPx / 2)
-      ctx.restore()
+      px.rect(0, 0, W, H, `rgba(46, 204, 113, ${0.28 * a})`)
+      px.text('CLEAR!', W / 2, oy + gridPx / 2, {
+        font: `bold ${Math.round(56 + (1 - a) * 24)}px "Courier New", monospace`,
+        fill: '#1ea96b', stroke: { color: '#0f5132', width: 6 },
+        align: 'center', baseline: 'middle', alpha: Math.min(1, a * 1.5),
+      })
     }
 
     // ─── ダメージ演出（赤フラッシュ + TIME UP） ────────────────
     if (this._state.damageFx > 0) {
       const a = this._state.damageFx / this._damageFxDuration
-      ctx.fillStyle = `rgba(220, 30, 40, ${0.32 * a})`
-      ctx.fillRect(0, 0, W, H)
-      ctx.save()
-      ctx.globalAlpha = Math.min(1, a * 1.5)
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.font = 'bold 48px "Courier New", monospace'
-      ctx.lineWidth = 6
-      ctx.strokeStyle = '#7a1015'
-      ctx.strokeText('TIME UP', W / 2, oy + gridPx / 2)
-      ctx.fillStyle = '#e23b3b'
-      ctx.fillText('TIME UP', W / 2, oy + gridPx / 2)
-      ctx.restore()
+      px.rect(0, 0, W, H, `rgba(220, 30, 40, ${0.32 * a})`)
+      px.text('TIME UP', W / 2, oy + gridPx / 2, {
+        font: 'bold 48px "Courier New", monospace',
+        fill: '#e23b3b', stroke: { color: '#7a1015', width: 6 },
+        align: 'center', baseline: 'middle', alpha: Math.min(1, a * 1.5),
+      })
     }
-
-    ctx.restore()
   }
 
   // ─── 描画ヘルパー ───────────────────────────────────────────────────────────
 
   // 白系の方眼紙背景（横スクロール本体を覆い隠し、puzzle テーマの罫線を敷く）。
-  private _drawPaperBackground(ctx: CanvasRenderingContext2D, W: number, H: number): void {
-    ctx.fillStyle = this._paperColor
-    ctx.fillRect(0, 0, W, H)
-    ctx.save()
-    ctx.globalAlpha = this._paperGridAlpha
-    ctx.strokeStyle = this._paperGridColor
-    ctx.lineWidth = 1
+  // 16-PuzzlePlugin.md と同じ _paperGridSize(=40) を使っており、両者の格子は揃っている。
+  private _drawPaperBackground(px: PixelCanvas, W: number, H: number): void {
+    px.rect(0, 0, W, H, this._paperColor)
     const step = this._paperGridSize
-    ctx.beginPath()
-    for (let x = step; x < W; x += step) {
-      ctx.moveTo(x, 0)
-      ctx.lineTo(x, H)
-    }
-    for (let y = step; y < H; y += step) {
-      ctx.moveTo(0, y)
-      ctx.lineTo(W, y)
-    }
-    ctx.stroke()
-    ctx.restore()
+    px.withAlpha(this._paperGridAlpha, () => {
+      for (let x = step; x < W; x += step) px.line(x, 0, x, H, this._paperGridColor, 1)
+      for (let y = step; y < H; y += step) px.line(0, y, W, y, this._paperGridColor, 1)
+    })
   }
 
-  // 盤面外周の装飾パネル（影付きカード + 二重枠 + 四隅オーナメント）。
-  private _drawBoardPanel(ctx: CanvasRenderingContext2D, ox: number, oy: number, gridPx: number, animTime: number): void {
+  // 盤面外周の装飾パネル（角落としカード + 二重枠 + 四隅オーナメント）。
+  // shadowBlur によるドロップシャドウは D3 に該当しないため（形状に沿う影であり全画面の
+  // 均一な塗りではない）本来はハロー等で表現したいが、方向性のある影を近似する適切な
+  // プリミティブが無いため今回は省略した（懸念点参照）。
+  private _drawBoardPanel(px: PixelCanvas, ox: number, oy: number, gridPx: number, animTime: number): void {
     const pad = this._panelPadding
     const x = ox - pad
     const y = oy - pad
     const w = gridPx + pad * 2
     const h = gridPx + pad * 2
+    const cut = Math.max(1, Math.round(this._panelRadius / Math.max(1, PIXELART.size)))
 
-    ctx.save()
-    // 影付きの白カード
-    ctx.shadowColor = 'rgba(40, 40, 70, 0.25)'
-    ctx.shadowBlur = 24
-    ctx.shadowOffsetY = 8
-    ctx.fillStyle = '#fbfbfe'
-    this._roundRect(ctx, x, y, w, h, this._panelRadius)
-    ctx.fill()
-    ctx.restore()
+    // 白カード
+    px.roundedRect(x, y, w, h, '#fbfbfe', cut)
 
     // 二重枠
-    ctx.strokeStyle = this._inkColor
-    ctx.lineWidth = 3
-    this._roundRect(ctx, x, y, w, h, this._panelRadius)
-    ctx.stroke()
-    ctx.strokeStyle = this._cellEmptyBorder
-    ctx.lineWidth = 1.5
-    this._roundRect(ctx, x + 6, y + 6, w - 12, h - 12, this._panelRadius - 4)
-    ctx.stroke()
+    this._strokeRoundedRect(px, x, y, w, h, this._inkColor, 3)
+    this._strokeRoundedRect(px, x + 6, y + 6, w - 12, h - 12, this._cellEmptyBorder, 1.5)
 
     // 四隅のオーナメント（パズルピース風の小タイル、僅かに脈動）
     const pulse = 0.6 + 0.4 * (0.5 + 0.5 * Math.sin(animTime * 2))
     const s = 9
-    ctx.fillStyle = `rgba(30, 169, 107, ${0.55 + 0.35 * pulse})`
-    for (const [cx, cy] of [[x + 14, y + 14], [x + w - 14, y + 14], [x + 14, y + h - 14], [x + w - 14, y + h - 14]] as Cell[]) {
-      this._roundRect(ctx, cx - s / 2, cy - s / 2, s, s, 2)
-      ctx.fill()
-    }
+    px.withAlpha(0.55 + 0.35 * pulse, () => {
+      for (const [cx, cy] of [[x + 14, y + 14], [x + w - 14, y + 14], [x + 14, y + h - 14], [x + w - 14, y + h - 14]] as Cell[]) {
+        px.roundedRect(cx - s / 2, cy - s / 2, s, s, '#1ea96b', 1)
+      }
+    })
   }
 
-  // 壁（立体ブロック）。
-  private _drawWall(ctx: CanvasRenderingContext2D, x: number, y: number, inner: number): void {
-    ctx.save()
-    ctx.shadowColor = 'rgba(20, 20, 40, 0.3)'
-    ctx.shadowBlur = 4
-    ctx.shadowOffsetY = 2
-    ctx.fillStyle = this._wallColor
-    this._roundRect(ctx, x, y, inner, inner, this._cellRadius)
-    ctx.fill()
-    ctx.restore()
-    // 上面ベベル
-    ctx.fillStyle = this._wallTopColor
-    this._roundRect(ctx, x, y, inner, inner * 0.42, this._cellRadius)
-    ctx.fill()
+  // 壁（立体ブロック表現。TetrisFeature の px.block と共通）。
+  private _drawWall(px: PixelCanvas, x: number, y: number, inner: number): void {
+    px.block(x, y, inner, inner, this._wallColor)
   }
 
-  // ゴールマス（脈動するターゲット）。
-  private _drawGoal(ctx: CanvasRenderingContext2D, cx: number, cy: number, inner: number, animTime: number): void {
+  // ゴールマス（脈動するターゲット）。arc → px.circle / px.arcBlocks に置換。脈動の式は無変更
+  private _drawGoal(px: PixelCanvas, cx: number, cy: number, inner: number, animTime: number): void {
     const pulse = 0.7 + 0.3 * Math.sin(animTime * 4)
     const rad = inner / 2 - 2
-    ctx.save()
-    ctx.fillStyle = `rgba(30, 169, 107, ${0.12 + 0.1 * pulse})`
-    ctx.beginPath()
-    ctx.arc(cx, cy, rad, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.strokeStyle = this._goalColor
-    ctx.lineWidth = 3
-    ctx.beginPath()
-    ctx.arc(cx, cy, rad * (0.7 + 0.08 * pulse), 0, Math.PI * 2)
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.arc(cx, cy, rad * 0.4, 0, Math.PI * 2)
-    ctx.stroke()
-    ctx.fillStyle = this._goalColor
-    ctx.beginPath()
-    ctx.arc(cx, cy, rad * 0.16, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.restore()
+    px.withAlpha(0.12 + 0.1 * pulse, () => px.circle(cx, cy, rad, '#1ea96b'))
+    px.arcBlocks(cx, cy, rad * (0.7 + 0.08 * pulse), 0, Math.PI * 2, this._goalColor, 1)
+    px.arcBlocks(cx, cy, rad * 0.4, 0, Math.PI * 2, this._goalColor, 1)
+    px.circle(cx, cy, rad * 0.16, this._goalColor)
   }
 
-  // プレイヤー駒（視認性の高い意匠: 立体タイル + 光沢 + 中央スタッド）。
-  private _drawPiece(ctx: CanvasRenderingContext2D, cx: number, cy: number, inner: number, animTime: number): void {
+  // プレイヤー駒（立体タイル + 光沢 + 中央スタッド）。補間移動の計算式は無変更
+  private _drawPiece(px: PixelCanvas, cx: number, cy: number, inner: number, animTime: number): void {
     const size = inner * 0.82
     const half = size / 2
-    const r = this._cellRadius
-    ctx.save()
-    // ふわっと浮く影
-    ctx.shadowColor = 'rgba(120, 50, 0, 0.35)'
-    ctx.shadowBlur = 12
-    ctx.shadowOffsetY = 3
-    // 本体（縦グラデーション）
-    const grad = ctx.createLinearGradient(cx, cy - half, cx, cy + half)
-    grad.addColorStop(0, this._pieceColor)
-    grad.addColorStop(1, this._pieceColorDark)
-    ctx.fillStyle = grad
-    this._roundRect(ctx, cx - half, cy - half, size, size, r)
-    ctx.fill()
-    ctx.restore()
+    const cut = Math.max(1, Math.round(this._cellRadius / Math.max(1, PIXELART.size)))
 
-    // 輪郭
-    ctx.strokeStyle = this._pieceOutline
-    ctx.lineWidth = 2.5
-    this._roundRect(ctx, cx - half, cy - half, size, size, r)
-    ctx.stroke()
+    // 本体（縦の帯グラデーション。角落としで角丸を表現）
+    px.bandGradient(cx - half, cy - half, size, size, [[0, this._pieceColor], [1, this._pieceColorDark]], 'v', PIXELART.gradientSteps)
+    // 角落とし: 4隅のセルを背景色で欠けさせる代わりに、輪郭線で角丸を示す
+    this._strokeRoundedRect(px, cx - half, cy - half, size, size, this._pieceOutline, 2.5)
 
     // 光沢（上側ハイライト）
-    ctx.save()
-    ctx.globalAlpha = 0.45
-    ctx.fillStyle = '#ffffff'
-    this._roundRect(ctx, cx - half + 4, cy - half + 4, size - 8, size * 0.32, r - 2)
-    ctx.fill()
-    ctx.restore()
+    px.withAlpha(0.45, () => {
+      px.roundedRect(cx - half + 4, cy - half + 4, size - 8, size * 0.32, '#ffffff', Math.max(1, cut - 1))
+    })
 
     // 中央スタッド（パズルピースのつまみ風、微かに脈動）
     const pulse = 0.9 + 0.1 * Math.sin(animTime * 6)
-    ctx.fillStyle = '#fff4e6'
-    ctx.beginPath()
-    ctx.arc(cx, cy + size * 0.06, half * 0.34 * pulse, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.strokeStyle = this._pieceOutline
-    ctx.lineWidth = 2
-    ctx.stroke()
+    px.circle(cx, cy + size * 0.06, half * 0.34 * pulse, '#fff4e6')
+    px.arcBlocks(cx, cy + size * 0.06, half * 0.34 * pulse, 0, Math.PI * 2, this._pieceOutline, 1)
+  }
+
+  // 角落とし矩形の輪郭のみ（roundedRect は塗りつぶしのみのため、直線4本で枠を近似する）
+  private _strokeRoundedRect(px: PixelCanvas, x: number, y: number, w: number, h: number, color: string, lineWidthPx: number): void {
+    const thickness = Math.max(1, Math.round(lineWidthPx / Math.max(1, PIXELART.size)))
+    px.line(x, y, x + w, y, color, thickness)
+    px.line(x, y + h, x + w, y + h, color, thickness)
+    px.line(x, y, x, y + h, color, thickness)
+    px.line(x + w, y, x + w, y + h, color, thickness)
   }
 
   onManualUpdated(world: MutableWorld, _versionKey: string): void {
@@ -763,16 +678,5 @@ export class PuzzleFeature implements FeatureSystem {
     }
     this._state.puzzleCount++
     this._startPuzzle()
-  }
-
-  private _roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
-    const rad = Math.min(r, w / 2, h / 2)
-    ctx.beginPath()
-    ctx.moveTo(x + rad, y)
-    ctx.arcTo(x + w, y, x + w, y + h, rad)
-    ctx.arcTo(x + w, y + h, x, y + h, rad)
-    ctx.arcTo(x, y + h, x, y, rad)
-    ctx.arcTo(x, y, x + w, y, rad)
-    ctx.closePath()
   }
 }

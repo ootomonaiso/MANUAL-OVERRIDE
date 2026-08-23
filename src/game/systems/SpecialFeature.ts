@@ -14,6 +14,7 @@ import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import type { Hazard } from '../entities'
 import { VFX, STEALTH, BOSS, SPECIAL } from '../../data/tunables'
 import { soundManager } from '../../plugins/SoundManager'
+import { PixelCanvas } from '../render'
 
 interface StealthState {
   idleTimer: number
@@ -142,45 +143,40 @@ export class SpecialFeature implements FeatureSystem {
   }
 
   render(ctx: CanvasRenderingContext2D, world: MutableWorld): void {
+    const px = new PixelCanvas(ctx)
+
     if (world.rules.features.has('stealth_mode') && this.stealth.hidden) {
+      // ステルス外套: 既定はディザ（D8）で「透けている」感を出す
       const p = world.player
-      ctx.save()
-      ctx.globalAlpha = STEALTH.stealthAlpha
-      ctx.fillStyle = '#88ccff'
-      ctx.beginPath()
-      ctx.ellipse(p.x + p.w / 2, p.y + p.h, p.w * 1.4, p.h * 0.35, 0, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.restore()
+      const rx = p.w * 1.4, ry = p.h * 0.35
+      const cx = p.x + p.w / 2, cy = p.y + p.h
+      px.withAlpha(STEALTH.stealthAlpha, () => {
+        px.dither(cx - rx, cy - ry, rx * 2, ry * 2, '#88ccff', 'transparent', 0.5)
+      })
     }
 
     if (world.rules.features.has('tower')) {
       const p = world.player
       const towerX = p.x - 26
       const towerY = p.y + p.h - 36
-      ctx.save()
-      ctx.fillStyle = '#7a8a99'
-      ctx.fillRect(towerX, towerY, 14, 36)
-      ctx.fillStyle = '#cfe8ff'
-      ctx.fillRect(towerX - 3, towerY - 6, 20, 8)
+      // tower.json: 本体(14x36)+上部(20x8)を統合したスプライト。
+      // 合成バウンディングボックス（towerX-3, towerY-6, 20, 42）へ同じサイズで転送する
+      px.sprite('tower', towerX - 3, towerY - 6, 20, 42)
+      // リロードバー（幅の計算 20*reload は無変更）
       const reload = 1 - Math.max(0, this.tower.cooldown) / SPECIAL.towerFireIntervalSec
-      ctx.fillStyle = 'rgba(255,255,255,0.6)'
-      ctx.fillRect(towerX - 3, towerY - 12, 20 * reload, 3)
-      ctx.restore()
+      px.rect(towerX - 3, towerY - 12, 20 * reload, 3, 'rgba(255,255,255,0.6)')
     }
 
     if (world.rules.features.has('boss') && this.boss.active) {
       const boss = this.boss.active
       const sx = world.getHazardScreenX(boss)
       const ratio = Math.max(0, boss.hp / boss.maxHp)
-      ctx.save()
-      ctx.fillStyle = 'rgba(0,0,0,0.5)'
-      ctx.fillRect(sx, boss.y - 14, boss.w, 6)
-      ctx.fillStyle = '#ff4444'
-      ctx.fillRect(sx, boss.y - 14, boss.w * ratio, 6)
-      ctx.strokeStyle = '#ffffff'
-      ctx.lineWidth = 1
-      ctx.strokeRect(sx, boss.y - 14, boss.w, 6)
-      ctx.restore()
+      px.rect(sx, boss.y - 14, boss.w, 6, 'rgba(0,0,0,0.5)')
+      px.rect(sx, boss.y - 14, boss.w * ratio, 6, '#ff4444')
+      px.line(sx, boss.y - 14, sx + boss.w, boss.y - 14, '#ffffff', 1)
+      px.line(sx, boss.y - 8, sx + boss.w, boss.y - 8, '#ffffff', 1)
+      px.line(sx, boss.y - 14, sx, boss.y - 8, '#ffffff', 1)
+      px.line(sx + boss.w, boss.y - 14, sx + boss.w, boss.y - 8, '#ffffff', 1)
     }
   }
 

@@ -1,0 +1,44 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "player_stg",
+  "w": 18,
+  "h": 26,
+  "palette": {
+    "W": "#3a6ea5",
+    "B": "#88ccff",
+    "b": "#5b9fd2",
+    "G": "#eaffff",
+    "C": "#2a7fd0",
+    "O": "#0a0a12"
+  },
+  "frames": {
+    "idle": [
+      ".....OWO..........",
+      ".....OWWO.........",
+      "....OWWWO.........",
+      "....OWWWO.........",
+      "....OWWWO.........",
+      "...OWWWWBOO.......",
+      "...OWWWBBBBO......",
+      "..OWWWbBBBBBO.....",
+      "..OWbbbBBBBBBOO...",
+      ".OWbbbbBBBBBBBBO..",
+      ".ObbbbbBBBBBBBBBO.",
+      ".ObbbbbBBGGGGBBBBO",
+      "OWbbbbbBBGCCCGBBBB",
+      "OWbbbbbBBGCCCGBBBB",
+      ".ObbbbbBBGGGGBBBBO",
+      ".ObbbbbBBBBBBBBBO.",
+      ".OWbbbbBBBBBBBBO..",
+      "..OWbbbBBBBBBOO...",
+      "..OWWWbBBBBBO.....",
+      "...OWWWBBBBO......",
+      "...OWWWWBOO.......",
+      "....OWWWO.........",
+      "....OWWWO.........",
+      "....OWWWO.........",
+      ".....OWWO.........",
+      "......OO.........."
+    ]
+  }
+}

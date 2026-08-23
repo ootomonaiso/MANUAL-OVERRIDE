@@ -9,6 +9,11 @@
 import { GenrePluginBase } from '../engine/GenrePluginBase'
 import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
+import { PixelCanvas } from '../game/render'
+import { PIXELART } from '../data/tunables'
+
+// プレイヤーの走りアニメーションのフレーム数（run_a / run_b の2枚）
+const EXPLORER_RUN_FRAME_COUNT = 2
 
 export class DungeonPlugin extends GenrePluginBase {
   readonly id: GenreId = 'dungeon'
@@ -49,145 +54,86 @@ export class DungeonPlugin extends GenrePluginBase {
   ]
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // 遠景：石造りの壁と天井（暗闇の奥行き）
-    ctx.globalAlpha = 0.25
-    ctx.fillStyle = this.farLayerColor
+    const px = new PixelCanvas(ctx)
 
     // 天井ブロック
-    ctx.fillRect(0, 0, W, gY * 0.18)
+    px.withAlpha(0.25, () => px.rect(0, 0, W, gY * 0.18, this.farLayerColor))
 
     // 壁のブロック目地（横線）
-    ctx.strokeStyle = '#1a1000'
-    ctx.lineWidth = 1
-    ctx.globalAlpha = 0.1
-    for (let gy = 0; gy < gY * 0.18; gy += 14) {
-      ctx.beginPath()
-      ctx.moveTo(0, gy)
-      ctx.lineTo(W, gy)
-      ctx.stroke()
-    }
+    px.withAlpha(0.1, () => {
+      for (let gy = 0; gy < gY * 0.18; gy += 14) {
+        px.line(0, gy, W, gy, '#1a1000', 1)
+      }
+    })
 
-    ctx.globalAlpha = 1
+    // 決定論的ハッシュによる3段階の明度差でタイルの質感を出す（新規のドット絵らしさ）
+    const sector = Math.floor(offsetX / 40)
+    for (let s = sector - 1; s <= sector + Math.ceil(W / 40) + 1; s++) {
+      const h = (s * 977) & 0xff
+      const shade = h % 3
+      const tint = shade === 0 ? 'rgba(255,240,220,0.05)' : shade === 1 ? 'rgba(0,0,0,0.05)' : 'transparent'
+      px.rect(s * 40 - offsetX, 0, 40, gY * 0.18, tint)
+    }
   }
 
   drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // 石壁の柱・アーチ
-    ctx.globalAlpha = 0.65
-    ctx.fillStyle = '#1a1200'
+    const px = new PixelCanvas(ctx)
+
+    // 石壁の柱・アーチ（配置ハッシュは無変更）
     const sector = Math.floor(offsetX / 200)
+    px.withAlpha(0.65, () => {
+      for (let s = sector - 1; s <= sector + 4; s++) {
+        const h = (s * 2017) & 0xffff
+        const pxPos = s * 200 - offsetX + (h % 100)
+        const pillarH = 70 + (h >> 4) % 40
+        px.rect(pxPos - 9, gY - pillarH, 18, pillarH, '#1a1200')
+        // 柱頭装飾（角丸を除去し段差で表現）
+        px.rect(pxPos - 12, gY - pillarH, 24, 8, '#1a1200')
+      }
+    })
+
+    // 松明の光（壁に固定）。炎の揺らぎの駆動式は無変更
+    const t = performance.now() / 700
     for (let s = sector - 1; s <= sector + 4; s++) {
       const h = (s * 2017) & 0xffff
-      const px = s * 200 - offsetX + (h % 100)
+      const pxPos = s * 200 - offsetX + (h % 100)
       const pillarH = 70 + (h >> 4) % 40
-      // 石柱
-      ctx.fillRect(px - 9, gY - pillarH, 18, pillarH)
-      // 柱頭装飾
-      ctx.fillRect(px - 12, gY - pillarH, 24, 8)
-    }
-    ctx.globalAlpha = 1
-
-    // 松明の光（壁に固定）
-    const t = performance.now() / 700
-    const torchSector = Math.floor(offsetX / 200)
-    for (let s = torchSector - 1; s <= torchSector + 4; s++) {
-      const h = (s * 2017) & 0xffff
-      const px = s * 200 - offsetX + (h % 100)
-      const pillarH = 70 + (h >> 4) % 40
-
       const flicker = 0.6 + Math.sin(t * 1.3 + s * 2.1) * 0.25
 
-      // 照らす半円（地面方向）
-      ctx.globalAlpha = flicker * 0.08
-      const grad = ctx.createRadialGradient(px, gY - pillarH + 2, 0, px, gY - pillarH + 2, 70)
-      grad.addColorStop(0, '#ff8800')
-      grad.addColorStop(1, 'rgba(0,0,0,0)')
-      ctx.fillStyle = grad
-      ctx.beginPath()
-      ctx.arc(px, gY - pillarH + 2, 70, 0, Math.PI * 2)
-      ctx.fill()
+      // 照らす半円（ディザによる2〜3段の同心半円で表現）
+      px.withAlpha(flicker * 0.5, () => {
+        px.dither(pxPos - 70, gY - pillarH + 2 - 35, 140, 70, '#ff8800', 'transparent', 0.4)
+      })
 
-      // 炎本体
-      ctx.globalAlpha = flicker * 0.85
-      ctx.fillStyle = '#ff6600'
-      ctx.beginPath()
-      ctx.arc(px, gY - pillarH - 2, 5, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.globalAlpha = flicker * 0.6
-      ctx.fillStyle = '#ffcc00'
-      ctx.beginPath()
-      ctx.arc(px, gY - pillarH - 4, 3, 0, Math.PI * 2)
-      ctx.fill()
+      // 炎本体（2フレームの明滅。駆動式はそのまま、色を切り替えるだけ）
+      const frame = Math.floor(t * 1.3 + s * 2.1) % 2 === 0
+      px.withAlpha(flicker * 0.85, () => px.circle(pxPos, gY - pillarH - 2, 5, '#ff6600'))
+      px.withAlpha(flicker * 0.6, () => px.circle(pxPos, gY - pillarH - 4, frame ? 3 : 2, '#ffcc00'))
     }
 
     // 石畳（地面パターン）
-    ctx.globalAlpha = 0.12
-    ctx.strokeStyle = '#332200'
-    ctx.lineWidth = 1
     const tileW = 40
     const startX = -(offsetX % tileW)
-    for (let tx = startX; tx <= W; tx += tileW) {
-      ctx.beginPath()
-      ctx.moveTo(tx, gY - 2)
-      ctx.lineTo(tx, gY)
-      ctx.stroke()
-    }
-    ctx.globalAlpha = 1
+    px.withAlpha(0.12, () => {
+      for (let tx = startX; tx <= W; tx += tileW) {
+        px.line(tx, gY - 2, tx, gY, '#332200', 1)
+      }
+    })
   }
 
   drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, _onGround: boolean, runCycle: number): void {
-    const legSwing = Math.sin(runCycle * Math.PI * 2) * 8
+    const px = new PixelCanvas(ctx)
 
     // 影
-    ctx.fillStyle = 'rgba(0,0,0,0.4)'
-    ctx.beginPath()
-    ctx.ellipse(w / 2, h + 2, w * 0.36, 4, 0, 0, Math.PI * 2)
-    ctx.fill()
+    px.ellipse(w / 2, h + 2, w * 0.36, 4, 'rgba(0,0,0,0.4)')
 
-    // ローブ（ダンジョン探索者）
-    ctx.fillStyle = '#3a2200'
-    this._roundRect(ctx, 4, h * 0.38, w - 8, h * 0.56, 4)
-    ctx.fill()
+    const frame = Math.floor(runCycle * EXPLORER_RUN_FRAME_COUNT) % 2 === 0 ? 'run_a' : 'run_b'
+    px.sprite('player_explorer', 0, 0, w, h, { frame })
 
-    // ローブのフード線
-    ctx.strokeStyle = '#5a3800'
-    ctx.lineWidth = 1.5
-    ctx.beginPath()
-    ctx.moveTo(w * 0.3, h * 0.38)
-    ctx.lineTo(w * 0.5, h * 0.5)
-    ctx.lineTo(w * 0.72, h * 0.38)
-    ctx.stroke()
-
-    // 頭（フード）
-    ctx.fillStyle = '#2a1800'
-    ctx.beginPath()
-    ctx.arc(w * 0.55, h * 0.22, h * 0.2, 0, Math.PI * 2)
-    ctx.fill()
-
-    // 目（光るアイ）
-    const eyeGlow = `rgba(255,200,50,0.9)`
-    ctx.fillStyle = eyeGlow
-    ctx.shadowColor = '#ffcc00'
-    ctx.shadowBlur = 6
-    ctx.beginPath()
-    ctx.arc(w * 0.62, h * 0.21, 2.5, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.shadowBlur = 0
-
-    // ランタン（左手に持つ）
-    ctx.fillStyle = '#554400'
-    ctx.fillRect(w * 0.0, h * 0.48, 10, 14)
+    // ランタンの明かり（バウンディングボックスを超えて広がるため px.halo で別描画）
     const lanternFlicker = 0.6 + Math.sin(performance.now() / 400) * 0.2
-    ctx.globalAlpha = lanternFlicker * 0.5
-    ctx.fillStyle = '#ffaa00'
-    ctx.beginPath()
-    ctx.arc(5, h * 0.48 + 7, 12, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.globalAlpha = 1
-
-    // 脚
-    ctx.lineWidth = 5.5; ctx.strokeStyle = '#2a1800'; ctx.lineCap = 'round'
-    ctx.beginPath(); ctx.moveTo(w * 0.38, h * 0.9); ctx.lineTo(w * 0.28 - legSwing * 0.35, h + 2); ctx.stroke()
-    ctx.beginPath(); ctx.moveTo(w * 0.62, h * 0.9); ctx.lineTo(w * 0.72 + legSwing * 0.35, h + 2); ctx.stroke()
+    px.halo((expand, c) => px.circle(5, h * 0.48 + 7, 12 + expand, c), '#ffaa00', PIXELART.haloSteps)
+    px.withAlpha(lanternFlicker * 0.5, () => px.circle(5, h * 0.48 + 7, 12, '#ffaa00'))
   }
 }
 

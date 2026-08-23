@@ -1,0 +1,36 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "tower",
+  "w": 10,
+  "h": 21,
+  "palette": {
+    "B": "#7a8a99",
+    "C": "#cfe8ff",
+    "O": "#000000"
+  },
+  "frames": {
+    "idle": [
+      "CCCCCCCCCC",
+      "CCCCCCCCCC",
+      "CCCCCCCCCC",
+      "CCCCCCCCCC",
+      "CCCCCCCCCC",
+      "OOBBBBBBBB",
+      ".OBBBBBBBB",
+      ".OBBBBBBBB",
+      ".OBBBBBBBB",
+      ".OBBBBBBBB",
+      ".OBBBBBBBB",
+      ".OBBBBBBBB",
+      ".OBBBBBBBB",
+      ".OBBBBBBBB",
+      ".OBBBBBBBB",
+      ".OBBBBBBBB",
+      ".OBBBBBBBB",
+      ".OBBBBBBBB",
+      ".OBBBBBBBB",
+      ".OBBBBBBBB",
+      ".OBBBBBBBB"
+    ]
+  }
+}
