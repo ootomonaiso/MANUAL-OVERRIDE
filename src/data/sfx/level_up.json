@@ -1,0 +1,10 @@
+{
+  "id": "level_up",
+  "$comment": "レベルアップ音（上昇アルペジオ）",
+  "tracks": [
+    { "kind": "osc", "wave": "square", "freq": 523, "durationSec": 0.1, "volume": 0.25, "delaySec": 0 },
+    { "kind": "osc", "wave": "square", "freq": 659, "durationSec": 0.1, "volume": 0.25, "delaySec": 0.1 },
+    { "kind": "osc", "wave": "square", "freq": 784, "durationSec": 0.1, "volume": 0.25, "delaySec": 0.2 },
+    { "kind": "osc", "wave": "square", "freq": 1047, "durationSec": 0.15, "volume": 0.3, "delaySec": 0.3 }
+  ]
+}

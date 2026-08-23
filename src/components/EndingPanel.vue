@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import type { FinalScore, GenreId, PlayStyleResult, SurpriseEnding } from '../domain/types'
 import { GENRES } from '../data/genres'
 import { SCORE } from '../data/tunables'
+import { soundManager } from '../plugins/SoundManager'
 
 /** EndingPanel で矛盾状態を表示するためのインターフェース（readonly 対応） */
 interface ContradictionDisplay {
@@ -30,6 +31,15 @@ const genreLabel = genreDef?.label ?? 'ゲーム'
 const endingFlavor = genreDef?.endingFlavor ?? ''
 
 const otherGenres = GENRES.filter(g => g.id !== props.genre && g.id !== 'base')
+
+// ── Issue #24/#146: サプライズエンド種別ごとのアイコン ──────────
+const SURPRISE_ICONS: Record<string, string> = {
+  glitch: '⚠',
+  bad_ending: '💀',
+  hidden_genre: '🔑',
+  narrative_twist: '✨',
+}
+const surpriseIcon = computed(() => SURPRISE_ICONS[props.surpriseEnding?.type ?? ''] ?? '⚠')
 
 // ── Issue #24: プレイスタイルラベル ────────────────────────────
 const playStyleLabels: Record<string, string> = {
@@ -117,12 +127,13 @@ function animateCount(target: number, setter: (v: number) => void, delay: number
 }
 
 onMounted(() => {
+  soundManager.onScoreReveal()
   animateCount(props.finalScore.play,  v => displayPlay.value  = v, 400)
   animateCount(props.finalScore.throw, v => displayThrow.value = v, 900)
   animateCount(props.finalScore.total, v => displayTotal.value = v, 1400, 600)
-  animTimers.push(setTimeout(() => { gradeVisible.value = true }, 2200))
+  animTimers.push(setTimeout(() => { soundManager.onGradeStamp(); gradeVisible.value = true }, 2200))
   animTimers.push(setTimeout(() => { altVisible.value   = true }, 2700))
-  animTimers.push(setTimeout(() => { flavorVisible.value = true }, 3200))
+  animTimers.push(setTimeout(() => { if (props.surpriseEnding) soundManager.onSurpriseEnding(); flavorVisible.value = true }, 3200))
 })
 
 onUnmounted(() => {
@@ -143,7 +154,7 @@ onUnmounted(() => {
       <div class="ending-genre-section">
         <!-- Issue #24: サプライズエンド表示 -->
         <div v-if="surpriseEnding" class="ending-surprise" :class="'surprise-' + surpriseEnding.type">
-          <div class="surprise-icon">⚠</div>
+          <div class="surprise-icon">{{ surpriseIcon }}</div>
           <div class="surprise-title">{{ surpriseEnding.title }}</div>
           <div class="surprise-desc">{{ surpriseEnding.description }}</div>
         </div>

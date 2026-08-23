@@ -1,0 +1,8 @@
+{
+  "$comment": "被弾音 — ノイズ + 低域サインの衝撃",
+  "id": "hit",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.15, "volume": 0.4 },
+    { "kind": "osc", "wave": "sine", "freq": 100, "durationSec": 0.12, "volume": 0.4 }
+  ]
+}

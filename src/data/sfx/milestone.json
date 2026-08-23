@@ -1,0 +1,8 @@
+{
+  "$comment": "マイルストーン — 2音の上昇（523→784 Hz）",
+  "id": "milestone",
+  "tracks": [
+    { "kind": "osc", "wave": "sine", "freq": 523, "freqEnd": 784, "durationSec": 0.1, "volume": 0.25, "delaySec": 0 },
+    { "kind": "osc", "wave": "sine", "freq": 784, "durationSec": 0.1, "volume": 0.2, "delaySec": 0.12 }
+  ]
+}

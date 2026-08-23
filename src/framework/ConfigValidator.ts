@@ -8,6 +8,7 @@
  */
 
 import type { GameConfigMap, GameConfigSection } from './config-types'
+import type { SfxDef, SfxOscTrack, SfxNoiseTrack } from './sfx-types'
 
 export interface ConfigValidationResult {
   ok: boolean
@@ -25,7 +26,7 @@ const REQUIRED_NUMBER_FIELDS: Partial<Record<GameConfigSection, string[]>> = {
   physics: ['playerWidth', 'playerHeight', 'jumpVelocity', 'runSpeed',
             'coyoteFrames', 'jumpBufferFrames'],
   shoot:   ['bulletSpeed', 'bulletWidth', 'bulletHeight', 'shotCooldown', 'comboResetTime'],
-  throw:   ['gravity', 'maxPower', 'powerDistanceDivisor', 'speedMultiplier'],
+  throw:   ['gravity', 'maxPower', 'powerDistanceDivisor'],
   spawn:   ['firstSpawnDist', 'enemyHpAmount', 'itemDropChance', 'itemExpChance'],
   vfx:     ['hitShakeIntensity', 'deathShakeIntensity', 'particleGravity', 'runCycleRate'],
   camera:  ['leadOffset', 'parallaxStars', 'parallaxFar', 'parallaxMid', 'parallaxGround'],
@@ -36,7 +37,7 @@ const REQUIRED_NUMBER_FIELDS: Partial<Record<GameConfigSection, string[]>> = {
   difficulty: ['updateDistancesBaseInterval', 'updateDistancesCount', 'tempoSpeedBonus'],
   boss:    ['firstBossDist', 'bossHp', 'bossWidth', 'bossHeight'],
   rhythm_tuning: ['minBpm', 'maxBpm', 'justWindowSec', 'justMultiplier'],
-  stealth: ['stealthAlpha', 'stealthDurationSec', 'stealthInvincibleSec', 'stealthCooldownSec', 'detectionRange'],
+  stealth: ['stealthAlpha', 'stealthDurationSec', 'stealthCooldownSec', 'detectionRange'],
   genre_params: ['recommendedSingleChoice', 'recommendedMaxPerAxis'],
   game_balance: ['scoreRatioPlay', 'scoreRatioThrow', 'baseScrollSpeed'],
 }
@@ -92,9 +93,7 @@ const RANGE_CHECKS: Array<{
   { section: 'rhythm_tuning', field: 'justMultiplier', min: 0 },
   { section: 'stealth',    field: 'stealthAlpha',   min: 0, max: 1 },
   { section: 'stealth',    field: 'stealthDurationSec', min: 0 },
-  { section: 'stealth',    field: 'stealthInvincibleSec', min: 0 },
   { section: 'stealth',    field: 'stealthCooldownSec', min: 0 },
-  { section: 'stealth',    field: 'stealthInvincibleSec', min: 0 },
   { section: 'game_balance', field: 'scoreRatioPlay', min: 0, max: 1 },
   { section: 'game_balance', field: 'scoreRatioThrow', min: 0, max: 1 },
   { section: 'game_balance', field: 'baseScrollSpeed', min: 0 },
@@ -165,5 +164,76 @@ export function devValidateConfig(config: GameConfigMap): void {
   }
   if (result.ok && result.warnings.length === 0) {
     console.warn('[ConfigValidator] ✅ 設定の整合性チェック: 問題なし')
+  }
+}
+
+const VALID_WAVES = ['sine', 'triangle', 'square', 'sawtooth'] as const
+const VALID_FILTER_TYPES = ['lowpass', 'highpass', 'bandpass'] as const
+
+/** 開発時の SFX 定義検証。PROD ではスキップ。 */
+export function devValidateSfx(defs: Readonly<Record<string, SfxDef>>): void {
+  if (import.meta.env?.PROD) return
+
+  for (const [id, def] of Object.entries(defs)) {
+    if (typeof id !== 'string' || id.length === 0) {
+      console.warn('[ConfigValidator] SFX: id が空の定義があります')
+      continue
+    }
+    if (!Array.isArray(def.tracks) || def.tracks.length === 0) {
+      console.warn(`[ConfigValidator] SFX "${id}": tracks が空です`)
+      continue
+    }
+    for (let i = 0; i < def.tracks.length; i++) {
+      const t = def.tracks[i]
+      const kind = t.kind
+      if (kind === 'osc') {
+        const osc = t as SfxOscTrack
+        if (!VALID_WAVES.includes(osc.wave)) {
+          console.warn(`[ConfigValidator] SFX "${id}".tracks[${i}]: 不正な wave "${osc.wave}"`)
+        }
+        if (typeof osc.freq !== 'number' || osc.freq <= 0) {
+          console.warn(`[ConfigValidator] SFX "${id}".tracks[${i}]: freq が正の数ではありません`)
+        }
+        if (typeof osc.durationSec !== 'number' || osc.durationSec <= 0) {
+          console.warn(`[ConfigValidator] SFX "${id}".tracks[${i}]: durationSec が正の数ではありません`)
+        }
+        if (typeof osc.volume !== 'number' || osc.volume < 0 || osc.volume > 1) {
+          console.warn(`[ConfigValidator] SFX "${id}".tracks[${i}]: volume が 0〜1 の範囲にありません`)
+        }
+      } else if (kind === 'noise') {
+        const noise = t as SfxNoiseTrack
+        if (typeof noise.durationSec !== 'number' || noise.durationSec <= 0) {
+          console.warn(`[ConfigValidator] SFX "${id}".tracks[${i}]: durationSec が正の数ではありません`)
+        }
+        if (typeof noise.volume !== 'number' || noise.volume < 0 || noise.volume > 1) {
+          console.warn(`[ConfigValidator] SFX "${id}".tracks[${i}]: volume が 0〜1 の範囲にありません`)
+        }
+      } else {
+        console.warn(`[ConfigValidator] SFX "${id}".tracks[${i}]: 不正な kind "${kind}"`)
+      }
+      if (t.filter) {
+        if (!VALID_FILTER_TYPES.includes(t.filter.type)) {
+          console.warn(`[ConfigValidator] SFX "${id}".tracks[${i}].filter: 不正な type "${t.filter.type}"`)
+        }
+        if (typeof t.filter.freq !== 'number' || t.filter.freq <= 0) {
+          console.warn(`[ConfigValidator] SFX "${id}".tracks[${i}].filter: freq が正の数ではありません`)
+        }
+        if (t.filter.freqEnd !== undefined && (typeof t.filter.freqEnd !== 'number' || t.filter.freqEnd <= 0)) {
+          console.warn(`[ConfigValidator] SFX "${id}".tracks[${i}].filter.freqEnd: 正の数ではありません`)
+        }
+        if (t.filter.q !== undefined && (typeof t.filter.q !== 'number' || t.filter.q < 0)) {
+          console.warn(`[ConfigValidator] SFX "${id}".tracks[${i}].filter.q: 0 以上の数ではありません`)
+        }
+      }
+      if (t.delaySec !== undefined && (typeof t.delaySec !== 'number' || t.delaySec < 0)) {
+        console.warn(`[ConfigValidator] SFX "${id}".tracks[${i}]: delaySec は 0 以上の数ではありません`)
+      }
+      if (kind === 'osc') {
+        const osc = t as SfxOscTrack
+        if (osc.freqEnd !== undefined && (typeof osc.freqEnd !== 'number' || osc.freqEnd <= 0)) {
+          console.warn(`[ConfigValidator] SFX "${id}".tracks[${i}]: freqEnd は正の数ではありません`)
+        }
+      }
+    }
   }
 }

@@ -77,6 +77,12 @@ export interface GenrePlugin {
   }
 
   /**
+   * プレイヤー描画のスケール係数（デフォルト 1.0）。
+   * 1.5 にするとプレイヤーが1.5倍大きく描画される。
+   */
+  readonly playerScale?: number
+
+  /**
    * このジャンル固有のパーティクル色上書き。
    * 省略したキーは tunables.ts の VFX デフォルト色を使用。
    */
@@ -97,6 +103,13 @@ export interface GenrePlugin {
    * 0 にすると非表示。
    */
   readonly groundDashAlpha?: number
+
+  /**
+   * スクロール速度ボーナス px/s。
+   * RuntimeRules.scrollSpeed の最終計算に加算される（省略時 0）。
+   * tempo パラメータとは別に、ジャンル固有の速度補正をかけたい時に使う。
+   */
+  readonly scrollSpeedBonus?: number
 
   /**
    * ジャンル固有のハザードスポーン密度設定。

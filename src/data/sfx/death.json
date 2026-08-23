@@ -1,0 +1,8 @@
+{
+  "$comment": "死亡音 — のこぎり波の減衰 + ノイズ",
+  "id": "death",
+  "tracks": [
+    { "kind": "osc", "wave": "sawtooth", "freq": 400, "freqEnd": 60, "durationSec": 0.5, "volume": 0.3 },
+    { "kind": "noise", "durationSec": 0.3, "volume": 0.15 }
+  ]
+}

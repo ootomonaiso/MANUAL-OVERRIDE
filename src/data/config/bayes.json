@@ -1,10 +1,8 @@
 {
   "$comment": "ベイズ収束ハイパーパラメータ。decayRateを0.50に引き上げにより少ない選択で収束可能に。",
   "section": "bayes",
-  "convergenceThreshold": 0.30,
   "minProb": 0.30,
   "dominanceRatio": 1.5,
   "decayRate": 0.50,
-  "baseDecay": 0.10,
-  "candidateThreshold": 0.10
+  "baseDecay": 0.10
 }

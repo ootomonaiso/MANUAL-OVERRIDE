@@ -2,10 +2,7 @@ import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import type { BeatMarker } from '../entities'
 import { RHYTHM_TUNING } from '../../data/tunables'
-
-// ビートマーカーの生存時間(ms)。生成時の初期値とフェード計算の分母で共有する
-// （別々にハードコードすると片方だけ変えたときにフェードが実寿命とズレる）。
-const BEAT_MARKER_LIFETIME_MS = 400
+import { soundManager } from '../../plugins/SoundManager'
 
 interface RhythmState {
   beatInterval: number
@@ -70,10 +67,11 @@ export class RhythmFeature implements FeatureSystem {
     if (s.nextBeat <= 0) {
       s.nextBeat += s.beatInterval
       s.beatCount++
+      soundManager.onBeat(r.bpm)
 
       if (beatHazardActive) {
         s.beatHazardInverted = s.beatCount % 2 === 0
-        s.beatMarkers.push({ t: BEAT_MARKER_LIFETIME_MS, x: Math.random() * 600 + 100, strength: 1 })
+        s.beatMarkers.push({ t: 400, x: Math.random() * 600 + 100, strength: 1 })
       }
     }
 
@@ -97,6 +95,7 @@ export class RhythmFeature implements FeatureSystem {
         const p = world.player
         world.addScorePopup(p.x + p.w, p.y + RHYTHM_TUNING.justInputPopupOffsetY, `JUST! +${bonus}`, '#ff00ff')
         world.addParticle(p.x + p.w / 2, p.y, 0, RHYTHM_TUNING.justInputParticleVy, RHYTHM_TUNING.justInputParticleLife, '#ff00ff', RHYTHM_TUNING.justInputParticleSize)
+        soundManager.onJustHit()
       }
     }
   }
@@ -107,7 +106,7 @@ export class RhythmFeature implements FeatureSystem {
     const gY = world.canvas.height - 80
     ctx.save()
     for (const m of this.state.beatMarkers) {
-      ctx.globalAlpha = (m.t / BEAT_MARKER_LIFETIME_MS) * 0.3
+      ctx.globalAlpha = (m.t / 400) * 0.3
       ctx.strokeStyle = '#ff00ff'
       ctx.lineWidth = 2
       ctx.setLineDash([6, 4])

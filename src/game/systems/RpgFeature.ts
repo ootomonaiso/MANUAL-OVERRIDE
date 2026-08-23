@@ -13,14 +13,39 @@ import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import { rectsOverlap } from '../entities'
 import { VFX, SPAWN } from '../../data/tunables'
 import { getActiveSystems } from '../../engine/GameRegistry'
+import { soundManager } from '../../plugins/SoundManager'
 
 export class RpgFeature implements FeatureSystem {
   readonly handles = ['hp', 'exp', 'item_pickup', 'shield'] as const
 
-  /** hp feature: 被弾時に HP 減算・無敵・シェイク・パーティクルを処理 */
+  /** hp feature: 被弾時に HP 減算・シールド・無敵・シェイク・パーティクルを処理 */
   onPlayerHit(world: MutableWorld): void {
     if (!world.rules.features.has('hp')) return
     const p = world.player
+
+    // shield feature: ダメージを1回ガード（クールダウンなし、連続被弾時は消費後即無効）
+    if (world.rules.features.has('shield') && p.hp > 0) {
+      soundManager.onShieldAbsorb()
+      // シールド発動: ダメージを軽減（HP 減算なし）、演出のみ
+      p.invincible = VFX.invincibleDuration
+      world.triggerShake(VFX.hitShakeIntensity * 0.5)
+      // シールドブロックパーティクル（白・拡散）
+      for (let i = 0; i < VFX.hitParticleCount * 2; i++) {
+        const angle = Math.random() * Math.PI * 2
+        const speed = VFX.hitParticleSpeedMin + Math.random() * (VFX.hitParticleSpeedMax - VFX.hitParticleSpeedMin)
+        const life  = VFX.hitParticleLifeMin + Math.random() * VFX.hitParticleLifeRange
+        const size  = VFX.hitParticleSizeBase + Math.random() * VFX.hitParticleSizeRange
+        world.addParticle(
+          p.x + p.w / 2, p.y + p.h / 2,
+          Math.cos(angle) * speed * 1.5, Math.sin(angle) * speed * 1.5 + VFX.hitParticleYBoost,
+          life, '#88ddff', size,
+        )
+      }
+      // shield は1回で消費（feature フラグを削除＝永続的な shield 設定が必要な場合は外す）
+      world.rules.features.delete('shield')
+      return
+    }
+
     world.modifyPlayerHp(-1)
     if (p.hp > 0) {
       p.invincible = VFX.invincibleDuration
@@ -50,6 +75,7 @@ export class RpgFeature implements FeatureSystem {
       if (!rectsOverlap(p.rect, iRect, 0)) continue
       item.alive = false
       world.addScoreVarsItemCollected()
+      soundManager.onItemPickup()
       if (item.type === 'exp') {
         p.exp += SPAWN.expItemExpGain
         world.addScore(SPAWN.expItemScore)

@@ -1,0 +1,7 @@
+{
+  "$comment": "投擲開始 — サイン波の上昇スweep",
+  "id": "throw_start",
+  "tracks": [
+    { "kind": "osc", "wave": "sine", "freq": 200, "freqEnd": 800, "durationSec": 0.3, "volume": 0.4 }
+  ]
+}

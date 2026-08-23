@@ -1,0 +1,7 @@
+{
+  "$comment": "スコア表示音（短いビープ）",
+  "id": "score_reveal",
+  "tracks": [
+    { "kind": "osc", "wave": "square", "freq": 1000, "durationSec": 0.03, "volume": 0.15 }
+  ]
+}

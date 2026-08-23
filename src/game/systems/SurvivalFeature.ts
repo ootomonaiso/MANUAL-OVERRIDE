@@ -13,7 +13,8 @@ import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import { rectsOverlap, Hazard } from '../entities'
 import { SURVIVAL, VFX } from '../../data/tunables'
-import { getActiveSystems, getGenre } from '../../engine/GameRegistry'
+import { getActiveSystems } from '../../engine/GameRegistry'
+import { soundManager } from '../../plugins/SoundManager'
 
 interface SurvivalState {
   meleeCooldown: number
@@ -21,7 +22,6 @@ interface SurvivalState {
   lastHungerDamage: number
   xp: number
   nextLevelXp: number
-  kills: number
 }
 
 export class SurvivalFeature implements FeatureSystem {
@@ -36,7 +36,6 @@ export class SurvivalFeature implements FeatureSystem {
       lastHungerDamage: 0,
       xp: 0,
       nextLevelXp: SURVIVAL.xpPerLevel,
-      kills: 0,
     }
   }
 
@@ -45,9 +44,13 @@ export class SurvivalFeature implements FeatureSystem {
     this._resetPlayer(world)
   }
 
-  onManualUpdated(world: MutableWorld, _versionKey: string): void {
-    this.state = this._fresh()
-    this._resetPlayer(world)
+  onManualUpdated(): void {
+    // 説明書更新（ジャンル確定後も続くカード選択）では一時的な攻撃タイマーのみ
+    // 初期化する。kills/xp/level/weaponDamage を初期化すると次の撃破時に
+    // world へ巻き戻った kills が書き込まれ、最終スコアが下がる（#179）。
+    this.state.meleeCooldown = 0
+    this.state.meleeActive = 0
+    this.state.lastHungerDamage = 0
   }
 
   onDisable(world: MutableWorld): void {
@@ -100,6 +103,7 @@ export class SurvivalFeature implements FeatureSystem {
       if (this.state.lastHungerDamage >= SURVIVAL.hungerDamageInterval) {
         this.state.lastHungerDamage = 0
         world.modifyPlayerHp(-SURVIVAL.hungerDamageAmount)
+        soundManager.onHungerDamage()
         world.triggerShake(VFX.hitShakeIntensity * 0.5)
         world.addScorePopup(p.x + p.w / 2, p.y - 10, 'starving...', SURVIVAL.hudHungerColorLow)
       }
@@ -118,6 +122,7 @@ export class SurvivalFeature implements FeatureSystem {
 
     this.state.meleeCooldown = SURVIVAL.meleeCooldown
     this.state.meleeActive = SURVIVAL.meleeCooldown * SURVIVAL.meleeActiveRatio
+    soundManager.onMeleeAttack()
   }
 
   // ─── 内部: メリー攻撃 × 障害物 衝突判定 ─────────────────────────
@@ -129,24 +134,21 @@ export class SurvivalFeature implements FeatureSystem {
     const range = SURVIVAL.meleeRange
     const damage = p.weaponDamage
 
-    // プレイヤー中心から左右両方向の攻撃範囲（プレイヤー座標＝画面座標）
+    // プレイヤー中心から左右両方向の攻撃範囲
     const meleeLeft = p.x - range
     const meleeRight = p.x + p.w + range
     const meleeTop = p.y - range * SURVIVAL.meleeVerticalRatio
     const meleeBottom = p.y + p.h + range * SURVIVAL.meleeVerticalRatio
     const meleeRect = { x: meleeLeft, y: meleeTop, w: meleeRight - meleeLeft, h: meleeBottom - meleeTop }
 
-    // ハザードはワールド座標なので画面座標へ変換して比較する
-    // （変換しないと cameraX が増える＝スクロール後に近接が一切当たらなくなる）
-    for (let i = world.hazards.length - 1; i >= 0; i--) {
-      const h = world.hazards[i]
+    for (const h of world.hazards) {
       if (h.isSafe || h.hp <= 0) continue
-      const hScreenRect = { x: h.rect.x - world.cameraX, y: h.rect.y, w: h.w, h: h.h }
-      if (!rectsOverlap(meleeRect, hScreenRect, SURVIVAL.meleeCollisionGrace)) continue
+      if (!rectsOverlap(meleeRect, h.rect, SURVIVAL.meleeCollisionGrace)) continue
 
       h.hp -= damage
+      soundManager.onMeleeHit()
       // 攻撃パーティクル
-      for (let j = 0; j < SURVIVAL.meleeHitParticleCount; j++) {
+      for (let i = 0; i < SURVIVAL.meleeHitParticleCount; i++) {
         const angle = Math.random() * Math.PI * 2
         const speed = SURVIVAL.meleeHitParticleSpeedMin + Math.random() * (SURVIVAL.meleeHitParticleSpeedMax - SURVIVAL.meleeHitParticleSpeedMin)
         world.addParticle(
@@ -156,23 +158,14 @@ export class SurvivalFeature implements FeatureSystem {
         )
       }
 
-      // 撃破時のハザード除去・kills 加算・スコア反映・XP付与は _onEnemyKilled が一手に担う。
-      // 除去しないと hp<=0 でもメインループの被弾判定（!isSafe のみ参照）で当たり続け、倒した敵に殺される。
       if (h.hp <= 0) {
         this._onEnemyKilled(world, h)
       }
     }
   }
 
-  // ─── 内部: 敵撃破時のハザード除去・スコア反映・XP付与とレベルアップ ──
-  private _onEnemyKilled(world: MutableWorld, hazard: Hazard): void {
-    // ハザードを即座に除去する。除去しないと hp<=0 のまま当たり判定だけが
-    // 生き残り、倒したはずの敵に触れ続けてダメージを受け続けてしまう。
-    world.removeHazardById(hazard)
-    this.state.kills++
-    world.setKills(this.state.kills)
-    getGenre(world.rules.genre).onHazardDestroyed?.(world, hazard)
-
+  // ─── 内部: 敵撃破時のXP付与とレベルアップ ────────────────────────
+  private _onEnemyKilled(world: MutableWorld, _hazard: Hazard): void {
     if (!world.rules.features.has('survival_level')) return
     const p = world.player
 
@@ -200,6 +193,7 @@ export class SurvivalFeature implements FeatureSystem {
       p.weaponDamage += SURVIVAL.levelUpDamageBonus
 
       // レベルアップ演出
+      soundManager.onLevelUp()
       this._spawnLevelUpEffect(world)
     }
   }
@@ -238,6 +232,7 @@ export class SurvivalFeature implements FeatureSystem {
 
       item.alive = false
       world.addScoreVarsItemCollected()
+      soundManager.onItemPickup()
 
       if (item.type === 'food') {
         p.hunger = Math.min(SURVIVAL.maxHunger, p.hunger + SURVIVAL.foodRestore)

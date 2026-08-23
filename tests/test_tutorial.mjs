@@ -13,8 +13,7 @@ import { chromium } from '@playwright/test';
   console.log('✓ Title screen captured');
 
   // 2. 「はじめる」をクリック
-  const startBtn2 = page.locator('button', { hasText: 'はじめる' });
-  if (await startBtn2.isVisible().catch(() => false)) await startBtn2.click();
+  await page.click('text=はじめる');
   await page.waitForTimeout(1500);
 
   // 3. チュートリアル画面が表示されることを確認

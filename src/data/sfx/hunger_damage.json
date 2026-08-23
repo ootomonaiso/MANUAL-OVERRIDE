@@ -1,0 +1,7 @@
+{
+  "id": "hunger_damage",
+  "$comment": "空腹ダメージ音（低周波減衰）",
+  "tracks": [
+    { "kind": "osc", "wave": "sawtooth", "freq": 150, "freqEnd": 80, "durationSec": 0.15, "volume": 0.25 }
+  ]
+}

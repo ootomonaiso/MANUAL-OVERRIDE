@@ -13,6 +13,7 @@ import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import type { Hazard } from '../entities'
 import { VFX, STEALTH, BOSS, SPECIAL } from '../../data/tunables'
+import { soundManager } from '../../plugins/SoundManager'
 
 interface StealthState {
   idleTimer: number
@@ -54,6 +55,7 @@ export class SpecialFeature implements FeatureSystem {
     world.removeHazardById(hazard)
     world.addScorePopup(screenX + hazard.w / 2, hazard.y, `TOUCH! +${gain}`, '#00ffcc')
     world.addScoreVarsColorTouch()
+    soundManager.onColorTouch()
     const cx = screenX + hazard.w / 2
     const cy = hazard.y + hazard.h / 2
     for (let i = 0; i < 6; i++) {
@@ -76,7 +78,12 @@ export class SpecialFeature implements FeatureSystem {
     }
 
     if (r.features.has('boss') && this.boss.active && !world.hazards.includes(this.boss.active)) {
-      this._onBossDefeated(world, this.boss.active)
+      // hazards配列から消えた理由（撃破 / 画面外カル）を区別せず撃破扱いにすると、
+      // HPを削らず画面外へ流しただけでも撃破スコアが入ってしまう。
+      // hp<=0（実際に倒した）場合のみ撃破報酬を与える。
+      if (this.boss.active.hp <= 0) {
+        this._onBossDefeated(world, this.boss.active)
+      }
       this.boss.active = null
     }
 
@@ -91,6 +98,7 @@ export class SpecialFeature implements FeatureSystem {
     this.timeBonus.timer -= SPECIAL.timeBonusIntervalSec
 
     world.addScore(SPECIAL.timeBonusScore)
+    soundManager.onTimeBonus()
     const p = world.player
     world.addScorePopup(p.x + p.w / 2, p.y - 30, `TIME +${SPECIAL.timeBonusScore}`, '#66ddff')
   }
@@ -110,10 +118,12 @@ export class SpecialFeature implements FeatureSystem {
     spawned.maxHp = spawned.hp
     this.boss.active = spawned
     this.boss.lastBossDistance = world.distance
+    soundManager.onBossSpawn()
     world.triggerShake(BOSS.bossSpawnShake)
   }
 
   private _onBossDefeated(world: MutableWorld, boss: Hazard): void {
+    soundManager.onBossDefeated()
     const sx = world.getHazardScreenX(boss)
     const cx = sx + boss.w / 2
     const cy = boss.y + boss.h / 2
@@ -186,11 +196,9 @@ export class SpecialFeature implements FeatureSystem {
     }
 
     if (this.stealth.idleTimer >= STEALTH.stealthDurationSec) {
+      soundManager.onStealthActivate()
       this.stealth.hidden = true
-      // 潜伏中は毎フレーム無敵時間を上限まで補充する。dt（1フレーム分）だと
-      // 当たり判定・無敵減算が _updateStealth より前に走るため次フレームには実質0へ戻り、
-      // 無敵が機能しない。フレーム間隔を十分に超える固定値で上書きする。
-      p.invincible = Math.max(p.invincible, STEALTH.stealthInvincibleSec)
+      p.invincible = Math.max(p.invincible, dt)
       world.addScoreVarsStealthBonus(dt)
       world.addScore(STEALTH.stealthSafeBonus)
     }
@@ -219,6 +227,7 @@ export class SpecialFeature implements FeatureSystem {
     const cx = targetScreenX + target.w / 2
     const cy = target.y + target.h / 2
     world.removeHazardById(target)
+    soundManager.onTowerFire()
     world.addScore(SPECIAL.towerKillScore)
     world.addScorePopup(cx, target.y, `+${SPECIAL.towerKillScore}`, '#ffd166')
     world.setKills(world.gameStats.kills + 1)

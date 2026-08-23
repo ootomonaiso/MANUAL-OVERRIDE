@@ -1,0 +1,7 @@
+{
+  "id": "tetris_rotate",
+  "$comment": "テトリスブロック回転音",
+  "tracks": [
+    { "kind": "osc", "wave": "triangle", "freq": 330, "durationSec": 0.03, "volume": 0.15 }
+  ]
+}

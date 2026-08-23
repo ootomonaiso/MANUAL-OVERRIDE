@@ -1,7 +1,7 @@
 import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect, FeatureId } from '../domain/types'
 import type { MutableWorld, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup } from './entities'
-import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL } from '../data/gameBalance'
+import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL, BASE_SCROLL_SPEED } from '../data/gameBalance'
 import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY } from '../data/tunables'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
 import { resolveWeight } from '../engine/types'
@@ -73,6 +73,11 @@ export class SideScroller {
   private dead = false
   private paused = false
   private firstJumpDone = false
+  // 説明書更新の進行度。distance と違い初回ジャンプ後にのみ加算し、ジャンル確定後は
+  // postLockUpdatePace 倍で減速する。初回ジャンプ前に更新が溜まる問題(#169)と、
+  // 確定後もテンポが途切れ続ける問題(#104)をこの単一アキュムレータで解消する。
+  private updateProgress = 0
+  private genreLocked = false
 
   // ScoreVars 計算用フィールド
   private scoreVarsHits = 0           // 敵撃破時のヒット数（accuracy 計算用）
@@ -104,6 +109,10 @@ export class SideScroller {
   private shakeIntensity = 0
   private shakeX = 0
   private shakeY = 0
+  /** 被ダメージフラッシュ（残像 0〜1、減衰） */
+  private hitFlash = 0
+  /** ジャンルロック画面フラッシュ（0〜1、減衰） */
+  private genreLockFlash = 0
 
   // 死亡演出
   private deathTimer = 0
@@ -131,8 +140,10 @@ export class SideScroller {
   private _disabledActions = new Map<string, number>()
   // invertHazard 解除予定時刻（-Infinity = 永続/未設定）
   private _invertHazardUntil = -Infinity
-  // changeKey キースタック: action名 → {キー, 解除時刻} のスタック（複数エフェクト対応）
-  private _keyStack = new Map<string, Array<{ key: string; until: number }>>()
+  // changeKey キースタック: action名 → 元のキーのスタック（複数エフェクト対応）
+  private _keyStack = new Map<string, string[]>()
+  // changeKey 解除予定時刻: action名 → 解除時刻
+  private _changeKeyUntil = new Map<string, number>()
   // 次の getSnapshot() で一度だけ返す通知メッセージ
   private _pendingLearningMsg: string | null = null
   private _pendingFormulaError: string | null = null
@@ -157,9 +168,6 @@ export class SideScroller {
     // （無重力ジャンルへの切り替え時に、旧重力下で蓄積した速度がそのまま残り続けるのを防ぐ）
     const oldGravity = this.rules.gravity
     const newGravity = rules.gravity
-    // スクロール軸が切り替わると既存オブジェクトの座標系が別軸として再解釈され、
-    // 切替直後にハザードがワープ/消失する。軸が変わったら一掃する。
-    const oldAxis = this.rules.scrollAxis
     if (!this.player.onGround && newGravity !== oldGravity) {
       if (oldGravity > 0 && newGravity > 0) {
         this.player.vy *= newGravity / oldGravity
@@ -181,20 +189,16 @@ export class SideScroller {
 
     this.rules = rules
     this.input.setGameKeys(rules.controls)
-    if (oldAxis !== rules.scrollAxis) {
-      this.hazards = []
-      this.items = []
-      this._bullets = []
-      this.scorePopups = []
-    }
     if (rules.features.has('double_jump')) {
       this.player.jumpsLeft = Math.max(this.player.jumpsLeft, 2)
     } else {
+      // double_jump が削除された場合、最大ジャンプ回数を1に制限
       this.player.jumpsLeft = Math.min(this.player.jumpsLeft, 1)
     }
     // LearningSystem の副作用状態をリセット（ルール差し替えで古いエフェクトが残らないよう）
     this._disabledActions.clear()
     this._invertHazardUntil = -Infinity
+    this._changeKeyUntil.clear()
     this._keyStack.clear()
     this._pendingLearningMsg = null
     this._gameStats.beatHazardInverted = false
@@ -215,6 +219,7 @@ export class SideScroller {
 
   /** ジャンル確定直後に1回だけ呼ぶ（App.vue の lockedGenre watch から） */
   notifyGenreLocked(): void {
+    this.genreLocked = true
     getGenre(this.rules.genre).onGenreLocked?.(this._buildWorld())
   }
 
@@ -236,6 +241,9 @@ export class SideScroller {
 
   setPaused(v: boolean): void { this.paused = v }
 
+  /** ジャンル確定時の画面フラッシュを発火 */
+  triggerGenreLockFlash(): void { this.genreLockFlash = 1.0 }
+
   /** ウィンドウリサイズ時に呼ぶ。canvas.width/height の変更後に Canvas コンテキスト状態を復元する */
   onResize(): void {
     // canvas サイズ変更で ctx 状態はリセットされる。次フレームの描画が正しく動くよう
@@ -244,14 +252,17 @@ export class SideScroller {
   }
 
   getSnapshot(): GameSnapshot {
+    // distance ではなく updateProgress を基準にする（初回ジャンプ前は 0 のまま
+    // 溜まらない, 確定後は減速する）。#169 / #104
+    const prog = this.updateProgress
     let pending = UPDATE_DISTANCES.findIndex(
-      (d, i) => this.distance >= d && !this.updateTriggeredFor.has(i)
+      (d, i) => prog >= d && !this.updateTriggeredFor.has(i)
     )
     // UPDATE_DISTANCES の範囲外でも無限に更新を続ける
     if (pending < 0) {
       const lastDist = UPDATE_DISTANCES[UPDATE_DISTANCES.length - 1]
-      if (this.distance >= lastDist) {
-        const extraIdx = UPDATE_DISTANCES.length + Math.floor((this.distance - lastDist) / DIFFICULTY.infiniteUpdateInterval)
+      if (prog >= lastDist) {
+        const extraIdx = UPDATE_DISTANCES.length + Math.floor((prog - lastDist) / DIFFICULTY.infiniteUpdateInterval)
         if (!this.updateTriggeredFor.has(extraIdx)) {
           pending = extraIdx
         }
@@ -385,12 +396,17 @@ export class SideScroller {
       this._gameStats.beatHazardInverted = false
       this._invertHazardUntil = -Infinity
     }
-    for (const [action, entries] of this._keyStack) {
-      while (entries.length > 0 && now >= entries[entries.length - 1].until) {
-        const entry = entries.pop()!
-        this._setControl(action, entry.key)
+    for (const [action, until] of this._changeKeyUntil) {
+      if (now >= until) {
+        const stack = this._keyStack.get(action)
+        const orig = stack?.pop()
+        if (orig !== undefined) {
+          this._setControl(action, orig)
+        } else {
+          this._keyStack.delete(action)
+        }
+        this._changeKeyUntil.delete(action)
       }
-      if (entries.length === 0) this._keyStack.delete(action)
     }
 
     const r = this.rules
@@ -446,8 +462,22 @@ export class SideScroller {
     this.shakeX = (Math.random() - 0.5) * this.shakeIntensity * 2
     this.shakeY = (Math.random() - 0.5) * this.shakeIntensity * 2
 
+    // ─── 演出フラッシュ減衰 ───────────────────────────────────────
+    if (this.hitFlash > 0) this.hitFlash = Math.max(0, this.hitFlash - dt * 4)
+    if (this.genreLockFlash > 0) this.genreLockFlash = Math.max(0, this.genreLockFlash - dt * 1.5)
+
     // ─── 距離スコア加算 ───────────────────────────────────────────
     this.playScore += effectiveScrollSpeed * dt * SCORE.distanceScoreRate
+
+    // ─── 説明書更新の進行度加算 ───────────────────────────────────
+    // 初回ジャンプ前は加算しない（溜め込み→まとめ発火の防止, #169）。
+    // ジャンル確定後は減速させ、確定後の割り込み頻度を下げる（#104）。
+    // 進行度はスクロール速度・距離加速に依存させず、固定基準速度で正規化した
+    // 経過時間ベースで加算する（説明書出現を速度非依存にする, #213）。
+    if (this.firstJumpDone) {
+      const pace = this.genreLocked ? DIFFICULTY.postLockUpdatePace : 1
+      this.updateProgress += BASE_SCROLL_SPEED * dt * pace
+    }
   }
 
   // ─── 死亡演出更新 ────────────────────────────────────────────────
@@ -467,7 +497,6 @@ export class SideScroller {
     const H = this.canvas.height
     const leftKey  = r.controls.moveLeft
     const rightKey = r.controls.moveRight
-    const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
 
     if (this.input.keys.has(leftKey))  this.stats.moveLeft++
     if (this.input.keys.has(rightKey)) this.stats.moveRight++
@@ -504,9 +533,6 @@ export class SideScroller {
         if (!h.isSafe) {
           this._onPlayerHit(p)
           if (this.dead) return true
-          // 無敵時間が付与されたら、同一フレーム内で重なっている他のハザードによる
-          // 多重ヒットを防ぐため以降のハザードは処理しない
-          if (p.invincible > 0) break
         } else {
           for (const sys of getActiveSystems(r.features)) {
             sys.onSafeHazardTouch?.(this._getWorld(), h, h.x)
@@ -515,7 +541,7 @@ export class SideScroller {
       }
     }
 
-    if (this.input.justPressed.has(shootKey)) this.stats.shots++
+    // 発射数の統計は実発射する ShootFeature 側で addShot() により計上する（#209）
     return false
   }
 
@@ -529,13 +555,15 @@ export class SideScroller {
     const jumpKey  = r.controls.jump
     const leftKey  = r.controls.moveLeft
     const rightKey = r.controls.moveRight
-    const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
     // tetris_mode: jump key is repurposed for hard drop; lights_out: パズル中は操作不要
     const tetrisMode = r.features.has('tetris_mode')
     const noControlMode = tetrisMode || r.features.has('lights_out')
 
-    if (!r.features.has('auto_run') && !r.features.has('tetris_mode') && this.input.keys.has(leftKey))  this.stats.moveLeft++
-    if ((r.features.has('auto_run') || this.input.keys.has(rightKey)) && !r.features.has('tetris_mode')) this.stats.moveRight++
+    // auto_run 由来の自動前進は「プレイヤーの移動操作」ではないため統計に数えない。
+    // 数えるとプレイスタイル判定が入力に関係なく常に explorer へ偏り、passive が
+    // 一度も検出できなくなる（#171-3）。実際に押されたキーだけを移動操作として数える。
+    if (!tetrisMode && this.input.keys.has(leftKey))  this.stats.moveLeft++
+    if (!tetrisMode && this.input.keys.has(rightKey)) this.stats.moveRight++
     if (p.onGround) {
       this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
     }
@@ -592,8 +620,11 @@ export class SideScroller {
     }
     if (!this.input.keys.has(jumpKey)) this.jumpHeld = false
 
-    // このブロックは外側の else（gravity !== 0 が確定）内なので通常重力のみ
-    p.vy += r.gravity * (p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0) * dt
+    if (r.gravity === 0) {
+      p.vy *= Math.pow(0.05, dt)
+    } else {
+      p.vy += r.gravity * (p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0) * dt
+    }
     p.y += p.vy * dt
 
     if (p.y + p.h >= gY) {
@@ -614,6 +645,11 @@ export class SideScroller {
           this.jumpBufferTimer = 0
           this.jumpHeld = true
           this.stats.jumps++
+          // 通常ジャンプ分岐と同じ副作用を揃える。欠落すると着地バッファジャンプ時に
+          // 初回ジャンプ判定・ジャンプ粒子・SE が出ない一貫性バグになる（#181）。
+          this.firstJumpDone = true
+          this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
+          soundManager.onJump()
           const jw = this._getWorld()
           getGenre(r.genre).onPlayerJump?.(jw)
           for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
@@ -660,9 +696,6 @@ export class SideScroller {
         if (isHazardous) {
           this._onPlayerHit(p)
           if (this.dead) return true
-          // 無敵時間が付与されたら、同一フレーム内で重なっている他のハザードによる
-          // 多重ヒットを防ぐため以降のハザードは処理しない
-          if (p.invincible > 0) break
         } else {
           for (const sys of getActiveSystems(r.features)) {
             sys.onSafeHazardTouch?.(this._getWorld(), h, sx)
@@ -679,13 +712,14 @@ export class SideScroller {
       return h.x - this.cameraX > SPAWN.hazardCullLeft
     })
 
-    if (this.input.justPressed.has(shootKey)) this.stats.shots++
+    // 発射数の統計は実発射する ShootFeature 側で addShot() により計上する（#209）
     return false
   }
 
   // ─── 被弾処理 ────────────────────────────────────────────────────
   private _onPlayerHit(p: Player): void {
     this.stats.collisions += 1
+    this.hitFlash = 1.0  // 被ダメフラッシュ
     const world = this._getWorld()
     soundManager.onHit()
     for (const sys of getActiveSystems(this.rules.features)) {
@@ -775,15 +809,13 @@ export class SideScroller {
     // ─── プレイヤー ───────────────────────────────────────────────
     if (!this.dead) this._drawPlayer()
 
-    // ─── 前景レイヤー（ジャンル装飾: 走査線・ビネット・HUD枠など） ──
-    getGenre(this.rules.genre).drawForeground?.(ctx, this.cameraX, W, H, gY)
-
-    // ─── ジャンル固有HUD ──────────────────────────────────────────
+    // ─── ジャンル固有HUD（シェイクの影響を受けるレイヤー） ─────
     getGenre(r.genre).drawGenreHUD?.(ctx, this._getWorld(), W, H)
 
     ctx.restore()  // shake の restore
 
-    // ─── ジャンル前景（HUD フレーム等。シェイクの影響を受けない画面固定レイヤー） ──
+    // ─── 前景レイヤー（シェイクの影響を受けない画面固定レイヤー） ──
+    // ビネット・スキャンライン・HUDフレーム等の画面固定装飾はここで1回だけ描画
     getGenre(r.genre).drawForeground?.(ctx, this.cameraX, W, H, gY)
 
     // ─── 死亡オーバーレイ ─────────────────────────────────────────
@@ -805,6 +837,18 @@ export class SideScroller {
         ctx.textAlign = 'left'
         ctx.globalAlpha = 1
       }
+    }
+
+    // ─── 被ダメージフラッシュ ─────────────────────────────────────
+    if (this.hitFlash > 0) {
+      ctx.fillStyle = `rgba(255, 0, 0, ${this.hitFlash * 0.3})`
+      ctx.fillRect(0, 0, W, H)
+    }
+
+    // ─── ジャンルロックフラッシュ ─────────────────────────────────
+    if (this.genreLockFlash > 0) {
+      ctx.fillStyle = `rgba(255, 255, 255, ${this.genreLockFlash * 0.15})`
+      ctx.fillRect(0, 0, W, H)
     }
   }
 
@@ -950,6 +994,14 @@ export class SideScroller {
     ctx.scale(squashX * stretchX, squashY * stretchY)
     ctx.translate(-p.w / 2, -p.h)
 
+    // 縦スクロール時は進行（射撃）方向が上になるため、右向き固定のスプライトを
+    // 中心周りに -90° 回して上を向かせる（撃つ向きと体の向きの食い違いを解消, #102）。
+    if (this.rules.scrollAxis === 'y') {
+      ctx.translate(p.w / 2, p.h / 2)
+      ctx.rotate(-Math.PI / 2)
+      ctx.translate(-p.w / 2, -p.h / 2)
+    }
+
     // ジャンルプラグインに描画を委譲（ここに if/else は一切不要）
     getGenre(this.rules.genre).drawPlayer(ctx, p.w, p.h, p.onGround, this.runCycle)
 
@@ -970,8 +1022,11 @@ export class SideScroller {
     let color = h.color
     let glow = h.glowColor
     if (this._gameStats.beatHazardInverted && r.features.has('beat_hazard')) {
-      color = r.safeColors.has(h.color) ? '#e74c3c' : '#3498db'
-      glow = r.safeColors.has(h.color) ? '#ff6b6b' : '#74b9ff'
+      // safeColors はマニュアル由来の色名 Set、h.color はプラグインの HEX なので
+      // has() は常に false になり全ハザードが同色に潰れていた（#171-5）。
+      // 反転時に危険物となる側（衝突判定 line 679 と同じ h.isSafe 基準）を赤で示す。
+      color = h.isSafe ? '#e74c3c' : '#3498db'
+      glow  = h.isSafe ? '#ff6b6b' : '#74b9ff'
     }
 
     const y = h.y + floatY
@@ -982,6 +1037,12 @@ export class SideScroller {
     const pulse = Math.sin(h.pulse * pulseSpd) * pulseAmp + 1
 
     ctx.save()
+
+    // ジャンル固有のハザード描画フック。true ならデフォルト描画（形状・HPバー）をスキップ
+    if (pluginH.drawHazard?.(ctx, h, sx, this._getWorld())) {
+      ctx.restore()
+      return
+    }
 
     // グロー効果
     ctx.shadowColor = glow
@@ -1168,9 +1229,6 @@ export class SideScroller {
     const table = plugin.spawnTable
     const weights = table.map(e => resolveWeight(e, this.distance, e.weightMaxDist ?? SPAWN.spawnWeightMaxDist))
     const entry = table[this._weightedRandom(weights)]
-    // spawnTable が空（または重み合計0）だと _weightedRandom が -1 を返し entry が undefined。
-    // 現行データでは全ジャンル非空だが、将来の空テーブルでのクラッシュを防ぐ。
-    if (!entry) return
 
     const w = entry.wRange[0] + Math.random() * (entry.wRange[1] - entry.wRange[0])
     const h = entry.hRange[0] + Math.random() * (entry.hRange[1] - entry.hRange[0])
@@ -1201,18 +1259,27 @@ export class SideScroller {
     } else {
       // ─── 横スクロール: 画面右端からワールド座標で出現 ────────────
       const worldX = this.cameraX + W + SPAWN.hazardSpawnOffsetX
+      // gravity === 0 は上下自由飛行ジャンル（STG 等）。プレイヤーが y=0 まで登れるため、
+      // air/float 敵を地面基準の帯に固めると画面上部が敵の届かない安全地帯になる（#177）。
+      // このモードでは air/float を可動域全高（0〜gY-h）に分布させる。
+      const freeFlight = r.gravity === 0
       let y: number
       let floatAmp = 0
       switch (entry.placement) {
         case 'air':
-          y = gY - h - SPAWN.airMinOffset - Math.random() * SPAWN.airRandOffset
+          y = freeFlight
+            ? Math.random() * (gY - h)
+            : gY - h - SPAWN.airMinOffset - Math.random() * SPAWN.airRandOffset
           break
         case 'float': {
-          y = gY - h - SPAWN.floatMinOffset - Math.random() * SPAWN.floatRandOffset
           const ampRange = entry.floatAmpRange
           floatAmp = ampRange
             ? ampRange[0] + Math.random() * (ampRange[1] - ampRange[0])
             : SPAWN.defaultFloatAmp
+          // 全高分布時は floatAmp 分の振動で画面外へ抜けないよう内側にクランプする
+          y = freeFlight
+            ? floatAmp + Math.random() * Math.max(0, gY - h - floatAmp * 2)
+            : gY - h - SPAWN.floatMinOffset - Math.random() * SPAWN.floatRandOffset
           break
         }
         default: // 'ground'
@@ -1360,6 +1427,7 @@ export class SideScroller {
       },
       addBeatHit()             { self._gameStats.beatHits++ },
       setBeatHazardInverted(v) { self._gameStats.beatHazardInverted = v },
+      addShot()                { self.stats.shots++ },
 
       addScoreVarsHit()        { self.scoreVarsHits++ },
       addScoreVarsItemCollected() { self.scoreVarsItemsCollected++ },
@@ -1427,19 +1495,19 @@ export class SideScroller {
       case 'changeKey': {
         // payload = "jump:w" のような形式（action:newKey）
         const [action, newKey] = effect.payload.split(':')
-        const currentKey = this._getControl(action)
-        if (!currentKey) break
-        // スタック方式: 各エフェクトが元のキーと解除時刻をプッシュし、期限切れでポップして復元
+        // スタック方式: 各エフェクトが現在のキーをプッシュし、期限切れでポップして復元
         if (!this._keyStack.has(action)) {
           this._keyStack.set(action, [])
         }
-        const stack = this._keyStack.get(action)!
-        // 現在のキーと解除時刻をスタックに保存
-        const until = effect.durationSec != null
-          ? performance.now() + effect.durationSec * 1000
-          : Infinity
-        stack.push({ key: currentKey, until })
+        const currentKey = this._getControl(action)
+        if (currentKey) {
+          const stack = this._keyStack.get(action)
+          if (stack) stack.push(currentKey)
+        }
         this._setControl(action, newKey)
+        if (effect.durationSec != null) {
+          this._changeKeyUntil.set(action, performance.now() + effect.durationSec * 1000)
+        }
         break
       }
     }

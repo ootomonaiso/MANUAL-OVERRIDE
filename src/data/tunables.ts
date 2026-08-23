@@ -76,6 +76,8 @@ export const DIFFICULTY = {
   enemyDensityRate: _d.enemyDensityRate,
   globalDifficultyMult: _d.globalDifficultyMult,
   infiniteUpdateInterval: _d.infiniteUpdateInterval,
+  // ジャンル確定後の説明書更新ペース倍率（<1 で更新間隔を広げテンポ悪化を緩和）
+  postLockUpdatePace: _d.postLockUpdatePace,
 } as const
 
 // ─────────────────────────────────────────────────────────────

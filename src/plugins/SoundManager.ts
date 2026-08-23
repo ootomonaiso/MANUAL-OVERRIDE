@@ -13,6 +13,41 @@ export interface SoundHooks {
   onThrowLand(): void
   onBeat(bpm: number): void
   onCombo(count: number): void
+
+  // SFX 専用フック（JSON 駆動 SE 実装による）
+  onTetrisMove?(): void
+  onTetrisRotate?(): void
+  onTetrisHardDrop?(): void
+  onTetrisLock?(): void
+  onLineClear?(): void
+  onPuzzleSlide?(): void
+  onPuzzleClear?(): void
+  onJustHit?(): void
+  onEnemyDestroyed?(): void
+  onEnemyHit?(): void
+  onMeleeAttack?(): void
+  onMeleeHit?(): void
+  onDash?(): void
+  onSlide?(): void
+  onWallJump?(): void
+  onItemPickup?(): void
+  onColorTouch?(): void
+  onTowerFire?(): void
+  onTimeBonus?(): void
+  onLevelUp?(): void
+  onHungerDamage?(): void
+  onBossSpawn?(): void
+  onBossDefeated?(): void
+  onStealthActivate?(): void
+  onShieldAbsorb?(): void
+  onManualUpdate?(): void
+  onLearningEffect?(): void
+  onThrowRelease?(): void
+  onThrowGrab?(): void
+  onScoreReveal?(): void
+  onGradeStamp?(): void
+  onSurpriseEnding?(): void
+  onPauseToggle?(): void
 }
 
 class SoundManager implements SoundHooks {
@@ -51,9 +86,6 @@ class SoundManager implements SoundHooks {
     this._bgmAudio = audio
 
     audio.play().then(() => {
-      // play() の解決前に別の playBgm/stopBgm で BGM が差し替えられている場合、
-      // 既に破棄済みの古い audio をフェードインし直さない（二重再生防止）。
-      if (this._bgmAudio !== audio) return
       this._cancelFadeIn = this._fade(audio, volume, fadeInMs, () => {
         this._cancelFadeIn = null
       })
@@ -123,6 +155,41 @@ class SoundManager implements SoundHooks {
   onThrowLand() { this._impl.onThrowLand?.() }
   onBeat(bpm: number) { this._impl.onBeat?.(bpm) }
   onCombo(count: number) { this._impl.onCombo?.(count) }
+
+  // SFX 専用フック（JSON 駆動 SE 実装による）
+  onTetrisMove() { this._impl.onTetrisMove?.() }
+  onTetrisRotate() { this._impl.onTetrisRotate?.() }
+  onTetrisHardDrop() { this._impl.onTetrisHardDrop?.() }
+  onTetrisLock() { this._impl.onTetrisLock?.() }
+  onLineClear() { this._impl.onLineClear?.() }
+  onPuzzleSlide() { this._impl.onPuzzleSlide?.() }
+  onPuzzleClear() { this._impl.onPuzzleClear?.() }
+  onJustHit() { this._impl.onJustHit?.() }
+  onEnemyDestroyed() { this._impl.onEnemyDestroyed?.() }
+  onEnemyHit() { this._impl.onEnemyHit?.() }
+  onMeleeAttack() { this._impl.onMeleeAttack?.() }
+  onMeleeHit() { this._impl.onMeleeHit?.() }
+  onDash() { this._impl.onDash?.() }
+  onSlide() { this._impl.onSlide?.() }
+  onWallJump() { this._impl.onWallJump?.() }
+  onItemPickup() { this._impl.onItemPickup?.() }
+  onColorTouch() { this._impl.onColorTouch?.() }
+  onTowerFire() { this._impl.onTowerFire?.() }
+  onTimeBonus() { this._impl.onTimeBonus?.() }
+  onLevelUp() { this._impl.onLevelUp?.() }
+  onHungerDamage() { this._impl.onHungerDamage?.() }
+  onBossSpawn() { this._impl.onBossSpawn?.() }
+  onBossDefeated() { this._impl.onBossDefeated?.() }
+  onStealthActivate() { this._impl.onStealthActivate?.() }
+  onShieldAbsorb() { this._impl.onShieldAbsorb?.() }
+  onManualUpdate() { this._impl.onManualUpdate?.() }
+  onLearningEffect() { this._impl.onLearningEffect?.() }
+  onThrowRelease() { this._impl.onThrowRelease?.() }
+  onThrowGrab() { this._impl.onThrowGrab?.() }
+  onScoreReveal() { this._impl.onScoreReveal?.() }
+  onGradeStamp() { this._impl.onGradeStamp?.() }
+  onSurpriseEnding() { this._impl.onSurpriseEnding?.() }
+  onPauseToggle() { this._impl.onPauseToggle?.() }
 }
 
 export const soundManager = new SoundManager()

@@ -58,6 +58,11 @@
           "minItems": 1
         },
         "genreParams": { "$ref": "#/definitions/genreParams" },
+        "addFeatures": {
+          "type": "array",
+          "description": "この選択で即時付与するフィーチャーID群（ジャンル確定を待たず追加、履歴で累積）。例: [\"shoot\"]",
+          "items": { "type": "string" }
+        },
         "paramMultiplier": {
           "type": "number",
           "description": "genreParams への乗数。省略時 1.0。大きくするとこの選択の重みが増す",

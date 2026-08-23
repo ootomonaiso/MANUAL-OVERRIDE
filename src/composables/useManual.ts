@@ -1,4 +1,4 @@
-import { ref, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import type { ManualVersion } from '../domain/types'
 
 export type DiffLine = { text: string; type: 'added' | 'removed' | 'unchanged' }
@@ -91,13 +91,6 @@ export function useManual(_currentManual: () => ManualVersion) {
     animTimer = setTimeout(() => { isAnimating.value = false }, ANIM_DURATION_MS)
     centerTimer = setTimeout(() => { isCentered.value = false }, CENTER_DURATION_MS)
   }
-
-  // アンマウント後にタイマーが発火して破棄済み ref を触らないよう後片付けする
-  // （useScoreAnimation 等の他 composable と同じパターンに揃える）。
-  onUnmounted(() => {
-    if (animTimer !== null) clearTimeout(animTimer)
-    if (centerTimer !== null) clearTimeout(centerTimer)
-  })
 
   return { history, diffLines, isAnimating, isCentered, recordUpdate }
 }

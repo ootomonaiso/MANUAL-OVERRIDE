@@ -32,6 +32,7 @@
 | ファイル | 対象 | 内容 |
 |---|---|---|
 | [genre-system.md](genre-system.md) | ジャンル | 22ジャンル定義・ジャンル収束アルゴリズム |
+| [genre-lab.md](genre-lab.md) | ジャンル設計（開発ツール） | 事後確率・収束・到達性を可視化する dev 専用 GUI の使い方（`npm run reach-sim` の GUI 版） |
 | [genre-plugin.md](genre-plugin.md) | ジャンル拡張 | GenrePlugin 実装ガイド・全フック一覧 |
 | [feature-ids.md](feature-ids.md) | フィーチャー | 全FeatureId リファレンス（分類別） |
 | [feature-system.md](feature-system.md) | フィーチャー拡張 | FeatureSystem 実装ガイド・全フック一覧 |
@@ -67,8 +68,7 @@
 |---|---|---|
 | [TASKS.md](TASKS.md) | 開発者 | 未実装タスク・改善予定一覧（優先度順） |
 | [CHANGELOG.md](CHANGELOG.md) | 開発者 | 変更履歴・バグ修正ログ |
-| [design.md](design.md) | 開発者 | 実装設計書・型設計・モジュール詳細 |
-| [spec.md](spec.md) | 参照 | 初期仕様ドラフト（歴史的資料） |
+| [../SPECIFICATION.md](../SPECIFICATION.md) | 開発者・企画 | 要件定義書・仕様書・設計書（統合版、リポジトリ直下） |
 | [../plan/engine-audit-report.md](../plan/engine-audit-report.md) | 開発者 | エンジン構造の静的監査（バグ優先度・対応状況付き）。修正前に既知の問題と重複していないか確認する |
 
 ---

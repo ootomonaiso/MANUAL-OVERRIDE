@@ -1,0 +1,9 @@
+{
+  "id": "line_clear",
+  "$comment": "テトリスライン消去音（アルペジオ上昇）",
+  "tracks": [
+    { "kind": "osc", "wave": "square", "freq": 523, "durationSec": 0.08, "volume": 0.25, "delaySec": 0 },
+    { "kind": "osc", "wave": "square", "freq": 659, "durationSec": 0.08, "volume": 0.25, "delaySec": 0.06 },
+    { "kind": "osc", "wave": "square", "freq": 784, "durationSec": 0.1, "volume": 0.25, "delaySec": 0.12 }
+  ]
+}
