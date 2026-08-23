@@ -1,0 +1,8 @@
+{
+  "$comment": "壁ジャンプ音（二重跳ね）",
+  "id": "wall_jump",
+  "tracks": [
+    { "kind": "osc", "wave": "triangle", "freq": 300, "freqEnd": 500, "durationSec": 0.06, "volume": 0.3, "delaySec": 0 },
+    { "kind": "osc", "wave": "triangle", "freq": 400, "freqEnd": 650, "durationSec": 0.06, "volume": 0.25, "delaySec": 0.07 }
+  ]
+}

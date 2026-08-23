@@ -184,6 +184,7 @@ function beginSnapshotLoop() {
 
     // LearningSystem エフェクト通知
     if (snapshot.value.learningNotification) {
+      soundManager.onLearningEffect()
       showToast(`🎯 ${snapshot.value.learningNotification}`)
     }
 
@@ -212,6 +213,7 @@ function onChoose(cardId: string) {
   // 新しい説明書を記録（差分演出）
   const currentManual = gameState.currentManual()
   manualCtl.recordUpdate(currentManual)
+  soundManager.onManualUpdate()
   // ルールをゲームエンジンへ反映。SideScroller.this.rules が gameState.rules と
   // 同一参照を共有すると updateRules() 内の新旧比較が常に「変化なし」になるため、
   // 必ずコピーを渡す（#184）。
@@ -316,6 +318,7 @@ function onKeyDown(e: KeyboardEvent) {
     if (isActivePlayPhase() || reviewPaused.value) {
       e.preventDefault()
       toggleReviewPause()
+      soundManager.onPauseToggle()
     }
   } else if (e.key === 'Escape' && reviewPaused.value) {
     reviewPaused.value = false

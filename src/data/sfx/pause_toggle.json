@@ -1,0 +1,7 @@
+{
+  "id": "pause_toggle",
+  "$comment": "ポーズ切り替え音（短い単音）",
+  "tracks": [
+    { "kind": "osc", "wave": "square", "freq": 400, "durationSec": 0.04, "volume": 0.2 }
+  ]
+}

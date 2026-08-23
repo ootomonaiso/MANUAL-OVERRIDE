@@ -1,0 +1,7 @@
+{
+  "$comment": "ビート刻み — ハイハット風ノイズ",
+  "id": "beat",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.04, "volume": 0.12 }
+  ]
+}

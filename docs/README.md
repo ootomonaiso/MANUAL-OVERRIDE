@@ -68,8 +68,7 @@
 |---|---|---|
 | [TASKS.md](TASKS.md) | 開発者 | 未実装タスク・改善予定一覧（優先度順） |
 | [CHANGELOG.md](CHANGELOG.md) | 開発者 | 変更履歴・バグ修正ログ |
-| [design.md](design.md) | 開発者 | 実装設計書・型設計・モジュール詳細 |
-| [spec.md](spec.md) | 参照 | 初期仕様ドラフト（歴史的資料） |
+| [../SPECIFICATION.md](../SPECIFICATION.md) | 開発者・企画 | 要件定義書・仕様書・設計書（統合版、リポジトリ直下） |
 | [../plan/engine-audit-report.md](../plan/engine-audit-report.md) | 開発者 | エンジン構造の静的監査（バグ優先度・対応状況付き）。修正前に既知の問題と重複していないか確認する |
 
 ---

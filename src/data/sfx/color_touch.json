@@ -1,0 +1,7 @@
+{
+  "id": "color_touch",
+  "$comment": "カラータッチ音（柔らかな単音）",
+  "tracks": [
+    { "kind": "osc", "wave": "sine", "freq": 784, "durationSec": 0.1, "volume": 0.2 }
+  ]
+}

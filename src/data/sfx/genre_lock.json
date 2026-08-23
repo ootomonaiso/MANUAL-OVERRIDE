@@ -1,0 +1,9 @@
+{
+  "$comment": "ジャンル確定 — 矩形波の3音ファンファーレ（440/554/659 Hz）",
+  "id": "genre_lock",
+  "tracks": [
+    { "kind": "osc", "wave": "square", "freq": 440, "durationSec": 0.12, "volume": 0.2, "delaySec": 0 },
+    { "kind": "osc", "wave": "square", "freq": 554, "durationSec": 0.12, "volume": 0.2, "delaySec": 0.13 },
+    { "kind": "osc", "wave": "square", "freq": 659, "durationSec": 0.12, "volume": 0.2, "delaySec": 0.26 }
+  ]
+}

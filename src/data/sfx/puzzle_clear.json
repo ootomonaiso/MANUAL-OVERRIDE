@@ -1,0 +1,10 @@
+{
+  "id": "puzzle_clear",
+  "$comment": "パズル完遂音（上昇アルペジオ）",
+  "tracks": [
+    { "kind": "osc", "wave": "sine", "freq": 523, "durationSec": 0.1, "volume": 0.25, "delaySec": 0 },
+    { "kind": "osc", "wave": "sine", "freq": 659, "durationSec": 0.1, "volume": 0.25, "delaySec": 0.1 },
+    { "kind": "osc", "wave": "sine", "freq": 784, "durationSec": 0.1, "volume": 0.25, "delaySec": 0.2 },
+    { "kind": "osc", "wave": "sine", "freq": 1047, "durationSec": 0.15, "volume": 0.25, "delaySec": 0.3 }
+  ]
+}

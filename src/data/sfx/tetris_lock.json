@@ -1,0 +1,7 @@
+{
+  "id": "tetris_lock",
+  "$comment": "テトリスロック音",
+  "tracks": [
+    { "kind": "osc", "wave": "square", "freq": 440, "durationSec": 0.04, "volume": 0.2 }
+  ]
+}
