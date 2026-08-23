@@ -29,6 +29,7 @@
 | `groundDashAlpha?: number` | 地面ダッシュ模様透明度 |
 | `scrollSpeedBonus?: number` | スクロール速度ボーナス px/s |
 | `verticalBackgroundLayers?: boolean` | 縦スクロールモードでも `drawFarLayer`/`drawMidLayer` を呼ぶか（省略時 false。縦モードは既定で空グラデーション＋星のみ描く） |
+| `spriteFacesUp?: boolean` | `drawPlayer` が上向きを正面としてスプライトを描くか（省略時 false）。true のとき縦スクロール時の engine 側 -90° 回転を無効化し二重回転を防ぐ |
 | `drawFarLayer(ctx, offsetX, W, gY)` | 遠景描画（必須） |
 | `drawMidLayer(ctx, offsetX, W, gY)` | 中景描画（必須） |
 | `drawPlayer(ctx, w, h, onGround, runCycle)` | プレイヤー描画（必須） |

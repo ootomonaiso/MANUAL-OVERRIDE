@@ -1,11 +1,24 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
+import type { HudLayout } from '../domain/hudLayout'
 
 const props = defineProps<{
   survivedSec: number
   distance: number
+  layout?: HudLayout
   firstJumpDone: boolean
 }>()
+
+// 説明書ヒントの向き先。その時のレイアウトで ManualPanel が実際に配置される
+// ゾーンを指す（仕様 4-3 #8）。
+const hint = computed(() => {
+  switch (props.layout) {
+    case 'hbase': return { cls: 'to-topleft',     arrow: '↖', where: '左上' }
+    case 'vstg':  return { cls: 'to-left',        arrow: '←', where: '左' }
+    case 'hstg':  return { cls: 'to-bottom',      arrow: '↓', where: '下' }
+    default:      return { cls: 'to-bottomright', arrow: '↘', where: '右下' }
+  }
+})
 
 // ── ヒントが「こなされた」かを追跡 ──────────────────
 // 色ルールの案内は常時表示の ControlsLegend に集約したため、ここでは
@@ -37,15 +50,15 @@ watch(() => props.survivedSec, v => {
         </div>
       </Transition>
 
-      <!-- 説明書ヒント（右下の説明書を指す矢印） -->
+      <!-- 説明書ヒント（そのレイアウトの説明書ゾーンを指す矢印） -->
       <Transition name="hint-pop">
-        <div v-if="!manualDone" class="hint hint-manual">
+        <div v-if="!manualDone" class="hint hint-manual" :class="hint.cls">
           <div class="hint-manual-text">
             <span class="hint-manual-icon">📋</span>
-            右下の説明書を読んでください
+            {{ hint.where }}の説明書を読んでください
           </div>
           <div class="hint-manual-sub">選択でゲームが変わります</div>
-          <div class="hint-manual-arrow">↘</div>
+          <div class="hint-manual-arrow">{{ hint.arrow }}</div>
         </div>
       </Transition>
 
@@ -99,14 +112,15 @@ watch(() => props.survivedSec, v => {
 }
 .hint-jump-icon { font-size: 14px; }
 
-/* ── 説明書ヒント（右下寄り） ── */
+/* ── 説明書ヒント（配置はレイアウトに追随） ── */
 .hint-manual {
-  bottom: 270px;
-  right: 240px;
   flex-direction: column;
-  align-items: flex-end;
   gap: 4px;
 }
+.hint-manual.to-bottomright { bottom: 270px; right: 240px; align-items: flex-end; }
+.hint-manual.to-topleft     { top: 120px; left: 380px; align-items: flex-start; }
+.hint-manual.to-left        { top: 45%; left: 40px; align-items: flex-start; }
+.hint-manual.to-bottom      { bottom: 130px; left: 50%; transform: translateX(-50%); align-items: center; }
 .hint-manual-text {
   display: flex;
   align-items: center;

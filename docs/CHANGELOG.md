@@ -4,6 +4,30 @@
 
 ---
 
+## HUD再配置・可動域セーフゾーン化と縦STGスプライト二重回転修正（2026-07-15）
+
+### 背景
+
+横スクロール・横STG・縦STGの3系統で、HUD要素（スコア/距離/KILLS/コンボ/操作ヒント/説明書）が四隅に分散し、プレイヤーの可動域と重なって視認性・情報整理の両面で問題があった。地上横スクロールの「地面より下の余白」に相当するセーフゾーンをSTG系にも人工的に設け、そこをHUD専用領域として使う方針で再設計した。あわせて、機首＝上で描く縦STG自機（`aerial_stg`）に engine 側の -90° 回転が二重にかかっていた不具合（#102）を修正した。
+
+### 変更
+
+- **レイアウト分類**（`src/domain/hudLayout.ts` 新規）: RuntimeRules から横STG（`hstg`）/縦STG（`vstg`）/横スクロール原点（`hbase`）/対象外（`other`）を分類する純粋モジュールを追加。engine と Vue が同じ関数でレイアウトを導出する。比率は `hud_safezone.json` で調整可能。
+- **engine**（`sideScroller.ts`）: セーフゾーン境界を目標値へ指数補間、ジャンル確定時に入力ロック＋自機を中央へ自動移動する遷移演出、可動域のクランプ、ハザード/アイテム/パーティクル/スコアポップアップのUIゾーン回避、境界の半透明フィル描画を追加。
+- **HUD**（`Hud.vue` / `ManualPanel.vue` / `TutorialHints.vue`）: スコア・説明書・操作ヒントの配置をレイアウト別に再構成。中央上部のジャンルバッジ浮遊を廃止。
+- **操作ヒント統合**（`ControlHintBadge.vue` 新規）: 上部の操作説明バーと説明書内の操作一覧を、歯車アイコン＋`P`キーの1UIへ集約（`ControlsLegend` を置換）。
+- **縦STGスプライト**（#102）: `GenrePlugin` に `spriteFacesUp` フラグを追加し `AerialStgPlugin` で `true` を宣言。true のプラグインでは `drawPlayer` の -90° 回転をスキップして二重回転を防ぐ。
+
+### 変更ファイル
+
+`src/domain/hudLayout.ts` / `src/data/config/hud_safezone.json` / `src/framework/config-types.ts` / `src/data/tunables.ts` / `src/engine/GenrePlugin.ts` / `src/genres/AerialStgPlugin.ts` / `src/game/sideScroller.ts` / `src/App.vue` / `src/components/Hud.vue` / `src/components/ManualPanel.vue` / `src/components/TutorialHints.vue` / `src/components/ControlHintBadge.vue`
+
+### テスト
+
+- **ユニットテスト**（`tests/unit/domain/hudLayout.test.ts`）: `classifyHudLayout` / `computeSafeZone` の分類・境界算出を検証
+
+---
+
 ## 投擲フェーズの操作性・爽快感・スコア改善（2026-07-10）
 
 ### 問題

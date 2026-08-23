@@ -2,7 +2,8 @@ import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule,
 import type { MutableWorld, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup } from './entities'
 import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL, BASE_SCROLL_SPEED } from '../data/gameBalance'
-import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY } from '../data/tunables'
+import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY, HUD_SAFEZONE } from '../data/tunables'
+import { classifyHudLayout, computeSafeZone, type SafeZone } from '../domain/hudLayout'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
 import { resolveWeight } from '../engine/types'
 import { soundManager } from '../plugins/SoundManager'
@@ -42,6 +43,10 @@ export interface GameSnapshot {
   statItemsCollected: number
   statShots: number
   statDashes: number | undefined
+  // 現在の（イージング補間済み）セーフゾーン境界（px）。HUD配置の同期用。
+  safeZone: SafeZone
+  // ジャンル遷移演出中か（入力ロック中）。
+  transitioning: boolean
 }
 
 // ループ内 dt のクランプ上限（フレーム落ち時に物理が発散するのを防ぐ）
@@ -52,6 +57,17 @@ const INITIAL_LEARNING_DELAY_SEC = 0.5
 
 // ミリ秒 → 秒換算（spawnDensity の interval は ms、スクロール計算は px/s で一致させるため）
 const MS_TO_SEC = 1000
+
+// セーフゾーン境界の指数的追従係数。境界値は目標へ 1-exp(-k*dt/transitionSec) で
+// 補間され、約 transitionSec 経過で ~98% に達する（急な出現を防ぐ, 仕様 2-F/3）。
+const SAFE_ZONE_SETTLE_K = 4
+
+// ジャンル遷移の自動移動イージング係数。ease-out（速く動いて最後に減速＝キビキビ,
+// 仕様 4-2）を指数追従で近似する。transitionSec 経過でほぼ目標に到達。
+const TRANSITION_EASE_K = 5
+
+// ハザードを可動域内に収める際の内側マージン（px）。従来のスポーン端マージン相当。
+const HAZARD_BAND_MARGIN = 10
 
 // ──────────────────────────────────────────────────────────────────────
 // SideScroller — Canvas ゲームエンジン本体
@@ -89,6 +105,13 @@ export class SideScroller {
 
   // カメラ
   private cameraX = 0
+
+  // セーフゾーン境界（px）。毎フレーム目標値へイージング補間される（仕様 2-F/3）。
+  // 現在のレイアウトに応じた上下（横STG）/左右（縦STG）の非可動帯。
+  private safeZone: SafeZone = { top: 0, bottom: 0, left: 0, right: 0 }
+
+  // ジャンル遷移演出の残り時間（秒）。>0 の間は入力ロック＆自動移動中（仕様 2-F）。
+  private _transitionRemaining = 0
 
   // スポーン
   private nextSpawnDist = SPAWN.firstSpawnDist
@@ -297,6 +320,8 @@ export class SideScroller {
       statItemsCollected: this.stats.itemsCollected,
       statShots: this.stats.shots,
       statDashes: this.stats.dashes,
+      safeZone: { ...this.safeZone },
+      transitioning: this._transitionRemaining > 0,
     }
   }
 
@@ -376,6 +401,15 @@ export class SideScroller {
   private _update(dt: number): void {
     this.survivedSec += dt
     this.stats.ticks++
+
+    // セーフゾーン境界を現レイアウトの目標値へ補間（急な出現を防ぐ）
+    this._updateSafeZone(dt)
+
+    // ジャンル遷移演出中は入力を無効化しプレイヤーを中央へ自動移動（仕様 2-F）
+    if (this._transitionRemaining > 0) {
+      this._updateTransition(dt)
+      return
+    }
 
     // ─── LearningSystem の評価（定期チェック） ────────────────────
     if (this.learningRules) {
@@ -480,6 +514,68 @@ export class SideScroller {
     }
   }
 
+  // ─── セーフゾーン境界の補間 ──────────────────────────────────────
+  // 現レイアウト（横STG=上下 / 縦STG=左右）の目標帯幅へ、指数的に追従する。
+  // ジャンル遷移時に旧→新の境界が「徐々に」変化する（仕様 2-F/3）。
+  private _updateSafeZone(dt: number): void {
+    const layout = classifyHudLayout(this.rules)
+    const target = computeSafeZone(layout, this.canvas.width, this.canvas.height, HUD_SAFEZONE)
+    const t = 1 - Math.exp(-dt * SAFE_ZONE_SETTLE_K / HUD_SAFEZONE.transitionSec)
+    const s = this.safeZone
+    s.top    += (target.top    - s.top)    * t
+    s.bottom += (target.bottom - s.bottom) * t
+    s.left   += (target.left   - s.left)   * t
+    s.right  += (target.right  - s.right)  * t
+  }
+
+  /**
+   * ジャンル確定時に1回呼ぶ（App.vue の lockedGenre watch から）。
+   * 新レイアウトが STG系（セーフゾーンを持つ）の場合のみ遷移演出を開始する。
+   * それ以外のジャンルでは中央への自動移動は不自然なため何もしない。
+   */
+  beginGenreTransition(): void {
+    const layout = classifyHudLayout(this.rules)
+    if (layout !== 'hstg' && layout !== 'vstg') return
+    this._transitionRemaining = HUD_SAFEZONE.transitionSec
+  }
+
+  /** 遷移演出フレーム: 入力を無視し、プレイヤーを新レイアウトのy中央へease-outで寄せる */
+  private _updateTransition(dt: number): void {
+    this._transitionRemaining = Math.max(0, this._transitionRemaining - dt)
+    const p = this.player
+    const W = this.canvas.width
+    const H = this.canvas.height
+    const sz = this.safeZone
+
+    // 目標 y: 縦STGは下寄り（シューティングらしい初期位置）、横STGは可動域の中央。
+    const bandTop = sz.top
+    const bandBottom = H - sz.bottom
+    const targetY = this.rules.scrollAxis === 'y'
+      ? bandTop + (bandBottom - bandTop - p.h) * HUD_SAFEZONE.vstgInitialYRatio
+      : (bandTop + bandBottom) / 2 - p.h / 2
+    // 縦STGは可動域の水平中央へ寄せる（左端入場のまま左UIゾーンに張り付くのを防ぐ）。
+    // 横STGは既存の左寄り立ち位置を保つため、境界内クランプのみ。
+    const targetX = this.rules.scrollAxis === 'y'
+      ? (sz.left + (W - sz.right)) / 2 - p.w / 2
+      : Math.max(sz.left, Math.min(W - sz.right - p.w, p.x))
+    const t = 1 - Math.exp(-dt * TRANSITION_EASE_K / HUD_SAFEZONE.transitionSec)
+    p.y += (targetY - p.y) * t
+    p.x += (targetX - p.x) * t
+    p.vx = 0
+    p.vy = 0
+    p.onGround = false
+
+    // 背景スクロールと演出のみ進める（スポーン・衝突・入力は停止）
+    const accel = 1 + Math.min(this.distance / DISTANCE_ACCEL.fullDist, DISTANCE_ACCEL.maxBonus)
+    const speed = this.rules.scrollSpeed * accel
+    this.distance += speed * dt
+    this.cameraX = this.rules.scrollAxis === 'y' ? 0 : this.distance - CAMERA.leadOffset
+    this.particles.update(dt, VFX.particleGravity)
+    this.shakeIntensity *= VFX.shakeDecay
+    if (this.hitFlash > 0) this.hitFlash = Math.max(0, this.hitFlash - dt * 4)
+    if (this.genreLockFlash > 0) this.genreLockFlash = Math.max(0, this.genreLockFlash - dt * 1.5)
+  }
+
   // ─── 死亡演出更新 ────────────────────────────────────────────────
   private _updateDeathEffect(dt: number): void {
     this.deathTimer += dt
@@ -501,7 +597,9 @@ export class SideScroller {
     if (this.input.keys.has(leftKey))  this.stats.moveLeft++
     if (this.input.keys.has(rightKey)) this.stats.moveRight++
     p.x += p.vx * dt
-    p.x = Math.max(0, Math.min(W - p.w, p.x))
+    // 左右セーフゾーン（縦STG）: UIゾーンへは進入不可
+    const sz = this.safeZone
+    p.x = Math.max(sz.left, Math.min(W - sz.right - p.w, p.x))
     p.y = Math.max(0, Math.min(H - p.h, p.y + p.vy * dt))
     p.onGround = false
     this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
@@ -574,7 +672,10 @@ export class SideScroller {
       const downKey = r.controls.moveDown
       if (upKey   && this.input.keys.has(upKey))   p.y -= PLAYER_PHYSICS.runSpeed * dt
       if (downKey && this.input.keys.has(downKey)) p.y += PLAYER_PHYSICS.runSpeed * dt
-      p.y = Math.max(0, Math.min(gY - p.h, p.y))
+      // 上下セーフゾーン（横STG）: 上端 sz.top、下端は地面と下側UIゾーンの厳しい方
+      const sz = this.safeZone
+      const lowerLimit = Math.min(gY, H - sz.bottom) - p.h
+      p.y = Math.max(sz.top, Math.min(lowerLimit, p.y))
       p.vy = 0
       p.onGround = false
       p.airTime += dt
@@ -818,6 +919,9 @@ export class SideScroller {
     // ビネット・スキャンライン・HUDフレーム等の画面固定装飾はここで1回だけ描画
     getGenre(r.genre).drawForeground?.(ctx, this.cameraX, W, H, gY)
 
+    // ─── セーフゾーン境界のグラデーションフェード（仕様 3-3） ──────
+    this._drawSafeZoneBoundaries(W, H)
+
     // ─── 死亡オーバーレイ ─────────────────────────────────────────
     if (this.dead) {
       const fadeIn = Math.min(1, this.deathTimer * UI.deathFadeSpeed)
@@ -850,6 +954,36 @@ export class SideScroller {
       ctx.fillStyle = `rgba(255, 255, 255, ${this.genreLockFlash * 0.15})`
       ctx.fillRect(0, 0, W, H)
     }
+  }
+
+  // ─── セーフゾーン境界のグラデーション描画 ────────────────────────
+  // アクティブな UIゾーン（横STG=上下 / 縦STG=左右）を、外縁が濃く内側へ
+  // 透明にフェードする半透明帯で示す。明確な線は引かない（仕様 3-3 / 4-4 #10）。
+  private _drawSafeZoneBoundaries(W: number, H: number): void {
+    const sz = this.safeZone
+    const a = HUD_SAFEZONE.boundaryFadeAlpha
+    const lineA = HUD_SAFEZONE.boundaryLineAlpha
+    const ctx = this.ctx
+    const EPS = 1
+
+    ctx.save()
+    // UIゾーンを半透明フィルで塗る（可動域を明確化・仕様/実機調整）
+    ctx.fillStyle = `rgba(0,0,0,${a})`
+    if (sz.top > EPS)    ctx.fillRect(0, 0, W, sz.top)
+    if (sz.bottom > EPS) ctx.fillRect(0, H - sz.bottom, W, sz.bottom)
+    if (sz.left > EPS)   ctx.fillRect(0, 0, sz.left, H)
+    if (sz.right > EPS)  ctx.fillRect(W - sz.right, 0, sz.right, H)
+
+    // 内側境界線（可動域の縁）
+    ctx.strokeStyle = `rgba(255,255,255,${lineA})`
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    if (sz.top > EPS)    { ctx.moveTo(0, sz.top);          ctx.lineTo(W, sz.top) }
+    if (sz.bottom > EPS) { ctx.moveTo(0, H - sz.bottom);   ctx.lineTo(W, H - sz.bottom) }
+    if (sz.left > EPS)   { ctx.moveTo(sz.left, 0);         ctx.lineTo(sz.left, H) }
+    if (sz.right > EPS)  { ctx.moveTo(W - sz.right, 0);    ctx.lineTo(W - sz.right, H) }
+    ctx.stroke()
+    ctx.restore()
   }
 
   // ─── 背景描画（プラグイン委譲） ──────────────────────────────────
@@ -996,7 +1130,8 @@ export class SideScroller {
 
     // 縦スクロール時は進行（射撃）方向が上になるため、右向き固定のスプライトを
     // 中心周りに -90° 回して上を向かせる（撃つ向きと体の向きの食い違いを解消, #102）。
-    if (this.rules.scrollAxis === 'y') {
+    // 既に上向きで描くプラグイン（spriteFacesUp）は二重回転になるため回さない。
+    if (this.rules.scrollAxis === 'y' && !getGenre(this.rules.genre).spriteFacesUp) {
       ctx.translate(p.w / 2, p.h / 2)
       ctx.rotate(-Math.PI / 2)
       ctx.translate(-p.w / 2, -p.h / 2)
@@ -1241,10 +1376,15 @@ export class SideScroller {
     const hp = r.features.has('enemy_hp') ? (entry.hpOverride ?? SPAWN.enemyHpAmount) : 1
     const direction = entry.direction ?? 'right'
 
+    // 可動域（左右セーフゾーンを除いた帯）。縦STGで敵がUIゾーンに湧かないようにする。
+    const sz = this.safeZone
+    const bandMinX = sz.left + HAZARD_BAND_MARGIN
+    const bandMaxX = W - sz.right - HAZARD_BAND_MARGIN
+
     if (isVertical) {
-      // ─── 縦スクロール: 画面上端からランダムX位置に出現 ──────────
+      // ─── 縦スクロール: 可動域内のランダムX位置に出現 ──────────
       // hazard は screen 座標で管理（y が増加 → 下に落ちる）
-      const spawnX = Math.random() * (W - w - 20) + 10
+      const spawnX = bandMinX + Math.random() * Math.max(0, bandMaxX - w - bandMinX)
       const spawnY = -h - 20  // 画面外上部
       this.hazards.push(new Hazard(spawnX, spawnY, w, h, color, glowColor, entry.shape, hp, isSafe, 0, direction))
       if (entry.isBoss) {
@@ -1253,7 +1393,7 @@ export class SideScroller {
       }
       if (r.features.has('item_pickup') && Math.random() < SPAWN.itemDropChance) {
         const itemType = Math.random() < SPAWN.itemExpChance ? 'exp' : 'hp'
-        const itemX = Math.random() * (W - 32) + 16
+        const itemX = bandMinX + Math.random() * Math.max(0, bandMaxX - 32 - bandMinX)
         this.items.push(new Item(itemX, spawnY, itemType))
       }
     } else {
@@ -1285,6 +1425,11 @@ export class SideScroller {
         default: // 'ground'
           y = gY - h
       }
+      // 上下セーフゾーン（横STG）を除いた可動域内へ収める。float は振動分も考慮。
+      // 非STG（sz=0）では従来どおり [0, gY-h] に収まり挙動不変。
+      const bandTopY = sz.top + floatAmp
+      const bandBottomY = Math.min(gY, H - sz.bottom) - h - floatAmp
+      if (bandBottomY > bandTopY) y = Math.max(bandTopY, Math.min(bandBottomY, y))
       // 左方向ハザードは画面左外にスポーン
       const spawnX = direction === 'left'
         ? this.cameraX - w - SPAWN.hazardSpawnOffsetX
@@ -1297,7 +1442,8 @@ export class SideScroller {
 
       if (r.features.has('item_pickup') && Math.random() < SPAWN.itemDropChance) {
         const type = Math.random() < SPAWN.itemExpChance ? 'exp' : 'hp'
-        this.items.push(new Item(worldX + SPAWN.itemOffsetX, gY - SPAWN.itemGroundOffsetY, type))
+        const itemY = Math.min(gY - SPAWN.itemGroundOffsetY, H - sz.bottom - SPAWN.itemGroundOffsetY)
+        this.items.push(new Item(worldX + SPAWN.itemOffsetX, itemY, type))
       }
     }
   }
@@ -1362,8 +1508,23 @@ export class SideScroller {
     }
   }
 
+  // 画面座標をアクティブなセーフゾーン（UIゾーン）の外側へ押し出す（仕様 2-H / 4-3 #7）。
+  // 演出（パーティクル・スコアポップアップ）がUI帯に被らないよう境界でクリップする。
+  private _avoidSafeZoneX(x: number): number {
+    const sz = this.safeZone
+    return Math.max(sz.left, Math.min(this.canvas.width - sz.right, x))
+  }
+  private _avoidSafeZoneY(y: number): number {
+    const sz = this.safeZone
+    return Math.max(sz.top, Math.min(this.canvas.height - sz.bottom, y))
+  }
+
   private _addScorePopup(x: number, y: number, text: string, color: string): void {
-    this.scorePopups.push({ x, y, text, color, life: UI.popupLifeSec, vy: UI.popupRiseVy })
+    this.scorePopups.push({
+      x: this._avoidSafeZoneX(x),
+      y: this._avoidSafeZoneY(y),
+      text, color, life: UI.popupLifeSec, vy: UI.popupRiseVy,
+    })
   }
 
   // ─── MutableWorld 実装 ───────────────────────────────────────────
@@ -1388,7 +1549,8 @@ export class SideScroller {
       addScorePopup(x, y, text, c) { self._addScorePopup(x, y, text, c) },
       triggerShake(intensity)       { self.shakeIntensity = Math.max(self.shakeIntensity, intensity) },
       addParticle(x, y, vx, vy, life, color, size = 3) {
-        self.particles.add(x, y, vx, vy, life, color, size)
+        // フィーチャー由来のパーティクルはUIゾーン外側へクリップ（仕様 2-H）
+        self.particles.add(self._avoidSafeZoneX(x), self._avoidSafeZoneY(y), vx, vy, life, color, size)
       },
 
       spawnHazard(h)       { self.hazards.push(h) },

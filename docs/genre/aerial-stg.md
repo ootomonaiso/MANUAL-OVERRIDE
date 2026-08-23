@@ -87,12 +87,12 @@ src/
 
 - `scrollAxis === 'y'` のとき、`MovementFeature.preUpdate` が上下左右のキー入力を `p.vx` / `p.vy` にマッピングする
 - `_updateVertical` で `p.x += p.vx * dt`、`p.y += p.vy * dt` としてそのまま適用（重力なし）
-- プレイヤーは画面外に出ないようクランプされる（`0 ≤ p.x ≤ W - p.w`、`0 ≤ p.y ≤ H - p.h`）
+- プレイヤーは可動域内にクランプされる。左右は HUD セーフゾーン（縦STG=左右のUIゾーン）を除いた帯（`sz.left ≤ p.x ≤ W - sz.right - p.w`）、縦は `0 ≤ p.y ≤ H - p.h`
 - `vertical_scroll` フィーチャーが有効なとき `MovementFeature.update` でハザードに緩やかなX方向ドリフトが加わり、敵の動きに変化が出る
 
 ### 敵の出現（spawnTable）
 
-縦スクロールモードでは全ハザードが画面上端からランダムなX位置に出現し、フレームごとに `h.y += speed * dt` で下降する。
+縦スクロールモードでは全ハザードが画面上端の可動域内（左右の HUD セーフゾーンを除いた帯）のランダムなX位置に出現し、フレームごとに `h.y += speed * dt` で下降する。
 
 | 形状    | placement | weightStart → weightEnd | サイズ        |
 | ------- | --------- | ----------------------- | ------------- |
@@ -153,6 +153,7 @@ aerial_stgでは `shoot` / `spread_shot` / `enemy_hp` の3フィーチャーが�
 ### 描画フックの委譲（エンジン連携）
 
 - `AerialStgPlugin.verticalBackgroundLayers = true` により、縦モードでも `drawFarLayer` / `drawMidLayer` が呼ばれる（`sideScroller._drawBackground` が判定）
+- `AerialStgPlugin.spriteFacesUp = true` により、機首＝上で描く自機スプライトに対して縦スクロール時の engine 側 -90° 回転を無効化する（二重回転回避, #102）
 - `drawHazard` が `true` を返すとデフォルトのハザード描画をスキップし、AerialStgPluginの独自描画を使う
 - `drawForeground` は `ctx.restore()` の外（シェイクの影響を受けない）で呼ばれる
 

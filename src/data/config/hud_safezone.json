@@ -1,0 +1,13 @@
+{
+  "$comment": "HUD再配置 & 可動域セーフゾーン化（hud-ui-spec.md + 実機調整）。比率は画面幅/高さに対する割合。",
+  "section": "hud_safezone",
+  "hbaseTopRatio": 0.25,
+  "hstgTopRatio": 0.25,
+  "hstgBottomRatio": 0.08333,
+  "vstgLeftRatio": 0.225,
+  "vstgRightRatio": 0.225,
+  "vstgInitialYRatio": 0.72,
+  "transitionSec": 1.4,
+  "boundaryFadeAlpha": 0.5,
+  "boundaryLineAlpha": 0.2
+}
