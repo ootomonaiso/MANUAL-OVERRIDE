@@ -1,0 +1,7 @@
+{
+  "$comment": "ジャンプ音 — 三角波の軽い上昇",
+  "id": "jump",
+  "tracks": [
+    { "kind": "osc", "wave": "triangle", "freq": 300, "freqEnd": 500, "durationSec": 0.08, "volume": 0.5 }
+  ]
+}

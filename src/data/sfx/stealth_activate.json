@@ -1,0 +1,7 @@
+{
+  "id": "stealth_activate",
+  "$comment": "ステルス発動音（低周波減衰フェード）",
+  "tracks": [
+    { "kind": "osc", "wave": "sine", "freq": 300, "freqEnd": 150, "durationSec": 0.15, "volume": 0.15 }
+  ]
+}

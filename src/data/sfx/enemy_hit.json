@@ -1,0 +1,8 @@
+{
+  "id": "enemy_hit",
+  "$comment": "敵被弾音",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.05, "volume": 0.2 },
+    { "kind": "osc", "wave": "square", "freq": 200, "durationSec": 0.04, "volume": 0.2 }
+  ]
+}

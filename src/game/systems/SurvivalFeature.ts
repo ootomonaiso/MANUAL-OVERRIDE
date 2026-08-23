@@ -14,6 +14,7 @@ import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import { rectsOverlap, Hazard } from '../entities'
 import { SURVIVAL, VFX } from '../../data/tunables'
 import { getActiveSystems } from '../../engine/GameRegistry'
+import { soundManager } from '../../plugins/SoundManager'
 
 interface SurvivalState {
   meleeCooldown: number
@@ -102,6 +103,7 @@ export class SurvivalFeature implements FeatureSystem {
       if (this.state.lastHungerDamage >= SURVIVAL.hungerDamageInterval) {
         this.state.lastHungerDamage = 0
         world.modifyPlayerHp(-SURVIVAL.hungerDamageAmount)
+        soundManager.onHungerDamage()
         world.triggerShake(VFX.hitShakeIntensity * 0.5)
         world.addScorePopup(p.x + p.w / 2, p.y - 10, 'starving...', SURVIVAL.hudHungerColorLow)
       }
@@ -120,6 +122,7 @@ export class SurvivalFeature implements FeatureSystem {
 
     this.state.meleeCooldown = SURVIVAL.meleeCooldown
     this.state.meleeActive = SURVIVAL.meleeCooldown * SURVIVAL.meleeActiveRatio
+    soundManager.onMeleeAttack()
   }
 
   // ─── 内部: メリー攻撃 × 障害物 衝突判定 ─────────────────────────
@@ -143,6 +146,7 @@ export class SurvivalFeature implements FeatureSystem {
       if (!rectsOverlap(meleeRect, h.rect, SURVIVAL.meleeCollisionGrace)) continue
 
       h.hp -= damage
+      soundManager.onMeleeHit()
       // 攻撃パーティクル
       for (let i = 0; i < SURVIVAL.meleeHitParticleCount; i++) {
         const angle = Math.random() * Math.PI * 2
@@ -189,6 +193,7 @@ export class SurvivalFeature implements FeatureSystem {
       p.weaponDamage += SURVIVAL.levelUpDamageBonus
 
       // レベルアップ演出
+      soundManager.onLevelUp()
       this._spawnLevelUpEffect(world)
     }
   }
@@ -227,6 +232,7 @@ export class SurvivalFeature implements FeatureSystem {
 
       item.alive = false
       world.addScoreVarsItemCollected()
+      soundManager.onItemPickup()
 
       if (item.type === 'food') {
         p.hunger = Math.min(SURVIVAL.maxHunger, p.hunger + SURVIVAL.foodRestore)

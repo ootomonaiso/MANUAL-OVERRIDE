@@ -1,0 +1,11 @@
+{
+  "id": "boss_defeated",
+  "$comment": "ボス撃破音（爆発 + 勝利アルペジオ）",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.3, "volume": 0.3, "filter": { "type": "lowpass", "freq": 1000 } },
+    { "kind": "osc", "wave": "square", "freq": 523, "durationSec": 0.12, "volume": 0.3, "delaySec": 0.1 },
+    { "kind": "osc", "wave": "square", "freq": 659, "durationSec": 0.12, "volume": 0.3, "delaySec": 0.22 },
+    { "kind": "osc", "wave": "square", "freq": 784, "durationSec": 0.12, "volume": 0.3, "delaySec": 0.34 },
+    { "kind": "osc", "wave": "square", "freq": 1047, "durationSec": 0.25, "volume": 0.35, "delaySec": 0.46 }
+  ]
+}

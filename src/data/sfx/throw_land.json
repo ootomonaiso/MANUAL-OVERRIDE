@@ -1,0 +1,8 @@
+{
+  "$comment": "投擲着地 — ノイズ + 低域サイン",
+  "id": "throw_land",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.2, "volume": 0.3 },
+    { "kind": "osc", "wave": "sine", "freq": 80, "durationSec": 0.15, "volume": 0.3 }
+  ]
+}

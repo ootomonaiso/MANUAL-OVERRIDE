@@ -13,6 +13,7 @@ import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import type { Hazard } from '../entities'
 import { VFX, STEALTH, BOSS, SPECIAL } from '../../data/tunables'
+import { soundManager } from '../../plugins/SoundManager'
 
 interface StealthState {
   idleTimer: number
@@ -54,6 +55,7 @@ export class SpecialFeature implements FeatureSystem {
     world.removeHazardById(hazard)
     world.addScorePopup(screenX + hazard.w / 2, hazard.y, `TOUCH! +${gain}`, '#00ffcc')
     world.addScoreVarsColorTouch()
+    soundManager.onColorTouch()
     const cx = screenX + hazard.w / 2
     const cy = hazard.y + hazard.h / 2
     for (let i = 0; i < 6; i++) {
@@ -96,6 +98,7 @@ export class SpecialFeature implements FeatureSystem {
     this.timeBonus.timer -= SPECIAL.timeBonusIntervalSec
 
     world.addScore(SPECIAL.timeBonusScore)
+    soundManager.onTimeBonus()
     const p = world.player
     world.addScorePopup(p.x + p.w / 2, p.y - 30, `TIME +${SPECIAL.timeBonusScore}`, '#66ddff')
   }
@@ -115,10 +118,12 @@ export class SpecialFeature implements FeatureSystem {
     spawned.maxHp = spawned.hp
     this.boss.active = spawned
     this.boss.lastBossDistance = world.distance
+    soundManager.onBossSpawn()
     world.triggerShake(BOSS.bossSpawnShake)
   }
 
   private _onBossDefeated(world: MutableWorld, boss: Hazard): void {
+    soundManager.onBossDefeated()
     const sx = world.getHazardScreenX(boss)
     const cx = sx + boss.w / 2
     const cy = boss.y + boss.h / 2
@@ -191,6 +196,7 @@ export class SpecialFeature implements FeatureSystem {
     }
 
     if (this.stealth.idleTimer >= STEALTH.stealthDurationSec) {
+      soundManager.onStealthActivate()
       this.stealth.hidden = true
       p.invincible = Math.max(p.invincible, dt)
       world.addScoreVarsStealthBonus(dt)
@@ -221,6 +227,7 @@ export class SpecialFeature implements FeatureSystem {
     const cx = targetScreenX + target.w / 2
     const cy = target.y + target.h / 2
     world.removeHazardById(target)
+    soundManager.onTowerFire()
     world.addScore(SPECIAL.towerKillScore)
     world.addScorePopup(cx, target.y, `+${SPECIAL.towerKillScore}`, '#ffd166')
     world.setKills(world.gameStats.kills + 1)

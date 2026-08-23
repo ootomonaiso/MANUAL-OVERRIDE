@@ -2,6 +2,7 @@ import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import { PLAYER_PHYSICS } from '../../data/gameBalance'
 import { PHYSICS, SCORE, EXTRA_MOVEMENT } from '../../data/tunables'
+import { soundManager } from '../../plugins/SoundManager'
 
 const SLIDE_DURATION_SEC = 0.6
 const SLIDE_COOLDOWN_SEC = 0.4
@@ -51,6 +52,7 @@ export class MovementFeature implements FeatureSystem {
       const atLeft  = p.x <= PLAYER_PHYSICS.playerMinX + 0.5
       const atRight = p.x >= W * PLAYER_PHYSICS.playerMaxXRatio - 0.5
       if ((atLeft || atRight) && input.justPressed.has(r.controls.jump)) {
+        soundManager.onWallJump()
         p.jumpsLeft = 1
         p.vx = (atLeft ? 1 : -1) * PLAYER_PHYSICS.wallJumpPushSpeed
         for (let i = 0; i < EXTRA_MOVEMENT.wallJumpParticleCount; i++) {
@@ -152,6 +154,7 @@ export class MovementFeature implements FeatureSystem {
       this.slide.timer = SLIDE_DURATION_SEC
       // ヒットボックスを縮小（背の低い障害物をくぐれるように）
       p.h = Math.max(8, PLAYER_PHYSICS.height * SLIDE_HEIGHT_RATIO)
+      soundManager.onSlide()
       // スライド開始パーティクル
       for (let i = 0; i < 4; i++) {
         world.addParticle(
@@ -179,6 +182,7 @@ export class MovementFeature implements FeatureSystem {
     this.dash.timer    = Math.max(0, this.dash.timer - dt)
 
     if (input.justPressed.has(dashKey) && this.dash.cooldown <= 0) {
+      soundManager.onDash()
       this.dash.timer    = PLAYER_PHYSICS.dashDurationSec
       this.dash.cooldown = PLAYER_PHYSICS.dashCooldownSec
       this.dash.dir = (p.vx < 0 ? -1 : 1)

@@ -1,7 +1,7 @@
 import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect, FeatureId } from '../domain/types'
 import type { MutableWorld, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup } from './entities'
-import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL } from '../data/gameBalance'
+import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL, BASE_SCROLL_SPEED } from '../data/gameBalance'
 import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY, HUD_SAFEZONE } from '../data/tunables'
 import { classifyHudLayout, computeSafeZone, type SafeZone } from '../domain/hudLayout'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
@@ -506,9 +506,11 @@ export class SideScroller {
     // ─── 説明書更新の進行度加算 ───────────────────────────────────
     // 初回ジャンプ前は加算しない（溜め込み→まとめ発火の防止, #169）。
     // ジャンル確定後は減速させ、確定後の割り込み頻度を下げる（#104）。
+    // 進行度はスクロール速度・距離加速に依存させず、固定基準速度で正規化した
+    // 経過時間ベースで加算する（説明書出現を速度非依存にする, #213）。
     if (this.firstJumpDone) {
       const pace = this.genreLocked ? DIFFICULTY.postLockUpdatePace : 1
-      this.updateProgress += effectiveScrollSpeed * dt * pace
+      this.updateProgress += BASE_SCROLL_SPEED * dt * pace
     }
   }
 
@@ -591,7 +593,6 @@ export class SideScroller {
     const H = this.canvas.height
     const leftKey  = r.controls.moveLeft
     const rightKey = r.controls.moveRight
-    const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
 
     if (this.input.keys.has(leftKey))  this.stats.moveLeft++
     if (this.input.keys.has(rightKey)) this.stats.moveRight++
@@ -638,7 +639,7 @@ export class SideScroller {
       }
     }
 
-    if (this.input.justPressed.has(shootKey)) this.stats.shots++
+    // 発射数の統計は実発射する ShootFeature 側で addShot() により計上する（#209）
     return false
   }
 
@@ -652,7 +653,6 @@ export class SideScroller {
     const jumpKey  = r.controls.jump
     const leftKey  = r.controls.moveLeft
     const rightKey = r.controls.moveRight
-    const shootKey = (r.controls.shoot ?? 'z').toLowerCase()
     // tetris_mode: jump key is repurposed for hard drop; lights_out: パズル中は操作不要
     const tetrisMode = r.features.has('tetris_mode')
     const noControlMode = tetrisMode || r.features.has('lights_out')
@@ -813,7 +813,7 @@ export class SideScroller {
       return h.x - this.cameraX > SPAWN.hazardCullLeft
     })
 
-    if (this.input.justPressed.has(shootKey)) this.stats.shots++
+    // 発射数の統計は実発射する ShootFeature 側で addShot() により計上する（#209）
     return false
   }
 
@@ -1589,6 +1589,7 @@ export class SideScroller {
       },
       addBeatHit()             { self._gameStats.beatHits++ },
       setBeatHazardInverted(v) { self._gameStats.beatHazardInverted = v },
+      addShot()                { self.stats.shots++ },
 
       addScoreVarsHit()        { self.scoreVarsHits++ },
       addScoreVarsItemCollected() { self.scoreVarsItemsCollected++ },

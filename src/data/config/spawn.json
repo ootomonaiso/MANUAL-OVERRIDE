@@ -1,7 +1,7 @@
 {
   "$comment": "ハザード・アイテムスポーン",
   "section": "spawn",
-  "firstSpawnDist": 480,
+  "firstSpawnDist": 650,
   "enemyHpAmount": 3,
   "defaultFloatAmp": 14,
   "airMinOffset": 60,

@@ -5,6 +5,7 @@ import {
   type ThrowState,
 } from '../game/throwEngine'
 import type { ThrowResult } from '../domain/types'
+import { soundManager } from '../plugins/SoundManager'
 
 defineProps<{
   manualVersion: string
@@ -88,6 +89,7 @@ function onMouseDown(e: MouseEvent | TouchEvent) {
   if (state.value.phase === 'flying' || state.value.phase === 'done') return
   const { clientX, clientY } = 'touches' in e ? e.touches[0] : e
   state.value = createThrowState()
+  soundManager.onThrowGrab()
   onDragStart(state.value, clientX, clientY)
 }
 
@@ -100,6 +102,7 @@ function onMouseMove(e: MouseEvent | TouchEvent) {
 function onMouseUp() {
   if (state.value.phase !== 'dragging') return
   onRelease(state.value)
+  soundManager.onThrowRelease()
   // 発射の手応え: 粒子バースト + シェイク（弱い投擲では控えめ）
   if (state.value.power > 0.05) {
     burst(state.value.manualX, state.value.manualY, 14, state.value.power)

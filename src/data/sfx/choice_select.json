@@ -1,0 +1,7 @@
+{
+  "$comment": "選択確定 — 短いサインビープ",
+  "id": "choice_select",
+  "tracks": [
+    { "kind": "osc", "wave": "sine", "freq": 660, "durationSec": 0.06, "volume": 0.4 }
+  ]
+}
