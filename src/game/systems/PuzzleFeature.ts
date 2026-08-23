@@ -673,6 +673,7 @@ export class PuzzleFeature implements FeatureSystem {
     this._state.animTo = dest
     this._state.animProgress = 0
     this._state.animDuration = Math.max(this._slideMinSec, dist * this._slidePerCellSec)
+    soundManager.onPuzzleSlide()
   }
 
   private _pressedDirection(input: InputSnapshot): Cell | null {
@@ -708,6 +709,7 @@ export class PuzzleFeature implements FeatureSystem {
     world.setCombo(newCombo)
     this._state.solvedCount++
     soundManager.onCombo(newCombo)
+    soundManager.onPuzzleClear()
 
     const cx = world.canvas.width / 2
     const cy = world.canvas.height / 2

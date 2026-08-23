@@ -1,0 +1,7 @@
+{
+  "id": "tetris_move",
+  "$comment": "テトリスブロック横移動音",
+  "tracks": [
+    { "kind": "osc", "wave": "sine", "freq": 220, "durationSec": 0.03, "volume": 0.15 }
+  ]
+}

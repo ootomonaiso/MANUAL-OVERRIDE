@@ -75,11 +75,14 @@ export class ShootFeature implements FeatureSystem {
     const { rules } = world
     const shootKey = rules.controls.shoot?.toLowerCase() ?? 'z'
 
-    if (!input.justPressed.has(shootKey)) return
+    // 押下中は連射する（#209）。発射間隔は SHOOT.shotCooldown が律速するため
+    // justPressed ではなく keys（押しっぱなし）で判定する。
+    if (!input.keys.has(shootKey)) return
     if (this.state.shotCooldown > 0) return
     if (!rules.features.has('shoot')) return
 
     this.state.shotCooldown = SHOOT.shotCooldown
+    world.addShot()
     soundManager.onShoot()
 
     if (rules.scrollAxis === 'y') {
@@ -153,13 +156,18 @@ export class ShootFeature implements FeatureSystem {
     for (const b of s.bullets) {
       if (!b.alive) continue
       for (const h of world.hazards) {
-        if (h.isSafe || !rectsOverlap(b.rect, h.rect, 0)) continue
+        // 死亡済みハザードをスキップ。同一フレームで複数弾が同一ハザードに命中する場合（three_way / spread_shot 等）、
+        // hp<=0 のハザードへの追加ヒットで kills/combo/score/SE が多重発生するのを防ぐ。
+        if (h.isSafe || h.hp <= 0 || !rectsOverlap(b.rect, h.rect, 0)) continue
         b.alive = false
         if (hasEnemyHp) {
           h.hp--
           if (h.hp <= 0) {
+            soundManager.onEnemyDestroyed()
             s.kills++; s.combo++; s.comboTimer = SHOOT.comboResetTime
             scoreGain += SHOOT.baseScorePerKill * s.combo
+          } else {
+            soundManager.onEnemyHit()
           }
         } else {
           h.hp = 0

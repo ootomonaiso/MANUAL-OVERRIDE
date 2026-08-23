@@ -1,0 +1,7 @@
+{
+  "$comment": "投擲抓取音（短い単音）",
+  "id": "throw_grab",
+  "tracks": [
+    { "kind": "osc", "wave": "sine", "freq": 200, "durationSec": 0.05, "volume": 0.2 }
+  ]
+}

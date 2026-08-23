@@ -1,0 +1,7 @@
+{
+  "$comment": "射撃音 — 矩形波の鋭い放電",
+  "id": "shoot",
+  "tracks": [
+    { "kind": "osc", "wave": "square", "freq": 900, "freqEnd": 300, "durationSec": 0.06, "volume": 0.35 }
+  ]
+}

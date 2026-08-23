@@ -20,6 +20,7 @@ import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import type { ScrollDirection } from '../../domain/types'
 import { TETRIS_COLORS } from './tetris-colors'
+import { soundManager } from '../../plugins/SoundManager'
 
 // ─── グリッド定数 ───────────────────────────────────────────────────
 const COLS = 10
@@ -254,6 +255,7 @@ function rotatePiece(state: TetrisState): boolean {
       const testPiece = { ...state.piece, col: state.piece.col + kick }
       if (isValidPlacement(state.grid, testPiece)) {
         state.piece.col = testPiece.col
+        soundManager.onTetrisRotate()
         return true
       }
     }
@@ -263,6 +265,7 @@ function rotatePiece(state: TetrisState): boolean {
         const testPiece = { ...state.piece, row: state.piece.row + kick }
         if (isValidPlacement(state.grid, testPiece)) {
           state.piece.row = testPiece.row
+          soundManager.onTetrisRotate()
           return true
         }
       }
@@ -271,6 +274,7 @@ function rotatePiece(state: TetrisState): boolean {
     state.piece.rotation = oldRotation
     return false
   }
+  soundManager.onTetrisRotate()
   return true
 }
 
@@ -279,6 +283,7 @@ function movePiece(state: TetrisState, dcol: number): boolean {
   const testPiece = { ...state.piece, col: state.piece.col + dcol }
   if (isValidPlacement(state.grid, testPiece)) {
     state.piece.col = testPiece.col
+    soundManager.onTetrisMove()
     return true
   }
   return false
@@ -299,6 +304,7 @@ function hardDrop(state: TetrisState, _world?: MutableWorld): number {
   // H9+H1-I9: only set lockTimer when piece actually dropped
   // prevents Space spam from resetting lock delay infinitely
   if (dropped > 0) {
+    soundManager.onTetrisHardDrop()
     state.lockTimer = 0.1  // 100ms lock delay after hard drop
     state.lockResets = 0
   }
@@ -316,6 +322,7 @@ function lockPiece(state: TetrisState, world?: MutableWorld): number {
     }
   }
   state.piece = null
+  soundManager.onTetrisLock()
   const lines = clearLines(state, world)
   // H2: update streak - add line count on clear, reset to 0 on no-clear
   if (lines > 0) {
@@ -338,6 +345,7 @@ function clearLines(state: TetrisState, world?: MutableWorld): number {
   }
 
   if (lines > 0) {
+    soundManager.onLineClear()
     state.linesCleared += lines
     const score = LINE_SCORES[Math.min(lines, LINE_SCORES.length - 1)]
     state.totalScore += score

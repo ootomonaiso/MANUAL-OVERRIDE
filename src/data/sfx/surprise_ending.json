@@ -1,0 +1,9 @@
+{
+  "id": "surprise_ending",
+  "$comment": "サプライズエンディング音（三連上昇）",
+  "tracks": [
+    { "kind": "osc", "wave": "sine", "freq": 440, "durationSec": 0.15, "volume": 0.2, "delaySec": 0 },
+    { "kind": "osc", "wave": "sine", "freq": 466, "durationSec": 0.15, "volume": 0.2, "delaySec": 0.15 },
+    { "kind": "osc", "wave": "sine", "freq": 494, "durationSec": 0.2, "volume": 0.2, "delaySec": 0.3 }
+  ]
+}
