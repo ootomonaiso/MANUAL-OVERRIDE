@@ -7,20 +7,29 @@
  *
  * 対象ジャンル: platformer / runner / racing / sports / rhythm
  * すべて横スクロール前提のため、X 平面通過判定で十分。
+ *
+ * 座標系:
+ *   - ハザード h.x はワールド座標（スポーン時 cameraX + W + offset）
+ *   - プレイヤー p.x はスクリーン座標
+ *   - 通過判定・衝突判定はスクリーン系に変換して行う
  */
 
 import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
-import { rectsOverlap } from '../entities'
+import { rectsOverlap, type Hazard } from '../entities'
 import { NEAR_MISS } from '../../data/tunables'
 import { getActiveSystems } from '../../engine/GameRegistry'
 
 interface NearMissState {
-  passedHazards: Set<number>
+  passedHazards: Set<Hazard>
   decayTimer: number
 }
 
 const NEAR_MISS_POPUP_COLOR = '#88ddff'
+
+// マジックナンバー定数化
+const COMBO_POPUP_OFFSET_X = 4    // popX = p.x + p.w + 4
+const COMBO_POPUP_OFFSET_Y = 20  // popY = p.y - 20
 
 export class NearMissComboFeature implements FeatureSystem {
   readonly handles = ['near_miss_combo'] as const
@@ -71,19 +80,29 @@ export class NearMissComboFeature implements FeatureSystem {
     const s = this.state
     const p = world.player
     const threshold = NEAR_MISS.nearMissThreshold
+    const isBeatInverted = world.gameStats.beatHazardInverted && world.rules.features.has('beat_hazard')
 
     for (let i = world.hazards.length - 1; i >= 0; i--) {
       const h = world.hazards[i]
 
-      // 既に通過判定済みならスキップ
-      if (s.passedHazards.has(h.passId)) continue
+      // 既に通過判定済みならスキップ（オブジェクト参照で管理）
+      if (s.passedHazards.has(h)) continue
+
+      // near-miss 対象: isSafe のハザードは安全色（避ける必要がない）
+      // 例外: beat_hazard 反転時は isSafe が危険なので near-miss 対象
+      const isHazardous = isBeatInverted ? h.isSafe : !h.isSafe
+      if (!isHazardous) continue
 
       // 衝突判定: 衝突している場合は near-miss 不是（被弾扱い）
-      if (rectsOverlap(p.rect, h.rect, 0)) continue
+      // ハザードをスクリーン系に変換して p.rect（スクリーン系）と比較
+      const hScreenX = world.getHazardScreenX(h)
+      const hScreenRect = { ...h.rect, x: hScreenX }
+      if (rectsOverlap(p.rect, hScreenRect, 0)) continue
 
       // 通過判定: ハザード右端がプレイヤー左端を下回った = 通過完了
-      if (h.x + h.w < p.x) {
-        s.passedHazards.add(h.passId)
+      // hScreenX はスクリーン座標、p.x もスクリーン座標 → 直接比較可能
+      if (hScreenX + h.w < p.x) {
+        s.passedHazards.add(h)
 
         // 垂直間隔を計算（重なりなら 0）
         const gap = this._verticalGap(p, h)
@@ -93,8 +112,8 @@ export class NearMissComboFeature implements FeatureSystem {
           s.decayTimer = 0
 
           // スコアポップ
-          const popX = p.x + p.w + 4
-          const popY = p.y - 20
+          const popX = p.x + p.w + COMBO_POPUP_OFFSET_X
+          const popY = p.y - COMBO_POPUP_OFFSET_Y
           world.addScorePopup(popX, popY, 'NEAR MISS!', NEAR_MISS_POPUP_COLOR)
         }
       }
@@ -103,6 +122,7 @@ export class NearMissComboFeature implements FeatureSystem {
 
   // ─── 内部: 垂直間隔の計算 ────────────────────────────────────────
   // 2 矩形の垂直方向の離れ（重なりなら 0）を返す。
+  // h.rect は floatAmp 補正済み（y 座標はワールド/スクリーン同一）。
   private _verticalGap(p: { y: number; h: number }, h: { y: number; h: number }): number {
     const pBottom = p.y + p.h
     const hBottom = h.y + h.h

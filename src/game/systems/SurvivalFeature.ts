@@ -15,6 +15,7 @@ import { rectsOverlap, Hazard } from '../entities'
 import { SURVIVAL, VFX } from '../../data/tunables'
 import { getActiveSystems } from '../../engine/GameRegistry'
 import { soundManager } from '../../plugins/SoundManager'
+import { buildMeleeRect, drawMeleeSwing } from './meleeShared'
 
 interface SurvivalState {
   meleeCooldown: number
@@ -76,8 +77,15 @@ export class SurvivalFeature implements FeatureSystem {
   }
 
   render(ctx: CanvasRenderingContext2D, world: MutableWorld): void {
-    if (this.state.meleeActive <= 0) return
-    this._drawMeleeSwing(ctx, world)
+    drawMeleeSwing(
+      ctx,
+      world.player.x,
+      world.player.y,
+      world.player.w,
+      world.player.h,
+      this.state.meleeActive,
+      SURVIVAL.meleeCooldown,
+    )
   }
 
   // ─── 内部: タイマー更新 ──────────────────────────────────────────
@@ -112,7 +120,7 @@ export class SurvivalFeature implements FeatureSystem {
     }
   }
 
-  // ─── 内部: メリー攻撃入力 ────────────────────────────────────────
+  // ─── 内部: 近接攻撃入力 ────────────────────────────────────────
   private _handleMeleeAttack(world: MutableWorld, input: InputSnapshot): void {
     if (!world.rules.features.has('survival_melee')) return
     const shootKey = world.rules.controls.shoot?.toLowerCase() ?? 'z'
@@ -125,25 +133,22 @@ export class SurvivalFeature implements FeatureSystem {
     soundManager.onMeleeAttack()
   }
 
-  // ─── 内部: メリー攻撃 × 障害物 衝突判定 ─────────────────────────
+  // ─── 内部: 近接攻撃 × 障害物 衝突判定 ─────────────────────────
   private _resolveMeleeCollisions(world: MutableWorld): void {
     if (this.state.meleeActive <= 0) return
     if (!world.rules.features.has('survival_melee')) return
 
     const p = world.player
-    const range = SURVIVAL.meleeRange
     const damage = p.weaponDamage
-
-    // プレイヤー中心から左右両方向の攻撃範囲
-    const meleeLeft = p.x - range
-    const meleeRight = p.x + p.w + range
-    const meleeTop = p.y - range * SURVIVAL.meleeVerticalRatio
-    const meleeBottom = p.y + p.h + range * SURVIVAL.meleeVerticalRatio
-    const meleeRect = { x: meleeLeft, y: meleeTop, w: meleeRight - meleeLeft, h: meleeBottom - meleeTop }
+    const meleeRect = buildMeleeRect(p.x, p.y, p.w, p.h)
 
     for (const h of world.hazards) {
       if (h.isSafe || h.hp <= 0) continue
-      if (!rectsOverlap(meleeRect, h.rect, SURVIVAL.meleeCollisionGrace)) continue
+
+      // ハザードをスクリーン系に変換して meleeRect（スクリーン系）と比較
+      const hScreenX = world.getHazardScreenX(h)
+      const hScreenRect = { ...h.rect, x: hScreenX }
+      if (!rectsOverlap(meleeRect, hScreenRect, SURVIVAL.meleeCollisionGrace)) continue
 
       h.hp -= damage
       soundManager.onMeleeHit()
@@ -152,7 +157,7 @@ export class SurvivalFeature implements FeatureSystem {
         const angle = Math.random() * Math.PI * 2
         const speed = SURVIVAL.meleeHitParticleSpeedMin + Math.random() * (SURVIVAL.meleeHitParticleSpeedMax - SURVIVAL.meleeHitParticleSpeedMin)
         world.addParticle(
-          h.x + h.w / 2 - world.cameraX, h.y + h.h / 2,
+          hScreenX + h.w / 2, h.y + h.h / 2,
           Math.cos(angle) * speed, Math.sin(angle) * speed,
           SURVIVAL.meleeHitParticleLife, SURVIVAL.meleeHitParticleColor, SURVIVAL.meleeHitParticleSize,
         )
@@ -247,33 +252,5 @@ export class SurvivalFeature implements FeatureSystem {
         sys.onItemPickup?.(world, item.type)
       }
     }
-  }
-
-  // ─── 内部: メリー攻撃の描画 ──────────────────────────────────────
-  private _drawMeleeSwing(ctx: CanvasRenderingContext2D, world: MutableWorld): void {
-    const p = world.player
-    const cx = p.x + p.w / 2
-    const cy = p.y + p.h / 2
-    const range = SURVIVAL.meleeRange
-    const arc = SURVIVAL.meleeArc
-
-    ctx.save()
-    ctx.globalAlpha = this.state.meleeActive / (SURVIVAL.meleeCooldown * SURVIVAL.meleeActiveRatio)
-    ctx.strokeStyle = SURVIVAL.meleeSwingStrokeColor
-    ctx.lineWidth = SURVIVAL.meleeSwingLineWidth
-    ctx.shadowColor = SURVIVAL.meleeSwingShadowColor
-    ctx.shadowBlur = SURVIVAL.meleeSwingShadowBlur
-
-    // 右方向の弧
-    ctx.beginPath()
-    ctx.arc(cx, cy, range, -arc / 2, arc / 2)
-    ctx.stroke()
-
-    // 左方向の弧
-    ctx.beginPath()
-    ctx.arc(cx, cy, range, Math.PI - arc / 2, Math.PI + arc / 2)
-    ctx.stroke()
-
-    ctx.restore()
   }
 }

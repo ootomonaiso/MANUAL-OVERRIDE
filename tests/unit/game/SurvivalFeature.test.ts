@@ -5,32 +5,64 @@ import type { MutableWorld, InputSnapshot } from '../../../src/engine/types'
 import { SURVIVAL } from '../../../src/data/tunables'
 
 // テスト用の最小限のMutableWorldモック
-function createMockWorld(): MutableWorld {
+// cameraX > 0 で実座標系を再現（melee 衝突バグの検出用）
+function createMockWorld(cameraX: number = 1000): MutableWorld {
   const player = new Player(100, 500)
   const hazards: Hazard[] = []
   const items: Item[] = []
+  const bullets: unknown[] = []
   const particles: unknown[] = []
   const popups: unknown[] = []
-  let shakeAmount = 0
+  let _shakeAmount = 0
+  let kills = 0
+  let combo = 0
+  let maxCombo = 0
+  let beatHits = 0
+  let beatHazardInverted = false
+
+  const gameStats = {
+    kills, combo, maxCombo, beatHits, beatHazardInverted,
+    get killsVal() { return kills },
+    get comboVal() { return combo },
+    get maxComboVal() { return maxCombo },
+  }
 
   const world: MutableWorld = {
     player,
     hazards,
     items,
-    cameraX: 0,
+    bullets,
+    cameraX,
     distance: 0,
+    survivedSec: 0,
     rules: {
       features: new Set(['survival_hunger', 'survival_melee', 'survival_level']),
-      controls: { shoot: 'z' },
+      controls: { shoot: 'z', jump: 'Space', moveLeft: 'ArrowLeft', moveRight: 'ArrowRight' },
+      hazardColors: new Set(),
+      safeColors: new Set(),
+      genre: 'survival',
+      scrollSpeed: 300,
+      bpm: 120,
+      gravity: 1600,
+      scrollDirection: 'horizontal',
+      environment: 'ground',
+      playerMaxHp: 3,
+      timescale: 1,
+      scrollAxis: 'x',
+      colorTouchScore: 200,
     },
-    addParticle: (_x: number, _y: number, _vx: number, _vy: number, _life: number, _color: string, _size: number) => {
+    gameStats: gameStats as unknown as import('../../../src/engine/types').GameStats,
+    canvas: {} as HTMLCanvasElement,
+    ctx: {} as CanvasRenderingContext2D,
+    scrollMode: 'x',
+    addParticle: (_x: number, _y: number, _vx: number, _vy: number, _life: number, _color: string, _size?: number) => {
       particles.push({ _x, _y, _vx, _vy, _life, _color, _size })
     },
     addScorePopup: (_x: number, _y: number, _text: string, _color: string) => {
       popups.push({ _x, _y, _text, _color })
     },
-    triggerShake: (amount: number) => {
-      shakeAmount = amount
+    triggerShake: (_amount: number) => {
+      _shakeAmount = _amount
     },
     modifyPlayerHp: (delta: number) => {
       player.hp += delta
@@ -40,6 +72,25 @@ function createMockWorld(): MutableWorld {
     spawnItem: (item: Item) => {
       items.push(item)
     },
+    setKills: (n: number) => { kills = n },
+    setCombo: (n: number) => { combo = n; if (n > maxCombo) maxCombo = n },
+    resetCombo: () => { combo = 0 },
+    removeHazardById: (h: Hazard) => {
+      const idx = world.hazards.indexOf(h)
+      if (idx >= 0) world.hazards.splice(idx, 1)
+    },
+    spawnHazard: (_h: Hazard) => {},
+    addScore: (_n: number) => {},
+    addBeatHit: () => { beatHits++ },
+    setBeatHazardInverted: (v: boolean) => { beatHazardInverted = v },
+    addShot: () => {},
+    addScoreVarsHit: () => {},
+    addScoreVarsBossKill: () => {},
+    addScoreVarsStealthBonus: (_n: number) => {},
+    addScoreVarsColorTouch: () => {},
+    getHazardScreenX: (h: Hazard) => h.x - world.cameraX,
+    getPlayerWorldX: () => world.player.x + world.cameraX,
+    setTimescale: (_s: number, _d?: number) => {},
   } as unknown as MutableWorld
 
   return world
@@ -123,9 +174,9 @@ describe('SurvivalFeature', () => {
     })
 
     it('攻撃範囲内の敵にダメージを与える', () => {
-      // プレイヤーの近くに敵を配置
+      // cameraX=1000 の世界で、スクリーン X=150 に敵を配置（melee 範囲内）
       const hazard = new Hazard(
-        world.player.x + world.player.w + 10,
+        world.cameraX + 150,
         world.player.y,
         30, 40, 'red', '#ff0000', 'rect', 3, false, 0, 'right'
       )
@@ -142,7 +193,7 @@ describe('SurvivalFeature', () => {
 
     it('安全な敵にはダメージを与えない', () => {
       const hazard = new Hazard(
-        world.player.x + world.player.w + 10,
+        world.cameraX + 150,
         world.player.y,
         30, 40, 'green', '#00ff00', 'rect', 3, true, 0, 'right'
       )
@@ -159,7 +210,7 @@ describe('SurvivalFeature', () => {
   describe('XP/レベルシステム', () => {
     it('敵撃破でXPを獲得する', () => {
       const hazard = new Hazard(
-        world.player.x + world.player.w + 10,
+        world.cameraX + 150,
         world.player.y,
         30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
       )
@@ -178,7 +229,7 @@ describe('SurvivalFeature', () => {
       const enemiesNeeded = Math.ceil(SURVIVAL.xpPerLevel / SURVIVAL.xpPerKill)
       for (let i = 0; i < enemiesNeeded; i++) {
         const hazard = new Hazard(
-          world.player.x + world.player.w + 10,
+          world.cameraX + 150,
           world.player.y,
           30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
         )
@@ -197,7 +248,7 @@ describe('SurvivalFeature', () => {
       const enemiesNeeded = Math.ceil(SURVIVAL.xpPerLevel / SURVIVAL.xpPerKill)
       for (let i = 0; i < enemiesNeeded; i++) {
         const hazard = new Hazard(
-          world.player.x + world.player.w + 10,
+          world.cameraX + 150,
           world.player.y,
           30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
         )
@@ -216,7 +267,7 @@ describe('SurvivalFeature', () => {
       const enemiesNeeded = Math.ceil(SURVIVAL.xpPerLevel / SURVIVAL.xpPerKill)
       for (let i = 0; i < enemiesNeeded; i++) {
         const hazard = new Hazard(
-          world.player.x + world.player.w + 10,
+          world.cameraX + 150,
           world.player.y,
           30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
         )
@@ -234,8 +285,9 @@ describe('SurvivalFeature', () => {
   describe('アイテム収集', () => {
     it('食料アイテムでhungerが回復する', () => {
       world.player.hunger = 10
+      // cameraX=1000 の世界で、スクリーン X=100 に food を配置（プレイヤーと重なる）
       const food = new Item(
-        world.player.x,
+        world.cameraX + 100,
         world.player.y,
         'food'
       )
@@ -249,8 +301,9 @@ describe('SurvivalFeature', () => {
 
     it('武器アイテムでweaponDamageが増加する', () => {
       const initialDamage = world.player.weaponDamage
+      // cameraX=1000 の世界で、スクリーン X=100 に weapon を配置（プレイヤーと重なる）
       const weapon = new Item(
-        world.player.x,
+        world.cameraX + 100,
         world.player.y,
         'weapon'
       )
@@ -263,8 +316,8 @@ describe('SurvivalFeature', () => {
     })
 
     it('exp/hpアイテムはSurvivalFeatureで処理しない', () => {
-      const expItem = new Item(world.player.x, world.player.y, 'exp')
-      const hpItem = new Item(world.player.x, world.player.y, 'hp')
+      const expItem = new Item(world.cameraX + 100, world.player.y, 'exp')
+      const hpItem = new Item(world.cameraX + 100, world.player.y, 'hp')
       world.items.push(expItem, hpItem)
 
       feature.update(world, createMockInput(), 0)

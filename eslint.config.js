@@ -31,7 +31,7 @@ export default [
     },
   },
 
-  // 4. Project-wide rule overrides
+  // 4. src files — 型安全・命名規則
   {
     files: ['src/**/*.{ts,vue}'],
     rules: {
@@ -70,6 +70,17 @@ export default [
       'no-debugger': 'error',
       'prefer-const': 'error',
       eqeqeq: ['error', 'always', { null: 'ignore' }],
+    },
+  },
+
+  // 5. test files — mock 引数の _ プレフィックスを許可
+  {
+    files: ['tests/**/*.{ts,vue}'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
   },
 ]

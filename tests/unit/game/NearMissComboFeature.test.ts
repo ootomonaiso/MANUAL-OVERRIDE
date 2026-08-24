@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { NearMissComboFeature } from '../../../src/game/systems/NearMissComboFeature'
 import { Player, Hazard } from '../../../src/game/entities'
 import type { MutableWorld, InputSnapshot } from '../../../src/engine/types'
@@ -12,8 +12,14 @@ interface MockResult {
   world: MutableWorld
 }
 
-function setupMockWorld(): MockResult {
-  const player = new Player(400, 500) // X=400 に配置（ハザードが右から左へ通過するため）
+/**
+ * テスト用の MutableWorld を構築する。
+ *
+ * ★ cameraX > 0（例: 1000）で設定することで、実ゲームの座標系ミスマッチバグを
+ *   テストが検出できるようにする。ハザードは「cameraX + 画面X」のワールド座標で配置。
+ */
+function setupMockWorld(cameraX: number = 1000): MockResult {
+  const player = new Player(400, 500) // X=400 はスクリーン座標（画面内）
   const hazards: Hazard[] = []
 
   const gameStats = {
@@ -29,7 +35,7 @@ function setupMockWorld(): MockResult {
     hazards,
     items: [],
     bullets: [],
-    cameraX: 0,
+    cameraX,
     distance: 0,
     survivedSec: 0,
     rules: {
@@ -108,27 +114,37 @@ describe('NearMissComboFeature', () => {
     registerGenre(new BasePlugin())
 
     feature = new NearMissComboFeature()
-    const result = setupMockWorld()
+    const result = setupMockWorld(1000) // ★ cameraX=1000 で実座標系を再現
     world = result.world
     feature.onInit(world)
   })
 
   describe('near-miss 検出', () => {
     it('接近回避（垂直間隔が閾値以内）で combo が +1 される', () => {
-      // プレイヤーのすぐ上を通過するハザード
-      // player.y=500, player.h=52 → player bottom=552, player top=500
-      // ハザードを player.top - 20 = 480 に配置（垂直間隔 20px < threshold 50px）
+      // cameraX=1000 の世界で:
+      //   プレイヤーはスクリーン X=400 → ワールド X=1400
+      //   ハザードはワールド座標で配置
+      //
+      // 通過判定: hScreenX + h.w < p.x
+      //   hScreenX = h.x - 1000
+      //   p.x = 400
+      //
+      // ハザードをプレイヤーの右側（画面内）に配置:
+      //   h.x = cameraX + 300 = 1300 → hScreenX = 300
+      //   h.w = 30 → hScreenX + h.w = 330 < 400 (まだ通過していない)
+      //
+      // その後ハザードを通過位置へ移動:
+      //   h.x = cameraX - 100 = 900 → hScreenX = -100
+      //   hScreenX + h.w = -70 < 400 → 通過!
       const hazard = new Hazard(
-        world.player.x + 200, // プレイヤーの右側（まだ通過していない）
+        world.cameraX + 300, // ワールド座標: cameraX + 画面X=300
         PLAYER_CENTER_Y() - 30, // 垂直間隔を小さく
         30, 30, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
       )
-      hazard.passId = 1
       world.hazards.push(hazard)
 
       // ハザードをプレイヤーの左まで移動させる（通過させる）
-      // プレイヤー右端(436) を超える位置
-      hazard.x = world.player.x - 100
+      hazard.x = world.cameraX - 100 // ワールド座標: cameraX - 100
 
       feature.update(world, createMockInput(), 0)
 
@@ -136,16 +152,14 @@ describe('NearMissComboFeature', () => {
     })
 
     it('遠くの通過（垂直間隔が閾値超）では combo が増えない', () => {
-      // プレイヤーから遠く離れた位置を通過するハザード
       const hazard = new Hazard(
-        world.player.x + 200,
+        world.cameraX + 300,
         PLAYER_CENTER_Y() - 200, // 垂直間隔 200px > threshold 50px
         30, 30, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
       )
-      hazard.passId = 2
       world.hazards.push(hazard)
 
-      hazard.x = world.player.x - 100
+      hazard.x = world.cameraX - 100
 
       feature.update(world, createMockInput(), 0)
 
@@ -154,12 +168,13 @@ describe('NearMissComboFeature', () => {
 
     it('衝突しているハザードは near-miss としてカウントされない', () => {
       // プレイヤーと重なっているハザード（衝突判定で near-miss スキップされる）
+      // p.x=400, p.w=36 → p.rect = {x:400, y:474, w:36, h:52}
+      // ハザードをスクリーン座標でプレイヤーと重なる位置に配置
       const hazard = new Hazard(
-        world.player.x + 10, // プレイヤーと重なる
+        world.cameraX + 380, // スクリーンX=380 → p.x=400 と重なる
         PLAYER_CENTER_Y() - 10,
         30, 30, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
       )
-      hazard.passId = 3
       world.hazards.push(hazard)
 
       // 衝突している状態で update → near-miss としてカウントされない
@@ -172,18 +187,17 @@ describe('NearMissComboFeature', () => {
       const hazards: Hazard[] = []
       for (let i = 0; i < 3; i++) {
         const h = new Hazard(
-          world.player.x + 200 + i * 100,
+          world.cameraX + 300 + i * 100, // ワールド座標
           PLAYER_CENTER_Y() - 20, // 閾値以内
           30, 30, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
         )
-        h.passId = 10 + i
         world.hazards.push(h)
         hazards.push(h)
       }
 
-      // 全ハザードを通過させる（プレイヤー右端 436 を超える位置）
+      // 全ハザードを通過させる（スクリーン座標でプレイヤー左側へ）
       for (const h of hazards) {
-        h.x = world.player.x - 100
+        h.x = world.cameraX - 100
       }
 
       feature.update(world, createMockInput(), 0)
@@ -193,17 +207,48 @@ describe('NearMissComboFeature', () => {
 
     it('maxCombo が combo よりも大きくならない（setCombo が自動更新）', () => {
       const hazard = new Hazard(
-        world.player.x + 200,
+        world.cameraX + 300,
         PLAYER_CENTER_Y() - 20,
         30, 30, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
       )
-      hazard.passId = 20
       world.hazards.push(hazard)
-      hazard.x = world.player.x - 100
+      hazard.x = world.cameraX - 100
 
       feature.update(world, createMockInput(), 0)
 
       expect(world.gameStats.maxCombo).toBeGreaterThanOrEqual(world.gameStats.combo)
+    })
+
+    it('isSafe のハザードは near-miss 対象外', () => {
+      // 安全色のハザードは near-miss としてカウントされない
+      const hazard = new Hazard(
+        world.cameraX + 300,
+        PLAYER_CENTER_Y() - 20,
+        30, 30, 'green', '#00ff00', 'rect', 1, true, 0, 'right'
+      )
+      world.hazards.push(hazard)
+      hazard.x = world.cameraX - 100
+
+      feature.update(world, createMockInput(), 0)
+
+      expect(world.gameStats.combo).toBe(0)
+    })
+
+    it('beatHazardInverted 時は isSafe が near-miss 対象になる', () => {
+      world.gameStats.beatHazardInverted = true
+      world.rules.features.add('beat_hazard')
+
+      const hazard = new Hazard(
+        world.cameraX + 300,
+        PLAYER_CENTER_Y() - 20,
+        30, 30, 'green', '#00ff00', 'rect', 1, true, 0, 'right'
+      )
+      world.hazards.push(hazard)
+      hazard.x = world.cameraX - 100
+
+      feature.update(world, createMockInput(), 0)
+
+      expect(world.gameStats.combo).toBe(1)
     })
   })
 
@@ -213,17 +258,15 @@ describe('NearMissComboFeature', () => {
       const hazards: Hazard[] = []
       for (let i = 0; i < 3; i++) {
         const h = new Hazard(
-          world.player.x + 200 + i * 100,
+          world.cameraX + 300 + i * 100,
           PLAYER_CENTER_Y() - 20,
           30, 30, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
         )
-        h.passId = 30 + i
         world.hazards.push(h)
         hazards.push(h)
       }
-      // プレイヤー右端(436) を確実に超える位置へ移動
       for (const h of hazards) {
-        h.x = world.player.x - 100
+        h.x = world.cameraX - 100
       }
       feature.update(world, createMockInput(), 0)
       expect(world.gameStats.combo).toBe(3)
@@ -239,21 +282,18 @@ describe('NearMissComboFeature', () => {
     it('減衰時間経過で combo が 0 になる', () => {
       // まず combo を 2 にする
       const h1 = new Hazard(
-        world.player.x + 200,
+        world.cameraX + 300,
         PLAYER_CENTER_Y() - 20,
         30, 30, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
       )
       const h2 = new Hazard(
-        world.player.x + 300,
+        world.cameraX + 400,
         PLAYER_CENTER_Y() - 20,
         30, 30, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
       )
-      h1.passId = 40
-      h2.passId = 41
       world.hazards.push(h1, h2)
-      // プレイヤー右端(436) を確実に超える位置へ移動
-      h1.x = world.player.x - 100
-      h2.x = world.player.x - 100
+      h1.x = world.cameraX - 100
+      h2.x = world.cameraX - 100
       feature.update(world, createMockInput(), 0)
       expect(world.gameStats.combo).toBe(2)
 
@@ -266,13 +306,12 @@ describe('NearMissComboFeature', () => {
     it('near-miss がない状態が継続すると combo が 0 に戻る', () => {
       // まず combo を 1 にする
       const h = new Hazard(
-        world.player.x + 200,
+        world.cameraX + 300,
         PLAYER_CENTER_Y() - 20,
         30, 30, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
       )
-      h.passId = 50
       world.hazards.push(h)
-      h.x = world.player.x - 100
+      h.x = world.cameraX - 100
       feature.update(world, createMockInput(), 0)
       expect(world.gameStats.combo).toBe(1)
 
@@ -280,6 +319,35 @@ describe('NearMissComboFeature', () => {
       feature.update(world, createMockInput(), NEAR_MISS.nearMissComboDecay + 0.5)
 
       expect(world.gameStats.combo).toBe(0)
+    })
+
+    it('combo が 0 の時は decayTimer がリセットされない（無界増加防止）', () => {
+      // combo=0 の状態で update しても decayTimer が蓄積しないことを確認
+      feature.update(world, createMockInput(), NEAR_MISS.nearMissComboDecay + 0.5)
+      // 再度 update しても combo が 0 のまま（減衰タイマーがリセットされる）
+      feature.update(world, createMockInput(), NEAR_MISS.nearMissComboDecay + 0.5)
+      expect(world.gameStats.combo).toBe(0)
+    })
+  })
+
+  describe('通過済みハザードの追跡（Set<Hazard>）', () => {
+    it('オブジェクト参照で通過済みハザードを管理する', () => {
+      // 同一ハザードオブジェクトを2回追加しても1回しかカウントされない
+      const h = new Hazard(
+        world.cameraX + 300,
+        PLAYER_CENTER_Y() - 20,
+        30, 30, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
+      )
+      world.hazards.push(h)
+      h.x = world.cameraX - 100
+
+      feature.update(world, createMockInput(), 0)
+      expect(world.gameStats.combo).toBe(1)
+
+      // 同じハザードを再追加（配列に追加）しても、オブジェクト参照で既通過判定
+      world.hazards.push(h)
+      feature.update(world, createMockInput(), 0)
+      expect(world.gameStats.combo).toBe(1) // 増えていない
     })
   })
 })

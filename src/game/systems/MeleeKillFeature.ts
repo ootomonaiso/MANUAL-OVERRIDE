@@ -14,6 +14,7 @@ import { rectsOverlap } from '../entities'
 import { SURVIVAL, VFX } from '../../data/tunables'
 import { getGenre } from '../../engine/GameRegistry'
 import { soundManager } from '../../plugins/SoundManager'
+import { buildMeleeRect, drawMeleeSwing } from './meleeShared'
 
 interface MeleeKillState {
   cooldown: number
@@ -35,12 +36,18 @@ export class MeleeKillFeature implements FeatureSystem {
     this._tickTimers(dt)
     this._handleInput(world, input)
     this._resolveCollisions(world)
-    this._syncStats(world)
   }
 
   render(ctx: CanvasRenderingContext2D, world: MutableWorld): void {
-    if (this.state.active <= 0) return
-    this._drawSwing(ctx, world)
+    drawMeleeSwing(
+      ctx,
+      world.player.x,
+      world.player.y,
+      world.player.w,
+      world.player.h,
+      this.state.active,
+      SURVIVAL.meleeCooldown,
+    )
   }
 
   // ─── 内部: タイマー更新 ──────────────────────────────────────────
@@ -65,28 +72,25 @@ export class MeleeKillFeature implements FeatureSystem {
     if (this.state.active <= 0) return
 
     const p = world.player
-    const range = SURVIVAL.meleeRange
-
-    // プレイヤー中心を軸に左右両方向へ range だけ伸びる矩形
-    const meleeLeft = p.x - range
-    const meleeRight = p.x + p.w + range
-    const meleeTop = p.y - range * SURVIVAL.meleeVerticalRatio
-    const meleeBottom = p.y + p.h + range * SURVIVAL.meleeVerticalRatio
-    const meleeRect = { x: meleeLeft, y: meleeTop, w: meleeRight - meleeLeft, h: meleeBottom - meleeTop }
+    const meleeRect = buildMeleeRect(p.x, p.y, p.w, p.h)
 
     // 逆順イテレーション + 即除去: 破壊したハザードを即 splice することで、
     // 同一フレーム内で同一ハザードに複数回攻撃判定が乗るのを防ぐ。
     for (let i = world.hazards.length - 1; i >= 0; i--) {
       const h = world.hazards[i]
       if (h.isSafe) continue
-      if (!rectsOverlap(meleeRect, h.rect, SURVIVAL.meleeCollisionGrace)) continue
+
+      // ハザードをスクリーン系に変換して meleeRect（スクリーン系）と比較
+      const hScreenX = world.getHazardScreenX(h)
+      const hScreenRect = { ...h.rect, x: hScreenX }
+      if (!rectsOverlap(meleeRect, hScreenRect, SURVIVAL.meleeCollisionGrace)) continue
 
       // 一撃破壊（rpg/dungeon は enemy_hp 未有効なので hp 非依存で即破壊）
       world.removeHazardById(h)
       soundManager.onMeleeHit()
 
-      // パーティクル
-      const cx = h.x + h.w / 2 - world.cameraX
+      // パーティクル（スクリーン座標で生成）
+      const cx = hScreenX + h.w / 2
       const cy = h.y + h.h / 2
       for (let j = 0; j < SURVIVAL.meleeHitParticleCount; j++) {
         const angle = Math.random() * Math.PI * 2
@@ -109,43 +113,5 @@ export class MeleeKillFeature implements FeatureSystem {
       world.addScorePopup(cx, cy - 16, 'SLASH!', MELEE_KILL_HAZARD_POPUP_COLOR)
       world.triggerShake(VFX.hitShakeIntensity * 0.3)
     }
-  }
-
-  // ─── 内部: ワールド統計同期 ──────────────────────────────────────
-  private _syncStats(world: MutableWorld): void {
-    // melee_kill 未有効時は何もしない（handles に melee_kill のみなので、
-    // 実質常に有効時はここを通る。念のため guard 入れる）。
-    if (!world.rules.features.has('melee_kill')) return
-    // setKills は _resolveCollisions 内で呼んでいるので、
-    // 追加の同期は不要。ただし combo 等の他 Feature への通知は
-    // melee_kill からは行わない（kills 増加は combo に関係ない）。
-  }
-
-  // ─── 内部: スイング演出描画 ──────────────────────────────────────
-  private _drawSwing(ctx: CanvasRenderingContext2D, world: MutableWorld): void {
-    const p = world.player
-    const cx = p.x + p.w / 2
-    const cy = p.y + p.h / 2
-    const range = SURVIVAL.meleeRange
-    const arc = SURVIVAL.meleeArc
-
-    ctx.save()
-    ctx.globalAlpha = this.state.active / (SURVIVAL.meleeCooldown * SURVIVAL.meleeActiveRatio)
-    ctx.strokeStyle = SURVIVAL.meleeSwingStrokeColor
-    ctx.lineWidth = SURVIVAL.meleeSwingLineWidth
-    ctx.shadowColor = SURVIVAL.meleeSwingShadowColor
-    ctx.shadowBlur = SURVIVAL.meleeSwingShadowBlur
-
-    // 右方向の弧
-    ctx.beginPath()
-    ctx.arc(cx, cy, range, -arc / 2, arc / 2)
-    ctx.stroke()
-
-    // 左方向の弧
-    ctx.beginPath()
-    ctx.arc(cx, cy, range, Math.PI - arc / 2, Math.PI + arc / 2)
-    ctx.stroke()
-
-    ctx.restore()
   }
 }

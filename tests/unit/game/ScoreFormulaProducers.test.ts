@@ -3,7 +3,7 @@ import { MeleeKillFeature } from '../../../src/game/systems/MeleeKillFeature'
 import { NearMissComboFeature } from '../../../src/game/systems/NearMissComboFeature'
 import { Player, Hazard } from '../../../src/game/entities'
 import type { MutableWorld, InputSnapshot } from '../../../src/engine/types'
-import { resetRegistry, registerGenre, getGenre } from '../../../src/engine/GameRegistry'
+import { resetRegistry, registerGenre } from '../../../src/engine/GameRegistry'
 import { BasePlugin } from '../../../src/genres/BasePlugin'
 
 // ─── ヘルパー: ジャンル ID → 有効 Feature 一覧 ─────────────────────
@@ -17,7 +17,7 @@ function createMeleeKillWorld(): MutableWorld {
 
   const world: MutableWorld = {
     player, hazards, items: [], bullets: [],
-    cameraX: 0, distance: 0, survivedSec: 0,
+    cameraX: 1000, distance: 0, survivedSec: 0,
     rules: {
       features: new Set(['melee_kill']),
       controls: { shoot: 'z', jump: 'Space', moveLeft: 'ArrowLeft', moveRight: 'ArrowRight' },
@@ -57,7 +57,7 @@ function createNearMissWorld(): MutableWorld {
 
   const world: MutableWorld = {
     player, hazards, items: [], bullets: [],
-    cameraX: 0, distance: 0, survivedSec: 0,
+    cameraX: 1000, distance: 0, survivedSec: 0,
     rules: {
       features: new Set(['near_miss_combo']),
       controls: { jump: 'Space', moveLeft: 'ArrowLeft', moveRight: 'ArrowRight' },
@@ -104,22 +104,19 @@ describe('統合: 7 ジャンルの scoreFormula producer が live になる', (
     it('rpg: melee_kill Feature で kills が 0 でなくなる', () => {
       const feature = new MeleeKillFeature()
       const world = createMeleeKillWorld()
-      // rules.genre を rpg に設定
       world.rules.genre = 'rpg'
       feature.onInit(world)
 
-      // melee 範囲内にハザードを配置
+      // cameraX=1000 の世界: スクリーン X=150 にハザードを配置
       const hazard = new Hazard(
-        world.player.x + world.player.w + 10,
+        world.cameraX + 150,
         world.player.y, 30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
       )
       world.hazards.push(hazard)
 
-      // 攻撃
       feature.update(world, createMockInput(new Set(['z'])), 0)
       feature.update(world, createMockInput(), 0)
 
-      // kills > 0 なら scoreFormula の「kills * 60」項が live
       expect(world.gameStats.kills).toBeGreaterThan(0)
     })
 
@@ -130,7 +127,7 @@ describe('統合: 7 ジャンルの scoreFormula producer が live になる', (
       feature.onInit(world)
 
       const hazard = new Hazard(
-        world.player.x + world.player.w + 10,
+        world.cameraX + 150,
         world.player.y, 30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
       )
       world.hazards.push(hazard)
@@ -148,20 +145,18 @@ describe('統合: 7 ジャンルの scoreFormula producer が live になる', (
       const world = createNearMissWorld()
       world.rules.genre = genreId
 
-      const PLAYER_CY = 500 - 52 / 2 // player center Y
+      const PLAYER_CY = 500 - 52 / 2
       const h = new Hazard(
-        world.player.x + 200,
+        world.cameraX + 300, // スクリーンX=300 → 画面内
         PLAYER_CY - 20, // 垂直間隔 20px < threshold 50px
         30, 30, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
       )
-      h.passId = 1
       world.hazards.push(h)
-      h.x = world.player.x - 50 // 通過させる
+      h.x = world.cameraX - 100 // 通過させる
 
       feature.onInit(world)
       feature.update(world, createMockInput(), 0)
 
-      // combo > 0 かつ maxCombo > 0 なら scoreFormula の「combo * N」項が live
       expect(world.gameStats.combo).toBeGreaterThan(0)
       expect(world.gameStats.maxCombo).toBeGreaterThan(0)
     }
@@ -185,5 +180,82 @@ describe('統合: 7 ジャンルの scoreFormula producer が live になる', (
     it('rhythm: near_miss_combo で combo/maxCombo が 0 でなくなる', () => {
       verifyNearMissCombo('rhythm')
     })
+  })
+})
+
+// ─── JSON 直接検証: 7 ジャンルが新 Feature を enableFeatures に持つ ─
+
+/**
+ * ジャンル JSON ファイルを直接読み込み、melee_kill / near_miss_combo が
+ * enableFeatures に含まれていることを検証する。
+ *
+ * これまで tests/unit/game/ScoreFormulaProducers.test.ts では
+ * `rules.features` を手組みしていたため、JSON 定義と実際の挙動の
+ * 乖離を検出できなかった。このテストで JSON 直接検証する。
+ */
+describe('JSON 直接検証: ジャンル定義と Feature enable 整合性', () => {
+  // dynamic import で JSON を読み込む（Vitest 対応）
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const rpgJson = require('../../../src/data/genres/rpg.json')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const dungeonJson = require('../../../src/data/genres/dungeon.json')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const platformerJson = require('../../../src/data/genres/platformer.json')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const runnerJson = require('../../../src/data/genres/runner.json')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const racingJson = require('../../../src/data/genres/racing.json')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const sportsJson = require('../../../src/data/genres/sports.json')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const rhythmJson = require('../../../src/data/genres/rhythm.json')
+
+  it('rpg.json が melee_kill を enableFeatures に持つ', () => {
+    expect(rpgJson.enableFeatures).toContain('melee_kill')
+  })
+
+  it('dungeon.json が melee_kill を enableFeatures に持つ', () => {
+    expect(dungeonJson.enableFeatures).toContain('melee_kill')
+  })
+
+  it('platformer.json が near_miss_combo を enableFeatures に持つ', () => {
+    expect(platformerJson.enableFeatures).toContain('near_miss_combo')
+  })
+
+  it('runner.json が near_miss_combo を enableFeatures に持つ', () => {
+    expect(runnerJson.enableFeatures).toContain('near_miss_combo')
+  })
+
+  it('racing.json が near_miss_combo を enableFeatures に持つ', () => {
+    expect(racingJson.enableFeatures).toContain('near_miss_combo')
+  })
+
+  it('sports.json が near_miss_combo を enableFeatures に持つ', () => {
+    expect(sportsJson.enableFeatures).toContain('near_miss_combo')
+  })
+
+  it('rhythm.json が near_miss_combo を enableFeatures に持つ', () => {
+    expect(rhythmJson.enableFeatures).toContain('near_miss_combo')
+  })
+
+  it('rpg.json の enableFeatures に melee_kill が含まれていること', () => {
+    // GenrePlugin 側の actual behavior は統合テスト（上 section）でカバー。
+    // ここでは JSON 定義の整合性を検証する。
+    expect(rpgJson.enableFeatures).toEqual(expect.arrayContaining(['melee_kill']))
+  })
+
+  it('melee_kill Feature が rpg/dungeon の scoreFormula に kills 項を含んでいる', () => {
+    // rpg: "exp * 2 + kills * 60 + distance * 0.3"
+    expect(rpgJson.scoreFormula).toContain('kills')
+    // dungeon: "exp * 3 + kills * 70 + itemsCollected * 60 + distance * 0.2"
+    expect(dungeonJson.scoreFormula).toContain('kills')
+  })
+
+  it('near_miss_combo Feature が 5 ジャンルの scoreFormula に combo 項を含んでいる', () => {
+    expect(platformerJson.scoreFormula).toContain('combo')
+    expect(runnerJson.scoreFormula).toContain('combo')
+    expect(racingJson.scoreFormula).toContain('combo')
+    expect(sportsJson.scoreFormula).toContain('combo')
+    expect(rhythmJson.scoreFormula).toContain('combo')
   })
 })
