@@ -3,7 +3,7 @@
   "id": "dungeon",
   "label": "ダンジョン探索",
   "thresholds": { "growth": 6, "craft": 5 },
-  "enableFeatures": ["hp", "exp", "item_pickup", "slow_precise"],
+  "enableFeatures": ["hp", "exp", "item_pickup", "slow_precise", "melee_kill"],
   "disableFeatures": ["auto_run", "beat_hazard", "vertical_scroll"],
   "scoreFormula": "exp * 3 + kills * 70 + itemsCollected * 60 + distance * 0.2",
   "manualReveal": "これはダンジョン探索になりました。奥へ進んでください。",
@@ -15,7 +15,8 @@
     "moveLeft": "ArrowLeft",
     "moveRight": "ArrowRight",
     "moveUp": "ArrowUp",
-    "moveDown": "ArrowDown"
+    "moveDown": "ArrowDown",
+    "shoot": "Z"
   },
   "gravity": 1600,
   "endingFlavor": "あなたは迷宮の奥底へたどり着いた。説明書は地図代わりになっていた。"

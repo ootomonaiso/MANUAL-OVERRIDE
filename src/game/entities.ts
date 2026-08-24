@@ -58,6 +58,8 @@ export class Hazard {
   pulse = 0   // 0〜1 sin アニメ（floating系）
   floatAmp = 0  // 上下に浮遊する振幅
   direction: HazardDirection = 'right'
+  /** 通過判定用のユニークID。NearMissComboFeature が「通過済みハザード」を区別するために使用 */
+  passId = 0
 
   constructor(
     x: number, y: number, w: number, h: number,
