@@ -1,9 +1,9 @@
 {
-  "$comment": "目標達成 — 3音の上昇ファンファーレ（C5/E5/G5）",
   "id": "goal_achieved",
+  "$comment": "目標達成 — sine 3音の上昇（A#4-D5-F5）。他の達成系（puzzle_clear/level_up等）と音域をずらして聞き分け可能にする",
   "tracks": [
-    { "kind": "osc", "wave": "sine", "freq": 523, "durationSec": 0.15, "volume": 0.2, "delaySec": 0 },
-    { "kind": "osc", "wave": "sine", "freq": 659, "durationSec": 0.15, "volume": 0.2, "delaySec": 0.1 },
-    { "kind": "osc", "wave": "sine", "freq": 784, "durationSec": 0.15, "volume": 0.2, "delaySec": 0.2 }
+    { "kind": "osc", "wave": "sine", "freq": 466, "durationSec": 0.14, "volume": 0.22, "delaySec": 0 },
+    { "kind": "osc", "wave": "sine", "freq": 587, "durationSec": 0.14, "volume": 0.22, "delaySec": 0.11 },
+    { "kind": "osc", "wave": "sine", "freq": 698, "durationSec": 0.18, "volume": 0.25, "delaySec": 0.22 }
   ]
 }

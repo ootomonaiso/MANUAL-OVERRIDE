@@ -1,7 +1,7 @@
 {
   "id": "pause_toggle",
-  "$comment": "ポーズ切り替え音（短い単音）",
+  "$comment": "ポーズ切り替え音 — 穏やかなUI操作のためtriangleに変更（squareは攻撃・警告系の音色として予約）",
   "tracks": [
-    { "kind": "osc", "wave": "square", "freq": 400, "durationSec": 0.04, "volume": 0.2 }
+    { "kind": "osc", "wave": "triangle", "freq": 400, "durationSec": 0.05, "volume": 0.2 }
   ]
 }

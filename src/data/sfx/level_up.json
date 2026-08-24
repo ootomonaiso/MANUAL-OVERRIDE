@@ -1,10 +1,10 @@
 {
   "id": "level_up",
-  "$comment": "レベルアップ音（上昇アルペジオ）",
+  "$comment": "レベルアップ音 — square の上昇アルペジオ（G4-B4-D5-G5）。combo_milestone は combo(440Hz) との連続性のため A4 起点なので、こちらは G4 起点にして聞き分けられるようにする",
   "tracks": [
-    { "kind": "osc", "wave": "square", "freq": 523, "durationSec": 0.1, "volume": 0.25, "delaySec": 0 },
-    { "kind": "osc", "wave": "square", "freq": 659, "durationSec": 0.1, "volume": 0.25, "delaySec": 0.1 },
-    { "kind": "osc", "wave": "square", "freq": 784, "durationSec": 0.1, "volume": 0.25, "delaySec": 0.2 },
-    { "kind": "osc", "wave": "square", "freq": 1047, "durationSec": 0.15, "volume": 0.3, "delaySec": 0.3 }
+    { "kind": "osc", "wave": "square", "freq": 392, "durationSec": 0.09, "volume": 0.25, "delaySec": 0 },
+    { "kind": "osc", "wave": "square", "freq": 494, "durationSec": 0.09, "volume": 0.25, "delaySec": 0.08 },
+    { "kind": "osc", "wave": "square", "freq": 587, "durationSec": 0.09, "volume": 0.25, "delaySec": 0.16 },
+    { "kind": "osc", "wave": "square", "freq": 784, "durationSec": 0.16, "volume": 0.3, "delaySec": 0.24 }
   ]
 }
