@@ -75,7 +75,7 @@ const HAZARD_BAND_MARGIN = 10
  * それ以外は従来通り isSafe=false が危険。
  * 横モード (_updateHorizontal) と縦モード (_updateVertical) の両方で再利用する。
  */
-export function _isHazardous(beatHazardInverted: boolean, hasBeatHazard: boolean, isSafe: boolean): boolean {
+export function isHazardous(beatHazardInverted: boolean, hasBeatHazard: boolean, isSafe: boolean): boolean {
   return beatHazardInverted && hasBeatHazard ? isSafe : !isSafe
 }
 
@@ -638,8 +638,8 @@ export class SideScroller {
       for (let i = this.hazards.length - 1; i >= 0; i--) {
         const h = this.hazards[i]
         if (!rectsOverlap(p.rect, h.rect)) continue
-        const isHazardous = _isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
-        if (isHazardous) {
+        const isHazard = isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
+        if (isHazard) {
           this._onPlayerHit(p)
           if (this.dead) return true
         } else {
@@ -802,8 +802,8 @@ export class SideScroller {
         const sx = h.x - this.cameraX
         const hRect = { ...h.rect, x: sx }
         if (!rectsOverlap(p.rect, hRect)) continue
-        const isHazardous = _isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
-        if (isHazardous) {
+        const isHazard = isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
+        if (isHazard) {
           this._onPlayerHit(p)
           if (this.dead) return true
         } else {
