@@ -13,7 +13,7 @@ import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import { rectsOverlap, Hazard } from '../entities'
 import { SURVIVAL, VFX } from '../../data/tunables'
-import { getActiveSystems } from '../../engine/GameRegistry'
+import { getActiveSystems, getGenre } from '../../engine/GameRegistry'
 import { soundManager } from '../../plugins/SoundManager'
 
 interface SurvivalState {
@@ -141,14 +141,16 @@ export class SurvivalFeature implements FeatureSystem {
     const meleeBottom = p.y + p.h + range * SURVIVAL.meleeVerticalRatio
     const meleeRect = { x: meleeLeft, y: meleeTop, w: meleeRight - meleeLeft, h: meleeBottom - meleeTop }
 
-    for (const h of world.hazards) {
+    // 逆順イテレーション: ハザード除去（splice）時にインデックスがずれて次要素をスキップするのを防止
+    for (let i = world.hazards.length - 1; i >= 0; i--) {
+      const h = world.hazards[i]
       if (h.isSafe || h.hp <= 0) continue
       if (!rectsOverlap(meleeRect, h.rect, SURVIVAL.meleeCollisionGrace)) continue
 
       h.hp -= damage
       soundManager.onMeleeHit()
       // 攻撃パーティクル
-      for (let i = 0; i < SURVIVAL.meleeHitParticleCount; i++) {
+      for (let j = 0; j < SURVIVAL.meleeHitParticleCount; j++) {
         const angle = Math.random() * Math.PI * 2
         const speed = SURVIVAL.meleeHitParticleSpeedMin + Math.random() * (SURVIVAL.meleeHitParticleSpeedMax - SURVIVAL.meleeHitParticleSpeedMin)
         world.addParticle(
@@ -160,41 +162,72 @@ export class SurvivalFeature implements FeatureSystem {
 
       if (h.hp <= 0) {
         this._onEnemyKilled(world, h)
+        // 即座に除去: 撃破したハザードが残存しない + 1フレーム内の多重ダメージを自然に防止
+        world.removeHazardById(h)
       }
     }
   }
 
-  // ─── 内部: 敵撃破時のXP付与とレベルアップ ────────────────────────
-  private _onEnemyKilled(world: MutableWorld, _hazard: Hazard): void {
-    if (!world.rules.features.has('survival_level')) return
+  // ─── 内部: 敵撃破時の処理 ────────────────────────────────────────
+  // 撃破時処理（onHazardDestroyed / 除去 / kills カウント）は survival_level の有無に関わらず実行
+  // XP/レベルアップロジックは survival_level 有効時のみ実行
+  private _onEnemyKilled(world: MutableWorld, h: Hazard): void {
     const p = world.player
 
-    p.exp += SURVIVAL.xpPerKill
-    this.state.xp += SURVIVAL.xpPerKill
-    p.currentLevelXp += SURVIVAL.xpPerKill
+    // 撃破スコアポップ
+    const cx = h.x + h.w / 2 - world.cameraX
+    const cy = h.y
+    world.addScorePopup(cx, cy, 'KILL!', SURVIVAL.killPopupColor)
 
-    // レベルアップ判定
-    // xpPerLevel <= 0 または xpLevelScale <= 1 の場合、nextLevelXpが減少しないため無限ループする
-    // 最大100回のレベルアップを1フレームで許可するガード
-    let guard = 100
-    while (this.state.xp >= this.state.nextLevelXp && guard > 0) {
-      guard--
-      this.state.xp -= this.state.nextLevelXp
-      p.currentLevelXp -= this.state.nextLevelXp
-      p.level++
-      this.state.nextLevelXp = Math.floor(SURVIVAL.xpPerLevel * Math.pow(SURVIVAL.xpLevelScale, p.level - 1))
-      p.nextLevelXp = this.state.nextLevelXp
+    // 撃破パーティクル
+    for (let i = 0; i < SURVIVAL.killParticleCount; i++) {
+      const angle = Math.random() * Math.PI * 2
+      const speed = SURVIVAL.killParticleSpeedMin + Math.random() * (SURVIVAL.killParticleSpeedMax - SURVIVAL.killParticleSpeedMin)
+      world.addParticle(
+        cx, cy,
+        Math.cos(angle) * speed, Math.sin(angle) * speed,
+        SURVIVAL.killParticleLife, SURVIVAL.killParticleColors[Math.floor(Math.random() * SURVIVAL.killParticleColors.length)],
+        SURVIVAL.killParticleSize,
+      )
+    }
+    world.triggerShake(VFX.hitShakeIntensity * SURVIVAL.killShakeIntensity)
 
-      // レベルアップ効果
-      if (p.hp < p.maxHp) {
-        const heal = Math.min(SURVIVAL.levelUpHealHp, p.maxHp - p.hp)
-        p.hp += heal
+    // kills カウント（survival の scoreFormula: kills * 50 のために必要）
+    world.setKills(world.gameStats.kills + 1)
+
+    // ジャンルプラグインの onHazardDestroyed を発火（food/weapon ドロップ等）
+    const genre = getGenre(world.rules.genre)
+    genre.onHazardDestroyed?.(world, h)
+
+    // survival_level 有効時のみ XP/レベルアップ処理
+    if (world.rules.features.has('survival_level')) {
+      p.exp += SURVIVAL.xpPerKill
+      this.state.xp += SURVIVAL.xpPerKill
+      p.currentLevelXp += SURVIVAL.xpPerKill
+
+      // レベルアップ判定
+      // xpPerLevel <= 0 または xpLevelScale <= 1 の場合、nextLevelXpが減少しないため無限ループする
+      // 最大100回のレベルアップを1フレームで許可するガード
+      let guard = 100
+      while (this.state.xp >= this.state.nextLevelXp && guard > 0) {
+        guard--
+        this.state.xp -= this.state.nextLevelXp
+        p.currentLevelXp -= this.state.nextLevelXp
+        p.level++
+        this.state.nextLevelXp = Math.floor(SURVIVAL.xpPerLevel * Math.pow(SURVIVAL.xpLevelScale, p.level - 1))
+        p.nextLevelXp = this.state.nextLevelXp
+
+        // レベルアップ効果
+        if (p.hp < p.maxHp) {
+          const heal = Math.min(SURVIVAL.levelUpHealHp, p.maxHp - p.hp)
+          p.hp += heal
+        }
+        p.weaponDamage += SURVIVAL.levelUpDamageBonus
+
+        // レベルアップ演出
+        soundManager.onLevelUp()
+        this._spawnLevelUpEffect(world)
       }
-      p.weaponDamage += SURVIVAL.levelUpDamageBonus
-
-      // レベルアップ演出
-      soundManager.onLevelUp()
-      this._spawnLevelUpEffect(world)
     }
   }
 

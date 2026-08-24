@@ -56,5 +56,13 @@
   "hudAtkTextColor": "#ccaa66",
   "hudPanelBgColor": "rgba(0,0,0,0.55)",
   "hudPanelPadding": 8,
-  "hudPanelRadius": 4
+  "hudPanelRadius": 4,
+  "killPopupColor": "#ff4444",
+  "killParticleCount": 8,
+  "killParticleSpeedMin": 80,
+  "killParticleSpeedMax": 200,
+  "killParticleLife": 0.5,
+  "killParticleColors": ["#ff4400", "#ff6600", "#cc3300", "#882200"],
+  "killParticleSize": 3,
+  "killShakeIntensity": 0.3
 }
