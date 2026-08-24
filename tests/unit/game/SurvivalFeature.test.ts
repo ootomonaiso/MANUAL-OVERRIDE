@@ -31,7 +31,6 @@ function createMockWorld(options?: {
   const items: Item[] = []
   const particles: unknown[] = []
   const popups: unknown[] = []
-  let shakeAmount = 0
 
   const gameStats: GameStats = {
     kills: options?.initialKills ?? 0,
@@ -74,9 +73,7 @@ function createMockWorld(options?: {
     addScorePopup: (_x: number, _y: number, _text: string, _color: string) => {
       popups.push({ _x, _y, _text, _color })
     },
-    triggerShake: (amount: number) => {
-      shakeAmount = amount
-    },
+    triggerShake: () => {},
     modifyPlayerHp: (delta: number) => {
       player.hp += delta
       if (player.hp < 0) player.hp = 0
@@ -438,6 +435,8 @@ describe('SurvivalFeature', () => {
       expect(world.hazards).toHaveLength(0)
 
       // 2. 撃破ドロップとして food を直接追加（SurvivalPlugin.onHazardDestroyed の動作をシミュレート）
+      //    pickup 前に hunger を低めに設定し、回復値が正確に加算されることを検証する。
+      world.player.hunger = 10
       const food = new Item(world.player.x, world.player.y, 'food')
       world.items.push(food)
 
@@ -445,8 +444,7 @@ describe('SurvivalFeature', () => {
       feature.update(world, createMockInput(), 0)
 
       expect(food.alive).toBe(false)
-      // 初期 hunger(100) から減衰 + food で回復。hunger が減少していない（= 回復している）ことを確認
-      expect(world.player.hunger).toBeGreaterThan(0)
+      expect(world.player.hunger).toBe(10 + SURVIVAL.foodRestore)
     })
   })
 

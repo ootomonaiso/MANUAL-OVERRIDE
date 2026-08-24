@@ -94,7 +94,7 @@ export class RpgFeature implements FeatureSystem {
           sys.onItemPickup?.(world, item.type)
         }
       }
-      // food / weapon 等其他型: alive のまま残し、SurvivalFeature 等に委ねる
+      // food / weapon などの他型: alive のまま残し、SurvivalFeature 等に委ねる
     }
     // 死亡/画面外の除去は sideScroller の filter で行う
   }
