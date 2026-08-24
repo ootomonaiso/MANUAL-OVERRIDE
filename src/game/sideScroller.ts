@@ -628,7 +628,13 @@ export class SideScroller {
       for (let i = this.hazards.length - 1; i >= 0; i--) {
         const h = this.hazards[i]
         if (!rectsOverlap(p.rect, h.rect)) continue
-        if (!h.isSafe) {
+        // 横モード（_updateHorizontal）と同一の beat_hazard 反転判定。
+        // 描画（_drawHazard）は縦横問わず反転色を適用するため、縦モードの
+        // 当たり判定も反転を考慮しないと見た目と食い違う（#217）。
+        const isHazardous = this._gameStats.beatHazardInverted && r.features.has('beat_hazard')
+          ? h.isSafe
+          : !h.isSafe
+        if (isHazardous) {
           this._onPlayerHit(p)
           if (this.dead) return true
         } else {
