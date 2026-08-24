@@ -121,15 +121,42 @@ JSON 定義からジャンルの視覚テーマを生成するプラグイン。
 
 ## `src/plugins/SoundManager.ts`
 
-BGM フェードイン/アウトと効果音フックを管理する。
+BGM フェードイン/アウトと効果音フックを管理する。効果音の実体は [`SfxSound`](#srcpluginssfxsoundts) が担当し、`SoundManager` は「ゲームイベント → 実装」の橋渡しに徹する。
 
 ### クラス `SoundManager`（シングルトン `soundManager`）
 
 | メソッド | 概要 |
 |---|---|
-| `playBgm(config: BgmConfig)` | BGM 再生（フェードイン） |
+| `playBgm(config: BgmConfig)` | BGM 再生（フェードイン）。`HTMLAudioElement` による音声ファイル再生 |
 | `stopBgm(fadeOutMs?)` | BGM 停止（フェードアウト） |
-| `register(impl: Partial<SoundHooks>)` | 効果音フック実装を登録 |
-| `onJump / onShoot / onHit / onGenreLock / onBeat …` | `SoundHooks` の各イベントフック |
+| `register(impl: Partial<SoundHooks>)` | 効果音フック実装を登録。[main.ts](../../src/main.ts) が `new SfxSound()` を1回だけ登録する |
+| `onJump / onShoot / onHit / onGenreLock / onBeat …` | `SoundHooks` の各イベントフック（全45種）。登録された実装へ委譲する |
 
-> 音声ファイルが存在しない場合、再生はスキップされる（オフライン動作を阻害しない）。
+### `interface SoundHooks`
+
+ゲームイベントの一覧。`onJump` 〜 `onCombo` の12個が必須で、それ以降の SFX 専用フック（`onTetrisMove` / `onLineClear` / `onBossDefeated` 等33個）は optional。
+
+> BGM の音声ファイルが存在しない場合、再生はスキップされる（オフライン動作を阻害しない）。
+
+---
+
+## `src/plugins/SfxSound.ts`
+
+JSON 駆動の効果音再生エンジン。`src/data/sfx/*.json` の定義を WebAudio ノードグラフへ変換して発音する。BGM・mute の管理は含まない。
+
+詳細な仕様は [sound-system.md](../sound-system.md) を参照。
+
+### クラス `SfxSound`（`SoundHooks` 実装）
+
+| メソッド | 概要 |
+|---|---|
+| `playSfx(id: string, freqScale?: number)` | `SFX_DEFS[id]` を引いて発音。未知 ID は dev 時に `console.warn` して安全に return |
+| `onJump / onLand / onShoot / …` | 各フックが対応する SFX ID で `playSfx()` を呼ぶだけの薄い層 |
+| `onCombo(count: number)` | 唯一 `freqScale` を使うフック。`computeComboFreqScale(count)` でピッチを変える |
+
+| エクスポート関数 | 概要 |
+|---|---|
+| `computeComboFreqScale(count: number): number` | コンボ数 → 周波数倍率。テスト・試聴ツールから同じピッチを再現するために公開されている |
+
+> 全メソッドは例外を投げない。AudioContext を生成できない環境ではすべて no-op になる。
+> `playSfx()` は呼び出しごとに WebAudio ノードを新規生成して使い捨てるため、同時再生・連打が安全に成立する。
