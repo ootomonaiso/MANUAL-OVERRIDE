@@ -8,6 +8,7 @@
     "dev": "node scripts/preprocess.mjs && vite",
     "build": "node scripts/preprocess.mjs && vue-tsc && vite build",
     "preview": "vite preview",
+    "sfx-test": "vite --open /tools/sfx-test.html",
     "typecheck": "vue-tsc --noEmit",
     "lint": "eslint src --ext .ts,.vue",
     "lint:fix": "eslint src --ext .ts,.vue --fix",
@@ -35,11 +36,11 @@
     "@vitejs/plugin-vue": "^6.0.8",
     "eslint": "^10.8.1",
     "eslint-plugin-vue": "^10.10.0",
-    "happy-dom": "^20.11.2",
+    "happy-dom": "^20.11.6",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.67.0",
-    "vite": "^8.2.1",
-    "vitest": "^4.1.10",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11",
     "vue-tsc": "^3.3.10"
   }
 }

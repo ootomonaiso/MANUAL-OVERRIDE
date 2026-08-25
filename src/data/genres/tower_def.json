@@ -5,7 +5,7 @@
   "thresholds": { "craft": 6, "enemy": 6 },
   "enableFeatures": ["tower", "enemy_hp", "item_pickup"],
   "disableFeatures": ["auto_run", "beat_hazard", "vertical_scroll", "stealth_mode"],
-  "scoreFormula": "kills * 90 + combo * 110 + survivedSec * 8",
+  "scoreFormula": "kills * 90 + maxCombo * 110 + survivedSec * 8",
   "manualReveal": "これはタワーディフェンスになりました。陣地を守ってください。",
   "theme": "puzzle",
   "bgColor": "#0a0f0a",

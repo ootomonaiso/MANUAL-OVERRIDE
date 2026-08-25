@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sfx-test — 効果音テストツール</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 16px;
+      background: #14161c; color: #d8dce6;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 13px;
+    }
+    h1 { font-size: 16px; margin: 0 0 4px; }
+    h2 { font-size: 13px; margin: 0 0 8px; color: #8fa3c8; border-bottom: 1px solid #2a2f3a; padding-bottom: 4px; }
+    .note { color: #6b7280; margin-bottom: 16px; }
+    .layout { display: grid; grid-template-columns: 380px 1fr; gap: 16px; align-items: start; }
+    .panel { background: #1b1e27; border: 1px solid #2a2f3a; border-radius: 6px; padding: 12px; margin-bottom: 16px; }
+    .sticky { position: sticky; top: 16px; }
+
+    select, input[type="number"] {
+      background: #12141b; color: #d8dce6;
+      border: 1px solid #2a2f3a; border-radius: 4px; padding: 6px 8px; font: inherit;
+    }
+    select { width: 100%; }
+
+    .toolbar { display: flex; gap: 8px; margin: 8px 0; align-items: center; flex-wrap: wrap; }
+    button.small { background: #2c3349; color: #d8dce6; border: 1px solid #3a4258; border-radius: 4px; padding: 4px 10px; cursor: pointer; font: inherit; }
+    button.small:hover { background: #38415c; }
+    button.primary { background: #2c3c5c; border-color: #5b8def; }
+
+    #recent-list { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
+    .card-btn {
+      display: block; width: 100%;
+      background: #232838; color: #d8dce6; border: 1px solid #2f3648; border-radius: 4px;
+      padding: 6px 8px; cursor: pointer; text-align: left; font: inherit;
+    }
+    .card-btn:hover { background: #2c3349; }
+
+    #badges { margin-top: 8px; }
+    .chip {
+      display: inline-block;
+      background: #232838; color: #8fa3c8; border: 1px solid #2f3648; border-radius: 10px;
+      padding: 2px 8px; font-size: 11px; margin: 2px 4px 2px 0;
+    }
+    .chip.ng { color: #e05661; border-color: #e05661; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid #2a2f3a; }
+    th { color: #8fa3c8; font-weight: normal; }
+
+    #combo-row { margin: 8px 0; }
+    label { display: flex; align-items: center; gap: 6px; }
+  </style>
+</head>
+<body>
+  <h1>sfx-test <span style="color:#5b8def">▸</span> 効果音テストツール</h1>
+  <p class="note">
+    開発専用（本番ビルドには含まれない）。SFX <span id="sfx-count">?</span> 件を実データから読込中。
+    再生には本番と同一の <code>SfxSound.playSfx()</code> を使用（<a href="../docs/sfx-test-mode.md" style="color:#5b8def">仕様書</a>）。
+  </p>
+
+  <div class="layout">
+    <div>
+      <div class="panel">
+        <h2>SFX選択</h2>
+        <select id="sfx-select"></select>
+        <p class="note" id="sfx-comment"></p>
+        <div id="combo-row" style="display:none">
+          <label>コンボ数
+            <input type="number" id="combo-count" min="0" max="200" value="0" />
+          </label>
+        </div>
+        <div class="toolbar">
+          <button class="small primary" id="play-btn">▶ 再生</button>
+        </div>
+        <div id="badges"></div>
+      </div>
+
+      <div class="panel">
+        <h2>最近使った候補（クリックで選択・再生はされません）</h2>
+        <div id="recent-list"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel sticky">
+        <h2>選択中SFXの内容</h2>
+        <table>
+          <thead>
+            <tr><th>#</th><th>kind</th><th>wave</th><th>freq</th><th>durationSec</th><th>volume</th><th>delaySec</th><th>filter</th></tr>
+          </thead>
+          <tbody id="preview-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/tools/sfxTest.ts"></script>
+</body>
+</html>
