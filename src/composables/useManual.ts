@@ -56,6 +56,10 @@ export function computeLineDiff(prevLines: string[], nextLines: string[]): DiffL
 // アニメーション時間と一致させる必要があるため export する。
 export const CENTER_DURATION_MS = 2800
 
+// 説明書履歴の単調増加IDカウンター。version 文字列は MAX_ROUNDS 超過で "5/5" に
+// クランプされるため、Vue の v-for :key として使えない（#218）。id は常に一意。
+let nextManualId = 1
+
 export function useManual(_currentManual: () => ManualVersion) {
   const history = ref<ManualVersion[]>([])
   const diffLines = ref<DiffLine[]>([])
@@ -71,7 +75,8 @@ export function useManual(_currentManual: () => ManualVersion) {
 
   function recordUpdate(nextManual: ManualVersion) {
     const prev = history.value[history.value.length - 1]
-    history.value.push(nextManual)
+    const entry: ManualVersion = { ...nextManual, id: nextManualId++ }
+    history.value.push(entry)
     if (history.value.length > 4) history.value.shift()
 
     // 初回（prev なし）は差分アニメーション不要

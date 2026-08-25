@@ -64,11 +64,11 @@ const filteredDiffLines = computed(() => {
         <div v-if="history.length <= 1" class="history-empty">まだ更新はありません</div>
         <div
           v-for="h in [...history].reverse().slice(1)"
-          :key="h.version"
+          :key="h.id"
           class="history-item"
         >
           <div class="history-ver">ver.{{ h.version }}</div>
-          <div v-for="line in h.manualText" :key="line" class="history-line">{{ line }}</div>
+          <div v-for="(line, lineIdx) in h.manualText" :key="`${h.id}-${lineIdx}`" class="history-line">{{ line }}</div>
         </div>
       </div>
     </Transition>
