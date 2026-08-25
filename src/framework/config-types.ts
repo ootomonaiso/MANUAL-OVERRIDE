@@ -408,6 +408,14 @@ export interface SurvivalConfig {
   killShakeIntensity: number
 }
 
+/** near_miss.json — near-miss combo パラメータ */
+export interface NearMissConfig {
+  /** ハザードとプレイヤーの垂直間隔の閾値（px）。これ以下なら near-miss 判定 */
+  nearMissThreshold: number
+  /** near-miss がない状態がこれ以上続くと combo が 0 に減衰（秒） */
+  nearMissComboDecay: number
+}
+
 /** extra_movement.json — 拡張移動フィーチャー */
 export interface ExtraMovementConfig {
   verticalDriftFreq: number
@@ -589,6 +597,7 @@ export interface GameConfigMap {
   puzzle: PuzzleConfig
   extra_movement: ExtraMovementConfig
   survival: SurvivalConfig
+  near_miss: NearMissConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap

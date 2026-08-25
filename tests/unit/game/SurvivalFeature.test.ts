@@ -21,11 +21,13 @@ import * as GameRegistry from '../../../src/engine/GameRegistry'
 
 // テスト用の最小限のMutableWorldモック
 function createMockWorld(options?: {
+  cameraX?: number
   features?: string[]
   controls?: { shoot?: string }
   genre?: string
   initialKills?: number
 }): MutableWorld {
+  const cameraX = options?.cameraX ?? 0
   const player = new Player(100, 500)
   const hazards: Hazard[] = []
   const items: Item[] = []
@@ -44,7 +46,7 @@ function createMockWorld(options?: {
     player,
     hazards,
     items,
-    cameraX: 0,
+    cameraX,
     distance: 0,
     rules: {
       features: new Set(options?.features ?? ['survival_hunger', 'survival_melee', 'survival_level']),
@@ -105,8 +107,8 @@ function createMockWorld(options?: {
     addBeatHit: () => { gameStats.beatHits++ },
     setBeatHazardInverted: () => {},
     addShot: () => {},
-    getHazardScreenX: (h) => h.x,
-    getPlayerWorldX: () => player.x,
+    getHazardScreenX: (h) => h.x - cameraX,
+    getPlayerWorldX: () => player.x + cameraX,
     addScore: () => {},
   } as unknown as MutableWorld
 

@@ -1,0 +1,6 @@
+{
+  "$comment": "near-miss combo パラメータ（platformer/runner/racing/sports/rhythm 用）",
+  "section": "near_miss",
+  "nearMissThreshold": 50,
+  "nearMissComboDecay": 2.0
+}

@@ -129,3 +129,8 @@ export const HUD_SAFEZONE = _c.hud_safezone
 // SURVIVAL — サバイバルゲーム（hunger / melee / level）
 // ─────────────────────────────────────────────────────────────
 export const SURVIVAL = _c.survival
+
+// ─────────────────────────────────────────────────────────────
+// NEAR_MISS — near-miss combo パラメータ
+// ─────────────────────────────────────────────────────────────
+export const NEAR_MISS = _c.near_miss

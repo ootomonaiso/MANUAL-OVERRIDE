@@ -3,7 +3,7 @@
   "id": "rpg",
   "label": "ロールプレイングゲーム",
   "thresholds": { "growth": 8 },
-  "enableFeatures": ["hp", "exp", "item_pickup", "slow_precise"],
+  "enableFeatures": ["hp", "exp", "item_pickup", "slow_precise", "melee_kill"],
   "disableFeatures": ["auto_run", "beat_hazard"],
   "scoreFormula": "exp * 2 + kills * 60 + distance * 0.3",
   "manualReveal": "これはRPGになりました。成長することが目的です。",
@@ -15,7 +15,8 @@
     "moveLeft": "ArrowLeft",
     "moveRight": "ArrowRight",
     "moveUp": "ArrowUp",
-    "moveDown": "ArrowDown"
+    "moveDown": "ArrowDown",
+    "shoot": "Z"
   },
   "gravity": 1600,
   "endingFlavor": "あなたは強くなった。説明書もいつしか経典になっていた。"

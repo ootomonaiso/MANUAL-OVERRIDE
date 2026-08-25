@@ -3,7 +3,7 @@
   "id": "rhythm",
   "label": "リズムゲーム",
   "thresholds": { "tempo": 6, "rhythm": 6 },
-  "enableFeatures": ["beat_hazard", "just_input", "beat_dash"],
+  "enableFeatures": ["beat_hazard", "just_input", "beat_dash", "near_miss_combo"],
   "disableFeatures": ["grid_stop"],
   "scoreFormula": "beatHits * 150 + maxCombo * 100 + distance * 0.4",
   "manualReveal": "これはリズムゲームになりました。音に合わせてください。",
