@@ -78,7 +78,10 @@ export function onRelease(state: ThrowState): void {
 export function updateThrow(state: ThrowState, dt: number, canvasHeight: number): void {
   if (state.phase !== 'flying') return
 
-  state.vx *= THROW.airFriction
+  // 空気抵抗は指数減衰（60fps 基準の 1 フレーム減衰率 airFriction を dt で補間）し、
+  // フレームレート非依存にする。毎フレーム一定乗算だと高 fps ほど vx 減衰が速くなり、
+  // 到達距離・滞空時間・投擲スコアが端末の fps に依存した（#238）。
+  state.vx *= Math.pow(THROW.airFriction, dt * 60)
   state.vy += THROW.gravity * dt
 
   state.manualX += state.vx * dt
