@@ -1,9 +1,11 @@
 {
-  "$comment": "ジャンル確定 — 矩形波の3音ファンファーレ（440/554/659 Hz）",
   "id": "genre_lock",
+  "$comment": "ジャンル確定 — ゲーム中一度きりの最重要イベント。ノイズの一撃(lowpass) + triangle 4音の上昇（F4-A4-C5-F5）で達成系の中でも別格の重みを出す",
   "tracks": [
-    { "kind": "osc", "wave": "square", "freq": 440, "durationSec": 0.12, "volume": 0.2, "delaySec": 0 },
-    { "kind": "osc", "wave": "square", "freq": 554, "durationSec": 0.12, "volume": 0.2, "delaySec": 0.13 },
-    { "kind": "osc", "wave": "square", "freq": 659, "durationSec": 0.12, "volume": 0.2, "delaySec": 0.26 }
+    { "kind": "noise", "durationSec": 0.2, "volume": 0.3, "filter": { "type": "lowpass", "freq": 400 } },
+    { "kind": "osc", "wave": "triangle", "freq": 349, "durationSec": 0.14, "volume": 0.25, "delaySec": 0.08 },
+    { "kind": "osc", "wave": "triangle", "freq": 440, "durationSec": 0.14, "volume": 0.25, "delaySec": 0.2 },
+    { "kind": "osc", "wave": "triangle", "freq": 523, "durationSec": 0.14, "volume": 0.25, "delaySec": 0.32 },
+    { "kind": "osc", "wave": "triangle", "freq": 698, "durationSec": 0.3, "volume": 0.3, "delaySec": 0.44 }
   ]
 }

@@ -8,6 +8,7 @@
     "dev": "node scripts/preprocess.mjs && vite",
     "build": "node scripts/preprocess.mjs && vue-tsc && vite build",
     "preview": "vite preview",
+    "sfx-test": "vite --open /tools/sfx-test.html",
     "typecheck": "vue-tsc --noEmit",
     "lint": "eslint src --ext .ts,.vue",
     "lint:fix": "eslint src --ext .ts,.vue --fix",

@@ -1,8 +1,8 @@
 {
   "id": "grade_stamp",
-  "$comment": "判定スタンプ音（打撃 + 低周波）",
+  "$comment": "判定スタンプ音 — sineにピッチ降下(freqEnd)を追加しハンコを押し込む質感を表現",
   "tracks": [
-    { "kind": "noise", "durationSec": 0.1, "volume": 0.3 },
-    { "kind": "osc", "wave": "sine", "freq": 100, "durationSec": 0.08, "volume": 0.3 }
+    { "kind": "noise", "durationSec": 0.1, "volume": 0.3, "filter": { "type": "lowpass", "freq": 500 } },
+    { "kind": "osc", "wave": "sine", "freq": 130, "freqEnd": 70, "durationSec": 0.1, "volume": 0.3 }
   ]
 }
