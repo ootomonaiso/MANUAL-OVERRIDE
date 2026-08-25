@@ -5,7 +5,7 @@
   "thresholds": { "vertical": 4, "enemy": 8 },
   "enableFeatures": ["shoot", "spread_shot", "enemy_hp", "vertical_scroll"],
   "disableFeatures": ["grid_stop", "auto_run", "slow_precise"],
-  "scoreFormula": "kills * 80 + combo * 150 + survivedSec * 10 + accuracy * 500",
+  "scoreFormula": "kills * 80 + maxCombo * 150 + survivedSec * 10 + accuracy * 500",
   "manualReveal": "これは弾幕シューティングになりました。弾の隙間を縫ってください。",
   "theme": "stg",
   "bgColor": "#000010",
