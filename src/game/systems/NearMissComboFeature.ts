@@ -58,7 +58,17 @@ export class NearMissComboFeature implements FeatureSystem {
   onPlayerHit(world: MutableWorld): void {
     if (!world.rules.features.has('near_miss_combo')) return
     world.resetCombo()
-    this.state.passedHazards.clear()
+    // 被弾時に重叠中のハザードを passedHazards へ追加する。
+    // clear() だと画面内に残る通過済みハザードが再評価され二重 near-miss になるため。
+    // 被弾源ハザードが後に near-miss になることもここで塞げる。
+    const p = world.player
+    for (const h of world.hazards) {
+      const hScreenX = world.getHazardScreenX(h)
+      const hScreenRect = { ...h.rect, x: hScreenX }
+      if (rectsOverlap(p.rect, hScreenRect, 0)) {
+        this.state.passedHazards.add(h)
+      }
+    }
     this.state.decayTimer = 0
   }
 
@@ -66,7 +76,12 @@ export class NearMissComboFeature implements FeatureSystem {
   private _tickDecay(world: MutableWorld, dt: number): void {
     const s = this.state
     s.decayTimer += dt
-    if (s.decayTimer >= NEAR_MISS.nearMissComboDecay && world.gameStats.combo > 0) {
+    // combo が 0 の時は decayTimer をクランプ（無界増加防止）
+    if (world.gameStats.combo === 0) {
+      s.decayTimer = 0
+      return
+    }
+    if (s.decayTimer >= NEAR_MISS.nearMissComboDecay) {
       world.setCombo(0)
       s.decayTimer = 0
       for (const sys of getActiveSystems(world.rules.features)) {
@@ -104,7 +119,7 @@ export class NearMissComboFeature implements FeatureSystem {
       if (hScreenX + h.w < p.x) {
         s.passedHazards.add(h)
 
-        // 垂直間隔を計算（重なりなら 0）
+        // 垂直間隔を計算（重なりなら 0）— h.rect は floatAmp 補正済み
         const gap = this._verticalGap(p, h)
         if (gap <= threshold) {
           // near-miss!
@@ -122,14 +137,17 @@ export class NearMissComboFeature implements FeatureSystem {
 
   // ─── 内部: 垂直間隔の計算 ────────────────────────────────────────
   // 2 矩形の垂直方向の離れ（重なりなら 0）を返す。
-  // h.rect は floatAmp 補正済み（y 座標はワールド/スクリーン同一）。
-  private _verticalGap(p: { y: number; h: number }, h: { y: number; h: number }): number {
+  // h.rect.y は floatAmp 補正済み（衝突判定と同じ y 座標を使用）。
+  private _verticalGap(
+    p: { y: number; h: number },
+    h: { y: number; h: number; rect: { y: number; h: number } },
+  ): number {
     const pBottom = p.y + p.h
-    const hBottom = h.y + h.h
+    const hBottom = h.rect.y + h.rect.h
     // プレイヤーがハザードより上
     if (p.y >= hBottom) return p.y - hBottom
     // ハザードがプレイヤーより上
-    if (h.y >= pBottom) return h.y - pBottom
+    if (h.rect.y >= pBottom) return h.rect.y - pBottom
     // 垂直方向に重なり
     return 0
   }

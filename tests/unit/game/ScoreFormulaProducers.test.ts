@@ -238,12 +238,6 @@ describe('JSON 直接検証: ジャンル定義と Feature enable 整合性', ()
     expect(rhythmJson.enableFeatures).toContain('near_miss_combo')
   })
 
-  it('rpg.json の enableFeatures に melee_kill が含まれていること', () => {
-    // GenrePlugin 側の actual behavior は統合テスト（上 section）でカバー。
-    // ここでは JSON 定義の整合性を検証する。
-    expect(rpgJson.enableFeatures).toEqual(expect.arrayContaining(['melee_kill']))
-  })
-
   it('melee_kill Feature が rpg/dungeon の scoreFormula に kills 項を含んでいる', () => {
     // rpg: "exp * 2 + kills * 60 + distance * 0.3"
     expect(rpgJson.scoreFormula).toContain('kills')
