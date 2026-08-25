@@ -54,8 +54,40 @@ function _scaleFontSize(font: string, factor: number): string {
   })
 }
 
+/** font 文字列から px 指定を取り出す。取り出せなければ null */
+export function parseFontSizePx(font: string): number | null {
+  const m = font.match(/(\d+(?:\.\d+)?)px/)
+  if (!m) return null
+  const v = parseFloat(m[1])
+  return Number.isFinite(v) && v > 0 ? v : null
+}
+
+/**
+ * 焼き込み倍率を決める（§11.4）。
+ *
+ * textScale をそのまま使うと、小さいフォントは字形が成立しないサイズまで
+ * 縮められて情報が失われる（16px / 3 = 5px では漢字が潰れる）。
+ * 焼き込み後のサイズが textMinBakePx を下回らない範囲でのみ倍率を効かせる。
+ * 結果として大きい文字はドット感を保ち、小さい文字は可読性が確保される。
+ *
+ * 倍率は整数に限る。縮小オフスクリーンを imageSmoothingEnabled = false で
+ * 拡大するため、拡大率が整数でないと最近傍サンプリングで 1 ソース画素が
+ * 1px になったり 2px になったりして混在し、ドットの大きさが不揃いになる。
+ * floor を使うので倍率は下がる側にしか動かず、焼き込みサイズは下限以上を保つ。
+ *
+ * px 指定を取り出せない font はそのまま textScale を使う
+ * （_scaleFontSize もサイズを変換できないため整合する）。
+ */
+export function computeBakeScale(font: string, textScale: number, minBakePx: number): number {
+  const maxScale = Math.max(1, Math.floor(textScale))
+  const fontSize = parseFontSizePx(font)
+  if (fontSize === null) return maxScale
+  const limit = Math.floor(fontSize / Math.max(1, minBakePx))
+  return Math.max(1, Math.min(maxScale, limit))
+}
+
 function _bake(str: string, opts: PixelTextOptions): CachedText {
-  const scale = Math.max(1, PIXELART.textScale)
+  const scale = computeBakeScale(opts.font, PIXELART.textScale, PIXELART.textMinBakePx)
 
   const measureCtx = _probe()
   measureCtx.font = opts.font

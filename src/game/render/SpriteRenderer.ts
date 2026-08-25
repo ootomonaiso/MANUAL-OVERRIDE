@@ -33,16 +33,29 @@ interface BakedSprite {
 
 const _cache = new Map<string, BakedSprite>()
 const _warnedMissingId = new Set<string>()
+// 未解決スロットの警告抑制キー: `${id}|${スロット名}`。同じ欠落を毎フレーム出力しない
+const _warnedMissingSlot = new Set<string>()
 
 function _slotsHash(slots?: SpriteSlots): string {
   if (!slots) return ''
   return Object.keys(slots).sort().map(k => `${k}=${slots[k]}`).join(',')
 }
 
-function _resolveColor(raw: string, slots: SpriteSlots | undefined): string | null {
+function _resolveColor(raw: string, slots: SpriteSlots | undefined, id: string): string | null {
   if (!raw.startsWith('@')) return raw
-  const v = slots?.[raw.slice(1)]
-  return v ?? null
+  const name = raw.slice(1)
+  const v = slots?.[name]
+  if (v !== undefined) return v
+  // 未解決は透明として扱う（§5 異常系）。ただし黙って欠けると原因追跡ができないため
+  // DEV では 1 回だけ警告する（§11.5）。
+  if (import.meta.env.DEV) {
+    const key = `${id}|${name}`
+    if (!_warnedMissingSlot.has(key)) {
+      _warnedMissingSlot.add(key)
+      console.warn(`[SpriteRenderer] スプライト "${id}" の動的色スロット "@${name}" が未解決です（該当セルは透明になります）`)
+    }
+  }
+  return null
 }
 
 function _pickFrame(def: SpriteDef, frame: string): readonly string[] | null {
@@ -52,7 +65,7 @@ function _pickFrame(def: SpriteDef, frame: string): readonly string[] | null {
   return first ? def.frames[first] : null
 }
 
-function _bake(def: SpriteDef, frame: string, slots: SpriteSlots | undefined, flipX: boolean): BakedSprite | null {
+function _bake(def: SpriteDef, id: string, frame: string, slots: SpriteSlots | undefined, flipX: boolean): BakedSprite | null {
   const rows = _pickFrame(def, frame)
   if (!rows) return null
 
@@ -69,7 +82,7 @@ function _bake(def: SpriteDef, frame: string, slots: SpriteSlots | undefined, fl
       if (ch === '.') continue
       const raw = def.palette[ch]
       if (raw === undefined) continue
-      const color = _resolveColor(raw, slots)
+      const color = _resolveColor(raw, slots, id)
       if (color === null) continue // 未解決の動的色スロット → 透明として扱う
       ctx.fillStyle = color
       const cx = flipX ? def.w - 1 - rx : rx
@@ -107,7 +120,7 @@ export class SpriteRenderer {
 
     let baked = _cache.get(key)
     if (!baked) {
-      const built = _bake(def, frame, opts?.slots, flipX)
+      const built = _bake(def, id, frame, opts?.slots, flipX)
       if (!built) return false
       if (_cache.size >= Math.max(1, PIXELART.spriteCacheMax)) {
         const oldest = _cache.keys().next().value

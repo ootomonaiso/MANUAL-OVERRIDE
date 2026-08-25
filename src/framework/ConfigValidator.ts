@@ -41,7 +41,8 @@ const REQUIRED_NUMBER_FIELDS: Partial<Record<GameConfigSection, string[]>> = {
   genre_params: ['recommendedSingleChoice', 'recommendedMaxPerAxis'],
   game_balance: ['scoreRatioPlay', 'scoreRatioThrow', 'baseScrollSpeed'],
   pixelart: ['size', 'gradientSteps', 'haloSteps', 'haloAlphaFalloff', 'alphaSteps',
-             'ditherRatioSteps', 'textScale', 'spriteCacheMax', 'textCacheMax'],
+             'ditherRatioSteps', 'textScale', 'textMinBakePx', 'blockShadeAmount',
+             'spriteCacheMax', 'textCacheMax'],
 }
 
 const RANGE_CHECKS: Array<{
@@ -110,6 +111,8 @@ const RANGE_CHECKS: Array<{
   { section: 'pixelart', field: 'alphaSteps', min: 2, max: 32 },
   { section: 'pixelart', field: 'ditherRatioSteps', min: 1, max: 32 },
   { section: 'pixelart', field: 'textScale', min: 1, max: 8 },
+  { section: 'pixelart', field: 'textMinBakePx', min: 1, max: 64 },
+  { section: 'pixelart', field: 'blockShadeAmount', min: 0, max: 255 },
   { section: 'pixelart', field: 'spriteCacheMax', min: 1 },
   { section: 'pixelart', field: 'textCacheMax', min: 1 },
 ]

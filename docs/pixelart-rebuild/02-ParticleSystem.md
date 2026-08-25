@@ -61,7 +61,7 @@ render(ctx: CanvasRenderingContext2D): void {
 変更:  ■  （PIXELART.size に整列した正方形）
 ```
 
-粒子は小さく大量に出るため、ミッドポイント円（`px.circle`）ではなく
+粒子は小さく大量に出るため、円（`px.circle`）ではなく
 単純な正方形で十分にドット絵らしくなる、と判断した。
 
 ### 2. サイズの量子化

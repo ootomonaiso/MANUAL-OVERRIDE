@@ -26,7 +26,8 @@ const SCHEMAS = {
   'throw.json':        ['section'],
   'pixelart.json':     ['section', 'size', 'gradientSteps', 'haloSteps',
                         'haloAlphaFalloff', 'alphaSteps', 'ditherRatioSteps',
-                        'textScale', 'spriteCacheMax', 'textCacheMax'],
+                        'textScale', 'textMinBakePx', 'blockShadeAmount',
+                        'spriteCacheMax', 'textCacheMax'],
 }
 
 // pixelart.json の数値範囲チェック（docs/pixelart-rebuild/00-rendering-system.md §9）
@@ -38,6 +39,8 @@ const PIXELART_RANGES = {
   alphaSteps:       { min: 2, max: 32 },
   ditherRatioSteps: { min: 1, max: 32 },
   textScale:        { min: 1, max: 8 },
+  textMinBakePx:    { min: 1, max: 64 },
+  blockShadeAmount: { min: 0, max: 255 },
   spriteCacheMax:   { min: 1 },
   textCacheMax:     { min: 1 },
 }

@@ -8,6 +8,8 @@
   "alphaSteps": 8,
   "ditherRatioSteps": 4,
   "textScale": 3,
+  "textMinBakePx": 11,
+  "blockShadeAmount": 40,
   "spriteCacheMax": 256,
   "textCacheMax": 128
 }

@@ -191,6 +191,10 @@ export interface PixelartConfig {
   alphaSteps: number
   ditherRatioSteps: number
   textScale: number
+  /** 焼き込み後フォントサイズの下限px。textScale はこれを下回らない範囲でのみ効く（§11.4） */
+  textMinBakePx: number
+  /** block() の明暗差（§11.6） */
+  blockShadeAmount: number
   spriteCacheMax: number
   textCacheMax: number
 }

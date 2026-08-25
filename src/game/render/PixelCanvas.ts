@@ -88,15 +88,20 @@ function _lerpColor(stops: readonly GradientStop[], t: number): string {
   return last[1]
 }
 
-// ── 4x4 Bayer 行列によるオーダードディザ ───────────────────────────
+// ── 2x2 Bayer 行列によるオーダードディザ ───────────────────────────
+// 閾値は 4 段階。PIXELART.ditherRatioSteps（既定 4）と段数が一致する。
 const _BAYER_2X2 = [
   [0, 2],
   [3, 1],
 ]
+const _BAYER_LEVELS = 4
 function _ditherThreshold(cx: number, cy: number): number {
   const v = _BAYER_2X2[cy % 2][cx % 2]
-  return (v + 0.5) / 4
+  return (v + 0.5) / _BAYER_LEVELS
 }
+
+// 変換行列が軸平行か・純粋な平行移動かを判定する際の許容誤差
+const _EPSILON = 1e-6
 
 export class PixelCanvas {
   private readonly ctx: CanvasRenderingContext2D
@@ -128,10 +133,8 @@ export class PixelCanvas {
     }
   }
 
-  /** グリッドスナップ矩形。全プリミティブの最終出力先 */
-  rect(x: number, y: number, w: number, h: number, color: string): void {
-    if (w <= 0 || h <= 0) return
-    const { dx, dy, dw, dh } = this._toDevice(x, y, w, h)
+  /** デバイス空間の矩形を発行する。全プリミティブの最終出力先 */
+  private _deviceRect(dx: number, dy: number, dw: number, dh: number, color: string): void {
     const ctx = this.ctx
     ctx.save()
     ctx.setTransform(1, 0, 0, 1, 0, 0)
@@ -140,47 +143,99 @@ export class PixelCanvas {
     ctx.restore()
   }
 
-  /** ブロック円（arc の代替） */
+  /** グリッドスナップ矩形 */
+  rect(x: number, y: number, w: number, h: number, color: string): void {
+    if (w <= 0 || h <= 0) return
+    const { dx, dy, dw, dh } = this._toDevice(x, y, w, h)
+    this._deviceRect(dx, dy, dw, dh, color)
+  }
+
+  /**
+   * 同一セルへの二重描画を避ける矩形（§11.3）。
+   * 経路上にブロックを並べる line / arcBlocks 用。半透明で描いたとき、
+   * 重なったセルだけ二重合成されて明点になるのを防ぐ。
+   * 判定はデバイス空間のスナップ後の座標で行う（ローカル座標だと拡大縮小時に取りこぼす）。
+   */
+  private _rectOnce(x: number, y: number, w: number, h: number, color: string, seen: Set<string>): void {
+    if (w <= 0 || h <= 0) return
+    const { dx, dy, dw, dh } = this._toDevice(x, y, w, h)
+    const key = `${dx},${dy}`
+    if (seen.has(key)) return
+    seen.add(key)
+    this._deviceRect(dx, dy, dw, dh, color)
+  }
+
+  /** 直径（実px）をセル数へ量子化する。最低 1 セル */
+  private _diaCells(diameter: number): number {
+    return Math.max(1, Math.round(diameter / this._size))
+  }
+
+  /**
+   * 半幅（セル単位の実数）を、全体の直径と偶奇を揃えたセル数の幅へ丸める（§11.2）。
+   *
+   * 偶奇を揃えないと行が半セルずれた位置に中央寄せされ、_snapPos の四捨五入で
+   * 左右非対称になる。揃えておけば (直径 - 幅) が必ず偶数になり、
+   * 行の左端がセル境界に乗る。
+   */
+  private static _widthCells(halfWidthCells: number, oddDiameter: boolean): number {
+    return oddDiameter
+      ? 2 * Math.round(halfWidthCells - 0.5) + 1
+      : 2 * Math.round(halfWidthCells)
+  }
+
+  /**
+   * 円系プリミティブ共通の行生成（§11.2）。
+   *
+   * 行は必ず「ちょうど 1 セル高」、幅は「セルの整数倍」で発行する。
+   * 端数を持たせると _snapPos（四捨五入）と _snapSize（切り上げ・最低1セル）が
+   * 行ごとに別々に効き、左右非対称・図形の膨張・半径変化時の組み替えが起きる。
+   *
+   * 半径ではなく**直径**を量子化する。半径を量子化すると直径が必ず偶数セルになり、
+   * 1 セル径の小さな円（泡・灯りなど）が 2 セルに膨らむため。
+   */
+  private _cellRows(
+    cx: number, cy: number,
+    diaXCells: number, diaYCells: number,
+    rowFrom: number, rowTo: number,
+    color: string,
+  ): void {
+    const s = this._size
+    const rx = diaXCells / 2
+    const ry = diaYCells / 2
+    const x0 = cx - rx * s
+    const y0 = cy - ry * s
+    const oddX = diaXCells % 2 === 1
+    for (let i = rowFrom; i <= rowTo; i++) {
+      const norm = (i + 0.5 - ry) / ry
+      const halfW = rx * Math.sqrt(Math.max(0, 1 - norm * norm))
+      const wCells = PixelCanvas._widthCells(halfW, oddX)
+      if (wCells <= 0) continue
+      this.rect(x0 + ((diaXCells - wCells) / 2) * s, y0 + i * s, wCells * s, s, color)
+    }
+  }
+
+  /** セル整数演算によるブロック円（arc の代替）。仕様は §11.2 */
   circle(cx: number, cy: number, r: number, color: string): void {
     if (r <= 0) return
-    const steps = Math.max(3, Math.round(r / (this._size * 0.5)))
-    const rowH = (r * 2) / steps
-    for (let i = 0; i < steps; i++) {
-      const yTop = -r + i * rowH
-      const yMid = yTop + rowH / 2
-      const halfW = Math.sqrt(Math.max(0, r * r - yMid * yMid))
-      if (halfW <= 0) continue
-      this.rect(cx - halfW, cy + yTop, halfW * 2, rowH, color)
-    }
+    const dia = this._diaCells(r * 2)
+    this._cellRows(cx, cy, dia, dia, 0, dia - 1, color)
   }
 
-  /** ブロック半円（arc の半円の代替。アーチの頂部や丘の稜線に使う）。dir は膨らむ向き */
+  /** ブロック半円（アーチの頂部や丘の稜線に使う）。dir は膨らむ向き */
   halfCircle(cx: number, cy: number, r: number, dir: 'up' | 'down', color: string): void {
     if (r <= 0) return
-    const steps = Math.max(3, Math.round(r / (this._size * 0.5)))
-    const rowH = r / steps
-    for (let i = 0; i < steps; i++) {
-      const yTop = dir === 'up' ? -r + i * rowH : i * rowH
-      const yMid = yTop + rowH / 2
-      const halfW = Math.sqrt(Math.max(0, r * r - yMid * yMid))
-      if (halfW <= 0) continue
-      this.rect(cx - halfW, cy + yTop, halfW * 2, rowH, color)
-    }
+    const dia = this._diaCells(r * 2)
+    const from = dir === 'up' ? 0 : Math.floor(dia / 2)
+    const to = dir === 'up' ? Math.ceil(dia / 2) - 1 : dia - 1
+    this._cellRows(cx, cy, dia, dia, from, to, color)
   }
 
-  /** ブロック楕円（ellipse の代替） */
+  /** セル整数演算によるブロック楕円（ellipse の代替）。仕様は §11.2 */
   ellipse(cx: number, cy: number, rx: number, ry: number, color: string): void {
     if (rx <= 0 || ry <= 0) return
-    const steps = Math.max(3, Math.round((ry * 2) / (this._size * 0.5)))
-    const rowH = (ry * 2) / steps
-    for (let i = 0; i < steps; i++) {
-      const yTop = -ry + i * rowH
-      const yMid = yTop + rowH / 2
-      const norm = yMid / ry
-      const halfW = rx * Math.sqrt(Math.max(0, 1 - norm * norm))
-      if (halfW <= 0) continue
-      this.rect(cx - halfW, cy + yTop, halfW * 2, rowH, color)
-    }
+    const diaX = this._diaCells(rx * 2)
+    const diaY = this._diaCells(ry * 2)
+    this._cellRows(cx, cy, diaX, diaY, 0, diaY - 1, color)
   }
 
   /** 階段状の三角形（spike の代替）。dir は頂点が向く方向 */
@@ -208,7 +263,10 @@ export class PixelCanvas {
     }
   }
 
-  /** ブロック線（stroke の代替）。thickness はセル数 */
+  /**
+   * 経路を 1 セル間隔でサンプリングするブロック線（stroke の代替）。thickness はセル数。
+   * 重複セルは描画しない（§11.3）。
+   */
   line(x0: number, y0: number, x1: number, y1: number, color: string, thickness: number): void {
     const s = this._size
     const t = Math.max(1, thickness) * s
@@ -220,10 +278,11 @@ export class PixelCanvas {
       return
     }
     const steps = Math.max(1, Math.round(dist / s))
+    const seen = new Set<string>()
     for (let i = 0; i <= steps; i++) {
       const px = x0 + (dx * i) / steps
       const py = y0 + (dy * i) / steps
-      this.rect(px - t / 2, py - t / 2, t, t, color)
+      this._rectOnce(px - t / 2, py - t / 2, t, t, color, seen)
     }
   }
 
@@ -265,22 +324,38 @@ export class PixelCanvas {
     }
   }
 
+  /**
+   * 同心リング 1 段。円系と同じくセル整数演算で行を生成する（§11.2）。
+   * 隣接するリングは境界の半径が一致し同じ量子化結果になるため、隙間は生じない。
+   */
   private _annulus(cx: number, cy: number, rInner: number, rOuter: number, color: string): void {
     if (rOuter <= 0) return
-    const steps = Math.max(3, Math.round((rOuter * 2) / (this._size * 0.5)))
-    const rowH = (rOuter * 2) / steps
-    for (let i = 0; i < steps; i++) {
-      const yTop = -rOuter + i * rowH
-      const yMid = yTop + rowH / 2
-      if (Math.abs(yMid) > rOuter) continue
-      const outerHalf = Math.sqrt(Math.max(0, rOuter * rOuter - yMid * yMid))
-      if (Math.abs(yMid) >= rInner) {
-        this.rect(cx - outerHalf, cy + yTop, outerHalf * 2, rowH, color)
-      } else {
-        const innerHalf = Math.sqrt(Math.max(0, rInner * rInner - yMid * yMid))
-        this.rect(cx - outerHalf, cy + yTop, outerHalf - innerHalf, rowH, color)
-        this.rect(cx + innerHalf, cy + yTop, outerHalf - innerHalf, rowH, color)
+    const s = this._size
+    const diaOuter = this._diaCells(rOuter * 2)
+    const diaInner = rInner > 0 ? this._diaCells(rInner * 2) : 0
+    const ro = diaOuter / 2
+    const ri = diaInner / 2
+    const x0 = cx - ro * s
+    const y0 = cy - ro * s
+    const oddOuter = diaOuter % 2 === 1
+    for (let i = 0; i < diaOuter; i++) {
+      const yc = i + 0.5 - ro
+      const outerHalf = ro * Math.sqrt(Math.max(0, 1 - (yc / ro) * (yc / ro)))
+      const wOuter = PixelCanvas._widthCells(outerHalf, oddOuter)
+      if (wOuter <= 0) continue
+      const left = x0 + ((diaOuter - wOuter) / 2) * s
+      const y = y0 + i * s
+      if (ri <= 0 || Math.abs(yc) >= ri) {
+        this.rect(left, y, wOuter * s, s, color)
+        continue
       }
+      const innerHalf = ri * Math.sqrt(Math.max(0, 1 - (yc / ri) * (yc / ri)))
+      // 外側と偶奇を揃えることで帯幅が整数セルになり、左右の帯が対称になる
+      const wInner = PixelCanvas._widthCells(innerHalf, oddOuter)
+      const bandCells = (wOuter - wInner) / 2
+      if (bandCells <= 0) continue
+      this.rect(left, y, bandCells * s, s, color)
+      this.rect(left + (wOuter - bandCells) * s, y, bandCells * s, s, color)
     }
   }
 
@@ -330,8 +405,9 @@ export class PixelCanvas {
   block(x: number, y: number, w: number, h: number, base: string): void {
     const s = this._size
     this.rect(x, y, w, h, base)
-    const light = _lighten(base, 40)
-    const dark = _lighten(base, -40)
+    const shade = PIXELART.blockShadeAmount
+    const light = _lighten(base, shade)
+    const dark = _lighten(base, -shade)
     this.rect(x, y, w, s, light)
     this.rect(x, y, s, h, light)
     this.rect(x, y + h - s, w, s, dark)
@@ -365,17 +441,22 @@ export class PixelCanvas {
     this.rect(x + c, y + h - c, w - 2 * c, c, color)
   }
 
-  /** 円弧上にブロックを並べる（arc + stroke の代替）。thickness はセル数 */
+  /**
+   * 円弧上にブロックを並べる（arc + stroke の代替）。thickness はセル数。
+   * 重複セルは描画しない（§11.3）。全周を描くと始点と終点が重なるため、
+   * 半透明で描いたときに弧の一部だけ二重合成されて明点になるのを防ぐ。
+   */
   arcBlocks(cx: number, cy: number, r: number, startAngle: number, endAngle: number, color: string, thickness: number): void {
     const s = this._size
     const t = Math.max(1, thickness) * s
     const arcLen = Math.abs(endAngle - startAngle) * r
     const steps = Math.max(1, Math.round(arcLen / s))
+    const seen = new Set<string>()
     for (let i = 0; i <= steps; i++) {
       const a = startAngle + (endAngle - startAngle) * (i / steps)
       const px = cx + r * Math.cos(a)
       const py = cy + r * Math.sin(a)
-      this.rect(px - t / 2, py - t / 2, t, t, color)
+      this._rectOnce(px - t / 2, py - t / 2, t, t, color, seen)
     }
   }
 
@@ -392,7 +473,7 @@ export class PixelCanvas {
     // 軸平行（無回転・軸に沿った反転のみ）かどうか。
     // 回転がある場合に外接矩形へ軸平行転送すると、寸法だけ入れ替わって
     // スプライト画素が回らない（縦スクロール時に自機の向きが変わらない不具合になる）。
-    const isAxisAligned = Math.abs(m.b) < 1e-6 && Math.abs(m.c) < 1e-6
+    const isAxisAligned = Math.abs(m.b) < _EPSILON && Math.abs(m.c) < _EPSILON
 
     ctx.save()
     let ok: boolean
@@ -435,8 +516,8 @@ export class PixelCanvas {
     const ctx = this.ctx
     const m = ctx.getTransform()
     const isPureTranslate =
-      Math.abs(m.a - 1) < 1e-6 && Math.abs(m.d - 1) < 1e-6 &&
-      Math.abs(m.b) < 1e-6 && Math.abs(m.c) < 1e-6
+      Math.abs(m.a - 1) < _EPSILON && Math.abs(m.d - 1) < _EPSILON &&
+      Math.abs(m.b) < _EPSILON && Math.abs(m.c) < _EPSILON
     if (!isPureTranslate) {
       this._text.draw(ctx, str, x, y, opts)
       return
