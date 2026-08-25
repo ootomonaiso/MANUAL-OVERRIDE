@@ -5,7 +5,7 @@
   "thresholds": { "enemy": 7, "combo": 5 },
   "enableFeatures": ["shoot", "enemy_hp", "boss", "dash"],
   "disableFeatures": ["auto_run", "grid_stop", "puzzle_solve", "stealth_mode"],
-  "scoreFormula": "kills * 110 + bossKills * 500 + combo * 130",
+  "scoreFormula": "kills * 110 + bossKills * 500 + maxCombo * 130",
   "manualReveal": "これはアリーナバトルになりました。全てを倒してください。",
   "theme": "stg",
   "bgColor": "#0f0000",
