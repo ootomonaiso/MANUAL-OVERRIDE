@@ -73,21 +73,28 @@ export class RpgFeature implements FeatureSystem {
       item.pulse += dt * SPAWN.itemPulseRate
       const iRect = { ...item.rect, x: item.rect.x - world.cameraX }
       if (!rectsOverlap(p.rect, iRect, 0)) continue
-      item.alive = false
-      world.addScoreVarsItemCollected()
-      soundManager.onItemPickup()
-      if (item.type === 'exp') {
-        p.exp += SPAWN.expItemExpGain
-        world.addScore(SPAWN.expItemScore)
-        world.addScorePopup(item.x - world.cameraX, item.y, '+EXP', '#ffcc00')
-      } else if (item.type === 'hp' && p.hp < p.maxHp) {
-        p.hp++
-        world.addScorePopup(item.x - world.cameraX, item.y, '+HP', '#ff8888')
+
+      // 収集判定（パルスアニメーションは全アイテムで継続）
+      const isCollectable = item.type === 'exp' || item.type === 'hp'
+      if (isCollectable) {
+        // exp / hp のみ消費（food / weapon は SurvivalFeature 等に委ねる）
+        item.alive = false
+        world.addScoreVarsItemCollected()
+        soundManager.onItemPickup()
+        if (item.type === 'exp') {
+          p.exp += SPAWN.expItemExpGain
+          world.addScore(SPAWN.expItemScore)
+          world.addScorePopup(item.x - world.cameraX, item.y, '+EXP', '#ffcc00')
+        } else if (item.type === 'hp' && p.hp < p.maxHp) {
+          p.hp++
+          world.addScorePopup(item.x - world.cameraX, item.y, '+HP', '#ff8888')
+        }
+        // onItemPickup フック発火（消費したアイテムのみ）
+        for (const sys of getActiveSystems(world.rules.features)) {
+          sys.onItemPickup?.(world, item.type)
+        }
       }
-      // onItemPickup フック発火
-      for (const sys of getActiveSystems(world.rules.features)) {
-        sys.onItemPickup?.(world, item.type)
-      }
+      // food / weapon などの他型: alive のまま残し、SurvivalFeature 等に委ねる
     }
     // 死亡/画面外の除去は sideScroller の filter で行う
   }

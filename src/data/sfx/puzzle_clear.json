@@ -1,10 +1,10 @@
 {
   "id": "puzzle_clear",
-  "$comment": "パズル完遂音（上昇アルペジオ）",
+  "$comment": "パズル完遂音 — sine の柔らかい上昇（B4-D5-F#5-B5）。他の達成系と音域を分けて聞き分け可能にする",
   "tracks": [
-    { "kind": "osc", "wave": "sine", "freq": 523, "durationSec": 0.1, "volume": 0.25, "delaySec": 0 },
-    { "kind": "osc", "wave": "sine", "freq": 659, "durationSec": 0.1, "volume": 0.25, "delaySec": 0.1 },
-    { "kind": "osc", "wave": "sine", "freq": 784, "durationSec": 0.1, "volume": 0.25, "delaySec": 0.2 },
-    { "kind": "osc", "wave": "sine", "freq": 1047, "durationSec": 0.15, "volume": 0.25, "delaySec": 0.3 }
+    { "kind": "osc", "wave": "sine", "freq": 494, "durationSec": 0.1, "volume": 0.25, "delaySec": 0 },
+    { "kind": "osc", "wave": "sine", "freq": 587, "durationSec": 0.1, "volume": 0.25, "delaySec": 0.1 },
+    { "kind": "osc", "wave": "sine", "freq": 740, "durationSec": 0.1, "volume": 0.25, "delaySec": 0.2 },
+    { "kind": "osc", "wave": "sine", "freq": 988, "durationSec": 0.16, "volume": 0.28, "delaySec": 0.3 }
   ]
 }

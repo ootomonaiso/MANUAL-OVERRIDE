@@ -1,8 +1,8 @@
 {
-  "$comment": "マイルストーン — 2音の上昇（523→784 Hz）",
   "id": "milestone",
+  "$comment": "マイルストーン — sine のピッチ上昇スイープ(523→784) + 余韻の1音。goal_achievedより短く軽量に留め「軽い節目」として差別化",
   "tracks": [
-    { "kind": "osc", "wave": "sine", "freq": 523, "freqEnd": 784, "durationSec": 0.1, "volume": 0.25, "delaySec": 0 },
-    { "kind": "osc", "wave": "sine", "freq": 784, "durationSec": 0.1, "volume": 0.2, "delaySec": 0.12 }
+    { "kind": "osc", "wave": "sine", "freq": 523, "freqEnd": 784, "durationSec": 0.1, "volume": 0.22, "delaySec": 0 },
+    { "kind": "osc", "wave": "sine", "freq": 880, "durationSec": 0.12, "volume": 0.2, "delaySec": 0.11 }
   ]
 }

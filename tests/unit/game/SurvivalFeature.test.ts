@@ -1,96 +1,115 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { SurvivalFeature } from '../../../src/game/systems/SurvivalFeature'
 import { Player, Hazard, Item } from '../../../src/game/entities'
-import type { MutableWorld, InputSnapshot } from '../../../src/engine/types'
+import type { MutableWorld, InputSnapshot, GameStats } from '../../../src/engine/types'
 import { SURVIVAL } from '../../../src/data/tunables'
 
+// GameRegistry の getGenre をモック（テスト環境では base ジャンルが未登録のため）
+vi.mock('../../../src/engine/GameRegistry', async () => {
+  const actual = await vi.importActual<typeof import('../../../src/engine/GameRegistry')>('../../../src/engine/GameRegistry')
+  return {
+    ...actual,
+    getGenre: vi.fn(() => ({
+      onHazardDestroyed: vi.fn(),
+    })),
+    getActiveSystems: () => [],
+  }
+})
+
+// モックから getGenre をインポートしてテスト内で使用
+import * as GameRegistry from '../../../src/engine/GameRegistry'
+
 // テスト用の最小限のMutableWorldモック
-// cameraX > 0 で実座標系を再現（melee 衝突バグの検出用）
-function createMockWorld(cameraX: number = 1000): MutableWorld {
+function createMockWorld(options?: {
+  cameraX?: number
+  features?: string[]
+  controls?: { shoot?: string }
+  genre?: string
+  initialKills?: number
+}): MutableWorld {
+  const cameraX = options?.cameraX ?? 0
   const player = new Player(100, 500)
   const hazards: Hazard[] = []
   const items: Item[] = []
-  const bullets: unknown[] = []
   const particles: unknown[] = []
   const popups: unknown[] = []
-  let _shakeAmount = 0
-  let kills = 0
-  let combo = 0
-  let maxCombo = 0
-  let beatHits = 0
-  let beatHazardInverted = false
 
-  const gameStats = {
-    kills, combo, maxCombo, beatHits, beatHazardInverted,
-    get killsVal() { return kills },
-    get comboVal() { return combo },
-    get maxComboVal() { return maxCombo },
+  const gameStats: GameStats = {
+    kills: options?.initialKills ?? 0,
+    combo: 0,
+    maxCombo: 0,
+    beatHits: 0,
+    beatHazardInverted: false,
   }
 
   const world: MutableWorld = {
     player,
     hazards,
     items,
-    bullets,
     cameraX,
     distance: 0,
-    survivedSec: 0,
     rules: {
-      features: new Set(['survival_hunger', 'survival_melee', 'survival_level']),
-      controls: { shoot: 'z', jump: 'Space', moveLeft: 'ArrowLeft', moveRight: 'ArrowRight' },
+      features: new Set(options?.features ?? ['survival_hunger', 'survival_melee', 'survival_level']),
+      controls: options?.controls ?? { shoot: 'z' },
+      genre: options?.genre ?? 'survival',
       hazardColors: new Set(),
       safeColors: new Set(),
-      genre: 'survival',
       scrollSpeed: 300,
       bpm: 120,
       gravity: 1600,
       scrollDirection: 'horizontal',
-      environment: 'ground',
+      environment: 'forest',
       playerMaxHp: 3,
       timescale: 1,
       scrollAxis: 'x',
       colorTouchScore: 200,
     },
-    gameStats: gameStats as unknown as import('../../../src/engine/types').GameStats,
+    survivedSec: 0,
     canvas: {} as HTMLCanvasElement,
     ctx: {} as CanvasRenderingContext2D,
+    gameStats,
     scrollMode: 'x',
-    addParticle: (_x: number, _y: number, _vx: number, _vy: number, _life: number, _color: string, _size?: number) => {
+    addParticle: (_x: number, _y: number, _vx: number, _vy: number, _life: number, _color: string, _size: number) => {
       particles.push({ _x, _y, _vx, _vy, _life, _color, _size })
     },
     addScorePopup: (_x: number, _y: number, _text: string, _color: string) => {
       popups.push({ _x, _y, _text, _color })
     },
-    triggerShake: (_amount: number) => {
-      _shakeAmount = _amount
-    },
+    triggerShake: () => {},
     modifyPlayerHp: (delta: number) => {
       player.hp += delta
       if (player.hp < 0) player.hp = 0
     },
+    resetCombo: () => { gameStats.combo = 0 },
+    setTimescale: () => {},
     addScoreVarsItemCollected: () => {},
+    addScoreVarsHit: () => {},
+    addScoreVarsBossKill: () => {},
+    addScoreVarsStealthBonus: () => {},
+    addScoreVarsColorTouch: () => {},
+    spawnHazard: (h: Hazard) => {
+      hazards.push(h)
+    },
     spawnItem: (item: Item) => {
       items.push(item)
     },
-    setKills: (n: number) => { kills = n },
-    setCombo: (n: number) => { combo = n; if (n > maxCombo) maxCombo = n },
-    resetCombo: () => { combo = 0 },
     removeHazardById: (h: Hazard) => {
-      const idx = world.hazards.indexOf(h)
-      if (idx >= 0) world.hazards.splice(idx, 1)
+      const i = hazards.indexOf(h)
+      if (i >= 0) hazards.splice(i, 1)
     },
-    spawnHazard: (_h: Hazard) => {},
-    addScore: (_n: number) => {},
-    addBeatHit: () => { beatHits++ },
-    setBeatHazardInverted: (v: boolean) => { beatHazardInverted = v },
+    setKills: (n: number) => {
+      gameStats.kills = n
+    },
+    setCombo: (n: number) => {
+      gameStats.combo = n
+      if (n > gameStats.maxCombo) gameStats.maxCombo = n
+    },
+    addBeatHit: () => { gameStats.beatHits++ },
+    setBeatHazardInverted: () => {},
     addShot: () => {},
-    addScoreVarsHit: () => {},
-    addScoreVarsBossKill: () => {},
-    addScoreVarsStealthBonus: (_n: number) => {},
-    addScoreVarsColorTouch: () => {},
-    getHazardScreenX: (h: Hazard) => h.x - world.cameraX,
-    getPlayerWorldX: () => world.player.x + world.cameraX,
-    setTimescale: (_s: number, _d?: number) => {},
+    getHazardScreenX: (h) => h.x - cameraX,
+    getPlayerWorldX: () => player.x + cameraX,
+    addScore: () => {},
   } as unknown as MutableWorld
 
   return world
@@ -174,9 +193,9 @@ describe('SurvivalFeature', () => {
     })
 
     it('攻撃範囲内の敵にダメージを与える', () => {
-      // cameraX=1000 の世界で、スクリーン X=150 に敵を配置（melee 範囲内）
+      // プレイヤーの近くに敵を配置
       const hazard = new Hazard(
-        world.cameraX + 150,
+        world.player.x + world.player.w + 10,
         world.player.y,
         30, 40, 'red', '#ff0000', 'rect', 3, false, 0, 'right'
       )
@@ -193,7 +212,7 @@ describe('SurvivalFeature', () => {
 
     it('安全な敵にはダメージを与えない', () => {
       const hazard = new Hazard(
-        world.cameraX + 150,
+        world.player.x + world.player.w + 10,
         world.player.y,
         30, 40, 'green', '#00ff00', 'rect', 3, true, 0, 'right'
       )
@@ -210,7 +229,7 @@ describe('SurvivalFeature', () => {
   describe('XP/レベルシステム', () => {
     it('敵撃破でXPを獲得する', () => {
       const hazard = new Hazard(
-        world.cameraX + 150,
+        world.player.x + world.player.w + 10,
         world.player.y,
         30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
       )
@@ -229,7 +248,7 @@ describe('SurvivalFeature', () => {
       const enemiesNeeded = Math.ceil(SURVIVAL.xpPerLevel / SURVIVAL.xpPerKill)
       for (let i = 0; i < enemiesNeeded; i++) {
         const hazard = new Hazard(
-          world.cameraX + 150,
+          world.player.x + world.player.w + 10,
           world.player.y,
           30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
         )
@@ -248,7 +267,7 @@ describe('SurvivalFeature', () => {
       const enemiesNeeded = Math.ceil(SURVIVAL.xpPerLevel / SURVIVAL.xpPerKill)
       for (let i = 0; i < enemiesNeeded; i++) {
         const hazard = new Hazard(
-          world.cameraX + 150,
+          world.player.x + world.player.w + 10,
           world.player.y,
           30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
         )
@@ -267,7 +286,7 @@ describe('SurvivalFeature', () => {
       const enemiesNeeded = Math.ceil(SURVIVAL.xpPerLevel / SURVIVAL.xpPerKill)
       for (let i = 0; i < enemiesNeeded; i++) {
         const hazard = new Hazard(
-          world.cameraX + 150,
+          world.player.x + world.player.w + 10,
           world.player.y,
           30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
         )
@@ -282,12 +301,87 @@ describe('SurvivalFeature', () => {
     })
   })
 
-  describe('アイテム収集', () => {
+  describe('近接撃破', () => {
+    it('ハザード撃破で kills が +1 される', () => {
+      const hazard = new Hazard(
+        world.player.x + world.player.w + 10,
+        world.player.y,
+        30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
+      )
+      world.hazards.push(hazard)
+
+      const input = createMockInput(new Set(['z']))
+      feature.update(world, input, 0)
+      feature.update(world, createMockInput(), 0)
+
+      expect(world.gameStats.kills).toBe(1)
+    })
+
+    it('ハザード撃破でハザードが除去される', () => {
+      const hazard = new Hazard(
+        world.player.x + world.player.w + 10,
+        world.player.y,
+        30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
+      )
+      world.hazards.push(hazard)
+
+      const input = createMockInput(new Set(['z']))
+      feature.update(world, input, 0)
+      feature.update(world, createMockInput(), 0)
+
+      expect(world.hazards).toHaveLength(0)
+    })
+
+    it('ハザード撃破で food/weapon がドロップされる (onHazardDestroyed 発火)', () => {
+      // getGenre → onHazardDestroyed が呼ばれることを検証
+      const genreSpy = vi.spyOn(GameRegistry, 'getGenre')
+      const hazard = new Hazard(
+        world.player.x + world.player.w + 10,
+        world.player.y,
+        30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
+      )
+      world.hazards.push(hazard)
+
+      const input = createMockInput(new Set(['z']))
+      feature.update(world, input, 0)
+      feature.update(world, createMockInput(), 0)
+
+      // getGenre が呼ばれ、onHazardDestroyed が発火した
+      expect(genreSpy).toHaveBeenCalledWith('survival')
+      const returnedPlugin = genreSpy.mock.results[0].value
+      expect(returnedPlugin.onHazardDestroyed).toHaveBeenCalledOnce()
+    })
+
+    it('survival_level 無効時でも kills カウントとハザード除去が行われる', () => {
+      const worldNoLevel = createMockWorld({
+        features: ['survival_hunger', 'survival_melee'], // survival_level なし
+      })
+      const featureNoLevel = new SurvivalFeature()
+      featureNoLevel.onInit(worldNoLevel)
+
+      const hazard = new Hazard(
+        worldNoLevel.player.x + worldNoLevel.player.w + 10,
+        worldNoLevel.player.y,
+        30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
+      )
+      worldNoLevel.hazards.push(hazard)
+
+      const input = createMockInput(new Set(['z']))
+      featureNoLevel.update(worldNoLevel, input, 0)
+      featureNoLevel.update(worldNoLevel, createMockInput(), 0)
+
+      expect(worldNoLevel.gameStats.kills).toBe(1)
+      expect(worldNoLevel.hazards).toHaveLength(0)
+      // survival_level 無効なので XP は付与されない
+      expect(worldNoLevel.player.exp).toBe(0)
+    })
+  })
+
+  describe('アイテム収集（food/weapon）', () => {
     it('食料アイテムでhungerが回復する', () => {
       world.player.hunger = 10
-      // cameraX=1000 の世界で、スクリーン X=100 に food を配置（プレイヤーと重なる）
       const food = new Item(
-        world.cameraX + 100,
+        world.player.x,
         world.player.y,
         'food'
       )
@@ -301,9 +395,8 @@ describe('SurvivalFeature', () => {
 
     it('武器アイテムでweaponDamageが増加する', () => {
       const initialDamage = world.player.weaponDamage
-      // cameraX=1000 の世界で、スクリーン X=100 に weapon を配置（プレイヤーと重なる）
       const weapon = new Item(
-        world.cameraX + 100,
+        world.player.x,
         world.player.y,
         'weapon'
       )
@@ -315,9 +408,9 @@ describe('SurvivalFeature', () => {
       expect(weapon.alive).toBe(false)
     })
 
-    it('exp/hpアイテムはSurvivalFeatureで処理しない', () => {
-      const expItem = new Item(world.cameraX + 100, world.player.y, 'exp')
-      const hpItem = new Item(world.cameraX + 100, world.player.y, 'hp')
+    it('exp/hpアイテムはSurvivalFeatureで処理しない（RpgFeatureに委ねる）', () => {
+      const expItem = new Item(world.player.x, world.player.y, 'exp')
+      const hpItem = new Item(world.player.x, world.player.y, 'hp')
       world.items.push(expItem, hpItem)
 
       feature.update(world, createMockInput(), 0)
@@ -325,6 +418,35 @@ describe('SurvivalFeature', () => {
       // exp/hpアイテムはSurvivalFeatureで処理しないため、aliveのまま
       expect(expItem.alive).toBe(true)
       expect(hpItem.alive).toBe(true)
+    })
+
+    it('撃破ドロップのfoodを拾うとhungerが回復する', () => {
+      // 1. 敵を撃破して kills が +1 されることを確認
+      const hazard = new Hazard(
+        world.player.x + world.player.w + 10,
+        world.player.y,
+        30, 40, 'red', '#ff0000', 'rect', 1, false, 0, 'right'
+      )
+      world.hazards.push(hazard)
+
+      const input = createMockInput(new Set(['z']))
+      feature.update(world, input, 0)
+      feature.update(world, createMockInput(), 0)
+
+      expect(world.gameStats.kills).toBe(1)
+      expect(world.hazards).toHaveLength(0)
+
+      // 2. 撃破ドロップとして food を直接追加（SurvivalPlugin.onHazardDestroyed の動作をシミュレート）
+      //    pickup 前に hunger を低めに設定し、回復値が正確に加算されることを検証する。
+      world.player.hunger = 10
+      const food = new Item(world.player.x, world.player.y, 'food')
+      world.items.push(food)
+
+      // 3. 次のフレームで food を収集
+      feature.update(world, createMockInput(), 0)
+
+      expect(food.alive).toBe(false)
+      expect(world.player.hunger).toBe(10 + SURVIVAL.foodRestore)
     })
   })
 

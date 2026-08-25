@@ -245,11 +245,11 @@ describe('JSON 直接検証: ジャンル定義と Feature enable 整合性', ()
     expect(dungeonJson.scoreFormula).toContain('kills')
   })
 
-  it('near_miss_combo Feature が 5 ジャンルの scoreFormula に combo 項を含んでいる', () => {
-    expect(platformerJson.scoreFormula).toContain('combo')
-    expect(runnerJson.scoreFormula).toContain('combo')
-    expect(racingJson.scoreFormula).toContain('combo')
-    expect(sportsJson.scoreFormula).toContain('combo')
-    expect(rhythmJson.scoreFormula).toContain('combo')
+  it('near_miss_combo Feature が 5 ジャンルの scoreFormula に maxCombo 項を含んでいる', () => {
+    expect(platformerJson.scoreFormula).toContain('maxCombo')
+    expect(runnerJson.scoreFormula).toContain('maxCombo')
+    expect(racingJson.scoreFormula).toContain('maxCombo')
+    expect(sportsJson.scoreFormula).toContain('maxCombo')
+    expect(rhythmJson.scoreFormula).toContain('maxCombo')
   })
 })

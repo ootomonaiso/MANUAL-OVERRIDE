@@ -1,9 +1,9 @@
 {
   "id": "line_clear",
-  "$comment": "テトリスライン消去音（アルペジオ上昇）",
+  "$comment": "テトリスライン消去音 — 高頻度イベントのため軽量・高音域のtriangleに変更し耳疲れを抑える",
   "tracks": [
-    { "kind": "osc", "wave": "square", "freq": 523, "durationSec": 0.08, "volume": 0.25, "delaySec": 0 },
-    { "kind": "osc", "wave": "square", "freq": 659, "durationSec": 0.08, "volume": 0.25, "delaySec": 0.06 },
-    { "kind": "osc", "wave": "square", "freq": 784, "durationSec": 0.1, "volume": 0.25, "delaySec": 0.12 }
+    { "kind": "osc", "wave": "triangle", "freq": 784, "durationSec": 0.07, "volume": 0.28, "delaySec": 0 },
+    { "kind": "osc", "wave": "triangle", "freq": 988, "durationSec": 0.07, "volume": 0.28, "delaySec": 0.05 },
+    { "kind": "osc", "wave": "triangle", "freq": 1175, "durationSec": 0.09, "volume": 0.3, "delaySec": 0.1 }
   ]
 }

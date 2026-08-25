@@ -33,6 +33,8 @@
 |---|---|---|
 | [genre-system.md](genre-system.md) | ジャンル | 22ジャンル定義・ジャンル収束アルゴリズム |
 | [genre-lab.md](genre-lab.md) | ジャンル設計（開発ツール） | 事後確率・収束・到達性を可視化する dev 専用 GUI の使い方（`npm run reach-sim` の GUI 版） |
+| [sound-system.md](sound-system.md) | 効果音・BGM | JSON駆動SFXの仕様（スキーマ・再生エンジン・音色設計ガイドライン・追加手順） |
+| [sfx-test-mode.md](sfx-test-mode.md) | 効果音（開発ツール） | `src/data/sfx/*.json` を本番と同一ロジックで試聴する dev 専用ツールの使い方（`npm run sfx-test`） |
 | [genre-plugin.md](genre-plugin.md) | ジャンル拡張 | GenrePlugin 実装ガイド・全フック一覧 |
 | [feature-ids.md](feature-ids.md) | フィーチャー | 全FeatureId リファレンス（分類別） |
 | [feature-system.md](feature-system.md) | フィーチャー拡張 | FeatureSystem 実装ガイド・全フック一覧 |

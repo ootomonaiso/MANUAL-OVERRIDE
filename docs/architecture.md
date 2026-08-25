@@ -161,11 +161,20 @@ src/
     │   ├── ConfigValidator.ts 設定ファイルのバリデーション
     │   └── index.ts           framework エクスポート
     │
-    └── plugins/
-        ├── PluginManager.ts   ユーザーインストールプラグイン管理
-        ├── JSONGenrePlugin.ts JSON からジャンル生成
-        └── SoundManager.ts    サウンド管理
+    ├── plugins/
+    │   ├── PluginManager.ts   ユーザーインストールプラグイン管理
+    │   ├── JSONGenrePlugin.ts JSON からジャンル生成
+    │   ├── SoundManager.ts    BGM管理 + 効果音フックの委譲
+    │   └── SfxSound.ts        JSON駆動 効果音再生エンジン（WebAudio）
+    │
+    └── tools/                 開発専用ツール（本番ビルドには含まれない）
+        ├── genreLab.ts        ジャンル設計GUI（tools/genre-lab.html）
+        ├── genreLabSim.ts     ジャンル収束シミュレーション層
+        ├── sfxTest.ts         効果音テスト再生UI（tools/sfx-test.html）
+        └── sfxTestLogic.ts    効果音テストのDOM非依存ロジック
 ```
+
+> `src/tools/` は `tools/*.html` からのみ参照される。production コードから import してはならない（ESLint と [sfxTestIsolation.test.ts](../tests/unit/sfxTestIsolation.test.ts) が機械的に禁止）。詳細は [sfx-test-mode.md](sfx-test-mode.md)。
 
 ---
 

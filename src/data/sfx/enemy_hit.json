@@ -1,8 +1,8 @@
 {
   "id": "enemy_hit",
-  "$comment": "敵被弾音",
+  "$comment": "敵被弾音 — noiseにhighpassをかけパチッとした軽快さを強調",
   "tracks": [
-    { "kind": "noise", "durationSec": 0.05, "volume": 0.2 },
+    { "kind": "noise", "durationSec": 0.05, "volume": 0.22, "filter": { "type": "highpass", "freq": 1500 } },
     { "kind": "osc", "wave": "square", "freq": 200, "durationSec": 0.04, "volume": 0.2 }
   ]
 }

@@ -397,6 +397,15 @@ export interface SurvivalConfig {
   hudPanelBgColor: string
   hudPanelPadding: number
   hudPanelRadius: number
+  // Kill VFX
+  killPopupColor: string
+  killParticleCount: number
+  killParticleSpeedMin: number
+  killParticleSpeedMax: number
+  killParticleLife: number
+  killParticleColors: readonly string[]
+  killParticleSize: number
+  killShakeIntensity: number
 }
 
 /** near_miss.json — near-miss combo パラメータ */

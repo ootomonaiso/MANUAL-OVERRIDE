@@ -69,6 +69,16 @@ const TRANSITION_EASE_K = 5
 // ハザードを可動域内に収める際の内側マージン（px）。従来のスポーン端マージン相当。
 const HAZARD_BAND_MARGIN = 10
 
+/**
+ * beat_hazard フィーチャー有効時の危険判定。
+ * 反転ONかつbeat_hazard有効なら isSafe の逆（safe=危険、hazard=安全）、
+ * それ以外は従来通り isSafe=false が危険。
+ * 横モード (_updateHorizontal) と縦モード (_updateVertical) の両方で再利用する。
+ */
+export function isHazardous(beatHazardInverted: boolean, hasBeatHazard: boolean, isSafe: boolean): boolean {
+  return beatHazardInverted && hasBeatHazard ? isSafe : !isSafe
+}
+
 // ──────────────────────────────────────────────────────────────────────
 // SideScroller — Canvas ゲームエンジン本体
 // ──────────────────────────────────────────────────────────────────────
@@ -628,7 +638,8 @@ export class SideScroller {
       for (let i = this.hazards.length - 1; i >= 0; i--) {
         const h = this.hazards[i]
         if (!rectsOverlap(p.rect, h.rect)) continue
-        if (!h.isSafe) {
+        const isHazard = isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
+        if (isHazard) {
           this._onPlayerHit(p)
           if (this.dead) return true
         } else {
@@ -791,10 +802,8 @@ export class SideScroller {
         const sx = h.x - this.cameraX
         const hRect = { ...h.rect, x: sx }
         if (!rectsOverlap(p.rect, hRect)) continue
-        const isHazardous = this._gameStats.beatHazardInverted && r.features.has('beat_hazard')
-          ? h.isSafe
-          : !h.isSafe
-        if (isHazardous) {
+        const isHazard = isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
+        if (isHazard) {
           this._onPlayerHit(p)
           if (this.dead) return true
         } else {
@@ -1148,7 +1157,9 @@ export class SideScroller {
     const ctx = this.ctx
     const pluginH = getGenre(this.rules.genre)
 
-    // ジャンルプラグインが独自のハザード描画を提供する場合は委譲（true でデフォルト描画をスキップ）
+    // ジャンルプラグインが独自のハザード描画を提供する場合は委譲（true でデフォルト描画をスキップ）。
+    // フックはこの1回限り。ctx.save 後の二重呼び出しは冗長で、将来「描画して false を返す」
+    // プラグインが現れたら二重描画になる潜在リスクだった（#216）。
     if (pluginH.drawHazard?.(ctx, h, sx, this._getWorld()) === true) return
 
     const floatY = h.floatAmp > 0 ? Math.sin(h.pulse) * h.floatAmp : 0
@@ -1172,12 +1183,6 @@ export class SideScroller {
     const pulse = Math.sin(h.pulse * pulseSpd) * pulseAmp + 1
 
     ctx.save()
-
-    // ジャンル固有のハザード描画フック。true ならデフォルト描画（形状・HPバー）をスキップ
-    if (pluginH.drawHazard?.(ctx, h, sx, this._getWorld())) {
-      ctx.restore()
-      return
-    }
 
     // グロー効果
     ctx.shadowColor = glow

@@ -73,7 +73,22 @@ export default [
     },
   },
 
-  // 5. test files — mock 引数の _ プレフィックスを許可
+  // 5. sfx-test / genre-lab（src/tools/）は本番ビルドから隔離された開発専用ツール。
+  //    production コードが誤って import しないよう禁止する（docs/sfx-test-mode.md §2）。
+  {
+    files: ['src/**/*.{ts,vue}'],
+    ignores: ['src/tools/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['**/tools/*'],
+          message: '開発ツール（src/tools/）を本番コードから import しないでください。',
+        }],
+      }],
+    },
+  },
+
+  // 6. test files — mock 引数の _ プレフィックスを許可
   {
     files: ['tests/**/*.{ts,vue}'],
     rules: {

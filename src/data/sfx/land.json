@@ -1,8 +1,8 @@
 {
-  "$comment": "着地音 — ノイズ + 低域サイン",
   "id": "land",
+  "$comment": "着地音 — 高頻度アクションのため軽さを優先。noiseにhighpassをかけ足音の軽さを表現",
   "tracks": [
-    { "kind": "noise", "durationSec": 0.06, "volume": 0.3 },
+    { "kind": "noise", "durationSec": 0.06, "volume": 0.28, "filter": { "type": "highpass", "freq": 1200 } },
     { "kind": "osc", "wave": "sine", "freq": 150, "durationSec": 0.05, "volume": 0.3 }
   ]
 }
