@@ -28,6 +28,14 @@ const themeClass = computed(() => `theme-${props.theme}`)
 // レイアウト別の配置クラス（仕様 2-H）。中央表示中は panel-centered が優先。
 const posClass = computed(() => `pos-${props.layout ?? 'other'}`)
 
+// history-btn がフォーカス中の Space キーをゲーム操作と区別するため抑制する
+// （Enter はデフォルトで click を発火するため不要）
+function onHistoryKeydown(e: KeyboardEvent) {
+  e.stopPropagation()
+  e.preventDefault()
+  showHistory.value = !showHistory.value
+}
+
 // auto_run が有効な場合、左右移動の説明を除外
 const filteredManualText = computed(() => {
   if (!props.features?.has('auto_run')) return props.manual.manualText
@@ -53,7 +61,7 @@ const filteredDiffLines = computed(() => {
         <span class="manual-ver-dot" />
         ver.{{ manual.version }}
       </div>
-      <button class="history-btn" @click="showHistory = !showHistory" tabindex="-1">
+      <button class="history-btn" @click="showHistory = !showHistory" @keydown.space="onHistoryKeydown">
         {{ showHistory ? '▲' : '▼ 履歴' }}
       </button>
     </div>
