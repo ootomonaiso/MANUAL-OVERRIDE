@@ -24,6 +24,8 @@ const SCHEMAS = {
   'difficulty.json':   ['section'],
   'shoot.json':        ['section'],
   'throw.json':        ['section'],
+  'genre_defaults.json': ['section', 'scoreFormula', 'theme', 'bgColor'],
+  'palette_defaults.json': ['section', 'danger', 'dangerGlow', 'safe', 'safeGlow'],
 }
 
 // Required keys for manual branch files

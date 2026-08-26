@@ -9,6 +9,7 @@ import type { GameConfigMap, GameConfigSection, GenreDefJSON, GenreDefJSONInput 
 
 // ジャンル定義の省略可能フィールドのデフォルト値。
 // scripts/preprocess.mjs の検証と対になる（補完はここで一元管理）。
+// 値の定義元: src/data/config/genre_defaults.json
 const GENRE_DEFAULTS = {
   enableFeatures:  [] as string[],
   disableFeatures: [] as string[],
