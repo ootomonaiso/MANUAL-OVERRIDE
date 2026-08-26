@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { MeleeKillFeature } from '../../../src/game/systems/MeleeKillFeature'
 import { NearMissComboFeature } from '../../../src/game/systems/NearMissComboFeature'
-import { Player, Hazard } from '../../../src/game/entities'
+import { RpgFeature } from '../../../src/game/systems/RpgFeature'
+import { Player, Hazard, Item } from '../../../src/game/entities'
 import type { MutableWorld, InputSnapshot } from '../../../src/engine/types'
 import { resetRegistry, registerGenre } from '../../../src/engine/GameRegistry'
 import { BasePlugin } from '../../../src/genres/BasePlugin'
+import { SPAWN } from '../../../src/data/tunables'
 
 // ─── ヘルパー: ジャンル ID → 有効 Feature 一覧 ─────────────────────
 
@@ -251,5 +253,58 @@ describe('JSON 直接検証: ジャンル定義と Feature enable 整合性', ()
     expect(racingJson.scoreFormula).toContain('maxCombo')
     expect(sportsJson.scoreFormula).toContain('maxCombo')
     expect(rhythmJson.scoreFormula).toContain('maxCombo')
+  })
+
+  // ─── Issue #251: hack_slash に item_pickup が無いと EXP 経路が閉じる ─
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const hackSlashJson = require('../../../src/data/genres/hack_slash.json')
+
+  it('hack_slash.json が item_pickup を enableFeatures に持つ', () => {
+    expect(hackSlashJson.enableFeatures).toContain('item_pickup')
+  })
+
+  it('hack_slash.json の scoreFormula に exp 項を含んでいる', () => {
+    // "kills * 90 + maxCombo * 200 + exp * 2 + bossKills * 400"
+    expect(hackSlashJson.scoreFormula).toContain('exp')
+  })
+
+  it('hack_slash: item_pickup 有効で RpgFeature の update が exp 加算をゲートしない', () => {
+    // RpgFeature は features.has('item_pickup') で update 全体を early-return する。
+    // hack_slash.json の enableFeatures に item_pickup が含まれていれば、
+    // exp アイテム収集経路が成立する。
+    const feature = new RpgFeature()
+    const world = createMeleeKillWorld()
+    world.rules.features = new Set(['exp', 'item_pickup'])
+    world.rules.genre = 'hack_slash'
+    // cameraX=0 にしてアイテムとプレイヤーの座標を一致させる（RpgFeature は
+    // item.rect.x - world.cameraX でスクリーン座標に変換する）
+    world.cameraX = 0
+
+    const expItem = new Item(world.player.x, world.player.y, 'exp')
+    world.items.push(expItem)
+
+    feature.update(world, createMockInput(), 0)
+
+    expect(world.player.exp).toBe(SPAWN.expItemExpGain)
+    expect(expItem.alive).toBe(false)
+  })
+
+  it('hack_slash: item_pickup 無効だと RpgFeature の exp 加算がゲートされる（回帰テスト）', () => {
+    // item_pickup が features に無い場合、RpgFeature.update() は early return する。
+    const feature = new RpgFeature()
+    const world = createMeleeKillWorld()
+    world.rules.features = new Set(['exp']) // item_pickup 無し
+    world.rules.genre = 'hack_slash'
+    world.cameraX = 0
+
+    const expItem = new Item(world.player.x, world.player.y, 'exp')
+    world.items.push(expItem)
+
+    feature.update(world, createMockInput(), 0)
+
+    // item_pickup 無効 → RpgFeature が update 全体をスキップ → exp は加算されない
+    expect(world.player.exp).toBe(0)
+    expect(expItem.alive).toBe(true)
   })
 })
