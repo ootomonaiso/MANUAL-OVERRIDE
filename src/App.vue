@@ -376,6 +376,10 @@ watch(() => gameState.lockedGenre.value, (newGenre) => {
   rawRules.scrollSpeed = rawRules.scrollSpeed * GENRE_LOCKED_BOOST.mult
   scroller.updateRules(rawRules, gameState.currentManual())
 
+  // ジャンル確定をエンジンへ通知。genreLocked=true になり、
+  // 説明書更新ペースが postLockUpdatePace 倍に低下する（#255）。
+  scroller.notifyGenreLocked()
+
   // ジャンル遷移演出（入力ロック→y中央へ自動移動→セーフゾーン漸次変化, 仕様 2-F）。
   // updateRules 後に呼び、engine が新レイアウトを参照できるようにする。
   scroller.beginGenreTransition()
