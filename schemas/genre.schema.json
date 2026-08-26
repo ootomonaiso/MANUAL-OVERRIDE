@@ -359,6 +359,35 @@
           }
         }
       }
+    },
+    "bgm": {
+      "type": "object",
+      "description": "BGM再生設定。省略時はBGMなし。音源ファイルが存在しない場合は無音で継続する。",
+      "additionalProperties": false,
+      "properties": {
+        "src": {
+          "type": "string",
+          "description": "音源ファイルのパス（public/ からの相対パス）。例: \"bgm/stg.ogg\""
+        },
+        "loop": {
+          "type": "boolean",
+          "description": "ループ再生するか。省略時は true",
+          "default": true
+        },
+        "volume": {
+          "type": "number",
+          "description": "音量（0〜1）。省略時は 0.5",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.5
+        },
+        "fadeInMs": {
+          "type": "number",
+          "description": "フェードイン時間（ミリ秒）。省略時は 1200",
+          "minimum": 0,
+          "default": 1200
+        }
+      }
     }
   }
 }
