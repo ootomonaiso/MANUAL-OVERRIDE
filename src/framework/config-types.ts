@@ -235,6 +235,8 @@ export interface ScoreConfig {
 /** difficulty.json — 難易度 + TEMPO_SPEED_BONUS */
 export interface DifficultyConfig {
   updateDistancesInitial: number[]
+  /** 生成式初期値（1100 + baseInterval * i の 1100 部分） */
+  updateDistancesFirstGenerated: number
   updateDistancesBaseInterval: number
   updateDistancesCount: number
   genreLockedPlayDist: number
@@ -416,6 +418,21 @@ export interface NearMissConfig {
   nearMissComboDecay: number
 }
 
+/** genre_defaults.json — ジャンル定義のデフォルト値 */
+export interface GenreDefaultsConfig {
+  scoreFormula: string
+  theme: string
+  bgColor: string
+}
+
+/** palette_defaults.json — JSONGenrePlugin のパレットフォールバック */
+export interface PaletteDefaultsConfig {
+  danger: string
+  dangerGlow: string
+  safe: string
+  safeGlow: string
+}
+
 /** extra_movement.json — 拡張移動フィーチャー */
 export interface ExtraMovementConfig {
   verticalDriftFreq: number
@@ -497,6 +514,8 @@ export interface GameBalanceConfig {
   defaultFallbackGenre: string
   /** ジャンルパラメータのジッター幅（±20%） */
   paramJitterRange: number
+  /** genre が scoreFormula を持たない場合のフォールバック式 */
+  defaultScoreFormula: string
 }
 
 /**
@@ -548,6 +567,8 @@ export interface GenreDefJSON {
   visual?: GenreVisualConfig
   /** ジャンル固有のスポーン密度設定。TSプラグインもこれをマージされる。 */
   spawnDensity?: import('../domain/types').SpawnDensityConfig
+  /** BGM再生設定。省略時はBGMなし（音源未準備でもフォールバックで無音継続）。 */
+  bgm?: import('../domain/types').BgmConfig
 }
 
 /**
@@ -598,6 +619,8 @@ export interface GameConfigMap {
   extra_movement: ExtraMovementConfig
   survival: SurvivalConfig
   near_miss: NearMissConfig
+  genre_defaults: GenreDefaultsConfig
+  palette_defaults: PaletteDefaultsConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap

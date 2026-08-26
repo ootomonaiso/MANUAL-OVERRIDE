@@ -1,0 +1,7 @@
+{
+  "$comment": "ジャンル定義の省略可能フィールドのデフォルト値（normalizeGenreDef で使用）",
+  "section": "genre_defaults",
+  "scoreFormula": "distance * 1.0 + survivedSec * 5",
+  "theme": "plain",
+  "bgColor": "#1a1a2e"
+}
