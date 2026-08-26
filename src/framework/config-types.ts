@@ -548,6 +548,8 @@ export interface GenreDefJSON {
   visual?: GenreVisualConfig
   /** ジャンル固有のスポーン密度設定。TSプラグインもこれをマージされる。 */
   spawnDensity?: import('../domain/types').SpawnDensityConfig
+  /** BGM再生設定。省略時はBGMなし（音源未準備でもフォールバックで無音継続）。 */
+  bgm?: import('../domain/types').BgmConfig
 }
 
 /**
