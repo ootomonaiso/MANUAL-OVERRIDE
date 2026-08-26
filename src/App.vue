@@ -231,6 +231,14 @@ function giveUp() {
   gameState.startThrowing()
 }
 
+// ボタンがフォーカス中の Space キーをゲーム操作と区別するため抑制する
+// （Enter はデフォルトで click を発火するため不要）
+function onGiveupKeydown(e: KeyboardEvent) {
+  e.stopPropagation()
+  e.preventDefault()
+  giveUp()
+}
+
 // ─── 投擲完了 ────────────────────────────────────────────────────
 function onThrown(result: ThrowResult) {
   // getStats() を stop() より先に呼ぶ（stop() で内部状態がクリアされるため）
@@ -536,14 +544,18 @@ onUnmounted(() => {
       />
 
       <!-- ギブアップボタン（600m 以降 & genreLocked 時のみ） -->
-      <!-- tabindex="-1": Space キーでフォーカス発火しないよう除外 -->
+      <!-- tabindex 属性なし: キーボード操作可能。フォーカス中の Space は @keydown.space で抑制（ゲームのジャンプと競合するため） -->
       <Transition name="giveup-reveal">
         <div
           v-if="['playing','genreLocked'].includes(gameState.phase.value) && !snapshot.dead"
           class="giveup-area"
           :style="giveupThemeStyle"
         >
-          <button class="giveup-btn" tabindex="-1" @click="giveUp">
+          <button
+            class="giveup-btn"
+            @click="giveUp"
+            @keydown.space="onGiveupKeydown"
+          >
             説明書を投げてゲームを終わらせる
           </button>
           <div class="giveup-hint">ドラッグして投げると高スコア</div>

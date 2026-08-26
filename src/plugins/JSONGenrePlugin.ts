@@ -26,7 +26,8 @@ export interface GenreJsonDef {
   visual?: {
     /** 描画を委譲するテンプレート名。省略時はthemeから自動決定。
      *  'runner'=地上横スク / 'space'=宇宙STG / 'dungeon'=RPG暗洞窟
-     *  'rhythm'=ネオン音楽 / 'puzzle'=明るいパズル / 'aquatic'=水中 */
+     *  'rhythm'=ネオン音楽 / 'puzzle'=明るいパズル / 'aquatic'=水中
+     *  'aerial'=縦スクSTG / 'glitch'=base / 'stealth'=base */
     template?: string
     /** 空のグラデーション色 [上, 下]。省略時はテンプレートの色を使用 */
     skyColors?: string[]
@@ -42,6 +43,35 @@ export interface GenreJsonDef {
       safe?: string
       safeGlow?: string
     }
+    /** 背景の視差スクロール係数。省略時は委譲先の値を使用 */
+    parallax?: {
+      stars?: number
+      far?:   number
+      mid?:   number
+    }
+    /** 星フィールドのカスタマイズ。省略時は委譲先の値を使用 */
+    starConfig?: {
+      density?: number
+      sizeRange?: [number, number]
+      alphaRange?: [number, number]
+    }
+    /** ハザードの演出カスタマイズ。省略時は委譲先の値を使用 */
+    hazardConfig?: {
+      glowBlur?: number
+      pulseSpeed?: number
+      pulseAmplitude?: number
+    }
+    /** ジャンル固有のパーティクル色。省略時は委譲先の値を使用 */
+    particleColors?: {
+      jump?:  string
+      land?:  string
+      hit?:   string
+      death?: readonly string[]
+    }
+    /** 地面ラインの透明度。省略時は委譲先の値を使用 */
+    groundLineAlpha?: number
+    /** 地面ダッシュ模様の透明度。省略時は委譲先の値を使用 */
+    groundDashAlpha?: number
   }
 }
 
@@ -54,11 +84,14 @@ const TO_DELEGATE_ID: Record<string, string> = {
   rhythm:  'rhythm',
   puzzle:  'puzzle',
   aquatic: 'aquatic',
+  aerial:  'aerial_stg',
   // theme名（直接指定された場合）
   plain:   'base',
   stg:     'stg',
   rpg:     'rpg',
   horror:  'base',
+  stealth: 'base',
+  glitch:  'base',
 }
 
 export class JSONGenrePlugin implements PluginBase {
@@ -71,6 +104,12 @@ export class JSONGenrePlugin implements PluginBase {
   readonly palette: { danger: string; dangerGlow: string; safe: string; safeGlow: string }
   readonly spawnTable: readonly SpawnEntry[]
   readonly spawnDensity?: import('../domain/types').SpawnDensityConfig
+  readonly parallax?: PluginBase['parallax']
+  readonly starConfig?: PluginBase['starConfig']
+  readonly hazardConfig?: PluginBase['hazardConfig']
+  readonly particleColors?: PluginBase['particleColors']
+  readonly groundLineAlpha?: number
+  readonly groundDashAlpha?: number
 
   private readonly _delegate: PluginBase
 
@@ -108,6 +147,14 @@ export class JSONGenrePlugin implements PluginBase {
 
     this.spawnTable = this._delegate.spawnTable
     this.spawnDensity = def.spawnDensity
+
+    // 視覚チューニング: JSON指定があればそれを使い、なければデリゲートから継承
+    this.parallax = def.visual?.parallax ?? this._delegate.parallax
+    this.starConfig = def.visual?.starConfig ?? this._delegate.starConfig
+    this.hazardConfig = def.visual?.hazardConfig ?? this._delegate.hazardConfig
+    this.particleColors = def.visual?.particleColors ?? this._delegate.particleColors
+    this.groundLineAlpha = def.visual?.groundLineAlpha ?? this._delegate.groundLineAlpha
+    this.groundDashAlpha = def.visual?.groundDashAlpha ?? this._delegate.groundDashAlpha
   }
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
