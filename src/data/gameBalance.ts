@@ -21,7 +21,7 @@ const _generateUpdateDistances = (): readonly number[] => {
   const intervals: number[] = [...dc.updateDistancesInitial]
   const startIdx = dc.updateDistancesInitial.length
   for (let i = startIdx; i < dc.updateDistancesCount; i++) {
-    intervals.push(1100 + dc.updateDistancesBaseInterval * i)
+    intervals.push(dc.updateDistancesFirstGenerated + dc.updateDistancesBaseInterval * i)
   }
   return intervals
 }
@@ -85,6 +85,11 @@ if (!GENRES.some(g => g.id === _rawFallback)) {
   throw new Error(`[gameBalance] defaultFallbackGenre "${_rawFallback}" は未登録のジャンルIDです`)
 }
 export const DEFAULT_FALLBACK_GENRE = _rawFallback as GenreId
+
+// ─────────────────────────────────────────────────────────────
+// DEFAULT_SCORE_FORMULA — genre が scoreFormula を持たない場合のフォールバック
+// ─────────────────────────────────────────────────────────────
+export const DEFAULT_SCORE_FORMULA = _gb.defaultScoreFormula
 
 // ─────────────────────────────────────────────────────────────
 // PARAM_JITTER_RANGE — ジャンルパラメータのジッター幅（±20%）

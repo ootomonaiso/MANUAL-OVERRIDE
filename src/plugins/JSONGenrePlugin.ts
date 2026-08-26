@@ -15,6 +15,7 @@ import type { MutableWorld, SpawnEntry } from '../engine/types'
 import type { Hazard } from '../game/entities'
 import type { GenreId } from '../domain/types'
 import { getGenre } from '../engine/GameRegistry'
+import { GAME_CONFIG } from '../data/config'
 
 /** JSONGenrePlugin が受け取る入力インターフェース */
 export interface GenreJsonDef {
@@ -136,11 +137,12 @@ export class JSONGenrePlugin implements PluginBase {
     this.midLayerColor = def.visual?.midLayerColor ?? this._delegate.midLayerColor
     this.starColor     = def.visual?.starColor     ?? this._delegate.starColor ?? '#ffffff'
 
+    const _paletteDefaults = GAME_CONFIG.palette_defaults
     this.palette = {
-      danger:     def.visual?.palette?.danger     ?? '#ff6b6b',
-      dangerGlow: def.visual?.palette?.dangerGlow ?? '#ff9999',
-      safe:       def.visual?.palette?.safe       ?? '#4ecdc4',
-      safeGlow:   def.visual?.palette?.safeGlow   ?? '#80e8dd',
+      danger:     def.visual?.palette?.danger     ?? _paletteDefaults.danger,
+      dangerGlow: def.visual?.palette?.dangerGlow ?? _paletteDefaults.dangerGlow,
+      safe:       def.visual?.palette?.safe       ?? _paletteDefaults.safe,
+      safeGlow:   def.visual?.palette?.safeGlow   ?? _paletteDefaults.safeGlow,
     }
 
     this.spawnTable = this._delegate.spawnTable

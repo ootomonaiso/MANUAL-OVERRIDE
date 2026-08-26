@@ -1,7 +1,7 @@
 import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect, FeatureId } from '../domain/types'
 import type { MutableWorld, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup } from './entities'
-import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL, BASE_SCROLL_SPEED } from '../data/gameBalance'
+import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL, BASE_SCROLL_SPEED, DEFAULT_SCORE_FORMULA } from '../data/gameBalance'
 import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY, HUD_SAFEZONE } from '../data/tunables'
 import { classifyHudLayout, computeSafeZone, type SafeZone } from '../domain/hudLayout'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
@@ -375,7 +375,7 @@ export class SideScroller {
     }
 
     const genre = GENRES.find(g => g.id === this.rules.genre)
-    const formula = genre?.scoreFormula ?? 'distance * 0.8'
+    const formula = genre?.scoreFormula ?? DEFAULT_SCORE_FORMULA
     this.playScore = Math.max(0, Math.round(evalScoreFormula(formula, vars)))
   }
 
