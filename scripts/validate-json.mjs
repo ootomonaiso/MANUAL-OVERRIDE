@@ -12,6 +12,7 @@
 
 import { readFileSync, readdirSync, statSync } from 'fs'
 import { join, extname, basename, relative } from 'path'
+import Ajv from 'ajv'
 
 // ── Required-key schemas for known config files ──────────────────────────
 const SCHEMAS = {
@@ -33,6 +34,10 @@ const MANUAL_REQUIRED = ['id', 'entries']
 const _genreSchema = JSON.parse(readFileSync('schemas/genre.schema.json', 'utf8'))
 const VALID_AXES   = Object.keys(_genreSchema.properties.thresholds.properties)
 const VALID_THEMES = _genreSchema.properties.theme.enum
+
+// JSON Schema validator for genre definitions (draft-07)
+const ajv = new Ajv({ strict: false, allErrors: true })
+const validateGenreSchema = ajv.compile(_genreSchema)
 
 const GENRE_ID_PATTERN = /^[a-z][a-z0-9_]*$/
 
@@ -148,6 +153,15 @@ function validateGenres() {
     }
     if (data.theme !== undefined && !VALID_THEMES.includes(data.theme)) {
       problems.push(`theme "${data.theme}" が不正です（有効: ${VALID_THEMES.join(', ')}）`)
+    }
+
+    // JSON Schema 検証（feature enum、additionalProperties 等）
+    const schemaValid = validateGenreSchema(data)
+    if (!schemaValid && validateGenreSchema.errors) {
+      for (const err of validateGenreSchema.errors) {
+        const path = err.instancePath || '(root)'
+        problems.push(`schema: ${path} ${err.message}`)
+      }
     }
 
     if (problems.length > 0) fail(rel, problems.join('\n       '))

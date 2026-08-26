@@ -108,7 +108,15 @@
           "dash",
           "time_bonus",
           "tower",
-          "boss"
+          "boss",
+          "lights_out",
+          "melee_kill",
+          "movement",
+          "near_miss_combo",
+          "survival_hunger",
+          "survival_level",
+          "survival_melee",
+          "tetris_mode"
         ]
       }
     },
@@ -141,7 +149,15 @@
           "dash",
           "time_bonus",
           "tower",
-          "boss"
+          "boss",
+          "lights_out",
+          "melee_kill",
+          "movement",
+          "near_miss_combo",
+          "survival_hunger",
+          "survival_level",
+          "survival_melee",
+          "tetris_mode"
         ]
       }
     },
