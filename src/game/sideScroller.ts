@@ -642,6 +642,7 @@ export class SideScroller {
         if (isHazard) {
           this._onPlayerHit(p)
           if (this.dead) return true
+          break  // 無敵時間が付与されたため、同一フレームの追加被弾を防ぐ
         } else {
           for (const sys of getActiveSystems(r.features)) {
             sys.onSafeHazardTouch?.(this._getWorld(), h, h.x)
@@ -806,6 +807,7 @@ export class SideScroller {
         if (isHazard) {
           this._onPlayerHit(p)
           if (this.dead) return true
+          break  // 無敵時間が付与されたため、同一フレームの追加被弾を防ぐ
         } else {
           for (const sys of getActiveSystems(r.features)) {
             sys.onSafeHazardTouch?.(this._getWorld(), h, sx)
