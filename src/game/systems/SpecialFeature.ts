@@ -254,4 +254,9 @@ export class SpecialFeature implements FeatureSystem {
     this.boss = { active: null, lastBossDistance: -Infinity }
     this.timeBonus = { timer: 0 }
   }
+
+  /** stealth_mode が外れた時に内部状態をクリーンアップ（#254 follow-up） */
+  onDisable(): void {
+    this.stealth = { idleTimer: 0, hidden: false }
+  }
 }

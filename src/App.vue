@@ -237,6 +237,14 @@ function onGiveupKeydown(e: KeyboardEvent) {
   e.stopPropagation()
   e.preventDefault()
   giveUp()
+  // click 同等の操作後、フォーカスを解放して Space がジャンプと競合するのを防止 (#267 follow-up)
+  ;(e.currentTarget as HTMLButtonElement).blur()
+}
+
+/** ギブアップボタン: click 後もフォーカスを解放 (#267 follow-up) */
+function onGiveupClick(e: MouseEvent) {
+  giveUp()
+  ;(e.currentTarget as HTMLButtonElement).blur()
 }
 
 // ─── 投擲完了 ────────────────────────────────────────────────────
@@ -553,7 +561,7 @@ onUnmounted(() => {
         >
           <button
             class="giveup-btn"
-            @click="giveUp"
+            @click="onGiveupClick"
             @keydown.space="onGiveupKeydown"
           >
             説明書を投げてゲームを終わらせる

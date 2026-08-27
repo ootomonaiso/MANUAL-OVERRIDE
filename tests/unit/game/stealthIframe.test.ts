@@ -252,4 +252,113 @@ describe('stealth iframe: hidden 中は被弾しない (#254)', () => {
       expect(scroller['stealthHidden']).toBe(false)
     })
   })
+
+  describe('stealth_mode 無効ジャンルで隠密保護が効かないこと (#254 follow-up)', () => {
+    it('横モード: stealthHidden=true だが stealth_mode 無効なら被弾する', () => {
+      const noStealthRules: RuntimeRules = {
+        ..._makeStealthRules(),
+        features: new Set<import('../../../src/domain/types').FeatureId>(['movement']),
+      }
+      const canvas = _makeCanvas(800, 400)
+      const scroller = new SideScroller(canvas, noStealthRules)
+      const player = scroller['player'] as Player
+      const hazards = scroller['hazards']
+
+      scroller['distance'] = 220
+      scroller['cameraX'] = 0
+      player.invincible = 0
+      scroller['stealthHidden'] = true // 隠密中だが…
+
+      for (let i = 0; i < 2; i++) {
+        const h = new Hazard()
+        h.x = 140 + i * 3; h.y = 280; h.w = 30; h.h = 30
+        h.isSafe = false; h.color = '#ff3344'; h.glowColor = '#ff0000'
+        h.shape = 'rect'; h.hp = 1; h.maxHp = 1
+        h.direction = 'right'
+        hazards.push(h)
+      }
+
+      const ss = scroller as any
+      const result = ss._updateHorizontal(1 / 60, 3)
+
+      // stealth_mode 無効なので隠密保護は適用されず被弾する
+      expect(result).toBe(true)
+      expect(scroller['dead']).toBe(true)
+      expect(scroller['stats'].collisions).toBe(1)
+    })
+
+    it('縦モード: stealthHidden=true だが stealth_mode 無効なら被弾する', () => {
+      const noStealthRules: RuntimeRules = {
+        ..._makeStealthRules(),
+        features: new Set<import('../../../src/domain/types').FeatureId>(['movement']),
+        scrollAxis: 'y' as const,
+        scrollDirection: 'vertical',
+      }
+      const canvas = _makeCanvas(800, 400)
+      const scroller = new SideScroller(canvas, noStealthRules)
+      const player = scroller['player'] as Player
+      const hazards = scroller['hazards']
+
+      scroller['cameraX'] = 0
+      player.invincible = 0
+      scroller['stealthHidden'] = true
+
+      for (let i = 0; i < 2; i++) {
+        const h = new Hazard()
+        h.x = 150; h.y = 268 + i * 3; h.w = 30; h.h = 30
+        h.isSafe = false; h.color = '#ff3344'; h.glowColor = '#ff0000'
+        h.shape = 'rect'; h.hp = 1; h.maxHp = 1
+        h.direction = 'right'
+        hazards.push(h)
+      }
+
+      const ss = scroller as any
+      const result = ss._updateVertical(1 / 60, 3)
+
+      expect(result).toBe(true)
+      expect(scroller['dead']).toBe(true)
+      expect(scroller['stats'].collisions).toBe(1)
+    })
+  })
+
+  describe('updateRules で stealthHidden がリセットされること (#254 follow-up)', () => {
+    it('ルール差し替え時に stealthHidden が false にリセットされる', () => {
+      const stealthRules = _makeStealthRules()
+      const canvas = _makeCanvas(800, 400)
+      const scroller = new SideScroller(canvas, stealthRules)
+
+      // 隠密状態をシミュレート
+      scroller['stealthHidden'] = true
+      expect(scroller['stealthHidden']).toBe(true)
+
+      // stealth_mode 無効のルールに差し替え
+      const noStealthRules: RuntimeRules = {
+        ...stealthRules,
+        features: new Set<import('../../../src/domain/types').FeatureId>(['movement']),
+      }
+      scroller.updateRules(noStealthRules)
+
+      // stealthHidden がリセットされている
+      expect(scroller['stealthHidden']).toBe(false)
+    })
+
+    it('SpecialFeature.onDisable で内部状態がクリアされる', () => {
+      const stealthRules = _makeStealthRules()
+      const canvas = _makeCanvas(800, 400)
+      const scroller = new SideScroller(canvas, stealthRules)
+      const feature = new SpecialFeature()
+      feature.onInit()
+
+      // 隠密状態にセット
+      ;(feature as any).stealth.hidden = true
+      expect((feature as any).stealth.hidden).toBe(true)
+
+      // stealth_mode が外れたことをシミュレート
+      feature.onDisable()
+
+      // 内部状態がクリアされている
+      expect((feature as any).stealth.hidden).toBe(false)
+      expect((feature as any).stealth.idleTimer).toBe(0)
+    })
+  })
 })
