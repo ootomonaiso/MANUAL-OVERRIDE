@@ -158,6 +158,8 @@ export interface ManualRuntimeConfig {
 }
 
 export interface ManualVersion {
+  /** 単調増加ID。Vue の v-for :key 用（重複する version 値でも一意になる, #218）。JSON データには含まれない。 */
+  id?: number
   version: string
   manualText: string[]
   /** 説明書に差し込むイラスト（public/manuals/ からの相対パス）。省略可 */

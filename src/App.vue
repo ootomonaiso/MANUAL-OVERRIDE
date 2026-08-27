@@ -12,7 +12,8 @@ import EndingPanel from './components/EndingPanel.vue'
 import TutorialHints from './components/TutorialHints.vue'
 import PluginLoader from './components/PluginLoader.vue'
 import GenreRevealOverlay from './components/GenreRevealOverlay.vue'
-import ControlsLegend from './components/ControlsLegend.vue'
+import ControlHintBadge from './components/ControlHintBadge.vue'
+import { classifyHudLayout } from './domain/hudLayout'
 import { GENRES, GENRE_THEME_COLORS } from './data/genres'
 import { GENRE_LOCKED_BOOST } from './data/gameBalance'
 import type { ThrowResult, RuntimeRules } from './domain/types'
@@ -86,6 +87,7 @@ const snapshot = ref<GameSnapshot>({
   statJumps: 0, statMoveLeft: 0, statMoveRight: 0, firstJumpDone: false,
   learningNotification: null, scoreFormulaError: null,
   statCollisions: 0, statItemsCollected: 0, statShots: 0, statDashes: undefined,
+  safeZone: { top: 0, bottom: 0, left: 0, right: 0 }, transitioning: false,
 })
 
 // ─── Canvas サイズをウィンドウに合わせる ───────────────────────────
@@ -229,6 +231,22 @@ function giveUp() {
   gameState.startThrowing()
 }
 
+// ボタンがフォーカス中の Space キーをゲーム操作と区別するため抑制する
+// （Enter はデフォルトで click を発火するため不要）
+function onGiveupKeydown(e: KeyboardEvent) {
+  e.stopPropagation()
+  e.preventDefault()
+  giveUp()
+  // click 同等の操作後、フォーカスを解放して Space がジャンプと競合するのを防止 (#267 follow-up)
+  ;(e.currentTarget as HTMLButtonElement).blur()
+}
+
+/** ギブアップボタン: click 後もフォーカスを解放 (#267 follow-up) */
+function onGiveupClick(e: MouseEvent) {
+  giveUp()
+  ;(e.currentTarget as HTMLButtonElement).blur()
+}
+
 // ─── 投擲完了 ────────────────────────────────────────────────────
 function onThrown(result: ThrowResult) {
   // getStats() を stop() より先に呼ぶ（stop() で内部状態がクリアされるため）
@@ -261,6 +279,14 @@ function restart() {
   // タイトルへ戻る際にデバッグ設定をクリア（DebugPanel 再マウント時の表示と一致させる）
   debugCtl.resetDebug()
 }
+
+// ─── 現在のHUDレイアウト（3系統分類・engine と共有の純粋関数） ────
+const hudLayout = computed(() => classifyHudLayout({
+  scrollAxis: gameState.rules.scrollAxis,
+  gravity: gameState.rules.gravity,
+  genre: gameState.rules.genre,
+  features: gameState.rules.features,
+}))
 
 // ─── 現在のジャンルテーマ ─────────────────────────────────────────
 const currentTheme = computed(() => {
@@ -357,6 +383,14 @@ watch(() => gameState.lockedGenre.value, (newGenre) => {
   const rawRules = cloneRules()
   rawRules.scrollSpeed = rawRules.scrollSpeed * GENRE_LOCKED_BOOST.mult
   scroller.updateRules(rawRules, gameState.currentManual())
+
+  // ジャンル確定をエンジンへ通知。genreLocked=true になり、
+  // 説明書更新ペースが postLockUpdatePace 倍に低下する（#255）。
+  scroller.notifyGenreLocked()
+
+  // ジャンル遷移演出（入力ロック→y中央へ自動移動→セーフゾーン漸次変化, 仕様 2-F）。
+  // updateRules 後に呼び、engine が新レイアウトを参照できるようにする。
+  scroller.beginGenreTransition()
 
   genreLockedBoostTimer = window.setTimeout(() => {
     genreLockedBoostTimer = null
@@ -456,14 +490,19 @@ onUnmounted(() => {
         :beat-hits="snapshot.beatHits"
         :genre="gameState.rules.genre"
         :features="gameState.rules.features"
+        :scroll-axis="gameState.rules.scrollAxis"
+        :gravity="gameState.rules.gravity"
+        :safe-zone="snapshot.safeZone"
       />
 
-      <!-- 操作説明レジェンド（常時表示・変更は赤で注記） -->
-      <ControlsLegend
+      <!-- 操作系パネル（歯車 + P・クリックで詳細開閉／変更は赤で注記・仕様 2-D） -->
+      <ControlHintBadge
         v-if="['playing','tutorial','genreLocked'].includes(gameState.phase.value)"
         :controls="gameState.rules.controls"
         :features="gameState.rules.features"
         :scroll-axis="gameState.rules.scrollAxis"
+        :genre="gameState.rules.genre"
+        :layout="hudLayout"
       />
 
       <!-- 説明書パネル（投擲中は ThrowOverlay が代替） -->
@@ -476,10 +515,11 @@ onUnmounted(() => {
         :diff-lines="manualCtl.diffLines.value"
         :is-animating="manualCtl.isAnimating.value"
         :is-centered="manualCentered"
+        :center-token="manualCtl.centerToken.value"
         :history="manualCtl.history.value"
         :features="gameState.rules.features"
-        :controls="gameState.rules.controls"
         :highlight="gameState.phase.value === 'tutorial'"
+        :layout="hudLayout"
         @click="toggleReviewPause"
       />
 
@@ -507,17 +547,23 @@ onUnmounted(() => {
         v-if="gameState.phase.value === 'tutorial'"
         :survived-sec="snapshot.survivedSec"
         :distance="snapshot.distance"
+        :layout="hudLayout"
+        :first-jump-done="snapshot.firstJumpDone"
       />
 
       <!-- ギブアップボタン（600m 以降 & genreLocked 時のみ） -->
-      <!-- tabindex="-1": Space キーでフォーカス発火しないよう除外 -->
+      <!-- tabindex 属性なし: キーボード操作可能。フォーカス中の Space は @keydown.space で抑制（ゲームのジャンプと競合するため） -->
       <Transition name="giveup-reveal">
         <div
           v-if="['playing','genreLocked'].includes(gameState.phase.value) && !snapshot.dead"
           class="giveup-area"
           :style="giveupThemeStyle"
         >
-          <button class="giveup-btn" tabindex="-1" @click="giveUp">
+          <button
+            class="giveup-btn"
+            @click="onGiveupClick"
+            @keydown.space="onGiveupKeydown"
+          >
             説明書を投げてゲームを終わらせる
           </button>
           <div class="giveup-hint">ドラッグして投げると高スコア</div>

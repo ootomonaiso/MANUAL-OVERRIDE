@@ -1,10 +1,10 @@
 {
   "id": "combo_milestone",
-  "$comment": "コンボマイルストーン音（上昇アルペジオ）",
+  "$comment": "コンボマイルストーン音 — combo(440Hz)と同じ音を起点に加速する4音（間隔を狭めてアクセラレンド感を出す）",
   "tracks": [
-    { "kind": "osc", "wave": "square", "freq": 523, "durationSec": 0.1, "volume": 0.3, "delaySec": 0 },
-    { "kind": "osc", "wave": "square", "freq": 659, "durationSec": 0.1, "volume": 0.3, "delaySec": 0.1 },
-    { "kind": "osc", "wave": "square", "freq": 784, "durationSec": 0.1, "volume": 0.3, "delaySec": 0.2 },
-    { "kind": "osc", "wave": "square", "freq": 1047, "durationSec": 0.2, "volume": 0.35, "delaySec": 0.3 }
+    { "kind": "osc", "wave": "square", "freq": 440, "durationSec": 0.09, "volume": 0.28, "delaySec": 0 },
+    { "kind": "osc", "wave": "square", "freq": 494, "durationSec": 0.08, "volume": 0.28, "delaySec": 0.09 },
+    { "kind": "osc", "wave": "square", "freq": 587, "durationSec": 0.07, "volume": 0.3, "delaySec": 0.16 },
+    { "kind": "osc", "wave": "square", "freq": 740, "durationSec": 0.18, "volume": 0.32, "delaySec": 0.22 }
   ]
 }

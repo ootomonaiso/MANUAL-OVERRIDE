@@ -12,10 +12,10 @@
 import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import { rectsOverlap, Hazard } from '../entities'
-import { SURVIVAL, VFX, PIXELART } from '../../data/tunables'
-import { getActiveSystems } from '../../engine/GameRegistry'
+import { SURVIVAL, VFX } from '../../data/tunables'
+import { getActiveSystems, getGenre } from '../../engine/GameRegistry'
 import { soundManager } from '../../plugins/SoundManager'
-import { PixelCanvas } from '../render'
+import { buildMeleeRect, drawMeleeSwing } from './meleeShared'
 
 interface SurvivalState {
   meleeCooldown: number
@@ -77,8 +77,15 @@ export class SurvivalFeature implements FeatureSystem {
   }
 
   render(ctx: CanvasRenderingContext2D, world: MutableWorld): void {
-    if (this.state.meleeActive <= 0) return
-    this._drawMeleeSwing(ctx, world)
+    drawMeleeSwing(
+      ctx,
+      world.player.x,
+      world.player.y,
+      world.player.w,
+      world.player.h,
+      this.state.meleeActive,
+      SURVIVAL.meleeCooldown,
+    )
   }
 
   // ─── 内部: タイマー更新 ──────────────────────────────────────────
@@ -113,7 +120,7 @@ export class SurvivalFeature implements FeatureSystem {
     }
   }
 
-  // ─── 内部: メリー攻撃入力 ────────────────────────────────────────
+  // ─── 内部: 近接攻撃入力 ────────────────────────────────────────
   private _handleMeleeAttack(world: MutableWorld, input: InputSnapshot): void {
     if (!world.rules.features.has('survival_melee')) return
     const shootKey = world.rules.controls.shoot?.toLowerCase() ?? 'z'
@@ -126,34 +133,33 @@ export class SurvivalFeature implements FeatureSystem {
     soundManager.onMeleeAttack()
   }
 
-  // ─── 内部: メリー攻撃 × 障害物 衝突判定 ─────────────────────────
+  // ─── 内部: 近接攻撃 × 障害物 衝突判定 ─────────────────────────
   private _resolveMeleeCollisions(world: MutableWorld): void {
     if (this.state.meleeActive <= 0) return
     if (!world.rules.features.has('survival_melee')) return
 
     const p = world.player
-    const range = SURVIVAL.meleeRange
     const damage = p.weaponDamage
+    const meleeRect = buildMeleeRect(p.x, p.y, p.w, p.h)
 
-    // プレイヤー中心から左右両方向の攻撃範囲
-    const meleeLeft = p.x - range
-    const meleeRight = p.x + p.w + range
-    const meleeTop = p.y - range * SURVIVAL.meleeVerticalRatio
-    const meleeBottom = p.y + p.h + range * SURVIVAL.meleeVerticalRatio
-    const meleeRect = { x: meleeLeft, y: meleeTop, w: meleeRight - meleeLeft, h: meleeBottom - meleeTop }
-
-    for (const h of world.hazards) {
+    // 逆順イテレーション: ハザード除去（splice）時にインデックスがずれて次要素をスキップするのを防止
+    for (let i = world.hazards.length - 1; i >= 0; i--) {
+      const h = world.hazards[i]
       if (h.isSafe || h.hp <= 0) continue
-      if (!rectsOverlap(meleeRect, h.rect, SURVIVAL.meleeCollisionGrace)) continue
+
+      // ハザードをスクリーン系に変換して meleeRect（スクリーン系）と比較
+      const hScreenX = world.getHazardScreenX(h)
+      const hScreenRect = { ...h.rect, x: hScreenX }
+      if (!rectsOverlap(meleeRect, hScreenRect, SURVIVAL.meleeCollisionGrace)) continue
 
       h.hp -= damage
       soundManager.onMeleeHit()
       // 攻撃パーティクル
-      for (let i = 0; i < SURVIVAL.meleeHitParticleCount; i++) {
+      for (let j = 0; j < SURVIVAL.meleeHitParticleCount; j++) {
         const angle = Math.random() * Math.PI * 2
         const speed = SURVIVAL.meleeHitParticleSpeedMin + Math.random() * (SURVIVAL.meleeHitParticleSpeedMax - SURVIVAL.meleeHitParticleSpeedMin)
         world.addParticle(
-          h.x + h.w / 2 - world.cameraX, h.y + h.h / 2,
+          hScreenX + h.w / 2, h.y + h.h / 2,
           Math.cos(angle) * speed, Math.sin(angle) * speed,
           SURVIVAL.meleeHitParticleLife, SURVIVAL.meleeHitParticleColor, SURVIVAL.meleeHitParticleSize,
         )
@@ -161,41 +167,72 @@ export class SurvivalFeature implements FeatureSystem {
 
       if (h.hp <= 0) {
         this._onEnemyKilled(world, h)
+        // 即座に除去: 撃破したハザードが残存しない + 1フレーム内の多重ダメージを自然に防止
+        world.removeHazardById(h)
       }
     }
   }
 
-  // ─── 内部: 敵撃破時のXP付与とレベルアップ ────────────────────────
-  private _onEnemyKilled(world: MutableWorld, _hazard: Hazard): void {
-    if (!world.rules.features.has('survival_level')) return
+  // ─── 内部: 敵撃破時の処理 ────────────────────────────────────────
+  // 撃破時処理（onHazardDestroyed / 除去 / kills カウント）は survival_level の有無に関わらず実行
+  // XP/レベルアップロジックは survival_level 有効時のみ実行
+  private _onEnemyKilled(world: MutableWorld, h: Hazard): void {
     const p = world.player
 
-    p.exp += SURVIVAL.xpPerKill
-    this.state.xp += SURVIVAL.xpPerKill
-    p.currentLevelXp += SURVIVAL.xpPerKill
+    // 撃破スコアポップ
+    const cx = h.x + h.w / 2 - world.cameraX
+    const cy = h.y
+    world.addScorePopup(cx, cy, 'KILL!', SURVIVAL.killPopupColor)
 
-    // レベルアップ判定
-    // xpPerLevel <= 0 または xpLevelScale <= 1 の場合、nextLevelXpが減少しないため無限ループする
-    // 最大100回のレベルアップを1フレームで許可するガード
-    let guard = 100
-    while (this.state.xp >= this.state.nextLevelXp && guard > 0) {
-      guard--
-      this.state.xp -= this.state.nextLevelXp
-      p.currentLevelXp -= this.state.nextLevelXp
-      p.level++
-      this.state.nextLevelXp = Math.floor(SURVIVAL.xpPerLevel * Math.pow(SURVIVAL.xpLevelScale, p.level - 1))
-      p.nextLevelXp = this.state.nextLevelXp
+    // 撃破パーティクル
+    for (let i = 0; i < SURVIVAL.killParticleCount; i++) {
+      const angle = Math.random() * Math.PI * 2
+      const speed = SURVIVAL.killParticleSpeedMin + Math.random() * (SURVIVAL.killParticleSpeedMax - SURVIVAL.killParticleSpeedMin)
+      world.addParticle(
+        cx, cy,
+        Math.cos(angle) * speed, Math.sin(angle) * speed,
+        SURVIVAL.killParticleLife, SURVIVAL.killParticleColors[Math.floor(Math.random() * SURVIVAL.killParticleColors.length)],
+        SURVIVAL.killParticleSize,
+      )
+    }
+    world.triggerShake(VFX.hitShakeIntensity * SURVIVAL.killShakeIntensity)
 
-      // レベルアップ効果
-      if (p.hp < p.maxHp) {
-        const heal = Math.min(SURVIVAL.levelUpHealHp, p.maxHp - p.hp)
-        p.hp += heal
+    // kills カウント（survival の scoreFormula: kills * 50 のために必要）
+    world.setKills(world.gameStats.kills + 1)
+
+    // ジャンルプラグインの onHazardDestroyed を発火（food/weapon ドロップ等）
+    const genre = getGenre(world.rules.genre)
+    genre.onHazardDestroyed?.(world, h)
+
+    // survival_level 有効時のみ XP/レベルアップ処理
+    if (world.rules.features.has('survival_level')) {
+      p.exp += SURVIVAL.xpPerKill
+      this.state.xp += SURVIVAL.xpPerKill
+      p.currentLevelXp += SURVIVAL.xpPerKill
+
+      // レベルアップ判定
+      // xpPerLevel <= 0 または xpLevelScale <= 1 の場合、nextLevelXpが減少しないため無限ループする
+      // 最大100回のレベルアップを1フレームで許可するガード
+      let guard = 100
+      while (this.state.xp >= this.state.nextLevelXp && guard > 0) {
+        guard--
+        this.state.xp -= this.state.nextLevelXp
+        p.currentLevelXp -= this.state.nextLevelXp
+        p.level++
+        this.state.nextLevelXp = Math.floor(SURVIVAL.xpPerLevel * Math.pow(SURVIVAL.xpLevelScale, p.level - 1))
+        p.nextLevelXp = this.state.nextLevelXp
+
+        // レベルアップ効果
+        if (p.hp < p.maxHp) {
+          const heal = Math.min(SURVIVAL.levelUpHealHp, p.maxHp - p.hp)
+          p.hp += heal
+        }
+        p.weaponDamage += SURVIVAL.levelUpDamageBonus
+
+        // レベルアップ演出
+        soundManager.onLevelUp()
+        this._spawnLevelUpEffect(world)
       }
-      p.weaponDamage += SURVIVAL.levelUpDamageBonus
-
-      // レベルアップ演出
-      soundManager.onLevelUp()
-      this._spawnLevelUpEffect(world)
     }
   }
 
@@ -248,33 +285,5 @@ export class SurvivalFeature implements FeatureSystem {
         sys.onItemPickup?.(world, item.type)
       }
     }
-  }
-
-  // ─── 内部: メリー攻撃の描画 ──────────────────────────────────────
-  private _drawMeleeSwing(ctx: CanvasRenderingContext2D, world: MutableWorld): void {
-    const p = world.player
-    const px = new PixelCanvas(ctx)
-    const cx = p.x + p.w / 2
-    const cy = p.y + p.h / 2
-    const range = SURVIVAL.meleeRange
-    const arc = SURVIVAL.meleeArc
-    // 太さは実px指定だった既存値をセル単位APIに合わせて変換（値そのものは JSON から読む）
-    const thickness = Math.max(1, Math.round(SURVIVAL.meleeSwingLineWidth / Math.max(1, PIXELART.size)))
-    // ハローの広がりは shadowBlur（実px）をセル数へ換算して段数とする。JSON の値を参照し続ける
-    const haloSteps = Math.max(1, Math.round(SURVIVAL.meleeSwingShadowBlur / Math.max(1, PIXELART.size)))
-    const fadeAlpha = this.state.meleeActive / (SURVIVAL.meleeCooldown * SURVIVAL.meleeActiveRatio)
-
-    // px.withAlpha は現在の globalAlpha に乗算するため、ハローも本体もフェードが掛かる
-    px.withAlpha(fadeAlpha, () => {
-      px.halo((expand, c) => {
-        px.arcBlocks(cx, cy, range + expand, -arc / 2, arc / 2, c, thickness)
-        px.arcBlocks(cx, cy, range + expand, Math.PI - arc / 2, Math.PI + arc / 2, c, thickness)
-      }, SURVIVAL.meleeSwingShadowColor, haloSteps)
-
-      // 右方向の弧
-      px.arcBlocks(cx, cy, range, -arc / 2, arc / 2, SURVIVAL.meleeSwingStrokeColor, thickness)
-      // 左方向の弧
-      px.arcBlocks(cx, cy, range, Math.PI - arc / 2, Math.PI + arc / 2, SURVIVAL.meleeSwingStrokeColor, thickness)
-    })
   }
 }

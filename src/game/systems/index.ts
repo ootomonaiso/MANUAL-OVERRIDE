@@ -12,14 +12,16 @@
  */
 
 import { registerFeature } from '../../engine/GameRegistry'
-import { ShootFeature }     from './ShootFeature'
-import { RhythmFeature }    from './RhythmFeature'
-import { MovementFeature }  from './MovementFeature'
-import { RpgFeature }       from './RpgFeature'
-import { PuzzleFeature }    from './PuzzleFeature'
-import { SpecialFeature }   from './SpecialFeature'
-import { TetrisFeature }    from './TetrisFeature'
-import { SurvivalFeature }  from './SurvivalFeature'
+import { ShootFeature }      from './ShootFeature'
+import { RhythmFeature }     from './RhythmFeature'
+import { MovementFeature }   from './MovementFeature'
+import { RpgFeature }        from './RpgFeature'
+import { PuzzleFeature }     from './PuzzleFeature'
+import { SpecialFeature }    from './SpecialFeature'
+import { TetrisFeature }     from './TetrisFeature'
+import { SurvivalFeature }   from './SurvivalFeature'
+import { MeleeKillFeature }  from './MeleeKillFeature'
+import { NearMissComboFeature } from './NearMissComboFeature'
 
 registerFeature(new ShootFeature())
 registerFeature(new RhythmFeature())
@@ -29,3 +31,5 @@ registerFeature(new PuzzleFeature())
 registerFeature(new SpecialFeature())
 registerFeature(new TetrisFeature())
 registerFeature(new SurvivalFeature())
+registerFeature(new MeleeKillFeature())
+registerFeature(new NearMissComboFeature())

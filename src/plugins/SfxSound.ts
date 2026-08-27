@@ -18,9 +18,12 @@ const COMBO_STEP_HZ = 12
 const COMBO_MAX_FREQ = 1500
 const NOISE_BUFFER_SEC = 0.5
 const GAIN_FADE_FLOOR = 0.001
+const GAIN_ATTACK_SEC = 0.004
+const GAIN_ATTACK_DURATION_RATIO_MAX = 0.3
 const FILTER_SWEEP_SEC = 0.2
 const STOP_MARGIN_SEC = 0.01
 const MIN_FREQ_HZ = 20
+const PITCH_JITTER_RATIO = 0.015
 
 // SFX_DEFS['combo'] の最初の osc track freq から combo base freq を動的に読み取る。
 // JSON と TS の暗黙結合を弱めるため。読み取れなければフォールバック値を使用。
@@ -86,8 +89,16 @@ function _applyGainEnvelope(
   durationSec: number,
   startTime: number,
 ): void {
-  gain.gain.setValueAtTime(volume, startTime)
+  // アタックを0にすると音量が瞬間ジャンプしクリックノイズが乗るため、短い立ち上がりを必ず挟む
+  const attack = Math.min(GAIN_ATTACK_SEC, durationSec * GAIN_ATTACK_DURATION_RATIO_MAX)
+  gain.gain.setValueAtTime(GAIN_FADE_FLOOR, startTime)
+  gain.gain.linearRampToValueAtTime(volume, startTime + attack)
   gain.gain.exponentialRampToValueAtTime(GAIN_FADE_FLOOR, startTime + durationSec)
+}
+
+/** 毎回同一ピッチだと高頻度SEが機械的に聞こえるため、微小なランダムジッターを掛ける。 */
+function _pitchJitterScale(): number {
+  return 1 + (Math.random() * 2 - 1) * PITCH_JITTER_RATIO
 }
 
 function _applyFilter(
@@ -243,11 +254,14 @@ export class SfxSound implements SoundHooks {
     const ctx = this._ensureCtx()
     if (!ctx) return
 
+    // 複数トラックへ同一のジッター値を適用し、和音・アルペジオ内の音程関係は保つ
+    const jitteredScale = freqScale * _pitchJitterScale()
+
     for (let i = 0; i < def.tracks.length; i++) {
       try {
         const track = def.tracks[i]
         const delay = (track.delaySec ?? 0)
-        this._playTrack(ctx, track, freqScale, delay)
+        this._playTrack(ctx, track, jitteredScale, delay)
       } catch {
         // 個別トラックの再生失敗は no-op（volume:0 等での exponentialRampToValueAtTime 例外等対策）
       }

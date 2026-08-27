@@ -1,7 +1,7 @@
 {
-  "$comment": "ジャンプ音 — 三角波の軽い上昇",
   "id": "jump",
+  "$comment": "ジャンプ音 — 三角波の軽い上昇。最頻出アクションのため音量を抑え、達成系SEより耳につかないようにする",
   "tracks": [
-    { "kind": "osc", "wave": "triangle", "freq": 300, "freqEnd": 500, "durationSec": 0.08, "volume": 0.5 }
+    { "kind": "osc", "wave": "triangle", "freq": 300, "freqEnd": 500, "durationSec": 0.08, "volume": 0.35 }
   ]
 }

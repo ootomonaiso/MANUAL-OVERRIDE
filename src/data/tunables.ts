@@ -121,6 +121,11 @@ export const PUZZLE = _c.puzzle
 export const EXTRA_MOVEMENT = _c.extra_movement
 
 // ─────────────────────────────────────────────────────────────
+// HUD_SAFEZONE — HUD再配置 & 可動域セーフゾーン
+// ─────────────────────────────────────────────────────────────
+export const HUD_SAFEZONE = _c.hud_safezone
+
+// ─────────────────────────────────────────────────────────────
 // SURVIVAL — サバイバルゲーム（hunger / melee / level）
 // ─────────────────────────────────────────────────────────────
 export const SURVIVAL = _c.survival
@@ -129,3 +134,8 @@ export const SURVIVAL = _c.survival
 // PIXELART — PixelArt化レンダリング設定
 // ─────────────────────────────────────────────────────────────
 export const PIXELART = _c.pixelart
+
+// ─────────────────────────────────────────────────────────────
+// NEAR_MISS — near-miss combo パラメータ
+// ─────────────────────────────────────────────────────────────
+export const NEAR_MISS = _c.near_miss

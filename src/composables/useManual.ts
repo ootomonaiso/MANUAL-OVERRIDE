@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import type { ManualVersion } from '../domain/types'
 
 export type DiffLine = { text: string; type: 'added' | 'removed' | 'unchanged' }
@@ -52,11 +52,22 @@ export function computeLineDiff(prevLines: string[], nextLines: string[]): DiffL
   return hasDiff ? result : []
 }
 
+// 中央表示から自動的に隅へ戻るまでの時間。ManualPanel 側の残り時間バーの
+// アニメーション時間と一致させる必要があるため export する。
+export const CENTER_DURATION_MS = 2800
+
+// 説明書履歴の単調増加IDカウンター。version 文字列は MAX_ROUNDS 超過で "5/5" に
+// クランプされるため、Vue の v-for :key として使えない（#218）。id は常に一意。
+let nextManualId = 1
+
 export function useManual(_currentManual: () => ManualVersion) {
   const history = ref<ManualVersion[]>([])
   const diffLines = ref<DiffLine[]>([])
   const isAnimating = ref(false)
   const isCentered = ref(false)
+  // 中央表示のたびにインクリメントし、ManualPanel 側で :key として使うことで
+  // 残り時間バーのCSSアニメーションを毎回リスタートさせる
+  const centerToken = ref(0)
 
   // タイマーIDの追跡（連続更新時に前のタイマーをクリア）
   let animTimer: ReturnType<typeof setTimeout> | null = null
@@ -64,7 +75,8 @@ export function useManual(_currentManual: () => ManualVersion) {
 
   function recordUpdate(nextManual: ManualVersion) {
     const prev = history.value[history.value.length - 1]
-    history.value.push(nextManual)
+    const entry: ManualVersion = { ...nextManual, id: nextManualId++ }
+    history.value.push(entry)
     if (history.value.length > 4) history.value.shift()
 
     // 初回（prev なし）は差分アニメーション不要
@@ -79,7 +91,6 @@ export function useManual(_currentManual: () => ManualVersion) {
     diffLines.value = computeLineDiff(prev.manualText, nextManual.manualText)
 
     const ANIM_DURATION_MS = 1500
-    const CENTER_DURATION_MS = 2800
 
     // 既存タイマーをクリア（連続更新時のアニメーション破綻防止）
     if (animTimer !== null) clearTimeout(animTimer)
@@ -87,10 +98,18 @@ export function useManual(_currentManual: () => ManualVersion) {
 
     isAnimating.value = true
     isCentered.value = true
+    centerToken.value++
 
     animTimer = setTimeout(() => { isAnimating.value = false }, ANIM_DURATION_MS)
     centerTimer = setTimeout(() => { isCentered.value = false }, CENTER_DURATION_MS)
   }
 
-  return { history, diffLines, isAnimating, isCentered, recordUpdate }
+  // アンマウント後にタイマーが発火して破棄済み ref を触らないよう後片付けする
+  // （useScoreAnimation 等の他 composable と同じパターンに揃える）。
+  onUnmounted(() => {
+    if (animTimer !== null) clearTimeout(animTimer)
+    if (centerTimer !== null) clearTimeout(centerTimer)
+  })
+
+  return { history, diffLines, isAnimating, isCentered, centerToken, recordUpdate }
 }

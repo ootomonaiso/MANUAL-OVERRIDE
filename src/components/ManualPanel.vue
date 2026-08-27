@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { ManualVersion, ManualTheme, Controls } from '../domain/types'
+import type { ManualVersion, ManualTheme } from '../domain/types'
+import type { HudLayout } from '../domain/hudLayout'
+import { CENTER_DURATION_MS } from '../composables/useManual'
 
 const props = defineProps<{
   manual: ManualVersion
@@ -8,14 +10,39 @@ const props = defineProps<{
   diffLines: Array<{ text: string; type: 'added' | 'removed' | 'unchanged' }>
   isAnimating: boolean
   isCentered: boolean
+  /** 中央表示のたびにインクリメントされるトークン。残り時間バーの:keyに使い、
+   *  連続更新時にCSSアニメーションを確実にリスタートさせる */
+  centerToken?: number
   history: ManualVersion[]
   features?: Set<string> | ReadonlySet<string>
-  controls: Controls
   highlight?: boolean
+  layout?: HudLayout
 }>()
+
+// 残り時間バーのCSSアニメーション時間（ms → s文字列）。useManualの自動復帰
+// タイマーと一致させることで、バーが0になるタイミング＝ゲームに戻るタイミングになる
+const centerDurationStyle = `${CENTER_DURATION_MS / 1000}s`
 
 const showHistory = ref(false)
 const themeClass = computed(() => `theme-${props.theme}`)
+// レイアウト別の配置クラス（仕様 2-H）。中央表示中は panel-centered が優先。
+const posClass = computed(() => `pos-${props.layout ?? 'other'}`)
+
+// history-btn がフォーカス中の Space キーをゲーム操作と区別するため抑制する
+// （Enter はデフォルトで click を発火するため不要）
+function onHistoryKeydown(e: KeyboardEvent) {
+  e.stopPropagation()
+  e.preventDefault()
+  showHistory.value = !showHistory.value
+  // click 同等の操作後、フォーカスを解放して Space がジャンプと競合するのを防止 (#267 follow-up)
+  ;(e.currentTarget as HTMLButtonElement).blur()
+}
+
+/** 履歴ボタン: click 後もフォーカスを解放 (#267 follow-up) */
+function onHistoryClick(e: MouseEvent) {
+  showHistory.value = !showHistory.value
+  ;(e.currentTarget as HTMLButtonElement).blur()
+}
 
 // auto_run が有効な場合、左右移動の説明を除外
 const filteredManualText = computed(() => {
@@ -32,24 +59,17 @@ const filteredDiffLines = computed(() => {
     !line.text.includes('←') && !line.text.includes('→') && !line.text.includes('左右')
   )
 })
-
-function keyLabel(key: string): string {
-  const map: Record<string, string> = {
-    Space: 'SPACE', ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓',
-  }
-  return map[key] ?? key.toUpperCase()
-}
 </script>
 
 <template>
-  <div class="manual-panel" :class="[themeClass, { 'panel-centered': isCentered, 'manual-highlight': highlight }]">
+  <div class="manual-panel" :class="[themeClass, posClass, { 'panel-centered': isCentered, 'manual-highlight': highlight }]">
     <!-- ヘッダー -->
     <div class="manual-header">
       <div class="manual-ver-badge">
         <span class="manual-ver-dot" />
         ver.{{ manual.version }}
       </div>
-      <button class="history-btn" @click="showHistory = !showHistory" tabindex="-1">
+      <button class="history-btn" @click="onHistoryClick" @keydown.space="onHistoryKeydown">
         {{ showHistory ? '▲' : '▼ 履歴' }}
       </button>
     </div>
@@ -60,11 +80,11 @@ function keyLabel(key: string): string {
         <div v-if="history.length <= 1" class="history-empty">まだ更新はありません</div>
         <div
           v-for="h in [...history].reverse().slice(1)"
-          :key="h.version"
+          :key="h.id"
           class="history-item"
         >
           <div class="history-ver">ver.{{ h.version }}</div>
-          <div v-for="line in h.manualText" :key="line" class="history-line">{{ line }}</div>
+          <div v-for="(line, lineIdx) in h.manualText" :key="`${h.id}-${lineIdx}`" class="history-line">{{ line }}</div>
         </div>
       </div>
     </Transition>
@@ -104,24 +124,15 @@ function keyLabel(key: string): string {
       </template>
     </div>
 
-    <!-- 操作キー -->
-    <div class="manual-controls">
-      <div class="controls-title">操作</div>
-      <div class="controls-grid">
-        <!-- auto_run が有効な場合は左右キーを非表示 -->
-        <template v-if="!features?.has('auto_run')">
-          <span class="key-badge">{{ keyLabel(controls.moveLeft) }}</span>
-          <span class="key-action">左移動</span>
-          <span class="key-badge">{{ keyLabel(controls.moveRight) }}</span>
-          <span class="key-action">右移動</span>
-        </template>
-        <span class="key-badge">{{ keyLabel(controls.jump) }}</span>
-        <span class="key-action">ジャンプ</span>
-        <template v-if="controls.shoot">
-          <span class="key-badge">{{ keyLabel(controls.shoot) }}</span>
-          <span class="key-action">ショット</span>
-        </template>
-      </div>
+    <!-- 操作キーの一覧は専用UI（ControlHintBadge）へ移管したため説明書からは削除 -->
+
+    <!-- 中央表示中の残り時間バー（ここが0になるとゲームに戻る） -->
+    <div v-if="isCentered" class="manual-return-bar-track">
+      <div
+        :key="centerToken"
+        class="manual-return-bar-fill"
+        :style="{ animationDuration: centerDurationStyle }"
+      />
     </div>
   </div>
 </template>
@@ -150,6 +161,26 @@ function keyLabel(key: string): string {
   overflow-y: auto;
 }
 
+/* ──────────────────────────────────────
+   レイアウト別配置（仕様 2-H）。panel-centered 時は下の !important が優先。
+   pos-other / pos-hbase 以外の未対象ジャンルは既定（右下）のまま。
+────────────────────────────────────── */
+/* 横スクロール原点・横STG: 左上（普通の横スクロールと同じ配置。UIゾーンに縛られない） */
+.manual-panel.pos-hbase:not(.panel-centered),
+.manual-panel.pos-hstg:not(.panel-centered) {
+  top: 14px; left: 18px; right: auto; bottom: auto;
+  width: 270px;
+  font-size: 12px;
+  max-height: 60vh;
+}
+/* 縦STG: 左側UIゾーン内（左端・下寄せで上部の操作レジェンドを避ける） */
+.manual-panel.pos-vstg:not(.panel-centered) {
+  top: auto; bottom: 14px; left: 12px; right: auto;
+  width: min(21vw, 260px);
+  font-size: 12px;
+  max-height: 60vh;
+}
+
 /* ── 中央表示（説明書更新時） ── */
 .panel-centered {
   position: fixed !important;
@@ -172,6 +203,29 @@ function keyLabel(key: string): string {
 @keyframes panelCenterIn {
   0%   { opacity: 0; transform: translate(50%, 50%) scale(0.85); }
   100% { opacity: 1; transform: translate(50%, 50%) scale(1); }
+}
+
+/* ── 中央表示中の残り時間バー（0になるタイミング＝ゲームに戻るタイミング） ── */
+.manual-return-bar-track {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+  border-radius: 0 0 1px 1px;
+}
+.manual-return-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--genre-accent, #00ff41);
+  transform-origin: left center;
+  animation-name: manualReturnBarShrink;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes manualReturnBarShrink {
+  0%   { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
 }
 
 /* 中央表示解除時のトランジション（position/z-index はアニメーション不可のため除外） */

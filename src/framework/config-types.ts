@@ -252,6 +252,8 @@ export interface ScoreConfig {
 /** difficulty.json — 難易度 + TEMPO_SPEED_BONUS */
 export interface DifficultyConfig {
   updateDistancesInitial: number[]
+  /** 生成式初期値（1100 + baseInterval * i の 1100 部分） */
+  updateDistancesFirstGenerated: number
   updateDistancesBaseInterval: number
   updateDistancesCount: number
   genreLockedPlayDist: number
@@ -414,6 +416,38 @@ export interface SurvivalConfig {
   hudPanelBgColor: string
   hudPanelPadding: number
   hudPanelRadius: number
+  // Kill VFX
+  killPopupColor: string
+  killParticleCount: number
+  killParticleSpeedMin: number
+  killParticleSpeedMax: number
+  killParticleLife: number
+  killParticleColors: readonly string[]
+  killParticleSize: number
+  killShakeIntensity: number
+}
+
+/** near_miss.json — near-miss combo パラメータ */
+export interface NearMissConfig {
+  /** ハザードとプレイヤーの垂直間隔の閾値（px）。これ以下なら near-miss 判定 */
+  nearMissThreshold: number
+  /** near-miss がない状態がこれ以上続くと combo が 0 に減衰（秒） */
+  nearMissComboDecay: number
+}
+
+/** genre_defaults.json — ジャンル定義のデフォルト値 */
+export interface GenreDefaultsConfig {
+  scoreFormula: string
+  theme: string
+  bgColor: string
+}
+
+/** palette_defaults.json — JSONGenrePlugin のパレットフォールバック */
+export interface PaletteDefaultsConfig {
+  danger: string
+  dangerGlow: string
+  safe: string
+  safeGlow: string
 }
 
 /** extra_movement.json — 拡張移動フィーチャー */
@@ -442,6 +476,28 @@ export interface ExtraMovementConfig {
   dashTrailParticleColor: string
   dashTrailParticleSize: number
   dashTrailAlphaMax: number
+}
+
+/** hud_safezone.json — HUD再配置 & 可動域セーフゾーン化 */
+export interface HudSafezoneConfig {
+  /** 横スクロール原点: 上側UIゾーン高さの画面高に対する割合（HUD配置用・可動域clampなし） */
+  hbaseTopRatio: number
+  /** 横STG: 上側UIゾーン高さの画面高に対する割合 */
+  hstgTopRatio: number
+  /** 横STG: 下側UIゾーン高さの画面高に対する割合 */
+  hstgBottomRatio: number
+  /** 縦STG: 左側UIゾーン幅の画面幅に対する割合 */
+  vstgLeftRatio: number
+  /** 縦STG: 右側UIゾーン幅の画面幅に対する割合 */
+  vstgRightRatio: number
+  /** 縦STG: ジャンル確定時の初期垂直位置（可動域上端0〜下端1。大きいほど下寄り） */
+  vstgInitialYRatio: number
+  /** ジャンル遷移演出の所要時間（秒） */
+  transitionSec: number
+  /** UIゾーンの半透明フィルの不透明度（0〜1） */
+  boundaryFadeAlpha: number
+  /** ゾーン内側境界に引く区切り線の不透明度（0〜1） */
+  boundaryLineAlpha: number
 }
 
 /** genre_params.json — ジャンルパラメータ設計支援 */
@@ -475,6 +531,8 @@ export interface GameBalanceConfig {
   defaultFallbackGenre: string
   /** ジャンルパラメータのジッター幅（±20%） */
   paramJitterRange: number
+  /** genre が scoreFormula を持たない場合のフォールバック式 */
+  defaultScoreFormula: string
 }
 
 /**
@@ -526,6 +584,8 @@ export interface GenreDefJSON {
   visual?: GenreVisualConfig
   /** ジャンル固有のスポーン密度設定。TSプラグインもこれをマージされる。 */
   spawnDensity?: import('../domain/types').SpawnDensityConfig
+  /** BGM再生設定。省略時はBGMなし（音源未準備でもフォールバックで無音継続）。 */
+  bgm?: import('../domain/types').BgmConfig
 }
 
 /**
@@ -567,6 +627,7 @@ export interface GameConfigMap {
   rhythm_tuning: RhythmTuningConfig
   stealth: StealthConfig
   genre_params: GenreParamsConfig
+  hud_safezone: HudSafezoneConfig
   game_balance: GameBalanceConfig
   genres: GenresConfig
   bayes: BayesConfig
@@ -575,6 +636,9 @@ export interface GameConfigMap {
   extra_movement: ExtraMovementConfig
   survival: SurvivalConfig
   pixelart: PixelartConfig
+  near_miss: NearMissConfig
+  genre_defaults: GenreDefaultsConfig
+  palette_defaults: PaletteDefaultsConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap

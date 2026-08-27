@@ -150,6 +150,7 @@ for (const g of genres.filter(isCandidate)) {
 }
 
 console.log(`\n■ 狙い撃ちプレイヤー（各ジャンル ${N_FOCUS} 回）の到達成功率:`)
+const focusHits = {}
 const weak = []
 for (const g of genres.filter(isCandidate)) {
   let hit = 0
@@ -157,9 +158,28 @@ for (const g of genres.filter(isCandidate)) {
   for (let i = 0; i < N_FOCUS; i++) {
     if (playOnce(picker) === g.id) hit++
   }
+  focusHits[g.id] = hit
   const rate = hit / N_FOCUS * 100
   if (rate < 25) weak.push(g.id)
   console.log(`  ${g.id.padEnd(15)} ${rate.toFixed(1).padStart(5)}%  ${'#'.repeat(Math.round(rate / 2))}`)
 }
 
 console.log(`\n狙っても到達率25%未満: ${weak.length > 0 ? weak.join(', ') : 'なし'}`)
+
+// ── 到達率 0% ジャンルの検出（回帰検知） ──────────────────────
+// 狙い撃ちで 0% ということは、そのジャンルが「絶対に到達不能」になったことを意味する。
+// 確率的シミュレーションでは稀に 0% になる場合もあるが、複数ジャンルが 0% になるのは異常。
+// CI では「2ジャンル以上が 0%」の場合に失敗とする（1ジャンルまでの 0% は許容）。
+const zeroRate = Object.entries(focusHits)
+  .filter(([, hit]) => hit === 0)
+  .map(([id]) => id)
+
+if (zeroRate.length >= 2) {
+  console.error(`\n💥 到達率 0% のジャンルが ${zeroRate.length} 件: ${zeroRate.join(', ')}`)
+  console.error('   複数のジャンルが到達不能になっているため、回帰欠陥の疑いあり。')
+  process.exit(1)
+} else if (zeroRate.length === 1) {
+  console.log(`\n⚠️  到達率 0% のジャンルが 1 件: ${zeroRate[0]}（許容範囲内だが注意）`)
+} else {
+  console.log('\n✅ 到達率 0% のジャンルなし')
+}

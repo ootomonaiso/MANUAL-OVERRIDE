@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, toRef } from 'vue'
-import { GENRES } from '../data/genres'
 import { useScoreAnimation } from '../composables/useScoreAnimation'
+import { classifyHudLayout } from '../domain/hudLayout'
+import type { SafeZone } from '../domain/hudLayout'
 
 const props = defineProps<{
   distance: number
@@ -13,13 +14,32 @@ const props = defineProps<{
   beatHits: number
   genre: string
   features: Set<string> | ReadonlySet<string>
+  scrollAxis: 'x' | 'y'
+  gravity: number
+  safeZone: SafeZone
 }>()
 
 const displayScore = useScoreAnimation(toRef(props, 'playScore'))
 
 const DIST_BAR_MAX = 4000
 
-const genreLabel  = computed(() => GENRES.find(g => g.id === props.genre)?.label ?? '')
+// コンボ表示のデフォルト下端オフセット（px）と、下側セーフゾーンとの最小マージン
+const COMBO_BASE_BOTTOM = 100
+const COMBO_ZONE_MARGIN = 40
+
+const layout = computed(() => classifyHudLayout({
+  scrollAxis: props.scrollAxis,
+  gravity: props.gravity,
+  genre: props.genre,
+  features: props.features,
+}))
+
+// コンボは中央のプレイフィードバックとして維持しつつ、下側セーフゾーンに
+// かぶらない高さへ自動調整する（仕様 4-3 #6）
+const comboBottom = computed(() =>
+  Math.max(COMBO_BASE_BOTTOM, Math.round(props.safeZone.bottom) + COMBO_ZONE_MARGIN),
+)
+
 const distBar     = computed(() => Math.min(100, (props.distance / DIST_BAR_MAX) * 100))
 const COMBO_THRESHOLD_HIGH = 10
 const COMBO_THRESHOLD_MED  = 5
@@ -40,8 +60,8 @@ const comboGlow = computed(() => {
 </script>
 
 <template>
-  <div class="hud">
-    <!-- スコア（左上） -->
+  <div class="hud" :class="'layout-' + layout">
+    <!-- スコア（レイアウトに応じ左上 / 右上） -->
     <div class="hud-score-block">
       <div class="hud-score">{{ displayScore.toLocaleString() }}</div>
       <div class="hud-dist">
@@ -52,12 +72,7 @@ const comboGlow = computed(() => {
       </div>
     </div>
 
-    <!-- ジャンルバッジ（中央上） -->
-    <Transition name="badge-pop">
-      <div v-if="genre !== 'base'" class="hud-genre-badge">
-        {{ genreLabel }}
-      </div>
-    </Transition>
+    <!-- ジャンルバッジは中央上部浮遊を廃止し ControlHintBadge のゾーンへ統合（仕様 2-G） -->
 
     <!-- 右上: HP / コンボ / 統計 -->
     <div class="hud-right">
@@ -88,9 +103,9 @@ const comboGlow = computed(() => {
       </template>
     </div>
 
-    <!-- コンボ表示（大きく中央下） -->
+    <!-- コンボ表示（大きく中央下・下側セーフゾーンを避ける） -->
     <Transition name="combo-pop">
-      <div v-if="combo >= 2" class="hud-combo" :style="{ '--combo-glow': comboGlow }">
+      <div v-if="combo >= 2" class="hud-combo" :style="{ '--combo-glow': comboGlow, bottom: comboBottom + 'px' }">
         <span class="hud-combo-num">×{{ combo }}</span>
         <span class="hud-combo-label">COMBO</span>
       </div>
@@ -111,8 +126,23 @@ const comboGlow = computed(() => {
   position: absolute;
   top: 14px; left: 18px;
 }
+/* 対象レイアウト（横スクロール/横STG/縦STG）はスコアを右上へ統一（ユーザー調整）。
+   対象外ジャンルは従来どおり左上のまま。 */
+.layout-hbase .hud-score-block,
+.layout-hstg .hud-score-block,
+.layout-vstg .hud-score-block {
+  left: auto; right: 18px;
+  text-align: right;
+}
+.layout-hbase .hud-dist,
+.layout-hstg .hud-dist,
+.layout-vstg .hud-dist { justify-content: flex-end; }
+/* スコアが右上へ来るレイアウトでは統計（HP/KILLS）をその下へ送る */
+.layout-hbase .hud-right,
+.layout-hstg .hud-right,
+.layout-vstg .hud-right { top: 66px; }
 .hud-score {
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 900;
   color: var(--genre-accent, var(--green));
   font-family: var(--genre-font, var(--font-mono));
@@ -147,25 +177,7 @@ const comboGlow = computed(() => {
   font-family: var(--genre-font, var(--font-mono));
 }
 
-/* ─── ジャンルバッジ ─── */
-.hud-genre-badge {
-  position: absolute;
-  top: 14px; left: 50%;
-  transform: translateX(-50%);
-  background: var(--genre-bg, var(--green-subtle));
-  backdrop-filter: blur(6px);
-  border: 1px solid var(--genre-border, var(--green-dim));
-  color: var(--genre-accent, var(--green-dim));
-  font-size: 11px;
-  padding: 3px 14px;
-  border-radius: var(--radius-sm);
-  font-family: var(--genre-font, var(--font-mono));
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  transition: all 0.4s ease;
-}
-
-/* ─── 右上ブロック ─── */
+/* ─── 右上ブロック（HP/KILLS） ─── */
 .hud-right {
   position: absolute;
   top: 14px; right: 18px;
@@ -230,15 +242,6 @@ const comboGlow = computed(() => {
 }
 
 /* ─── トランジション ─── */
-.badge-pop-enter-active { animation: badgePop 0.4s ease; }
-.badge-pop-leave-active { transition: opacity 0.3s; }
-.badge-pop-leave-to    { opacity: 0; }
-@keyframes badgePop {
-  0%   { opacity: 0; transform: translateX(-50%) scale(0.7); }
-  60%  { transform: translateX(-50%) scale(1.1); }
-  100% { opacity: 1; transform: translateX(-50%) scale(1); }
-}
-
 .combo-pop-enter-active { animation: comboPop 0.2s ease; }
 .combo-pop-leave-active { transition: opacity 0.4s; }
 .combo-pop-leave-to    { opacity: 0; }

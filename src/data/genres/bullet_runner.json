@@ -5,7 +5,7 @@
   "thresholds": { "tempo": 7, "enemy": 6 },
   "enableFeatures": ["auto_run", "shoot", "enemy_hp"],
   "disableFeatures": ["grid_stop", "puzzle_solve", "slow_precise", "stealth_mode"],
-  "scoreFormula": "kills * 100 + distance * 1.5 + combo * 60",
+  "scoreFormula": "kills * 100 + distance * 1.5 + maxCombo * 60",
   "manualReveal": "これは弾幕ランナーになりました。走りながら戦ってください。",
   "theme": "stg",
   "bgColor": "#100010",

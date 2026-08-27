@@ -109,7 +109,8 @@ src/
 ├── domain/          # 純粋ロジック（ruleEngine, genreResolver, scoreCalc, LearningSystem）
 ├── framework/       # ConfigLoader・ManualBuilder・ManualValidator（JSON読み込み基盤）
 ├── genres/          # ジャンルプラグイン（TS実装 15種）
-├── plugins/         # PluginManager・SoundManager・JSONGenrePlugin
+├── plugins/         # PluginManager・SoundManager・SfxSound・JSONGenrePlugin
+├── tools/           # 開発専用ツール（本番ビルド対象外。production から import 禁止）
 ├── game/
 │   ├── sideScroller.ts   # Canvas エンジン本体
 │   ├── InputManager.ts   # キー入力の受付・正規化・エッジ検出
@@ -138,6 +139,7 @@ src/
 | `ruleEngine` | 選択履歴から RuntimeRules を合成する純粋関数 |
 | `genreResolver` | ベイズ事後確率でジャンルIDを決定（genreParams + genrePoints も後方互換で保持） |
 | `SoundManager` | BGM フェードイン/アウト・効果音フック（SoundHooks インターフェース） |
+| `SfxSound` | JSON駆動の効果音再生エンジン（WebAudio）。`src/data/sfx/*.json` を解釈して発音（[docs/sound-system.md](docs/sound-system.md)） |
 | `useScoreAnimation` | スコア差分の大小でアニメーション/即時更新を切り替える ViewModel |
 
 ---
@@ -225,6 +227,25 @@ src/
   "genrePoints": { "stg": 3 }
 }
 ```
+
+### 効果音 (`src/data/sfx/`)
+
+効果音1つにつきJSON 1ファイル（51件）。周波数・長さ・音量をコードに直書きしない。`tracks` 配列で「1つの効果音に複数の音を内包」でき、`delaySec` で重なり方（同時／時間差）を制御する。
+
+```json
+{
+  "id": "land",
+  "$comment": "着地音 — 高頻度アクションのため軽さを優先",
+  "tracks": [
+    { "kind": "noise", "durationSec": 0.06, "volume": 0.28, "filter": { "type": "highpass", "freq": 1200 } },
+    { "kind": "osc", "wave": "sine", "freq": 150, "durationSec": 0.05, "volume": 0.3 }
+  ]
+}
+```
+
+既存の音を差し替えるだけならJSON編集のみで完結する（コード変更不要）。`npm run sfx-test` で試聴できる。
+
+詳細: [docs/sound-system.md](docs/sound-system.md)（スキーマ・音色設計ガイドライン・追加手順） / [docs/sfx-test-mode.md](docs/sfx-test-mode.md)（試聴ツール）
 
 ---
 

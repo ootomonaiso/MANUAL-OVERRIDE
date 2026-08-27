@@ -1,7 +1,8 @@
 {
   "$comment": "難易度（updateDistancesパラメータ化、tempoSpeedBonusを統合）",
   "section": "difficulty",
-  "updateDistancesInitial": [1100, 2400, 3900],
+  "updateDistancesInitial": [1600, 2900, 4400],
+  "updateDistancesFirstGenerated": 1100,
   "updateDistancesBaseInterval": 2000,
   "updateDistancesCount": 100,
   "genreLockedPlayDist": 400,

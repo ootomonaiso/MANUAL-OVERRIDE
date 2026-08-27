@@ -93,6 +93,7 @@ src/
     │   ├── genreResolver.ts  resolveGenre() — 収束アルゴリズム
     │   ├── scoreCalc.ts      最終スコア計算(投擲込み)
     │   ├── LearningSystem.ts 行動統計 → 追加ルール発火
+    │   ├── hudLayout.ts      HUDレイアウト分類・セーフゾーン幾何（engine と Vue が共有）
     │   └── defaults.ts       デフォルト値定義
 │
 ├── engine/
@@ -137,7 +138,7 @@ src/
 │
 ├── data/
     │   ├── config.ts          GAME_CONFIG エントリポイント
-    │   ├── config/            JSON設定ファイル群（21個）
+    │   ├── config/            JSON設定ファイル群（23個）
     │   │   ├── genres.json    22 種の GenreDef
     │   │   ├── game_balance.json   スコア比率/投擲重み/基本速度
     │   │   ├── difficulty.json     難易度カーブ/アップデート距離
@@ -160,11 +161,20 @@ src/
     │   ├── ConfigValidator.ts 設定ファイルのバリデーション
     │   └── index.ts           framework エクスポート
     │
-    └── plugins/
-        ├── PluginManager.ts   ユーザーインストールプラグイン管理
-        ├── JSONGenrePlugin.ts JSON からジャンル生成
-        └── SoundManager.ts    サウンド管理
+    ├── plugins/
+    │   ├── PluginManager.ts   ユーザーインストールプラグイン管理
+    │   ├── JSONGenrePlugin.ts JSON からジャンル生成
+    │   ├── SoundManager.ts    BGM管理 + 効果音フックの委譲
+    │   └── SfxSound.ts        JSON駆動 効果音再生エンジン（WebAudio）
+    │
+    └── tools/                 開発専用ツール（本番ビルドには含まれない）
+        ├── genreLab.ts        ジャンル設計GUI（tools/genre-lab.html）
+        ├── genreLabSim.ts     ジャンル収束シミュレーション層
+        ├── sfxTest.ts         効果音テスト再生UI（tools/sfx-test.html）
+        └── sfxTestLogic.ts    効果音テストのDOM非依存ロジック
 ```
+
+> `src/tools/` は `tools/*.html` からのみ参照される。production コードから import してはならない（ESLint と [sfxTestIsolation.test.ts](../tests/unit/sfxTestIsolation.test.ts) が機械的に禁止）。詳細は [sfx-test-mode.md](sfx-test-mode.md)。
 
 ---
 
