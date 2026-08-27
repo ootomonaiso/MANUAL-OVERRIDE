@@ -29,9 +29,9 @@
 
 ## パラメータが蓄積するとジャンルが確定する
 
-各ジャンルには**閾値（thresholds）**が定義されています。蓄積したパラメータがそのジャンルの閾値をすべて満たすと確定候補になります。
+各ジャンルには**閾値（thresholds）**が定義されています。蓄積したパラメータがそのジャンルの閾値を満たすと、**ベイズ収束方式**（主方式）により事後確率が計算され、確率が十分に偏ったところでジャンルが確定します。
 
-確定するのは常に1つです。複数のジャンルが候補になった場合、**閾値の超過量の合計が最大のジャンル**が選ばれます。
+> **参考:** 後方互換として `genreParams 軸方式`（閾値超過量の合計が最大）と `genrePoints 直接方式`（カードの直接加点）も存在しますが、現行の主方式はベイズ事後確率です。
 
 ```
 例: { tempo: 8, enemy: 6 } が蓄積されたとき
@@ -59,10 +59,10 @@
 
 | ジャンル | 閾値 | 性格 |
 |---|---|---|
-| `runner` | tempo ≥ 7 | 1軸のみ。速度を上げ続けると確定 |
-| `stg` | range ≥ 5, enemy ≥ 5 | 2軸。射程と敵密度の両方が必要 |
-| `bullet_runner` | tempo ≥ 6, enemy ≥ 5 | 2軸。runner と stg の中間的な性格 |
-| `aerial_stg` | vertical ≥ 4, range ≥ 4, enemy ≥ 4 | 3軸。縦・射程・敵密度すべてが必要 |
+| `runner` | tempo ≥ 8 | 1軸のみ。速度を上げ続けると確定 |
+| `stg` | range ≥ 4, enemy ≥ 4 | 2軸。射程と敵密度の両方が必要 |
+| `bullet_runner` | tempo ≥ 7, enemy ≥ 6 | 2軸。runner と stg の中間的な性格 |
+| `aerial_stg` | vertical ≥ 3, range ≥ 3, enemy ≥ 4 | 3軸。縦・射程・敵密度すべてが必要 |
 
 runner と stg のどちらにも寄せた選択を続けると、どちらでもなく `bullet_runner` に収束するよう設計されています。これは意図的なジャンル配置です。
 
@@ -75,18 +75,18 @@ runner と stg のどちらにも寄せた選択を続けると、どちらで�
 確定した瞬間に何が起きるか：
 
 ```
-genres.json の定義（bullet_runnerの場合）:
+src/data/genres/bullet_runner.json の定義:
 
   enableFeatures:  ["auto_run", "shoot", "enemy_hp"]
   disableFeatures: ["grid_stop", "puzzle_solve", "slow_precise", "stealth_mode"]
-  scoreFormula:    "kills * 100 + distance * 1.5 + combo * 60"
+  scoreFormula:    "kills * 100 + distance * 1.5 + maxCombo * 60"
   theme:           "stg"
   bgColor:         "#100010"
 ```
 
 1. `auto_run`・`shoot`・`enemy_hp` が有効になり、弾が撃てるようになる
 2. `grid_stop` などのパズル系機能は無効になる
-3. スコア計算が「撃破数 × 100 + 距離 × 1.5 + コンボ × 60」に切り替わる
+3. スコア計算が「撃破数 × 100 + 距離 × 1.5 + 最大コンボ × 60」に切り替わる
 4. 説明書のUIテーマが STG 風（ドット文字・暗黒背景）になる
 
 これがフィーチャーの役割です。

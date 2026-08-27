@@ -1,7 +1,7 @@
 # 取扱説明書を読むゲーム — Framework ドキュメント
 
-**最終更新:** 2026-06-10  
-**最新実装:** チュートリアル画面・永遠システム・100+ 選択肢・スコア/学習システム統合・API リファレンス
+**最終更新:** 2026-08-27  
+**最新実装:** チュートリアル画面・永遠システム・100+ 選択肢・スコア/学習システム統合・API リファレンス・ドキュメント監査（2026-08-27）
 
 横スクロールを起点にジャンルが変容するゲームの技術フレームワーク完全ドキュメント。  
 このドキュメントセットは、プロジェクト構造・データフロー・拡張ガイドを網羅しています。
@@ -48,7 +48,7 @@
 | [api/domain.md](api/domain.md) | `src/domain/` | 型定義・ジャンル収束・ルール合成・スコア計算・学習システム |
 | [api/engine.md](api/engine.md) | `src/engine/` | GenrePlugin/FeatureSystem インターフェース・GameRegistry |
 | [api/game.md](api/game.md) | `src/game/` | SideScroller エンジン・エンティティ・FeatureSystem 実装 |
-| [api/genres.md](api/genres.md) | `src/genres/` | 全ジャンルプラグイン（16種 + JSONフォールバック）のテーマ・スポーン・描画 |
+| [api/genres.md](api/genres.md) | `src/genres/` | 全ジャンルプラグイン（16種 + JSONフォールバック7種）のテーマ・スポーン・描画 |
 | [api/framework.md](api/framework.md) | `src/framework/` | ManualLoader/Builder/Validator・ConfigLoader/Validator |
 | [api/data.md](api/data.md) | `src/data/` | GAME_CONFIG / MANUAL_DECK エントリポイント |
 | [api/composables_plugins.md](api/composables_plugins.md) | `src/tutorial/`・`src/composables/`・`src/plugins/` | チュートリアル・useGameState/useManual/useScoreAnimation composable・PluginManager/SoundManager |
@@ -298,14 +298,14 @@ MutableWorld.cameraX を使い、座標変換を統一：
 ### コア実装
 
 -  Canvas 物理エンジン（衝突・描画・パーティクル・シェイク）
--  GenrePlugin × 16 種（Base, Runner, STG, RPG, Rhythm, Puzzle, Aerial STG, Survival, Bullet Runner, Platformer, Racing, Arena, Aquatic, Dungeon, Hack & Slash, Tetris）+ JSON フォールバックプラグイン対応
--  FeatureSystem × 7 種（Shoot, Rhythm, Movement, RPG, Puzzle, Special, Tetris）※移動拡張（dash / wall_jump / vertical_scroll）は Movement に統合
+-  GenrePlugin × 16 種（Base, Runner, STG, RPG, Rhythm, Puzzle, Aerial STG, Survival, Bullet Runner, Platformer, Racing, Arena, Aquatic, Dungeon, Hack & Slash, Tetris）+ JSON フォールバック7種（Tower Defense, Idle, Horror, Stealth, Bullet Hell, Sports, Glitch）※ Runner は BasePlugin.ts 内に定義
+-  FeatureSystem × 10 種（Shoot, Rhythm, Movement, RPG, Puzzle, Special, Tetris, Survival, MeleeKill, NearMissCombo）※移動拡張（dash / wall_jump / vertical_scroll）は Movement に統合
 -  すべてのイベントフック完装備
 -  ManualLoader / Builder / Validator / genreResolver 完全実装
 
 ### 永遠システム・スコア/学習システム統合（2026-05-31）
 
--  **無限選択肢** - UPDATE_DISTANCES 動的生成 + 1500px 無限トリガー
+-  **無限選択肢** - UPDATE_DISTANCES 動的生成 + 2000px 無限トリガー
 -  **距離ベース難易度曲線** - 1.0倍 → 1.5倍 段階加速
 -  **advanced-branch.json** - ver 9.0～15.0 の 100+ 選択肢
 -  **複雑ナラティブ** - 複雑さ → 秩序 → 次元超越 → 創造の壮大な物語
@@ -317,7 +317,7 @@ MutableWorld.cameraX を使い、座標変換を統一：
 
 -  JSON ドリブン（マニュアル・ルール・ジャンル全て JSON化）
 -  オフライン完全動作（dist 内自己完結）
--  ビルドサイズ最適化（256KB JS bundle）
+-  ビルドサイズ監視（CI bundle-size チェック。現在 JS 433KB / CSS 81KB）
 -  テスト充実（Playwright 統合テスト）
 
 ---

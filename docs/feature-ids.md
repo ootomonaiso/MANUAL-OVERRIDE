@@ -50,8 +50,9 @@
 
 | FeatureId | 説明 | 対応 FeatureSystem |
 |---|---|---|
-| `grid_stop` | move/solveフェーズ交互切替。solve中はscrollSpeed=0で停止 | PuzzleFeature ✅ |
-| `puzzle_solve` | solve→move切替時にターゲットセル判定。正解でコンボ+スコア、不正解でリセット | PuzzleFeature ✅ |
+| `lights_out` | move/solveフェーズ交互切替。solve中はscrollSpeed=0で停止（スライドパズル実装） | PuzzleFeature ✅ |
+| `grid_stop` | （legacy）旧スクロール停止。現行は `lights_out` に置換。disableFeatures でのみ参照 | ─ |
+| `puzzle_solve` | （legacy）旧パズル判定。現行は `lights_out` に置換。disableFeatures でのみ参照 | ─ |
 
 ---
 
@@ -73,17 +74,24 @@
 | `time_bonus` | 一定時間ごと（5秒）にスコア加算（+50pt） | SpecialFeature ✅ |
 | `color_touch` | 安全色を踏むと得点・消滅・エフェクト | SpecialFeature ✅ |
 | `tower` | 一定間隔で最も近いハザードを自動撃破（描画+動作+パーティクル） | SpecialFeature ✅ |
-| `boss` | isBossスポーンを強化HP化。HPバー描画・撃破演出・スコア加算 | SpecialFeature ✅ |
 
 ---
+
+## 生存 / 近接 / 接近回避系
+
+| FeatureId | 説明 | 対応 FeatureSystem |
+|---|---|---|
+| `survival_hunger` | 時間経過でHPが減衰（survival ジャンル） | SurvivalFeature ✅ |
+| `survival_melee` | 近接攻撃（Zキーで範囲内のハザードを一撃破壊） | SurvivalFeature / MeleeKillFeature ✅ |
+| `survival_level` | XP蓄積・レベルアップ（survival ジャンル） | SurvivalFeature ✅ |
+| `melee_kill` | 近接攻撃（Zキーで矩形範囲内のハザードを一撃破壊） | MeleeKillFeature ✅ |
+| `near_miss_combo` | 接近回避コンボ（ハザードを衝突なしで通過時にコンボ加算） | NearMissComboFeature ✅ |
 
 ## テトリス系
 
 | FeatureId | 説明 | 対応 FeatureSystem |
 |---|---|---|
 | `tetris_mode` | 横スクロールを停止し 10×20 グリッドのテトリスを起動（7-Bag・ゴーストピース・ロックディレイ・ウォールキック） | TetrisFeature ✅ |
-
----
 
 ## 実装ステータス
 
@@ -99,9 +107,12 @@
 | RhythmFeature | beat_hazard / just_input / beat_dash | ✅ |
 | MovementFeature | auto_run / slow_precise / double_jump / long_air / dash / wall_jump / vertical_scroll | ✅（slide / gravity_flip は ⚠️ 未実装・console.warn） |
 | RpgFeature | hp / exp / item_pickup / shield | ✅（hp: onPlayerHit、item_pickup: update。shield は未実装） |
-| PuzzleFeature | grid_stop / puzzle_solve | ✅ |
+| PuzzleFeature | lights_out | ✅ |
 | SpecialFeature | stealth_mode / time_bonus / tower / color_touch / boss | ✅ |
 | TetrisFeature | tetris_mode | ✅ |
+| SurvivalFeature | survival_hunger / survival_melee / survival_level | ✅ |
+| MeleeKillFeature | melee_kill | ✅ |
+| NearMissComboFeature | near_miss_combo | ✅ |
 
 ---
 

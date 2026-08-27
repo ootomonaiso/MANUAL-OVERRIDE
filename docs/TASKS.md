@@ -1,7 +1,7 @@
 # 未実装・改善タスク一覧
 
 このドキュメントは、現在の実装状況から見た「やるべきこと」を優先度順にまとめています。  
-**最終更新:** 2026-06-29 | **総タスク数:** 62 件
+**最終更新:** 2026-08-27 | **総タスク数:** 62 件
 
 > **このドキュメントとGitHub Issuesの使い分け:** ここは長期ロードマップ・UX改善の backlog。
 > 具体的な不具合報告は [GitHub Issues](https://github.com/ootomonaiso/MANUAL-OVERRIDE/issues) を参照。
@@ -524,6 +524,8 @@
 - [x] ジャンル/フィーチャー追加手順を実態に修正: `GenreId`/`FeatureId` は `string` 型で `types.ts` 編集不要、ジャンルは `src/data/genres/<id>.json` を置くだけ、プラグインは `export default` で `import.meta.glob` 自動収集
 - [ ]（コード側・要確認）`slide` / `gravity_flip` / `shield` は未実装のまま（有効化時 console.warn）。B-1 と重複
 - [ ]（コード側・要確認）`src/data/config/genres.json` に旧 genres 配列が残存（実効値は `src/data/genres/*.json` 側）。混乱回避のため整理を検討。B-8 と関連
+
+- [x] 2026-08-27 第2回ドキュメント監査を実施し、残存乖離（新フィーチャー3種・config 5ファイル・glitch・閾値・スコア式等）を修正（CHANGELOG 参照）
 
 **推定作業時間:** 完了（ドキュメント）／ コード側項目は B-1・B-8 に集約  
 **対象ファイル:** `docs/`（README・architecture・genre-system・feature-ids・framework・design・adding-content・genre-plugin・TASKS・api/* ・guide/* 等）
