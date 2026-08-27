@@ -20,6 +20,18 @@ import { SFX_DEFS } from '../framework/SfxLoader'
 
 const _rawModules = import.meta.glob('./config/*.json', { eager: true })
 
+// genre_defaults.json からジャンル定義のデフォルト値を取得。
+// normalizeGenreDef 呼び出し時には GAME_CONFIG が未構築のため、
+// _rawModules 経由で JSON から直接読み取る（#259 follow-up）。
+const _genreDefaultsRaw = ((_rawModules as Record<string, { default?: unknown }>)['./config/genre_defaults.json']?.default ?? {}) as Record<string, unknown>
+const _genreDefaults = {
+  enableFeatures: (_genreDefaultsRaw.enableFeatures as string[]) ?? [],
+  disableFeatures: (_genreDefaultsRaw.disableFeatures as string[]) ?? [],
+  scoreFormula: _genreDefaultsRaw.scoreFormula as string,
+  theme: _genreDefaultsRaw.theme as string,
+  bgColor: _genreDefaultsRaw.bgColor as string,
+}
+
 // src/data/genres/*.json を自動収集してジャンル定義を組み立てる。
 // 必須は id / label / thresholds のみ。残りは normalizeGenreDef が補完する。
 const _genreModules = import.meta.glob('./genres/*.json', { eager: true })
@@ -30,7 +42,7 @@ for (const [path, mod] of Object.entries(_genreModules)) {
     console.error(`[config] ${path}: id / label / thresholds は必須です。このジャンルはスキップされます。`)
     continue
   }
-  _genreList.push(normalizeGenreDef(raw as GenreDefJSONInput))
+  _genreList.push(normalizeGenreDef(raw as GenreDefJSONInput, _genreDefaults))
 }
 
 // genres.json の代わりに合成セクションとして注入する
