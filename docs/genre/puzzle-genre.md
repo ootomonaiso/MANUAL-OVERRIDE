@@ -49,7 +49,7 @@ src/
 
 | パラメータ | 閾値 |
 |-----------|------|
-| `combo`   | 5以上 |
+| `combo`   | 6以上 |
 
 `combo` 軸が閾値を超えるとパズルジャンルへ収束します（単一軸収束）。
 
@@ -149,7 +149,7 @@ scale = max(timeScaleMin, 0.5 ^ (puzzleCount / timeHalfLifeSteps))
 最終スコア式（`src/data/genres/puzzle.json`）:
 
 ```
-combo * 200 + survivedSec * 3
+maxCombo * 200 + survivedSec * 3
 ```
 
 - 正解（ゴール到達）でコンボ +1。

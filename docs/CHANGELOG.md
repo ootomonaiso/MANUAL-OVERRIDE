@@ -4,6 +4,39 @@
 
 ---
 
+## ドキュメント監査・整合性修正（2026-08-27）
+
+### 背景
+
+ドキュメントとコード実態の乖離（件数・閾値・スコア式・新フィーチャー未記載等）を監査し修正。
+
+### 変更
+
+- 件数修正: FeatureSystem 7→10種、config/ JSON 21→26個、genres/ JSON 22→23個（TSプラグイン16種 / JSONフォールバック7種の構成は維持。BasePlugin.ts が Base + Runner の2クラスを含むことを明記）
+- 新FeatureSystem 3種追記: SurvivalFeature / MeleeKillFeature / NearMissComboFeature
+- 新config 5ファイル追記: genre_defaults / hud_safezone / near_miss / palette_defaults / survival
+- `glitch` ジャンル（`resolvable: false`、矛盾トリガー専用）の追記
+- `glitch` を ManualTheme 15→16種に追加
+- 投擲スコア重み修正: airTime 0.5→0.6, arcHeight 0.4→0.7, speedPenalty 0.1→0.04（閾値1200超過分のみ）
+- 無限選択肢無限トリガー 1500px → 2000px
+- 説明書更新距離初期値 1100/2400/3900 → 1600/2900/4400、以降 1100+2000×i
+- 全ジャンルの閾値・スコア式を実ファイル値に修正
+- `FeatureId` は `string` 型（types.ts 編集不要）を全ドキュメントに反映
+- `PuzzleFeature` の担当 feature を `lights_out` に修正（`grid_stop` / `puzzle_solve` は legacy として残記）
+- `RunnerPlugin` の実在を全ドキュメントに反映（BasePlugin.ts 内2クラス）、1巡目の誤りを修正
+
+### 変更ファイル
+
+CLAUDE.md / README.md / SPECIFICATION.md / docs/README.md / docs/architecture.md / docs/engine-framework.md / docs/getting-started.md / docs/feature-ids.md / docs/feature-system.md / docs/genre-system.md / docs/api/data.md / docs/api/genres.md / docs/api/game.md / docs/api/domain.md / docs/guide/00-overview.md / docs/guide/01-genre-system.md / docs/guide/03-adding-content.md / docs/genre/stg-genre.md / docs/genre/aerial-stg.md / docs/genre/puzzle-genre.md / docs/genre/tetris-genre.md / docs/genre/README.md / tests/README.md / docs/CHANGELOG.md / docs/TASKS.md
+
+### テスト
+
+- `npm run check-doc-links` 通過
+- `npm run validate` 通過
+- `npm run ci` 通過
+
+---
+
 ## HUD再配置・可動域セーフゾーン化と縦STGスプライト二重回転修正（2026-07-15）
 
 ### 背景
