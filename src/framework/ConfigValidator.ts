@@ -19,7 +19,8 @@ export interface ConfigValidationResult {
 const REQUIRED_SECTIONS: GameConfigSection[] = [
   'physics', 'shoot', 'throw', 'spawn', 'vfx', 'camera', 'background',
   'hazard_vfx', 'ui', 'score', 'difficulty', 'boss', 'rhythm_tuning',
-  'stealth', 'genre_params', 'game_balance', 'genres'
+  'stealth', 'genre_params', 'game_balance', 'genres',
+  'genre_defaults', 'palette_defaults',
 ]
 
 const REQUIRED_NUMBER_FIELDS: Partial<Record<GameConfigSection, string[]>> = {

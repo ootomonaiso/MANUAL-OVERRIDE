@@ -420,6 +420,8 @@ export interface NearMissConfig {
 
 /** genre_defaults.json — ジャンル定義のデフォルト値 */
 export interface GenreDefaultsConfig {
+  enableFeatures: string[]
+  disableFeatures: string[]
   scoreFormula: string
   theme: string
   bgColor: string
