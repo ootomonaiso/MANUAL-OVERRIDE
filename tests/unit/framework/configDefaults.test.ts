@@ -141,6 +141,7 @@ describe('ConfigValidator.REQUIRED_SECTIONS (#259 follow-up)', () => {
       genre_params: { recommendedSingleChoice: 4, recommendedMaxPerAxis: 7, thresholdGuide: { singleAxis: 5, dualAxis: 8, tripleAxis: 11 } },
       game_balance: { scoreRatioPlay: 0.7, scoreRatioThrow: 0.3, throwScoreWeightsAirTime: 0.6, throwScoreWeightsArcHeight: 0.7, throwScoreWeightsSpeedPenalty: 0.04, throwScoreWeightsSpeedPenaltyThreshold: 1200, baseScrollSpeed: 240, hazardSpawnBaseInterval: 1200, hazardSpawnMinInterval: 400, hazardSpawnDecayRate: 0.0008, distanceAccelMaxBonus: 0.5, distanceAccelFullDist: 3000, maxRounds: 20, genreLockedBoostMult: 1.8, genreLockedBoostDurationMs: 2800, defaultFallbackGenre: 'runner', paramJitterRange: 0.4, defaultScoreFormula: 'distance * 0.8' },
       genres: { genres: [{ id: 'base', label: 'base', thresholds: {}, enableFeatures: [], disableFeatures: [], scoreFormula: 'distance * 1.0', manualReveal: '', theme: 'plain', bgColor: '#1a1a2e' }], themeColors: {} },
+      pixelart: { size: 4, gradientSteps: 4, haloSteps: 3, haloAlphaFalloff: 0.6, alphaSteps: 8, ditherRatioSteps: 8, textScale: 2, textMinBakePx: 8, blockShadeAmount: 24, spriteCacheMax: 64, textCacheMax: 64 },
       genre_defaults: { scoreFormula: 'distance * 1.0 + survivedSec * 5', theme: 'plain', bgColor: '#1a1a2e' },
       palette_defaults: { danger: '#ff6b6b', dangerGlow: '#ff9999', safe: '#4ecdc4', safeGlow: '#80e8dd' },
     } as unknown as GameConfigMap
