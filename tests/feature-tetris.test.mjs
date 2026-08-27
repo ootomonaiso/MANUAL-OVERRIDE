@@ -46,11 +46,11 @@ const tetrisJson = JSON.parse(
   fs.readFileSync(path.join(root, 'src/data/genres/tetris.json'), 'utf-8')
 )
 
-// 閾値が適切であること（他のジャンルの閾値 10-18 と同等以上）
+// 閾値が適切であること（2軸ジャンルの慣例値: 各軸3前後。reach-sim (#252) で到達率を検証済み）
 const combo = tetrisJson.thresholds?.combo ?? 0
 const craft = tetrisJson.thresholds?.craft ?? 0
-assert.ok(combo >= 8, `combo 閾値が低すぎます: ${combo} (8以上が必要です)`)
-assert.ok(craft >= 8, `craft 閾値が低すぎます: ${craft} (8以上が必要です)`)
+assert.ok(combo >= 4, `combo 閾値が低すぎます: ${combo} (4以上が必要です)`)
+assert.ok(craft >= 2, `craft 閾値が低すぎます: ${craft} (2以上が必要です)`)
 
 // scoreFormula に distance を使わない（distance は tetris モードで凍結する）
 assert.ok(!tetrisJson.scoreFormula.includes('distance'),

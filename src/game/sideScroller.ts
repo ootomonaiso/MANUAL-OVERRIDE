@@ -238,6 +238,10 @@ export class SideScroller {
     this._keyStack.clear()
     this._pendingLearningMsg = null
     this._gameStats.beatHazardInverted = false
+    // stealthHidden: ルール差し替え時にリセット（#254 follow-up。
+    // 隠密中のプレイヤーが stealth_mode 無効ジャンルへ確定すると、
+    // フラグが true のまま残り新ジャンルで永久無敵になる問題を防止）
+    this.stealthHidden = false
     // ManualVersion から learningRules を取得
     if (manual?.learningRules) {
       this.learningRules = JSON.parse(JSON.stringify(manual.learningRules))
@@ -646,7 +650,9 @@ export class SideScroller {
         if (!rectsOverlap(p.rect, h.rect)) continue
         const isHazard = isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
         if (isHazard) {
-          if (this.stealthHidden) { /* 隠密中は被弾しない #254 */ }
+          // stealth_mode 無効ジャンル（tetris / tower_def / idle 等）では
+          // 隠密保護を適用しない。#254 follow-up
+          if (this.stealthHidden && r.features.has('stealth_mode')) { /* 隠密中は被弾しない #254 */ }
           else {
             this._onPlayerHit(p)
             if (this.dead) return true
@@ -814,7 +820,9 @@ export class SideScroller {
         if (!rectsOverlap(p.rect, hRect)) continue
         const isHazard = isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
         if (isHazard) {
-          if (this.stealthHidden) { /* 隠密中は被弾しない #254 */ }
+          // stealth_mode 無効ジャンル（tetris / tower_def / idle 等）では
+          // 隠密保護を適用しない。#254 follow-up
+          if (this.stealthHidden && r.features.has('stealth_mode')) { /* 隠密中は被弾しない #254 */ }
           else {
             this._onPlayerHit(p)
             if (this.dead) return true
