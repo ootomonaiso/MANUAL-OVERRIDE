@@ -250,6 +250,11 @@ export class PuzzleFeature implements FeatureSystem {
   private readonly _damageParticleSize = 5
 
   private _state: SlidePuzzleState = this._initialState()
+  // H7: persist baseScrollSpeed outside _state so re-init (_initialState) doesn't clobber it
+  // onManualUpdated calls onInit again; must not overwrite the originally saved value
+  private _savedBaseScrollSpeed = 0
+  // H7: save scrollSpeed on first init only to avoid restoring 0 on re-init
+  private firstInit = true
 
   private _initialState(): SlidePuzzleState {
     return {
@@ -276,7 +281,13 @@ export class PuzzleFeature implements FeatureSystem {
 
   onInit(world: MutableWorld): void {
     this._state = this._initialState()
-    this._state.baseScrollSpeed = world.rules.scrollSpeed
+    // H7: save scrollSpeed only on first init; re-init must not overwrite saved value
+    // Use dedicated field so _initialState() reset doesn't clobber it
+    if (this.firstInit) {
+      this._savedBaseScrollSpeed = world.rules.scrollSpeed
+      this.firstInit = false
+    }
+    this._state.baseScrollSpeed = this._savedBaseScrollSpeed
     world.rules.scrollSpeed = 0
     this._state.active = true
     // 入力キー名はジャンル確定後に変化しないため初期化時にキャッシュする。
@@ -292,8 +303,10 @@ export class PuzzleFeature implements FeatureSystem {
   }
 
   onDisable(world: MutableWorld): void {
-    world.rules.scrollSpeed = this._state.baseScrollSpeed
+    world.rules.scrollSpeed = this._savedBaseScrollSpeed
     this._state.active = false
+    // Reset firstInit so next onInit saves fresh values
+    this.firstInit = true
   }
 
   // 物理計算前にプレイヤーを静止させ、横スクロールの慣性を打ち消す。

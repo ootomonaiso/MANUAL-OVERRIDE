@@ -231,6 +231,22 @@ function giveUp() {
   gameState.startThrowing()
 }
 
+// ボタンがフォーカス中の Space キーをゲーム操作と区別するため抑制する
+// （Enter はデフォルトで click を発火するため不要）
+function onGiveupKeydown(e: KeyboardEvent) {
+  e.stopPropagation()
+  e.preventDefault()
+  giveUp()
+  // click 同等の操作後、フォーカスを解放して Space がジャンプと競合するのを防止 (#267 follow-up)
+  ;(e.currentTarget as HTMLButtonElement).blur()
+}
+
+/** ギブアップボタン: click 後もフォーカスを解放 (#267 follow-up) */
+function onGiveupClick(e: MouseEvent) {
+  giveUp()
+  ;(e.currentTarget as HTMLButtonElement).blur()
+}
+
 // ─── 投擲完了 ────────────────────────────────────────────────────
 function onThrown(result: ThrowResult) {
   // getStats() を stop() より先に呼ぶ（stop() で内部状態がクリアされるため）
@@ -367,6 +383,10 @@ watch(() => gameState.lockedGenre.value, (newGenre) => {
   const rawRules = cloneRules()
   rawRules.scrollSpeed = rawRules.scrollSpeed * GENRE_LOCKED_BOOST.mult
   scroller.updateRules(rawRules, gameState.currentManual())
+
+  // ジャンル確定をエンジンへ通知。genreLocked=true になり、
+  // 説明書更新ペースが postLockUpdatePace 倍に低下する（#255）。
+  scroller.notifyGenreLocked()
 
   // ジャンル遷移演出（入力ロック→y中央へ自動移動→セーフゾーン漸次変化, 仕様 2-F）。
   // updateRules 後に呼び、engine が新レイアウトを参照できるようにする。
@@ -532,14 +552,18 @@ onUnmounted(() => {
       />
 
       <!-- ギブアップボタン（600m 以降 & genreLocked 時のみ） -->
-      <!-- tabindex="-1": Space キーでフォーカス発火しないよう除外 -->
+      <!-- tabindex 属性なし: キーボード操作可能。フォーカス中の Space は @keydown.space で抑制（ゲームのジャンプと競合するため） -->
       <Transition name="giveup-reveal">
         <div
           v-if="['playing','genreLocked'].includes(gameState.phase.value) && !snapshot.dead"
           class="giveup-area"
           :style="giveupThemeStyle"
         >
-          <button class="giveup-btn" tabindex="-1" @click="giveUp">
+          <button
+            class="giveup-btn"
+            @click="onGiveupClick"
+            @keydown.space="onGiveupKeydown"
+          >
             説明書を投げてゲームを終わらせる
           </button>
           <div class="giveup-hint">ドラッグして投げると高スコア</div>

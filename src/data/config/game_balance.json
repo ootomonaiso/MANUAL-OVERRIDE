@@ -17,5 +17,6 @@
   "genreLockedBoostMult": 1.35,
   "genreLockedBoostDurationMs": 800,
   "defaultFallbackGenre": "runner",
-  "paramJitterRange": 0.4
+  "paramJitterRange": 0.4,
+  "defaultScoreFormula": "distance * 0.8"
 }

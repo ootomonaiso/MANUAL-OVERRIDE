@@ -85,6 +85,13 @@ class SoundManager implements SoundHooks {
     audio.volume = 0
     this._bgmAudio = audio
 
+    // 音源ファイルが存在しない場合（404等）やデコードエラー時に
+    // クラッシュせず無音で継続するため、error イベントを吸収する。
+    audio.addEventListener('error', () => {
+      console.warn('[SoundManager] BGM の読み込みに失敗しました:', src)
+      if (this._bgmAudio === audio) this._bgmAudio = null
+    })
+
     audio.play().then(() => {
       this._cancelFadeIn = this._fade(audio, volume, fadeInMs, () => {
         this._cancelFadeIn = null

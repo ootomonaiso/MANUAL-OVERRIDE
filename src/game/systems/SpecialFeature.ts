@@ -201,7 +201,14 @@ export class SpecialFeature implements FeatureSystem {
       p.invincible = Math.max(p.invincible, dt)
       world.addScoreVarsStealthBonus(dt)
       world.addScore(STEALTH.stealthSafeBonus)
+    } else if (this.stealth.hidden) {
+      // 隠密状態から外れたらフラグをリセット（衝突判定で被弾しないよう）
+      this.stealth.hidden = false
     }
+
+    // 衝突判定側（collision loop）で参照するよう世界へ公開
+    // #254: update が collision より後のため 1 フレーム遅延は許容（隠密は持続状態）
+    world.setStealthHidden(this.stealth.hidden)
   }
 
   private _updateTower(world: MutableWorld, dt: number): void {
@@ -246,5 +253,10 @@ export class SpecialFeature implements FeatureSystem {
     this.tower = { cooldown: SPECIAL.towerFireIntervalSec }
     this.boss = { active: null, lastBossDistance: -Infinity }
     this.timeBonus = { timer: 0 }
+  }
+
+  /** stealth_mode が外れた時に内部状態をクリーンアップ（#254 follow-up） */
+  onDisable(): void {
+    this.stealth = { idleTimer: 0, hidden: false }
   }
 }

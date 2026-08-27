@@ -1,7 +1,7 @@
 import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect, FeatureId } from '../domain/types'
 import type { MutableWorld, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup } from './entities'
-import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL, BASE_SCROLL_SPEED } from '../data/gameBalance'
+import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL, BASE_SCROLL_SPEED, DEFAULT_SCORE_FORMULA } from '../data/gameBalance'
 import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY, HUD_SAFEZONE } from '../data/tunables'
 import { classifyHudLayout, computeSafeZone, type SafeZone } from '../domain/hudLayout'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
@@ -99,6 +99,9 @@ export class SideScroller {
   private dead = false
   private paused = false
   private firstJumpDone = false
+  // stealth_mode: 隠密中の被弾回避フラグ（衝突判定が Feature update より前のため、
+  // 前フレームの隠密状態を参照して被弾をスキップする。#254）
+  private stealthHidden = false
   // 説明書更新の進行度。distance と違い初回ジャンプ後にのみ加算し、ジャンル確定後は
   // postLockUpdatePace 倍で減速する。初回ジャンプ前に更新が溜まる問題(#169)と、
   // 確定後もテンポが途切れ続ける問題(#104)をこの単一アキュムレータで解消する。
@@ -235,6 +238,10 @@ export class SideScroller {
     this._keyStack.clear()
     this._pendingLearningMsg = null
     this._gameStats.beatHazardInverted = false
+    // stealthHidden: ルール差し替え時にリセット（#254 follow-up。
+    // 隠密中のプレイヤーが stealth_mode 無効ジャンルへ確定すると、
+    // フラグが true のまま残り新ジャンルで永久無敵になる問題を防止）
+    this.stealthHidden = false
     // ManualVersion から learningRules を取得
     if (manual?.learningRules) {
       this.learningRules = JSON.parse(JSON.stringify(manual.learningRules))
@@ -273,6 +280,9 @@ export class SideScroller {
   }
 
   setPaused(v: boolean): void { this.paused = v }
+
+  /** stealth_hidden 状態を外部（SpecialFeature）から更新するためのセッター */
+  setStealthHidden(v: boolean): void { this.stealthHidden = v }
 
   /** ジャンル確定時の画面フラッシュを発火 */
   triggerGenreLockFlash(): void { this.genreLockFlash = 1.0 }
@@ -375,7 +385,7 @@ export class SideScroller {
     }
 
     const genre = GENRES.find(g => g.id === this.rules.genre)
-    const formula = genre?.scoreFormula ?? 'distance * 0.8'
+    const formula = genre?.scoreFormula ?? DEFAULT_SCORE_FORMULA
     this.playScore = Math.max(0, Math.round(evalScoreFormula(formula, vars)))
   }
 
@@ -640,8 +650,14 @@ export class SideScroller {
         if (!rectsOverlap(p.rect, h.rect)) continue
         const isHazard = isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
         if (isHazard) {
-          this._onPlayerHit(p)
-          if (this.dead) return true
+          // stealth_mode 無効ジャンル（tetris / tower_def / idle 等）では
+          // 隠密保護を適用しない。#254 follow-up
+          if (this.stealthHidden && r.features.has('stealth_mode')) { /* 隠密中は被弾しない #254 */ }
+          else {
+            this._onPlayerHit(p)
+            if (this.dead) return true
+            break  // 無敵時間が付与されたため、同一フレームの追加被弾を防ぐ
+          }
         } else {
           for (const sys of getActiveSystems(r.features)) {
             sys.onSafeHazardTouch?.(this._getWorld(), h, h.x)
@@ -804,8 +820,14 @@ export class SideScroller {
         if (!rectsOverlap(p.rect, hRect)) continue
         const isHazard = isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
         if (isHazard) {
-          this._onPlayerHit(p)
-          if (this.dead) return true
+          // stealth_mode 無効ジャンル（tetris / tower_def / idle 等）では
+          // 隠密保護を適用しない。#254 follow-up
+          if (this.stealthHidden && r.features.has('stealth_mode')) { /* 隠密中は被弾しない #254 */ }
+          else {
+            this._onPlayerHit(p)
+            if (this.dead) return true
+            break  // 無敵時間が付与されたため、同一フレームの追加被弾を防ぐ
+          }
         } else {
           for (const sys of getActiveSystems(r.features)) {
             sys.onSafeHazardTouch?.(this._getWorld(), h, sx)
@@ -1549,6 +1571,8 @@ export class SideScroller {
       get cameraX()     { return self.cameraX },
       get gameStats()   { return self._gameStats },
       get scrollMode()  { return self.rules.scrollAxis as 'x' | 'y' },
+      get stealthHidden() { return self.stealthHidden },
+      setStealthHidden(v) { self.stealthHidden = v },
 
       addScore(amount)              { self.playScore += amount },
       addScorePopup(x, y, text, c) { self._addScorePopup(x, y, text, c) },
