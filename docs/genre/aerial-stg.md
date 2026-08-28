@@ -33,10 +33,10 @@ src/
 | ----------------- | ------------------------------------------------ |
 | `id`              | `aerial_stg`                                     |
 | `label`           | 縦スクロールシューティング                       |
-| `thresholds`      | `vertical: 4`, `range: 4`, `enemy: 4`            |
+| `thresholds`      | `vertical: 3`, `range: 3`, `enemy: 4`            |
 | `enableFeatures`  | `shoot`, `vertical_scroll`, `enemy_hp`, `spread_shot` |
 | `disableFeatures` | `grid_stop`, `puzzle_solve`, `auto_run`          |
-| `scoreFormula`    | `kills * 130 + combo * 90 + survivedSec * 3`    |
+| `scoreFormula`    | `kills * 130 + maxCombo * 90 + survivedSec * 3`    |
 | `theme`           | `stg`                                            |
 | `bgColor`         | `#000015`                                        |
 | `environment`     | `sky`                                            |
@@ -60,8 +60,8 @@ src/
 
 | パラメータ  | 閾値  |
 | ----------- | ----- |
-| `vertical`  | 4以上 |
-| `range`     | 4以上 |
+| `vertical`  | 3以上 |
+| `range`     | 3以上 |
 | `enemy`     | 4以上 |
 
 ベイズ収束方式（主方式）では、3軸すべての乖離量から事後確率を計算して確定する。
@@ -118,7 +118,7 @@ aerial_stgでは `shoot` / `spread_shot` / `enemy_hp` の3フィーチャーが�
 
 | 項目          | 式                                             |
 | ------------- | ---------------------------------------------- |
-| スコア式      | `kills * 130 + combo * 90 + survivedSec * 3`  |
+| スコア式      | `kills * 130 + maxCombo * 90 + survivedSec * 3`  |
 | キルごと基礎点 | `baseScorePerKill(200) × combo`               |
 | コンボリセット | `comboResetTime(3.0)` 秒以内に次のキルがなければ0 |
 

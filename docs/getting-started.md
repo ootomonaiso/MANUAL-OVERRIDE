@@ -107,7 +107,7 @@ src/
 │       ├── RpgFeature.ts         経験値・レベルシステム
 │       ├── RhythmFeature.ts      リズム同期
 │       ├── PuzzleFeature.ts      パズル機能
-│       └── ... (8+ フィーチャー)
+│       └── ... (10 フィーチャー)
 │
 ├── genres/                       ← ジャンル定義（プラグイン）
 │   ├── BasePlugin.ts             基本ジャンル（横スクロール）
@@ -115,7 +115,7 @@ src/
 │   ├── RpgPlugin.ts              RPG
 │   ├── PuzzlePlugin.ts           パズル
 │   ├── RhythmPlugin.ts           リズムゲーム
-│   └── ... (8+ ジャンル)
+│   └── ... (16 TSプラグイン・JSONフォールバック7種)
 │
 ├── domain/                       ← ロジック・型定義
 │   ├── types.ts                  全型定義
@@ -145,8 +145,8 @@ src/
     ├── gameBalance.ts            ゲームバランス値
     ├── tunables.ts               調整可能なパラメータ
     ├── manualDeck.ts             説明書データベース
-    ├── config/                   ← JSON 設定ファイル群（23個）
-    │   ├── genres.json           ジャンル定義（20+ ジャンル）
+    ├── config/                   ← JSON 設定ファイル群（26個）
+    │   ├── genres.json           テーマカラーマップのみ（ジャンル定義本体は src/data/genres/*.json、23ファイル）
     │   ├── game_balance.json     敵の密度・スポーン・難易度
     │   ├── score.json            スコア計算の重み
     │   ├── physics.json          重力・速度・衝突パラメータ

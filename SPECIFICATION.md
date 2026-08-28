@@ -1,6 +1,6 @@
 # 取扱説明書を読むゲーム — 要件定義書・仕様書・設計書
 
-**版:** 1.0　**最終更新:** 2026-07-27
+**版:** 1.0　**最終更新:** 2026-08-27
 
 本書は本プロジェクトの要件定義書・仕様書・設計書を1ファイルに統合したもの。
 
@@ -36,7 +36,7 @@
 
 - Webブラウザ（デスクトップ想定）で完結する1人用ブラウザゲーム
 - チュートリアル〜説明書更新〜ジャンル確定〜投擲〜エンディングまでの一連のプレイフロー
-- 22ジャンル＋`base`（起点ジャンル）＋`glitch`（矛盾トリガー専用の非通常到達ジャンル）
+- 22ジャンル（起点 base 含む）＋glitch（矛盾トリガー専用の非通常到達ジャンル）＝ファイル数23
 - スコアリング（プレイスコア＋投擲スコア）
 - ルール・ジャンル・カード・バランス値のJSON駆動化とその検証基盤
 
@@ -214,7 +214,7 @@ ending             … ジャンル別エンディングメッセージ + 最終
 ```
 
 補足:
-- 説明書更新のトリガーは距離ベース。初期3回は間隔 `1100 / 2400 / 3900`、以降は `1100 + 1500×i` 間隔で最大100回分を動的生成する（無限選択肢システム）。
+- 説明書更新のトリガーは距離ベース。初期3回は 1600 / 2900 / 4400、以降は 1100 + 2000×i（i=3..99）で計100個を動的生成。範囲外は 2000px 間隔で無限に更新が続く。
 - `genreLocked` 以降は説明書の自動更新を停止する。
 - 死亡すると `playing` / `genreLocked` のいずれからでも自動的に `throwing` へ遷移する。
 - チュートリアルは設定でオン/オフ切り替え可能。
@@ -354,7 +354,7 @@ ending             … ジャンル別エンディングメッセージ + 最終
 
 | ディレクトリ | ファイル数 | 内容 |
 |---|---|---|
-| `src/data/config/` | 23ファイル | スコア比率・ジャンルテーマ色・物理・スポーン・演出・ベイズ等のバランス値 |
+| `src/data/config/` | 27ファイル | スコア比率・ジャンルテーマ色・物理・スポーン・演出・ベイズ等のバランス値 |
 | `src/data/genres/` | 23ファイル | 22ジャンル（起点`base`含む）＋`glitch`（`resolvable:false`、通常到達不可） |
 | `src/data/cards/` | 3デッキ + テンプレート | starter / expansion / surprise の3カードプール |
 
@@ -363,7 +363,7 @@ ending             … ジャンル別エンディングメッセージ + 最終
 ## 11. 既知の注意点・未決事項
 
 - 初期説明書のテキストは左右移動が可能であるかのような案内を含む一方、実挙動は `auto_run` により自動走行＋ジャンプのみとなっている（詳細は [plan/current-game-spec-report.md](plan/current-game-spec-report.md) §3.3 参照）。案内と挙動のどちらに寄せるかは判断待ち。
-- BGM/SE: `SoundManager` の仕組みは実装済みだが、実際の音声アセットは一部未配置。
+- BGM/SE: SFX は JSON 駆動の WebAudio 合成（src/data/sfx/*.json 51件）でアセット不要。BGM アセット（src/assets/）は未配置（tetris.json 等の bgm フィールドは未実装の参照先）。
 
 ---
 ---
@@ -437,7 +437,7 @@ src/
     gameBalance.ts            # 距離/スコア比率/投擲重み/難易度カーブ（config から再エクスポート）
     tunables.ts               # VFX・カメラ・スコアの調整値（config から再エクスポート）
     config.ts                 # GAME_CONFIG エントリポイント
-    config/                   # JSON設定ファイル群（22個）
+    config/                   # JSON設定ファイル群（26個）
       genres.json             # テーマカラー等。ジャンル定義本体は genres/*.json（22種、base 含む）
       game_balance.json       # スコア比率/投擲重み/基本速度
       difficulty.json         # 難易度カーブ/アップデート距離
@@ -578,10 +578,14 @@ export type FeatureId = string
 // 既知の FeatureId: shoot / three_way / charge_shot / spread_shot / bomb / enemy_hp / boss
 //   auto_run / slow_precise / double_jump / long_air / dash / wall_jump / slide / gravity_flip / vertical_scroll
 //   hp / exp / item_pickup / shield
-//   grid_stop / puzzle_solve
+//   lights_out
+//   grid_stop / puzzle_solve（legacy: disableFeatures でのみ参照）
 //   beat_hazard / just_input / beat_dash
 //   stealth_mode / time_bonus / tower / color_touch
 //   tetris_mode
+//   survival_hunger / survival_melee / survival_level
+//   melee_kill
+//   near_miss_combo
 
 export interface ManualVersion {
   version: string;                 // "1.0" 等
@@ -635,7 +639,7 @@ export interface FinalScore { play: number; throw: number; total: number; }
 
 ### 4.2 ジャンル定義（`data/genres/*.json`）
 - 22ジャンル + base を定義。
-- 15ジャンルが TSプラグイン実装、残り8ジャンルは JSONフォールバックで描画。
+- 16ジャンルが TSプラグイン実装（BasePlugin.ts が Base + Runner の2クラスを含む）、残り7ジャンルは JSONフォールバックで描画。
 
 ### 4.3 スコア式 DSL（`scoreFormula`）
 ジャンルごとのプレイスコア式を文字列で持ち、安全な評価器（`evalScoreFormula`）で計算する。
@@ -651,10 +655,10 @@ export interface FinalScore { play: number; throw: number; total: number; }
 
 ### 4.4 バランス（`data/gameBalance.ts`）
 ```
-UPDATE_DISTANCES: 100段階の動的生成 + 1500px 無限トリガー
+UPDATE_DISTANCES: 100段階の動的生成 + 2000px 無限トリガー
 hazardSpawnCurve: 距離に応じた出現間隔の減少関数
 scoreRatio: { play: 0.7, throw: 0.3 }
-throwScoreWeights: { airTime: 0.5, arcHeight: 0.4, speedPenalty: 0.1 }
+throwScoreWeights: { airTime: 0.6, arcHeight: 0.7, speedPenalty: 0.04 }（速度ペナルティは閾値1200超過分のみ）
 ```
 
 ## 5. ゲーム進行フロー（状態機械）
@@ -725,14 +729,17 @@ featuresFor(genreId, genres): { enable: Set, disable: Set }
 | MovementFeature | auto_run, slow_precise, double_jump, long_air, dash, wall_jump, vertical_scroll | 移動全般・ダッシュ・壁ジャンプ・縦スクロール（旧 ExtraMovementFeature 統合） |
 | RhythmFeature | beat_hazard, just_input, beat_dash | BPM同期の危険色反転・ジャスト入力加点 |
 | RpgFeature | hp, exp, item_pickup | HP・経験値・アイテム収集 |
-| PuzzleFeature | grid_stop, puzzle_solve | スクロール停止・配置パズル |
+| PuzzleFeature | lights_out | スクロール停止・配置パズル |
+| SurvivalFeature | survival_hunger, survival_melee, survival_level | 飢え・近接攻撃・レベルアップ |
+| MeleeKillFeature | melee_kill | 近接攻撃（Zキーで範囲内のハザードを一撃破壊） |
+| NearMissComboFeature | near_miss_combo | 接近回避コンボ（ハザードを衝突なしで通過時にコンボ加算） |
 | SpecialFeature | color_touch, stealth_mode, time_bonus, tower, boss | 安全色接触・ステルス・時間ボーナス・タワー・ボス |
 | TetrisFeature | tetris_mode | テトリス（グリッド・テトリミノ・ライン消去） |
 
 ### 6.5 `game/throwEngine.ts`
 - 入力：ドラッグ方向（角度）+ パワーゲージ（リリース時の値）。
 - 放物線シミュ：`v0`, `angle`, 重力。`airTime`/`arcHeight`/`speed` を計測。
-- 投擲スコア = `airTime*0.5 + arcHeight*0.4 - speed*0.1`（重みは JSON）。
+- 投擲スコア = `airTime*0.6 + arcHeight*0.7 − 速度ペナルティ*0.04`（速度1200超過分のみ。重み・閾値は game_balance.json）。
 
 ### 6.6 `domain/scoreCalc.ts`
 - プレイスコア：ジャンルの `scoreFormula` を安全パーサで評価。
