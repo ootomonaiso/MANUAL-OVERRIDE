@@ -12,6 +12,8 @@
 | `aerial_stg` | [aerial-stg.md](./aerial-stg.md) | 縦スクロールシューティング（4方向自由飛行＋射撃） |
 | `puzzle` | [puzzle-genre.md](./puzzle-genre.md) | スライドパズル（グリッド・タイムアタック） |
 | `tetris` | [tetris-genre.md](./tetris-genre.md) | 落ち物パズル（10×20グリッド・7-bag・ライン消去） |
+| `bullet_hell` | [bullet-hell-genre.md](./bullet-hell-genre.md) | 弾幕回避STG（**設計のみ・未実装**。常駐ボス＋オートエイム） |
+| `rpg` | [rpg-genre.md](./rpg-genre.md) | ローグライク戦闘RPG（**設計のみ・未実装**。マップなし、戦闘専用UIへ完全移行） |
 
 ## 記載方針
 
