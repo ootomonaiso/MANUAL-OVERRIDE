@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../schemas/battle-trait.schema.json",
+  "id": "trait_stone_skin",
+  "label": "石の肌",
+  "flavorText": "説明書を鎧代わりに巻きつけている。",
+  "kind": "trait",
+  "draftable": true,
+  "effect": [
+    { "op": "cutRate", "amount": 0.1 }
+  ]
+}

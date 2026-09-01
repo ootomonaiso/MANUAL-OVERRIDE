@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "passive_swift_step",
+  "label": "軽やかな足取り",
+  "flavorText": "説明書を読みながらでも、躓かなくなった。",
+  "kind": "passive",
+  "mainCategory": "swift",
+  "subCategories": [],
+  "effect": [
+    { "op": "statBoost", "stat": "agi", "rate": 0.05 }
+  ]
+}

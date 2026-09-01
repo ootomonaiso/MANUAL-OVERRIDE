@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../schemas/battle-trait.schema.json",
+  "id": "trait_resist_physical",
+  "label": "物理耐性",
+  "flavorText": "殴られ慣れている。",
+  "kind": "trait",
+  "draftable": false,
+  "effect": [
+    { "op": "elementAffinity", "element": "physical", "affinity": "resist" }
+  ]
+}

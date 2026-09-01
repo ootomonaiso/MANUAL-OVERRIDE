@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_cast_special",
+  "label": "特殊属性の発動",
+  "timing": "onCast",
+  "durationMs": 240,
+  "target": "source",
+  "visual": { "kind": "flash", "color": "var(--battle-element-special)" }
+}

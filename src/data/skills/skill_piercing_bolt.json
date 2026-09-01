@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "skill_piercing_bolt",
+  "label": "貫く光",
+  "flavorText": "説明書の文字が、鎧ごと相手を貫いた。",
+  "kind": "active",
+  "element": "special",
+  "mainCategory": "pierce",
+  "subCategories": ["wisdom"],
+  "cooldown": 3,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": ["fx_cast_special", "fx_hit_special"],
+  "effect": [
+    { "op": "damage", "element": "special", "scale": { "stat": "int", "rate": 0.7 } }
+  ]
+}

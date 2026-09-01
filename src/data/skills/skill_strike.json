@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "skill_strike",
+  "label": "叩く",
+  "flavorText": "説明書を丸めて殴る。原始的だが、効く。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "might",
+  "subCategories": [],
+  "cooldown": 0,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": ["fx_hit_physical"],
+  "effect": [
+    { "op": "damage", "element": "physical", "scale": { "stat": "str", "rate": 1.0 } }
+  ]
+}

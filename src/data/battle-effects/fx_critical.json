@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_critical",
+  "label": "クリティカル強調",
+  "timing": "onHit",
+  "durationMs": 320,
+  "target": "target",
+  "visual": { "kind": "burst", "color": "var(--battle-diff-plus)", "shake": 0.6 }
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "passive_keen_eye",
+  "label": "急所を読む目",
+  "flavorText": "何度も読み返すうちに、弱い場所が見えるようになった。",
+  "kind": "passive",
+  "mainCategory": "fatal",
+  "subCategories": [],
+  "effect": [
+    { "op": "statBoost", "stat": "critRate", "rate": 0.05 }
+  ]
+}

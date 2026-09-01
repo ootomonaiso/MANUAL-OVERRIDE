@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "skill_double_bolt",
+  "label": "連弾",
+  "flavorText": "一発では言い足りなかった。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "combo",
+  "subCategories": ["wisdom"],
+  "cooldown": 2,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": ["fx_cast_magical", "fx_hit_magical"],
+  "effect": [
+    {
+      "op": "repeat",
+      "times": 2,
+      "body": [
+        { "op": "damage", "element": "magical", "scale": { "stat": "int", "rate": 0.6 } }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_weakness",
+  "label": "弱点ヒット強調",
+  "timing": "onHit",
+  "durationMs": 300,
+  "target": "target",
+  "visual": { "kind": "float", "color": "var(--battle-diff-plus)" }
+}

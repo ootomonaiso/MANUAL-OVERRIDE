@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "skill_guard_shield",
+  "label": "護りの詞",
+  "flavorText": "読み上げると、言葉が薄い壁になった。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "aegis",
+  "subCategories": ["wisdom"],
+  "cooldown": 3,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": ["fx_shield_gain"],
+  "effect": [
+    { "op": "shield", "element": "magical", "scale": { "stat": "int", "rate": 0.8 } }
+  ]
+}

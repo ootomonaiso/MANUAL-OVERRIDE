@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../schemas/battle-trait.schema.json",
+  "id": "trait_weak_magical",
+  "label": "魔法弱点",
+  "flavorText": "呪文を浴びると、紙のように燃える。",
+  "kind": "trait",
+  "draftable": false,
+  "effect": [
+    { "op": "elementAffinity", "element": "magical", "affinity": "weak" }
+  ]
+}

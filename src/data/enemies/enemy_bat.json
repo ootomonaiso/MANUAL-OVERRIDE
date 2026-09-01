@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_bat",
+  "label": "説明書コウモリ",
+  "flavorText": "破り取られたページの端が、羽ばたいている。",
+  "stats": {
+    "hp": 1600, "str": 280, "def": 250, "int": 380, "ref": 320, "agi": 650,
+    "hitRate": 0.9, "evadeRate": 0, "critRate": 0.05, "critDamageMultiplier": 1.5
+  },
+  "traits": ["trait_weak_magical"],
+  "activeSkills": ["skill_fireball"],
+  "passiveSkills": [],
+  "actionPattern": ["skill_fireball"],
+  "isBoss": false
+}

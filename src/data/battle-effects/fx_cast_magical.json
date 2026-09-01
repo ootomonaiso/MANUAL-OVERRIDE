@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_cast_magical",
+  "label": "魔法属性の発動",
+  "timing": "onCast",
+  "durationMs": 220,
+  "target": "source",
+  "visual": { "kind": "flash", "color": "var(--battle-element-magical)" }
+}

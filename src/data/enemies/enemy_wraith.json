@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_wraith",
+  "label": "落丁の影",
+  "flavorText": "抜け落ちたページの形をした、何か。",
+  "stats": {
+    "hp": 5500, "str": 600, "def": 1600, "int": 750, "ref": 1200, "agi": 550,
+    "hitRate": 0.93, "evadeRate": 0, "critRate": 0.06, "critDamageMultiplier": 1.5
+  },
+  "traits": ["trait_weak_magical"],
+  "activeSkills": ["skill_piercing_bolt", "skill_double_bolt"],
+  "passiveSkills": [],
+  "actionPattern": ["skill_piercing_bolt", "skill_double_bolt"],
+  "isBoss": false
+}

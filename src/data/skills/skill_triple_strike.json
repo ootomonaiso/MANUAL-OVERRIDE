@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "skill_triple_strike",
+  "label": "三連撃",
+  "flavorText": "三度目に賭ける。それが作法だと教わった。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "combo",
+  "subCategories": ["might"],
+  "cooldown": 2,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": ["fx_slash", "fx_hit_physical"],
+  "effect": [
+    {
+      "op": "repeat",
+      "times": 3,
+      "body": [
+        { "op": "damage", "element": "physical", "scale": { "stat": "str", "rate": 0.8 } }
+      ],
+      "onLastIteration": [
+        { "op": "modifier", "stat": "critRate", "amount": 0.5, "scope": "thisHit" }
+      ]
+    }
+  ]
+}

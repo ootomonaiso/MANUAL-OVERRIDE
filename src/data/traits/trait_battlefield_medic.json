@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../schemas/battle-trait.schema.json",
+  "id": "trait_battlefield_medic",
+  "label": "応急手当の心得",
+  "flavorText": "戦いの合間に、傷の手当てだけは覚えた。",
+  "kind": "trait",
+  "draftable": true,
+  "effect": [
+    { "op": "healBetweenBattles", "amount": 500 }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_goblin",
+  "label": "ゴブリン",
+  "flavorText": "誤字のように、しぶとく湧いてくる。",
+  "stats": {
+    "hp": 2400, "str": 430, "def": 480, "int": 150, "ref": 250, "agi": 420,
+    "hitRate": 0.92, "evadeRate": 0, "critRate": 0.05, "critDamageMultiplier": 1.5
+  },
+  "traits": [],
+  "activeSkills": ["skill_strike", "skill_swift_slash"],
+  "passiveSkills": [],
+  "actionPattern": ["skill_strike", "skill_swift_slash"],
+  "isBoss": false
+}

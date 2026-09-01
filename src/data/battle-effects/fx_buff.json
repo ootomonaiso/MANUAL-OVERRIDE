@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_buff",
+  "label": "強化演出",
+  "timing": "onStatus",
+  "durationMs": 260,
+  "target": "target",
+  "visual": { "kind": "flash", "color": "var(--battle-diff-plus)" }
+}

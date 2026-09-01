@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "skill_curse_bolt",
+  "label": "呪詛弾",
+  "flavorText": "書き損じた一文が、投げつけると呪いになった。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "curse",
+  "subCategories": [],
+  "cooldown": 2,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": ["fx_debuff", "fx_hit_magical"],
+  "effect": [
+    { "op": "damage", "element": "magical", "scale": { "stat": "int", "rate": 0.5 } },
+    { "op": "modifier", "stat": "def", "rate": -0.15, "scope": "thisBattle", "applyTo": "target" }
+  ]
+}

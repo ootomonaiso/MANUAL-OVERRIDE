@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_guard",
+  "label": "防御姿勢演出",
+  "timing": "onStatus",
+  "durationMs": 240,
+  "target": "source",
+  "visual": { "kind": "overlay", "color": "var(--battle-category-guard)" }
+}

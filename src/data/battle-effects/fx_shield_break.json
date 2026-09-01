@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_shield_break",
+  "label": "シールド破壊演出",
+  "timing": "onShield",
+  "durationMs": 260,
+  "target": "target",
+  "visual": { "kind": "burst", "color": "var(--battle-category-aegis)" }
+}

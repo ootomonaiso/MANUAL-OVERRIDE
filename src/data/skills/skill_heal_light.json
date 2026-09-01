@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "skill_heal_light",
+  "label": "小治癒",
+  "flavorText": "説明書の余白に、傷を閉じる一文があった。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "heal",
+  "subCategories": ["wisdom"],
+  "cooldown": 2,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": ["fx_heal"],
+  "effect": [
+    { "op": "heal", "element": "magical", "scale": { "stat": "int", "rate": 0.6 } }
+  ]
+}

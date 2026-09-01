@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_resisted",
+  "label": "ダメージ軽減演出",
+  "timing": "onHit",
+  "durationMs": 260,
+  "target": "target",
+  "visual": { "kind": "flash", "color": "var(--battle-diff-muted)" }
+}

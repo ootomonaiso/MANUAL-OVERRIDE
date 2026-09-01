@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "skill_focus_strike",
+  "label": "見切り撃ち",
+  "flavorText": "急所は、一行だけ読めば分かる。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "fatal",
+  "subCategories": ["might"],
+  "cooldown": 2,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": ["fx_hit_physical"],
+  "effect": [
+    { "op": "modifier", "stat": "critRate", "amount": 0.5, "scope": "thisHit" },
+    { "op": "damage", "element": "physical", "scale": { "stat": "str", "rate": 1.1 } }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_heal",
+  "label": "回復演出",
+  "timing": "onHeal",
+  "durationMs": 300,
+  "target": "target",
+  "visual": { "kind": "float", "color": "var(--battle-category-heal)" }
+}

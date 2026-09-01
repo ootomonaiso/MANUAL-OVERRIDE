@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_orc",
+  "label": "オーク",
+  "flavorText": "分厚い装丁ごと殴りかかってくる。",
+  "stats": {
+    "hp": 4000, "str": 560, "def": 950, "int": 200, "ref": 400, "agi": 300,
+    "hitRate": 0.92, "evadeRate": 0, "critRate": 0.05, "critDamageMultiplier": 1.5
+  },
+  "traits": ["trait_resist_physical"],
+  "activeSkills": ["skill_strike", { "id": "skill_focus_strike", "level": 1 }],
+  "passiveSkills": [],
+  "actionPattern": ["skill_strike", "skill_strike", "skill_focus_strike"],
+  "isBoss": false
+}

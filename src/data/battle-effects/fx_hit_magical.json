@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_hit_magical",
+  "label": "魔法ヒット",
+  "timing": "onHit",
+  "durationMs": 260,
+  "target": "target",
+  "visual": { "kind": "burst", "color": "var(--battle-element-magical)" }
+}

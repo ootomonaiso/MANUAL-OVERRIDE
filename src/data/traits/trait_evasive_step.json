@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../schemas/battle-trait.schema.json",
+  "id": "trait_evasive_step",
+  "label": "身をかわす癖",
+  "flavorText": "守るより先に、体が避けるようになっていた。",
+  "kind": "trait",
+  "draftable": true,
+  "effect": [
+    { "op": "replaceGuard" }
+  ]
+}

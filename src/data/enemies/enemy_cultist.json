@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_cultist",
+  "label": "改訂者",
+  "flavorText": "他人の説明書を、勝手に書き換えたがる。",
+  "stats": {
+    "hp": 3200, "str": 350, "def": 450, "int": 550, "ref": 500, "agi": 400,
+    "hitRate": 0.92, "evadeRate": 0, "critRate": 0.05, "critDamageMultiplier": 1.5
+  },
+  "traits": ["trait_weak_physical"],
+  "activeSkills": ["skill_curse_bolt"],
+  "passiveSkills": [],
+  "actionPattern": ["skill_curse_bolt"],
+  "isBoss": false
+}

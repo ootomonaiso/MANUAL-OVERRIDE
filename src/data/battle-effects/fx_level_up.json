@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_level_up",
+  "label": "レベルアップ演出",
+  "timing": "onSystem",
+  "durationMs": 500,
+  "target": "screen",
+  "visual": { "kind": "overlay", "color": "var(--battle-diff-plus)" }
+}

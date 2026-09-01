@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_hit_special",
+  "label": "特殊ヒット",
+  "timing": "onHit",
+  "durationMs": 280,
+  "target": "target",
+  "visual": { "kind": "burst", "color": "var(--battle-element-special)" }
+}

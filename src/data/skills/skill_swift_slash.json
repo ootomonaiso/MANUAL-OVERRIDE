@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "skill_swift_slash",
+  "label": "疾風斬り",
+  "flavorText": "読み終える前に、もう斬っている。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "swift",
+  "subCategories": [],
+  "cooldown": 1,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": ["fx_slash", "fx_hit_physical"],
+  "effect": [
+    { "op": "damage", "element": "physical", "scale": { "stat": "agi", "rate": 0.9 } }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_hit_physical",
+  "label": "物理ヒット",
+  "timing": "onHit",
+  "durationMs": 260,
+  "target": "target",
+  "visual": { "kind": "flash", "color": "var(--battle-element-physical)", "shake": 0.4 }
+}

@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_miss",
+  "label": "ミス表示",
+  "timing": "onMiss",
+  "durationMs": 260,
+  "target": "target",
+  "visual": { "kind": "float", "color": "var(--battle-diff-muted)" }
+}

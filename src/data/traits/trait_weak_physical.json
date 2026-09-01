@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../schemas/battle-trait.schema.json",
+  "id": "trait_weak_physical",
+  "label": "物理弱点",
+  "flavorText": "殴られると、思ったより効く。",
+  "kind": "trait",
+  "draftable": false,
+  "effect": [
+    { "op": "elementAffinity", "element": "physical", "affinity": "weak" }
+  ]
+}

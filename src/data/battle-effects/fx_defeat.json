@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_defeat",
+  "label": "撃破演出",
+  "timing": "onDefeat",
+  "durationMs": 400,
+  "target": "target",
+  "visual": { "kind": "overlay", "color": "var(--battle-diff-minus)" }
+}
