@@ -428,4 +428,6 @@ export interface ScoreVars {
   bossKills: number        // ボス撃破数
   stealthBonus: number     // ステルス継続フレーム数（隠密評価）
   colorTouches: number     // 安全色に触れた回数（color_touch 評価）
+  hitsOnBoss: number       // ボスへの命中数（bullet_hell）
+  maxHitCombo: number      // 被弾せずに連続命中させた最大数（bullet_hell）
 }

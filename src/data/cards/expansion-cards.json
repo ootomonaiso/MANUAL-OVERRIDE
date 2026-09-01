@@ -119,6 +119,15 @@
       "weight": 2,
       "hint": "dungeon 方向（growth+craft の供給源）",
       "genreAffinity": ["dungeon", "rpg"]
+    },
+    {
+      "id": "c-boss-stationary",
+      "label": "画面上部に大きな存在が鎮座するようになる",
+      "manualText": ["上の方から絶えず何かが降り注ぐようになった。"],
+      "genreParams": { "vertical": 3, "enemy": 3 },
+      "weight": 2,
+      "hint": "bullet_hell 方向（vertical+enemy の大量供給源）",
+      "genreAffinity": ["bullet_hell"]
     }
   ]
 }

@@ -61,4 +61,18 @@ describe('GENRES bgm 伝搬 (#262)', () => {
     expect(tetris!.thresholds.combo).toBeGreaterThan(0)
     expect(tetris!.thresholds.craft).toBeGreaterThan(0)
   })
+
+  it('bullet_hell は boss_stationary / hp を有効化し enemy_hp を無効化・スコア式に hitsOnBoss / maxHitCombo を使用', () => {
+    const bh = GENRES.find(g => g.id === 'bullet_hell')
+    expect(bh).toBeDefined()
+    expect(bh!.enableFeatures).toContain('boss_stationary')
+    expect(bh!.enableFeatures).toContain('hp')
+    expect(bh!.enableFeatures).not.toContain('enemy_hp')
+    expect(bh!.disableFeatures).not.toContain('enemy_hp')
+
+    const formula = bh!.scoreFormula
+    expect(formula).toMatch(/hitsOnBoss/)
+    expect(formula).toMatch(/maxHitCombo/)
+    expect(formula).toMatch(/survivedSec/)
+  })
 })

@@ -1,14 +1,14 @@
 {
   "$schema": "../../../schemas/genre.schema.json",
   "id": "bullet_hell",
-  "label": "弾幕シューティング",
+  "label": "弾幕回避シューティング",
   "thresholds": { "vertical": 4, "enemy": 8 },
-  "enableFeatures": ["shoot", "spread_shot", "enemy_hp", "vertical_scroll"],
+  "enableFeatures": ["shoot", "spread_shot", "hp", "boss_stationary", "vertical_scroll"],
   "disableFeatures": ["grid_stop", "auto_run", "slow_precise"],
-  "scoreFormula": "kills * 80 + maxCombo * 150 + survivedSec * 10 + accuracy * 500",
-  "manualReveal": "これは弾幕シューティングになりました。弾の隙間を縫ってください。",
+  "scoreFormula": "survivedSec * 15 + hitsOnBoss * 25 + maxHitCombo * 40",
+  "manualReveal": "これは弾幕回避シューティングになりました。画面上部のボスが放つ弾幕を縫ってください。",
   "theme": "stg",
-  "bgColor": "#000010",
+  "bgColor": "#050510",
   "environment": "space",
   "scrollDirection": "vertical",
   "controls": {
@@ -20,10 +20,5 @@
     "shoot": "z"
   },
   "gravity": 1600,
-  "endingFlavor": "あなたは無数の弾を避け続けた。説明書の活字も弾丸に見えた。",
-  "spawnDensity": {
-    "baseInterval": 1200,
-    "minInterval": 400,
-    "decayRate": 0.0003
-  }
+  "endingFlavor": "あなたは無数の弾を避け続けた。説明書の活字も弾丸に見えた。"
 }

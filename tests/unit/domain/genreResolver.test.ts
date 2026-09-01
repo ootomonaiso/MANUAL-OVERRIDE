@@ -6,6 +6,7 @@ import {
   DEFAULT_BAYES_CONFIG,
 } from '../../../src/domain/genreResolver'
 import { GENRES } from '../../../src/data/genres'
+import { CARD_POOL } from '../../../src/data/cardPool'
 import bayesConfig from '../../../src/data/config/bayes.json'
 
 /**
@@ -134,7 +135,7 @@ describe('genreResolver - convergence', () => {
     // enemy:11, range:3 が必要。enemy特化ではenemy=11になるがrange=0
     // rangeが不足しているため、STGには収束しない可能性がある
     // ただし、最も確率の高いジャンルになるはず
-    const progress = resolveGenreProgress(params, GENRES, undefined, undefined, config)
+    const progress = resolveGenreProgress(params, GENRES, config)
     // runnerやotherより確率が高くなるはず
     expect(progress.closestGenre).toBeDefined()
   })
@@ -164,7 +165,7 @@ describe('genreResolver - convergence', () => {
     ])
     // rhythm=12, tempo=3。tempo:6が不足だが、rhythmが突出
     // rhythm方向に確率が上がるはず（収束しなくてもdirectionは正しい）
-    const progress = resolveGenreProgress(params, GENRES, undefined, undefined, config)
+    const progress = resolveGenreProgress(params, GENRES, config)
     expect(['rhythm', 'runner', 'sports', 'glitch', 'base']).toContain(progress.closestGenre)
   })
 
@@ -196,7 +197,7 @@ describe('genreResolver - convergence', () => {
     // tetrisのthresholdsはcombo:4, craft:4。deviation=0でL=1.0。
     // ただし他のジャンル（idle: craft:7, puzzle: combo:6）もdeviation=0になる可能性がある
     // 収束するか確率確認
-    const progress = resolveGenreProgress(params, GENRES, undefined, undefined, config)
+    const progress = resolveGenreProgress(params, GENRES, config)
     expect(['tetris', 'idle', 'puzzle']).toContain(progress.closestGenre)
   })
 
@@ -204,13 +205,13 @@ describe('genreResolver - convergence', () => {
 
   it('収束進捗が0〜1の範囲である', () => {
     const params = buildParamsFromCards(cardPools.tempo)
-    const progress = resolveGenreProgress(params, GENRES, undefined, undefined, config)
+    const progress = resolveGenreProgress(params, GENRES, config)
     expect(progress.progress).toBeGreaterThanOrEqual(0)
     expect(progress.progress).toBeLessThanOrEqual(1)
   })
 
   it('無選択時はbaseが最も確率が高い', () => {
-    const progress = resolveGenreProgress({}, GENRES, undefined, undefined, config)
+    const progress = resolveGenreProgress({}, GENRES, config)
     // 選択がない場合はbase以外で最も確率が高いジャンルが返る
     expect(progress.closestGenre).toBeDefined()
   })
@@ -239,5 +240,47 @@ describe('genreResolver - convergence', () => {
 
     // growthパラメータではrpgの確率が上がるはず
     expect(growthPosteriors['rpg']).toBeGreaterThan(basePosteriors['rpg'])
+  })
+
+  // ── bullet_hell 到達性 ──────────────────────────────────────
+
+  it('bullet_hell が到達可能である（c-boss-stationary カードで収束する）', () => {
+    // c-boss-stationary (vertical:3, enemy:3) が CARD_POOL に存在することを確認
+    const bossCard = CARD_POOL.find(c => c.id === 'c-boss-stationary')
+    expect(bossCard).toBeDefined()
+    expect(bossCard!.genreParams).toEqual({ vertical: 3, enemy: 3 })
+
+    // c-boss-stationary × 5 = vertical:15, enemy:15
+    // thresholds: vertical:4, enemy:8 → 両方充足
+    const params = buildParamsFromCards([
+      bossCard!.genreParams as Record<string, number>,
+      bossCard!.genreParams as Record<string, number>,
+      bossCard!.genreParams as Record<string, number>,
+      bossCard!.genreParams as Record<string, number>,
+      bossCard!.genreParams as Record<string, number>,
+    ])
+    expect(params.vertical).toBeGreaterThanOrEqual(4)
+    expect(params.enemy).toBeGreaterThanOrEqual(8)
+
+    const progress = resolveGenreProgress(params, GENRES, config)
+    expect(progress.closestGenre).toBe('bullet_hell')
+  })
+
+  it('bullet_hell の事後確率が vertical+enemy 特化で最も高くなる', () => {
+    const params = buildParamsFromCards([
+      { vertical: 3, enemy: 3 },
+      { vertical: 3, enemy: 3 },
+      { vertical: 3, enemy: 3 },
+      { vertical: 3, enemy: 3 },
+      { vertical: 3, enemy: 3 },
+    ])
+    const posteriors = computeBayesianPosteriors(params, GENRES, config)
+
+    // bullet_hell が最尤ジャンルになる
+    const nonBase = GENRES.filter(g => g.id !== 'base' && g.id !== 'glitch')
+    const topGenre = nonBase.reduce((a, b) =>
+      (posteriors[a.id] ?? 0) > (posteriors[b.id] ?? 0) ? a : b
+    )
+    expect(topGenre.id).toBe('bullet_hell')
   })
 })

@@ -14,6 +14,7 @@ import { rectsOverlap } from '../entities'
 import { VFX, SPAWN } from '../../data/tunables'
 import { getActiveSystems } from '../../engine/GameRegistry'
 import { soundManager } from '../../plugins/SoundManager'
+import { applyPlayerHitEffect } from './playerHitEffect'
 
 export class RpgFeature implements FeatureSystem {
   readonly handles = ['hp', 'exp', 'item_pickup', 'shield'] as const
@@ -46,22 +47,7 @@ export class RpgFeature implements FeatureSystem {
       return
     }
 
-    world.modifyPlayerHp(-1)
-    if (p.hp > 0) {
-      p.invincible = VFX.invincibleDuration
-      world.triggerShake(VFX.hitShakeIntensity)
-      for (let i = 0; i < VFX.hitParticleCount; i++) {
-        const angle = Math.random() * Math.PI * 2
-        const speed = VFX.hitParticleSpeedMin + Math.random() * (VFX.hitParticleSpeedMax - VFX.hitParticleSpeedMin)
-        const life  = VFX.hitParticleLifeMin + Math.random() * VFX.hitParticleLifeRange
-        const size  = VFX.hitParticleSizeBase + Math.random() * VFX.hitParticleSizeRange
-        world.addParticle(
-          p.x + p.w / 2, p.y + p.h / 2,
-          Math.cos(angle) * speed, Math.sin(angle) * speed + VFX.hitParticleYBoost,
-          life, '#ff4444', size,
-        )
-      }
-    }
+    applyPlayerHitEffect(world, { yBoost: VFX.hitParticleYBoost })
   }
 
   /** item_pickup feature: アイテムのパルスアニメ・収集判定・EXP / HP 付与 */

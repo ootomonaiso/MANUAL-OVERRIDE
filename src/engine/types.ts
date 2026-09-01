@@ -116,6 +116,10 @@ export interface MutableWorld {
   addScoreVarsStealthBonus(amount: number): void
   /** 安全色タッチ回数をインクリメント（color_touch Feature が使用） */
   addScoreVarsColorTouch(): void
+  /** ボス命中数をインクリメント（bullet_hell の BossFeature が使用） */
+  addScoreVarsHitsOnBoss(): void
+  /** 最大hitCombo をセット（bullet_hell の BossFeature が使用） */
+  setScoreVarsMaxHitCombo(n: number): void
 }
 
 // ──────────────────────────────────────────────────────────────────────
