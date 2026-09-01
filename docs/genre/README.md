@@ -13,7 +13,7 @@
 | `puzzle` | [puzzle-genre.md](./puzzle-genre.md) | スライドパズル（グリッド・タイムアタック） |
 | `tetris` | [tetris-genre.md](./tetris-genre.md) | 落ち物パズル（10×20グリッド・7-bag・ライン消去） |
 | `bullet_hell` | [bullet-hell-genre.md](./bullet-hell-genre.md) | 弾幕回避STG（**設計のみ・未実装**。常駐ボス＋オートエイム） |
-| `rpg` | [rpg-genre.md](./rpg-genre.md) | ローグライク戦闘RPG（**設計のみ・未実装**。マップなし、戦闘専用UIへ完全移行） |
+| `rpg` | [rpg/](./rpg/) | ローグライク戦闘RPG（**実装作業中**。マップなし、戦闘専用UIへ完全移行）。設計文書と機能別仕様書を格納 |
 
 ## 記載方針
 

@@ -1,7 +1,7 @@
 # RPG（ローグライク戦闘）ジャンル設計文書
 
 > **本文書のステータス: 設計のみ・未実装**
-> `rpg` は現状 `exp` を拾ってもスコアが増えるだけで、レベルアップ・ステータス成長が一切存在しない（`player.level` フィールドは [entities.ts:29](../../src/game/entities.ts#L29) に存在するが誰も参照していない死んだフィールド）。`enableFeatures` も `dungeon` と完全一致しており、ジャンルとしての固有性がない。
+> `rpg` は現状 `exp` を拾ってもスコアが増えるだけで、レベルアップ・ステータス成長が一切存在しない（`player.level` フィールドは [entities.ts:29](../../../src/game/entities.ts#L29) に存在するが誰も参照していない死んだフィールド）。`enableFeatures` も `dungeon` と完全一致しており、ジャンルとしての固有性がない。
 > 本文書は、あるべき姿として**ローグライク戦闘に絞ったRPG**へゼロから再設計したもの。実装前提のコード変更は含まない。**実装が完了したら、この文書を「現状の実装を記録する」形式（`tetris-genre.md` 等と同じ体裁）に書き直すこと。**
 
 ## 概要
@@ -982,7 +982,7 @@ battlesWon * 300 + bossDefeated * 3000 + maxSkillLevel * 200 + traitsAcquired * 
 - **現在のシールド耐久値**
 - **戦闘数・ボス撃破フラグ**（スコア計算とボス出現判定に使用）
 
-既存の `player`（`Player` クラス, [entities.ts](../../src/game/entities.ts)）を拡張するか、`useBattleState.ts` 側で独立した `BattleState` として持つかは実装時に決定する。
+既存の `player`（`Player` クラス, [entities.ts](../../../src/game/entities.ts)）を拡張するか、`useBattleState.ts` 側で独立した `BattleState` として持つかは実装時に決定する。
 
 ## 計算式一覧（参照用）
 
