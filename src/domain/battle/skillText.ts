@@ -12,13 +12,13 @@ export interface SkillTextToken {
   text: string
 }
 
-const STAT_LABEL: Record<StatKey, string> = {
+export const STAT_LABEL: Record<StatKey, string> = {
   hp: 'HP', str: 'STR', def: 'DEF', int: 'INT', ref: 'REF', agi: 'AGI',
   hitRate: '命中率', evadeRate: '回避率', critRate: 'クリティカル率',
   critDamageMultiplier: 'クリティカルダメージ倍率',
 }
 
-const ELEMENT_LABEL: Record<Element, string> = {
+export const ELEMENT_LABEL: Record<Element, string> = {
   physical: '物理', magical: '魔法', special: '特殊',
 }
 
