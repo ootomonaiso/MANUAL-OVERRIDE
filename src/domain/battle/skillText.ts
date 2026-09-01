@@ -4,12 +4,19 @@
  * 表示される数値はスキルレベルの倍率を適用済みの実値にする。
  */
 
-import type { SkillDef, EffectNode, StatKey, Element } from './types'
+import type { SkillDef, EffectNode, StatKey, Element, CategoryId } from './types'
 import { levelMultiplier } from './stats'
+
+export const CATEGORY_LABEL: Record<CategoryId, string> = {
+  vitality: '頑強', guard: '守勢', might: '剛撃', wisdom: '明晰', swift: '疾風',
+  fatal: '致命', heal: '治癒', aegis: '加護', curse: '呪詛', pierce: '貫通', combo: '連撃',
+}
 
 export interface SkillTextToken {
   type: 'plain' | 'stat' | 'element' | 'number'
   text: string
+  /** type === 'element' のとき、色分けに使う具体的な属性 */
+  element?: Element
 }
 
 export const STAT_LABEL: Record<StatKey, string> = {
@@ -30,7 +37,7 @@ function statTok(key: StatKey): SkillTextToken {
   return { type: 'stat', text: STAT_LABEL[key] }
 }
 function elemTok(el: Element): SkillTextToken {
-  return { type: 'element', text: ELEMENT_LABEL[el] }
+  return { type: 'element', text: ELEMENT_LABEL[el], element: el }
 }
 function numTok(text: string): SkillTextToken {
   return { type: 'number', text }

@@ -7,11 +7,14 @@
  * 戻す（readonly プロキシへの書き込みが no-op になる過去の不具合を避けるため）。
  */
 
-import { reactive, readonly, ref, computed, toRaw } from 'vue'
+import { reactive, readonly, ref, computed, toRaw, type DeepReadonly } from 'vue'
 import type {
   BattleState, Combatant, PlayerAction, DraftOption, EffectRequest,
   CategoryId, EffectiveStats,
 } from '../domain/battle/types'
+
+/** state: readonly(state) から UI へ渡る Combatant の実体型（配列も再帰的に readonly になる） */
+export type CombatantView = DeepReadonly<Combatant>
 import { CATEGORY_IDS } from '../domain/battle/types'
 import {
   initPlayer, spawnEnemyFromDef, pickEnemyDefs, resolveEffectiveStats,
@@ -256,11 +259,13 @@ export function useBattleState() {
   }
 
   // ── 表示用ヘルパー ────────────────────────────────────────────
-  function effectiveOf(c: Combatant): EffectiveStats {
-    return resolveEffectiveStats(toRaw(c), content)
+  // readonly(state) 経由で渡ってくる Combatant は配列も含め deep readonly になる。
+  // toRaw() は実行時には素のオブジェクトを返すが型は保持するため、ここで明示的に戻す。
+  function effectiveOf(c: CombatantView): EffectiveStats {
+    return resolveEffectiveStats(toRaw(c) as Combatant, content)
   }
-  function nextEnemySkillPreview(e: Combatant): string | null {
-    return previewEnemyNextSkill(toRaw(e))
+  function nextEnemySkillPreview(e: CombatantView): string | null {
+    return previewEnemyNextSkill(toRaw(e) as Combatant)
   }
   function draftOptionLabel(opt: DraftOption): { label: string; flavorText: string } | null {
     if (opt.isFallback) return null
