@@ -6,7 +6,7 @@
 import { BATTLE } from '../../data/tunables'
 import type {
   BattleStats, EffectiveStats, StatKey, StatModifier,
-  Combatant, TemporaryModifier, SkillDef,
+  Combatant, TemporaryModifier, SkillDef, EffectNode, Element, BattleContent,
 } from './types'
 
 export function clamp(v: number, min: number, max: number): number {
@@ -131,6 +131,34 @@ export function accumulatePassiveStatBoosts(
       if (typeof node.rate === 'number') addRate(acc, stat, node.rate * mult)
     }
   }
+}
+
+/**
+ * 発動元が持つ特性・パッシブから「効果倍率」（例:「物理攻撃+50%」）を集計する。
+ * 加算スタックしたものを1回だけ乗算する形の倍率として返す（既定1）。
+ * element を指定した attack と "any"（全属性）の両方を合算する。
+ */
+export function collectEffectMultiplier(
+  source: Combatant, element: Element, content: BattleContent,
+): number {
+  const rates: number[] = []
+  const scan = (nodes: readonly EffectNode[], mult: number) => {
+    for (const n of nodes) {
+      if (n.op !== 'effectBoost') continue
+      const el = n.element as Element | 'any'
+      if (el !== 'any' && el !== element) continue
+      if (typeof n.rate === 'number') rates.push(n.rate * mult)
+    }
+  }
+  for (const t of source.traits) {
+    const def = content.traits.get(t.id)
+    if (def) scan(def.effect, 1)
+  }
+  for (const p of source.passives) {
+    const def = content.skills.get(p.id)
+    if (def && def.kind === 'passive') scan(def.effect, levelMultiplier(p.level))
+  }
+  return stackMultipliers(rates)
 }
 
 /** 一時効果（守る/避ける等）を temporary リストへ変換するヘルパー */

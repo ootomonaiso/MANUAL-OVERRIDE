@@ -10,7 +10,7 @@ import {
   computeFinalCutRate, computeAffinityStage,
   applyDamage,
 } from '../damageCalc'
-import { levelMultiplier } from '../stats'
+import { levelMultiplier, collectEffectMultiplier } from '../stats'
 import { BATTLE } from '../../../data/tunables'
 
 interface DamageParams {
@@ -27,7 +27,7 @@ function readParams(node: EffectNode): DamageParams {
 function collectTraitCutRates(target: EffectContext['targets'][number], ctx: EffectContext): number[] {
   const rates: number[] = []
   for (const t of target.traits) {
-    const def = ctx.traitDefs.get(t.id)
+    const def = ctx.content.traits.get(t.id)
     if (!def) continue
     for (const eff of def.effect) {
       if (eff.op === 'cutRate' && typeof eff.amount === 'number') rates.push(eff.amount)
@@ -58,8 +58,9 @@ export const damageOp: EffectOp = {
       const isCrit = rollCritical(sourceStats.critRate, ctx.rng)
       const critMultiplier = isCrit ? sourceStats.critDamageMultiplier : 1
 
+      const effectMultiplier = collectEffectMultiplier(ctx.source, element, ctx.content)
       const outgoing = computeOutgoingDamage({
-        referenceValue, scaleRate, critMultiplier, effectMultiplier: 1,
+        referenceValue, scaleRate, critMultiplier, effectMultiplier,
       })
 
       const finalCutRate = computeFinalCutRate({
@@ -68,7 +69,7 @@ export const damageOp: EffectOp = {
         shieldCutRate: target.shield > 0 ? shieldCutRateFor(element) : 0,
         guardCutRate: readTemporaryFlat(target, 'cutRate'),
       })
-      const affinityStage = computeAffinityStage(element, target.traits, ctx.traitDefs)
+      const affinityStage = computeAffinityStage(element, target.traits, ctx.content.traits)
 
       const finalDamage = computeFinalDamage({ outgoingDamage: outgoing, finalCutRate, affinityStage })
 

@@ -6,7 +6,7 @@
 
 import type { EffectNode, EffectOp, StatKey, Element } from '../types'
 import { rollCritical, applyShield } from '../damageCalc'
-import { levelMultiplier } from '../stats'
+import { levelMultiplier, collectEffectMultiplier } from '../stats'
 
 interface ShieldParams {
   element: Element
@@ -21,7 +21,7 @@ function readParams(node: EffectNode): ShieldParams {
 export const shieldOp: EffectOp = {
   id: 'shield',
   execute(node, ctx) {
-    const { scale } = readParams(node)
+    const { element, scale } = readParams(node)
     const sourceStats = ctx.getEffective(ctx.source)
     const referenceValue = sourceStats[scale.stat]
     const mult = ctx.skill.kind === 'active' ? levelMultiplier(ctx.level) : 1
@@ -31,7 +31,8 @@ export const shieldOp: EffectOp = {
       if (!target.alive) continue
       const isCrit = rollCritical(sourceStats.critRate, ctx.rng)
       const critMultiplier = isCrit ? sourceStats.critDamageMultiplier : 1
-      const amount = referenceValue * scaleRate * critMultiplier
+      const effectMultiplier = collectEffectMultiplier(ctx.source, element, ctx.content)
+      const amount = referenceValue * scaleRate * critMultiplier * effectMultiplier
 
       applyShield(target, amount)
 

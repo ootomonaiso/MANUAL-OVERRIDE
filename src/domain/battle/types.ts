@@ -206,6 +206,12 @@ export interface Combatant {
   /** 「守る」「避ける」のクールタイム（両方には同時になれないが枠は共通で扱う） */
   builtinCooldowns: { guard: number; dodge: number }
 
+  /**
+   * 敵のみ: EnemyDef.actionPattern をそのまま保持する（同じスキルの連続repeatも含む）。
+   * actives は CT管理のためスキルIDごとに一意化したリストであり、
+   * パターン上の繰り返しはこちらで表現する。プレイヤーは空配列。
+   */
+  actionPattern: string[]
   patternIndex: number
   formationIndex: number
   isBoss: boolean
@@ -330,8 +336,8 @@ export interface EffectContext {
   rng: () => number
   /** 対象キャラの実効ステータスを都度算出する（補正の変化を反映するため毎回計算） */
   getEffective: (c: Combatant) => EffectiveStats
-  /** 特性・敵定義の参照に使う */
-  traitDefs: ReadonlyMap<string, TraitDef>
+  /** スキル・特性定義の参照に使う */
+  content: BattleContent
 }
 
 export interface EffectOp {

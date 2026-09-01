@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "battle-enemy.schema.json",
+  "title": "RPGジャンル: 敵定義",
+  "description": "src/data/enemies/*.json のスキーマ。docs/genre/rpg/07-data-schema.md 準拠。1ファイル1種。",
+  "type": "object",
+  "required": ["id", "label", "flavorText", "stats", "traits", "activeSkills", "passiveSkills", "actionPattern", "isBoss"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^enemy_[a-z0-9_]+$" },
+    "label": { "type": "string", "minLength": 1 },
+    "flavorText": { "type": "string", "minLength": 1 },
+    "stats": {
+      "type": "object",
+      "required": ["hp", "str", "def", "int", "ref", "agi", "hitRate", "evadeRate", "critRate", "critDamageMultiplier"],
+      "additionalProperties": false,
+      "properties": {
+        "hp":  { "type": "number", "exclusiveMinimum": 0 },
+        "str": { "type": "number", "minimum": 0 },
+        "def": { "type": "number", "minimum": 0 },
+        "int": { "type": "number", "minimum": 0 },
+        "ref": { "type": "number", "minimum": 0 },
+        "agi": { "type": "number", "minimum": 0 },
+        "hitRate": { "type": "number", "minimum": 0 },
+        "evadeRate": { "type": "number", "const": 0, "description": "導出値のため常に0を書く" },
+        "critRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "critDamageMultiplier": { "type": "number", "minimum": 1 }
+      }
+    },
+    "traits": { "type": "array", "items": { "type": "string", "pattern": "^trait_[a-z0-9_]+$" } },
+    "activeSkills": { "type": "array", "items": { "$ref": "#/definitions/activeSkillRef" } },
+    "passiveSkills": { "type": "array", "items": { "$ref": "#/definitions/passiveSkillRef" } },
+    "actionPattern": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^skill_[a-z0-9_]+$" },
+      "description": "ループする行動パターン。文字列IDのみ。activeSkills に含まれるIDのみ許可（実行時に検証）"
+    },
+    "isBoss": { "type": "boolean" }
+  },
+  "definitions": {
+    "activeSkillRef": {
+      "oneOf": [
+        { "type": "string", "pattern": "^skill_[a-z0-9_]+$" },
+        {
+          "type": "object",
+          "required": ["id", "level"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "pattern": "^skill_[a-z0-9_]+$" },
+            "level": { "type": "integer", "minimum": 1, "maximum": 4 }
+          }
+        }
+      ]
+    },
+    "passiveSkillRef": {
+      "oneOf": [
+        { "type": "string", "pattern": "^passive_[a-z0-9_]+$" },
+        {
+          "type": "object",
+          "required": ["id", "level"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "pattern": "^passive_[a-z0-9_]+$" },
+            "level": { "type": "integer", "minimum": 1, "maximum": 4 }
+          }
+        }
+      ]
+    }
+  }
+}

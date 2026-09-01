@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "battle-trait.schema.json",
+  "title": "RPGジャンル: 特性定義",
+  "description": "src/data/traits/*.json のスキーマ。docs/genre/rpg/07-data-schema.md 準拠。特性はカテゴリを持たない。1ファイル1特性。",
+  "type": "object",
+  "required": ["id", "label", "flavorText", "kind", "effect"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^trait_[a-z0-9_]+$" },
+    "label": { "type": "string", "minLength": 1 },
+    "flavorText": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "const": "trait" },
+    "draftable": { "type": "boolean", "description": "false なら通常ドラフトに出現しない（弱点・耐性など）" },
+    "unlockCondition": {
+      "type": "object",
+      "required": ["category", "points"],
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": ["vitality", "guard", "might", "wisdom", "swift", "fatal", "heal", "aegis", "curse", "pierce", "combo"]
+        },
+        "points": { "type": "number", "minimum": 0 }
+      }
+    },
+    "effect": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["op"],
+        "properties": {
+          "op": {
+            "type": "string",
+            "enum": ["damage", "heal", "shield", "repeat", "modifier",
+                      "statBoost", "elementAffinity", "cutRate", "replaceGuard", "healBetweenBattles",
+                    "effectBoost", "healTaken"]
+          }
+        }
+      }
+    }
+  }
+}

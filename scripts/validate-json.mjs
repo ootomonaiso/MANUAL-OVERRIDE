@@ -31,6 +31,8 @@ const SCHEMAS = {
                         'spriteCacheMax', 'textCacheMax'],
   'genre_defaults.json': ['section', 'scoreFormula', 'theme', 'bgColor'],
   'palette_defaults.json': ['section', 'danger', 'dangerGlow', 'safe', 'safeGlow'],
+  'battle.json': ['section', 'initialStats', 'cut', 'evade', 'affinity', 'guard', 'dodge', 'shield',
+                  'categoryUnlockThresholds', 'fallbackStatBoost', 'bossBattleIndex', 'multiHitIntervalMs'],
 }
 
 // pixelart.json の数値範囲チェック（docs/pixelart-rebuild/00-rendering-system.md §9）
@@ -450,6 +452,191 @@ function validateSfx() {
   }
 }
 
+// ── RPG バトルコンテンツ (docs/genre/rpg/07-data-schema.md) ─────────────
+const _battleSkillSchema = JSON.parse(readFileSync('schemas/battle-skill.schema.json', 'utf8'))
+const _battleTraitSchema = JSON.parse(readFileSync('schemas/battle-trait.schema.json', 'utf8'))
+const _battleEnemySchema = JSON.parse(readFileSync('schemas/battle-enemy.schema.json', 'utf8'))
+const _battleEffectSchema = JSON.parse(readFileSync('schemas/battle-effect.schema.json', 'utf8'))
+const ALLOWED_OPS = _battleSkillSchema.allowedOps
+
+const ajvBattle = new Ajv({ strict: false, allErrors: true })
+const validateSkillSchema = ajvBattle.compile(_battleSkillSchema)
+const validateTraitSchema = ajvBattle.compile(_battleTraitSchema)
+const validateEnemySchema = ajvBattle.compile(_battleEnemySchema)
+const validateEffectSchema = ajvBattle.compile(_battleEffectSchema)
+
+/** effect ノード配列を再帰的に走査し、参照する op / stat / repeat 構造の粗い妥当性を見る */
+function walkEffectNodes(nodes, problems, path = 'effect') {
+  if (!Array.isArray(nodes)) { problems.push(`${path} は配列である必要があります`); return }
+  nodes.forEach((node, i) => {
+    const p = `${path}[${i}]`
+    if (!node || typeof node !== 'object') { problems.push(`${p}: オブジェクトが必要です`); return }
+    if (!ALLOWED_OPS.includes(node.op)) { problems.push(`${p}.op "${node.op}" は未登録のオペレーションです`); return }
+    if (node.op === 'repeat') {
+      if (!Number.isInteger(node.times) || node.times < 1) problems.push(`${p}.times は1以上の整数である必要があります`)
+      walkEffectNodes(node.body, problems, `${p}.body`)
+      if (node.onFirstIteration) walkEffectNodes(node.onFirstIteration, problems, `${p}.onFirstIteration`)
+      if (node.onLastIteration) walkEffectNodes(node.onLastIteration, problems, `${p}.onLastIteration`)
+    }
+    if (['damage', 'heal', 'shield'].includes(node.op)) {
+      if (!node.scale || typeof node.scale.stat !== 'string' || typeof node.scale.rate !== 'number') {
+        problems.push(`${p}: scale.stat / scale.rate が必要です`)
+      }
+    }
+  })
+}
+
+/** src/data/skills/*.json を検証する。戻り値: { activeIds, passiveIds, referencedEffectIds } */
+function validateBattleSkills() {
+  const activeIds = new Set()
+  const passiveIds = new Set()
+  const referencedEffectIds = new Set()
+  const seen = new Set()
+
+  for (const file of walkJson('src/data/skills')) {
+    const rel = relPath(file)
+    const { data, error } = parseJson(file)
+    if (data === null) { fail(rel, `JSON parse error: ${error}`); continue }
+
+    const problems = []
+    const schemaValid = validateSkillSchema(data)
+    if (!schemaValid && validateSkillSchema.errors) {
+      for (const err of validateSkillSchema.errors) problems.push(`schema: ${err.instancePath || '(root)'} ${err.message}`)
+    }
+    if (data.id !== basename(file, '.json')) problems.push(`id "${data.id}" とファイル名が一致していません`)
+    if (seen.has(data.id)) problems.push(`id "${data.id}" が他のスキルと重複しています`)
+    seen.add(data.id)
+
+    if (data.kind === 'active') {
+      for (const key of ['element', 'cooldown', 'defaultFocus', 'focusRange']) {
+        if (data[key] === undefined) problems.push(`kind="active" には "${key}" が必須です`)
+      }
+      activeIds.add(data.id)
+    } else if (data.kind === 'passive') {
+      for (const key of ['element', 'cooldown', 'defaultFocus', 'focusRange']) {
+        if (data[key] !== undefined) problems.push(`kind="passive" に "${key}" は指定できません`)
+      }
+      passiveIds.add(data.id)
+    }
+    for (const fx of data.effects ?? []) referencedEffectIds.add(fx)
+    if (Array.isArray(data.effect)) walkEffectNodes(data.effect, problems)
+
+    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    else ok(rel)
+  }
+  return { activeIds, passiveIds, referencedEffectIds }
+}
+
+/** src/data/traits/*.json を検証する。戻り値: 特性IDの集合 */
+function validateBattleTraits() {
+  const traitIds = new Set()
+  const seen = new Set()
+
+  for (const file of walkJson('src/data/traits')) {
+    const rel = relPath(file)
+    const { data, error } = parseJson(file)
+    if (data === null) { fail(rel, `JSON parse error: ${error}`); continue }
+
+    const problems = []
+    const schemaValid = validateTraitSchema(data)
+    if (!schemaValid && validateTraitSchema.errors) {
+      for (const err of validateTraitSchema.errors) problems.push(`schema: ${err.instancePath || '(root)'} ${err.message}`)
+    }
+    if (data.id !== basename(file, '.json')) problems.push(`id "${data.id}" とファイル名が一致していません`)
+    if (seen.has(data.id)) problems.push(`id "${data.id}" が他の特性と重複しています`)
+    seen.add(data.id)
+    if (Array.isArray(data.effect)) walkEffectNodes(data.effect, problems)
+
+    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    else ok(rel)
+    traitIds.add(data.id)
+  }
+  return traitIds
+}
+
+/** src/data/enemies/*.json を検証する（skill/trait の参照整合性を含む） */
+function validateBattleEnemies(activeIds, passiveIds, traitIds) {
+  const seen = new Set()
+  let bossCount = 0
+
+  for (const file of walkJson('src/data/enemies')) {
+    const rel = relPath(file)
+    const { data, error } = parseJson(file)
+    if (data === null) { fail(rel, `JSON parse error: ${error}`); continue }
+
+    const problems = []
+    const schemaValid = validateEnemySchema(data)
+    if (!schemaValid && validateEnemySchema.errors) {
+      for (const err of validateEnemySchema.errors) problems.push(`schema: ${err.instancePath || '(root)'} ${err.message}`)
+    }
+    if (data.id !== basename(file, '.json')) problems.push(`id "${data.id}" とファイル名が一致していません`)
+    if (seen.has(data.id)) problems.push(`id "${data.id}" が他の敵と重複しています`)
+    seen.add(data.id)
+    if (data.isBoss) bossCount++
+
+    for (const t of data.traits ?? []) {
+      if (!traitIds.has(t)) problems.push(`traits: 存在しない特性 "${t}" を参照しています`)
+    }
+    const refIds = ref => (typeof ref === 'string' ? ref : ref?.id)
+    const activeRefIds = new Set()
+    for (const ref of data.activeSkills ?? []) {
+      const id = refIds(ref)
+      activeRefIds.add(id)
+      if (!activeIds.has(id)) problems.push(`activeSkills: 存在しないアクティブスキル "${id}" を参照しています`)
+    }
+    for (const ref of data.passiveSkills ?? []) {
+      const id = refIds(ref)
+      if (!passiveIds.has(id)) problems.push(`passiveSkills: 存在しないパッシブスキル "${id}" を参照しています`)
+    }
+    for (const id of data.actionPattern ?? []) {
+      if (!activeRefIds.has(id)) problems.push(`actionPattern: "${id}" は activeSkills に含まれていません`)
+    }
+
+    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    else ok(rel)
+  }
+
+  if (bossCount === 0) {
+    fail('src/data/enemies/*.json', 'isBoss:true の敵が1体もありません（ランがクリアできません）')
+  }
+}
+
+/** src/data/battle-effects/*.json を検証する。戻り値: エフェクトIDの集合 */
+function validateBattleEffects() {
+  const effectIds = new Set()
+  const seen = new Set()
+
+  for (const file of walkJson('src/data/battle-effects')) {
+    const rel = relPath(file)
+    const { data, error } = parseJson(file)
+    if (data === null) { fail(rel, `JSON parse error: ${error}`); continue }
+
+    const problems = []
+    const schemaValid = validateEffectSchema(data)
+    if (!schemaValid && validateEffectSchema.errors) {
+      for (const err of validateEffectSchema.errors) problems.push(`schema: ${err.instancePath || '(root)'} ${err.message}`)
+    }
+    if (data.id !== basename(file, '.json')) problems.push(`id "${data.id}" とファイル名が一致していません`)
+    if (seen.has(data.id)) problems.push(`id "${data.id}" が他のエフェクトと重複しています`)
+    seen.add(data.id)
+
+    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    else ok(rel)
+    effectIds.add(data.id)
+  }
+  return effectIds
+}
+
+function validateBattleEffectReferences(referencedEffectIds, effectIds) {
+  const rel = 'src/data/skills/*.json (effects 参照整合性)'
+  const missing = [...referencedEffectIds].filter(id => !effectIds.has(id))
+  if (missing.length > 0) {
+    fail(rel, `存在しないエフェクトを参照しています: ${missing.join(', ')}`)
+  } else {
+    ok(rel)
+  }
+}
+
 // ── Run ──────────────────────────────────────────────────────────────────
 console.log('\n🔍  JSON Integrity Check\n')
 
@@ -474,6 +661,13 @@ validateManualDeckRefs()
 
 // SFX definitions
 validateSfx()
+
+// RPG バトルコンテンツ
+const { activeIds: battleActiveIds, passiveIds: battlePassiveIds, referencedEffectIds: battleReferencedEffectIds } = validateBattleSkills()
+const battleTraitIds = validateBattleTraits()
+validateBattleEnemies(battleActiveIds, battlePassiveIds, battleTraitIds)
+const battleEffectIds = validateBattleEffects()
+validateBattleEffectReferences(battleReferencedEffectIds, battleEffectIds)
 
 // 説明書ツリー（後方互換データ）の参照整合性: すべての choices[].next が
 // マージ後デッキ内の実在キーを指すか検証する。1.0 からの到達性は検査しない

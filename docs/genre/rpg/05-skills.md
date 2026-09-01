@@ -81,8 +81,12 @@ export function runEffects(nodes: readonly EffectNode[], ctx: EffectContext): vo
 | `cutRate` | カット率を追加（特性用） | `amount` |
 | `replaceGuard` | 「守る」を「避ける」へ置換（特性用） | ― |
 | `healBetweenBattles` | 戦闘終了時に回復（特性用） | `amount` または `rate` |
+| `effectBoost` | 自身が出す効果の効果倍率を上昇（特性/パッシブ用） | `element`（`"any"` で全属性）/ `rate` |
+| `healTaken` | 対象側の被回復倍率を上昇（特性/パッシブ用） | `rate` |
 
 この一覧は初期セットであり、**後から増やせることが要件**である。
+
+> **実装時に判明した追加**: 当初の一覧には「送出ダメージ = ... × 効果倍率」（ダメージ計算の流れ）が参照する**効果倍率そのものを付与する手段**が含まれていなかった（`damage`/`heal`/`shield` のいずれの倍率も1固定になってしまう欠落だった）。`effectBoost`（例:「物理攻撃+50%」）と、回復側の対称にあたる `healTaken`（「被回復量+30%」）を追加した。
 
 ### `scale` の構造
 
@@ -115,14 +119,21 @@ export function runEffects(nodes: readonly EffectNode[], ctx: EffectContext): vo
 
 **命中判定と属性相性はヒットごとに個別に評価する**（[03-damage-calc.md](03-damage-calc.md)）。`repeat` の各反復が1ヒットに相当する。
 
-### `modifier` の `scope`
+### `modifier` の `scope` と `applyTo`
 
 | `scope` | 有効期間 |
 |---|---|
 | `thisHit` | 直後の1ヒットのみ |
-| `thisTurn` | そのターンの終わりまで |
+| `thisTurn` | そのラウンドの終わりまで（ラウンド終了処理で一括除去） |
 | `thisBattle` | 戦闘終了まで |
 | `permanent` | ラン終了まで |
+
+`applyTo` は補正を誰に与えるかを指定する（省略時 `"source"`）。
+
+| `applyTo` | 対象 |
+|---|---|
+| `"source"`（既定） | 発動元自身（例:「最後の攻撃のみクリティカル率上昇」のような自己バフ） |
+| `"target"` | 効果の対象（デバフ等） |
 
 ---
 

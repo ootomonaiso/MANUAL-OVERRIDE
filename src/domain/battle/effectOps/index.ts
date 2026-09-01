@@ -21,6 +21,8 @@ import { elementAffinityOp } from './elementAffinity'
 import { cutRateOp } from './cutRate'
 import { replaceGuardOp } from './replaceGuard'
 import { healBetweenBattlesOp } from './healBetweenBattles'
+import { effectBoostOp } from './effectBoost'
+import { healTakenOp } from './healTaken'
 
 registerOp(damageOp)
 registerOp(healOp)
@@ -32,3 +34,5 @@ registerOp(elementAffinityOp)
 registerOp(cutRateOp)
 registerOp(replaceGuardOp)
 registerOp(healBetweenBattlesOp)
+registerOp(effectBoostOp)
+registerOp(healTakenOp)

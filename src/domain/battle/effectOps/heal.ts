@@ -5,7 +5,7 @@
 
 import type { EffectContext, EffectNode, EffectOp, StatKey, Element } from '../types'
 import { computeOutgoingHeal, computeFinalHeal, rollCritical, applyHeal } from '../damageCalc'
-import { levelMultiplier } from '../stats'
+import { levelMultiplier, collectEffectMultiplier } from '../stats'
 
 interface HealParams {
   element: Element
@@ -21,7 +21,7 @@ function readParams(node: EffectNode): HealParams {
 function healTakenMultiplier(target: EffectContext['targets'][number], ctx: EffectContext): number {
   const rates: number[] = []
   for (const t of target.traits) {
-    const def = ctx.traitDefs.get(t.id)
+    const def = ctx.content.traits.get(t.id)
     if (!def) continue
     for (const eff of def.effect) {
       if (eff.op === 'healTaken' && typeof eff.rate === 'number') rates.push(eff.rate)
@@ -33,7 +33,7 @@ function healTakenMultiplier(target: EffectContext['targets'][number], ctx: Effe
 export const healOp: EffectOp = {
   id: 'heal',
   execute(node, ctx) {
-    const { scale } = readParams(node)
+    const { element, scale } = readParams(node)
     const sourceStats = ctx.getEffective(ctx.source)
     const referenceValue = sourceStats[scale.stat]
     const mult = ctx.skill.kind === 'active' ? levelMultiplier(ctx.level) : 1
@@ -44,8 +44,9 @@ export const healOp: EffectOp = {
       const isCrit = rollCritical(sourceStats.critRate, ctx.rng)
       const critMultiplier = isCrit ? sourceStats.critDamageMultiplier : 1
 
+      const effectMultiplier = collectEffectMultiplier(ctx.source, element, ctx.content)
       const outgoing = computeOutgoingHeal({
-        referenceValue, scaleRate, critMultiplier, effectMultiplier: 1,
+        referenceValue, scaleRate, critMultiplier, effectMultiplier,
       })
       const finalHeal = computeFinalHeal({
         outgoingHeal: outgoing,

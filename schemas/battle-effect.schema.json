@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "battle-effect.schema.json",
+  "title": "RPGジャンル: 戦闘エフェクト定義",
+  "description": "src/data/battle-effects/*.json のスキーマ。docs/genre/rpg/09-effects.md 準拠。1ファイル1エフェクト。",
+  "type": "object",
+  "required": ["id", "label", "timing", "durationMs", "target", "visual"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^fx_[a-z0-9_]+$" },
+    "label": { "type": "string", "minLength": 1 },
+    "timing": {
+      "type": "string",
+      "enum": ["onCast", "onHit", "onMiss", "onHeal", "onShield", "onStatus", "onDefeat", "onSystem"]
+    },
+    "durationMs": { "type": "integer", "minimum": 1 },
+    "target": { "type": "string", "enum": ["source", "target", "screen"] },
+    "visual": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "enum": ["flash", "shake", "slash", "burst", "float", "overlay"] },
+        "color": { "type": "string" },
+        "shake": { "type": "number", "minimum": 0 }
+      }
+    },
+    "sfx": { "type": "string", "description": "src/data/sfx/*.json のID" }
+  }
+}

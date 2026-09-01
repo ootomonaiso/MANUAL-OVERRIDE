@@ -3,7 +3,7 @@
  * 行動順キュー・フォーカス解決・敵の行動選択（docs/genre/rpg/04-battle-flow.md）。
  */
 
-import type { Combatant, TurnEntry, EnemyDef, ActiveSkillDef } from './types'
+import type { Combatant, TurnEntry, EnemyDef } from './types'
 
 /**
  * 行動順キューを構築する。
@@ -42,53 +42,54 @@ export function resolveAdjacent3(enemies: readonly Combatant[], centerIndex: num
 }
 
 /**
- * 敵の actionPattern を進めながら、最初に使用可能な(CT中でない)スキルIDを返す。
- * 飛ばしたスキルは消費扱いにしない。全てCT中なら null（何もしない）。
+ * EnemyDef から Combatant.actives（CT管理用・スキルIDごとに一意）と
+ * actionPattern（元の並び。繰り返しを保持）を構築する。
+ */
+export function buildEnemyActivesFromPattern(
+  def: EnemyDef,
+): { actives: { id: string; level: number; stacks: number; cooldown: number; slotIndex: null }[]; actionPattern: string[] } {
+  const seen = new Set<string>()
+  const actives: { id: string; level: number; stacks: number; cooldown: number; slotIndex: null }[] = []
+  for (const skillId of def.actionPattern) {
+    if (seen.has(skillId)) continue
+    seen.add(skillId)
+    const ref = def.activeSkills.find(a => a.id === skillId)
+    actives.push({ id: skillId, level: ref?.level ?? 1, stacks: 0, cooldown: 0, slotIndex: null })
+  }
+  return { actives, actionPattern: [...def.actionPattern] }
+}
+
+/**
+ * actionPattern（繰り返しを保持した元の並び）を patternIndex から進めながら、
+ * 最初に使用可能な(CT中でない)スキルIDを返す。飛ばした位置は消費扱いにしない
+ * （次に同じ位置へ来たときも同じ判定を行う）。全てCT中なら null（何もしない）。
  */
 export function pickEnemySkill(enemy: Combatant): string | null {
-  const pattern = enemy.actives.length > 0 ? enemy.actives : []
+  const pattern = enemy.actionPattern
   if (pattern.length === 0) return null
+  const byId = new Map(enemy.actives.map(a => [a.id, a]))
 
-  // actionPattern の並びは EnemyDef 側にあるため、呼び出し側が actionPattern を渡す設計にする。
-  // ここでは Combatant.actives の並び = actionPattern の並び、という前提を battleEngine 側で保証する。
   for (let i = 0; i < pattern.length; i++) {
     const idx = (enemy.patternIndex + i) % pattern.length
-    const owned = pattern[idx]
-    if (owned.cooldown <= 0) {
+    const skillId = pattern[idx]
+    const owned = byId.get(skillId)
+    if (owned && owned.cooldown <= 0) {
       enemy.patternIndex = (idx + 1) % pattern.length
-      return owned.id
+      return skillId
     }
   }
   return null
 }
 
-/**
- * EnemyDef から Combatant.actives を actionPattern 順に構築する。
- * pickEnemySkill が「actives の並び = actionPattern の並び」を前提とするため、
- * ここで actionPattern をそのまま使い、重複IDはスキップして初出のみ載せる
- * （同じスキルが actionPattern に複数回現れても CT 管理は1つに集約する）。
- */
-export function buildEnemyActivesFromPattern(def: EnemyDef): { id: string; level: number; stacks: number; cooldown: number; slotIndex: null }[] {
-  const seen = new Set<string>()
-  const result: { id: string; level: number; stacks: number; cooldown: number; slotIndex: null }[] = []
-  for (const skillId of def.actionPattern) {
-    if (seen.has(skillId)) continue
-    seen.add(skillId)
-    const ref = def.activeSkills.find(a => a.id === skillId)
-    result.push({ id: skillId, level: ref?.level ?? 1, stacks: 0, cooldown: 0, slotIndex: null })
-  }
-  return result
-}
-
-/** 敵の次に使うスキルを、実際に消費せずプレビューする（UI表示・詳細表示の非公開制御は呼び出し側） */
+/** 敵の次に使うスキルを、実際に消費せずプレビューする */
 export function previewEnemyNextSkill(enemy: Combatant): string | null {
-  const pattern = enemy.actives
+  const pattern = enemy.actionPattern
   if (pattern.length === 0) return null
+  const byId = new Map(enemy.actives.map(a => [a.id, a]))
   for (let i = 0; i < pattern.length; i++) {
     const idx = (enemy.patternIndex + i) % pattern.length
-    if (pattern[idx].cooldown <= 0) return pattern[idx].id
+    const owned = byId.get(pattern[idx])
+    if (owned && owned.cooldown <= 0) return pattern[idx]
   }
   return null
 }
-
-export type { ActiveSkillDef }

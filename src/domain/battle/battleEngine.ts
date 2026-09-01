@@ -15,7 +15,7 @@ import {
   newAccumulator, addFlat, addRate, toModifiers, accumulatePassiveStatBoosts,
   computeEffectiveStats, clampHpToMax,
 } from './stats'
-import { resolveAdjacent3, buildEnemyActivesFromPattern, previewEnemyNextSkill } from './turnQueue'
+import { resolveAdjacent3, buildEnemyActivesFromPattern, previewEnemyNextSkill, pickEnemySkill } from './turnQueue'
 import { runEffects, clearThisTurnModifiers, clearThisBattleModifiers } from './effectOps'
 import { CATEGORY_IDS } from './types'
 
@@ -47,7 +47,7 @@ function freshCombatant(id: string, label: string, isPlayer: boolean, formationI
     traits: [], passives: [], actives: [],
     temporary: [],
     builtinCooldowns: { guard: 0, dodge: 0 },
-    patternIndex: 0, formationIndex, isBoss: false,
+    actionPattern: [], patternIndex: 0, formationIndex, isBoss: false,
   }
 }
 
@@ -77,7 +77,9 @@ export function spawnEnemyFromDef(def: import('./types').EnemyDef, formationInde
   c.isBoss = def.isBoss
   c.traits = def.traits.map(id => ({ id }))
   c.passives = def.passiveSkills.map(ref => ({ id: ref.id, level: ref.level, stacks: 0 }))
-  c.actives = buildEnemyActivesFromPattern(def)
+  const built = buildEnemyActivesFromPattern(def)
+  c.actives = built.actives
+  c.actionPattern = built.actionPattern
   c.hp = c.baseStats.hp
   return c
 }
@@ -181,7 +183,7 @@ export function useActiveSkill(params: {
   runEffects(def.effect, {
     source, targets, skill: def, level, state, emit, rng,
     getEffective: c => resolveEffectiveStats(c, content),
-    traitDefs: content.traits,
+    content,
   })
 }
 
@@ -217,7 +219,7 @@ export function enemyTakeTurn(params: {
   emit: Emit
 }): void {
   const { state, content, enemy, player, rng, emit } = params
-  const skillId = previewEnemyNextSkillAndConsume(enemy)
+  const skillId = pickEnemySkill(enemy)
   if (!skillId) return   // 全スキルCT中 = 何もしない
   const owned = enemy.actives.find(a => a.id === skillId)
   if (!owned) return
@@ -227,20 +229,6 @@ export function enemyTakeTurn(params: {
   const targets = resolveEnemyFocus({ side: def.defaultFocus, range: def.focusRange }, enemy, player)
   useActiveSkill({ state, content, source: enemy, skillId, level: owned.level, targets, rng, emit })
   owned.cooldown = def.cooldown
-}
-
-function previewEnemyNextSkillAndConsume(enemy: Combatant): string | null {
-  // pickEnemySkill は patternIndex を進めて選んだスキルのIDを返す（未使用スキルは飛ばすのみ）
-  const pattern = enemy.actives
-  if (pattern.length === 0) return null
-  for (let i = 0; i < pattern.length; i++) {
-    const idx = (enemy.patternIndex + i) % pattern.length
-    if (pattern[idx].cooldown <= 0) {
-      enemy.patternIndex = (idx + 1) % pattern.length
-      return pattern[idx].id
-    }
-  }
-  return null
 }
 
 export { previewEnemyNextSkill }
