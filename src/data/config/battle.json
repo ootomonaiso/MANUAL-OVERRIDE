@@ -1,0 +1,26 @@
+{
+  "$comment": "rpg ジャンル（ローグライク戦闘）のバランス定数。docs/genre/rpg/*.md 準拠",
+  "section": "battle",
+  "initialStats": {
+    "hpMin": 6000,
+    "hpMax": 8000,
+    "baseMin": 600,
+    "baseMax": 800,
+    "favoredMin": 700,
+    "favoredMax": 900,
+    "hitRate": 0.95,
+    "critRate": 0.05,
+    "critDamageMultiplier": 2.0
+  },
+  "cut": { "anchor": 1000, "divisor": 20000, "max": 0.8 },
+  "evade": { "anchor": 1000, "divisor": 50000, "max": 0.8 },
+  "affinity": { "weakStage": 1, "resistStage": -1 },
+  "guard": { "cutRate": 0.5, "cooldown": 3 },
+  "dodge": { "evadeBonus": 0.5, "cooldown": 3 },
+  "shield": { "cutRate": 0.2, "cutRateVsSpecial": 0.4 },
+  "categoryUnlockThresholds": [10, 20, 35],
+  "fallbackStatBoost": { "hp": 400, "other": 40 },
+  "bossBattleIndex": 10,
+  "multiHitIntervalMs": 180,
+  "initialEnemyCount": { "min": 1, "max": 1 }
+}

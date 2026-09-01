@@ -353,6 +353,37 @@ export interface PuzzleConfig {
   timeHalfLifeSteps: number
 }
 
+/** battle.json — rpg ジャンル（ローグライク戦闘）のバランス定数 */
+export interface BattleConfig {
+  initialStats: {
+    hpMin: number
+    hpMax: number
+    baseMin: number
+    baseMax: number
+    favoredMin: number
+    favoredMax: number
+    hitRate: number
+    critRate: number
+    critDamageMultiplier: number
+  }
+  /** カット率: (防御ステータス - anchor) / divisor、上限 max */
+  cut: { anchor: number; divisor: number; max: number }
+  /** 回避率の基礎値: (AGI実効値 - anchor) / divisor、上限 max */
+  evade: { anchor: number; divisor: number; max: number }
+  /** 相性段階の重み（弱点/耐性1つあたり） */
+  affinity: { weakStage: number; resistStage: number }
+  guard: { cutRate: number; cooldown: number }
+  dodge: { evadeBonus: number; cooldown: number }
+  shield: { cutRate: number; cutRateVsSpecial: number }
+  /** カテゴリ特化の解放に必要な累計ポイント（段階配列。実装後に持ち越しの暫定値） */
+  categoryUnlockThresholds: number[]
+  fallbackStatBoost: { hp: number; other: number }
+  /** 何戦目にボスを出すか（実装後に持ち越しの暫定値） */
+  bossBattleIndex: number
+  multiHitIntervalMs: number
+  initialEnemyCount: { min: number; max: number }
+}
+
 /** survival.json — サバイバルゲーム固有パラメータ */
 export interface SurvivalConfig {
   maxHunger: number
@@ -641,6 +672,7 @@ export interface GameConfigMap {
   near_miss: NearMissConfig
   genre_defaults: GenreDefaultsConfig
   palette_defaults: PaletteDefaultsConfig
+  battle: BattleConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap

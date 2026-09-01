@@ -20,7 +20,7 @@ const REQUIRED_SECTIONS: GameConfigSection[] = [
   'physics', 'shoot', 'throw', 'spawn', 'vfx', 'camera', 'background',
   'hazard_vfx', 'ui', 'score', 'difficulty', 'boss', 'rhythm_tuning',
   'stealth', 'genre_params', 'game_balance', 'genres', 'pixelart',
-  'genre_defaults', 'palette_defaults',
+  'genre_defaults', 'palette_defaults', 'battle',
 ]
 
 const REQUIRED_NUMBER_FIELDS: Partial<Record<GameConfigSection, string[]>> = {
@@ -154,6 +154,46 @@ export function validateGameConfig(config: GameConfigMap): ConfigValidationResul
     }
     if (max !== undefined && val > max) {
       errors.push(`config.${section}.${field} = ${val} は最大値 ${max} を超えています`)
+    }
+  }
+
+  // battle: 入れ子フィールドは RANGE_CHECKS の対象外のためここで個別チェック
+  if (config.battle) {
+    const b = config.battle
+    const nested: Array<[string, number, number?, number?]> = [
+      ['initialStats.hpMin', b.initialStats?.hpMin, 1],
+      ['initialStats.hpMax', b.initialStats?.hpMax, 1],
+      ['initialStats.baseMin', b.initialStats?.baseMin, 1],
+      ['initialStats.baseMax', b.initialStats?.baseMax, 1],
+      ['initialStats.hitRate', b.initialStats?.hitRate, 0],
+      ['initialStats.critRate', b.initialStats?.critRate, 0, 1],
+      ['cut.divisor', b.cut?.divisor, 1],
+      ['cut.max', b.cut?.max, 0, 1],
+      ['evade.divisor', b.evade?.divisor, 1],
+      ['evade.max', b.evade?.max, 0, 1],
+      ['guard.cooldown', b.guard?.cooldown, 0],
+      ['dodge.cooldown', b.dodge?.cooldown, 0],
+      ['shield.cutRate', b.shield?.cutRate, 0, 1],
+      ['shield.cutRateVsSpecial', b.shield?.cutRateVsSpecial, 0, 1],
+      ['bossBattleIndex', b.bossBattleIndex, 1],
+    ]
+    for (const [path, val, min, max] of nested) {
+      if (typeof val !== 'number') {
+        errors.push(`config.battle.${path}: number が必要です`)
+        continue
+      }
+      if (min !== undefined && val < min) {
+        errors.push(`config.battle.${path} = ${val} は最小値 ${min} を下回っています`)
+      }
+      if (max !== undefined && val > max) {
+        errors.push(`config.battle.${path} = ${val} は最大値 ${max} を超えています`)
+      }
+    }
+    if (b.initialStats && b.initialStats.hpMin > b.initialStats.hpMax) {
+      errors.push('config.battle.initialStats: hpMin が hpMax を上回っています')
+    }
+    if (b.initialStats && b.initialStats.baseMin > b.initialStats.baseMax) {
+      errors.push('config.battle.initialStats: baseMin が baseMax を上回っています')
     }
   }
 

@@ -139,3 +139,8 @@ export const PIXELART = _c.pixelart
 // NEAR_MISS — near-miss combo パラメータ
 // ─────────────────────────────────────────────────────────────
 export const NEAR_MISS = _c.near_miss
+
+// ─────────────────────────────────────────────────────────────
+// BATTLE — rpg ジャンル（ローグライク戦闘）
+// ─────────────────────────────────────────────────────────────
+export const BATTLE = _c.battle
