@@ -100,6 +100,16 @@ function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
       const amount = node.amount as number
       return [plain('被ダメージを'), numTok(pct(amount)), plain('軽減する')]
     }
+    case 'effectBoost': {
+      const el = node.element as Element | 'any'
+      const rate = node.rate as number
+      const head = el === 'any' ? plain('全属性') : elemTok(el)
+      return [head, plain('の効果量を'), numTok(pct(rate * mult)), plain('上昇させる')]
+    }
+    case 'healTaken': {
+      const rate = node.rate as number
+      return [plain('受ける回復量を'), numTok(pct(rate * mult)), plain('上昇させる')]
+    }
     case 'replaceGuard':
       return [plain('「守る」が「避ける」に変化する')]
     case 'healBetweenBattles': {

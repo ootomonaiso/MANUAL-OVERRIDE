@@ -212,8 +212,11 @@ describe('JSON 直接検証: ジャンル定義と Feature enable 整合性', ()
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const rhythmJson = require('../../../src/data/genres/rhythm.json')
 
-  it('rpg.json が melee_kill を enableFeatures に持つ', () => {
-    expect(rpgJson.enableFeatures).toContain('melee_kill')
+  // rpg は Canvas を使わないローグライク戦闘へ移行したため、
+  // melee_kill などの横スクロール向け Feature は使わない（docs/genre/rpg/01-architecture.md）
+  it('rpg.json は Canvas 向け Feature を持たない', () => {
+    expect(rpgJson.enableFeatures).not.toContain('melee_kill')
+    expect(rpgJson.enableFeatures).not.toContain('exp')
   })
 
   it('dungeon.json が melee_kill を enableFeatures に持つ', () => {
@@ -240,11 +243,16 @@ describe('JSON 直接検証: ジャンル定義と Feature enable 整合性', ()
     expect(rhythmJson.enableFeatures).toContain('near_miss_combo')
   })
 
-  it('melee_kill Feature が rpg/dungeon の scoreFormula に kills 項を含んでいる', () => {
-    // rpg: "exp * 2 + kills * 60 + distance * 0.3"
-    expect(rpgJson.scoreFormula).toContain('kills')
+  it('melee_kill Feature を持つ dungeon の scoreFormula に kills 項がある', () => {
     // dungeon: "exp * 3 + kills * 70 + itemsCollected * 60 + distance * 0.2"
     expect(dungeonJson.scoreFormula).toContain('kills')
+  })
+
+  it('rpg の scoreFormula は戦闘結果の変数だけで構成されている', () => {
+    expect(rpgJson.scoreFormula).toContain('battlesWon')
+    expect(rpgJson.scoreFormula).toContain('bossDefeated')
+    expect(rpgJson.scoreFormula).not.toContain('distance')
+    expect(rpgJson.scoreFormula).not.toContain('kills')
   })
 
   it('near_miss_combo Feature が 5 ジャンルの scoreFormula に maxCombo 項を含んでいる', () => {

@@ -50,7 +50,8 @@ for (const [path, mod] of Object.entries(_traitModules)) {
   if (_traits.has(raw.id)) {
     console.warn(`[battleContent] 特性ID "${raw.id}" が重複しています (${path})。上書きします。`)
   }
-  _traits.set(raw.id, raw as TraitDef)
+  // 特性JSONはカテゴリ欄を持たない（スキーマで禁止）。TraitDef の不変条件を実体化しておく。
+  _traits.set(raw.id, { ...raw, mainCategory: null, subCategories: [] } as TraitDef)
 }
 
 // ── 敵 ─────────────────────────────────────────────────────────

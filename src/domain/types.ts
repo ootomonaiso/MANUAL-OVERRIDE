@@ -428,4 +428,10 @@ export interface ScoreVars {
   bossKills: number        // ボス撃破数
   stealthBonus: number     // ステルス継続フレーム数（隠密評価）
   colorTouches: number     // 安全色に触れた回数（color_touch 評価）
+  // ── rpg 戦闘（ローグライク）専用。Canvas 側の producer は供給しないため optional
+  //    （docs/genre/rpg/01-architecture.md「スコアの供給」） ─────────────
+  battlesWon?: number      // 勝利した戦闘数
+  bossDefeated?: number    // ボス撃破なら 1
+  maxSkillLevel?: number   // 到達した最大スキルレベル
+  traitsAcquired?: number  // 獲得した特性数
 }
