@@ -1,0 +1,36 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "tree_round",
+  "w": 18,
+  "h": 20,
+  "palette": {
+    "T": "#001000",
+    "C": "#213321",
+    "S": "#081a08",
+    "O": "#000000"
+  },
+  "frames": {
+    "idle": [
+      "......OOOOOO......",
+      "....OOCCCCCCOO....",
+      "...OCCCCCCCCCCO...",
+      "..OCCCCCCCCCCCCO..",
+      ".OCCCCCCCCCCCCCCO.",
+      ".OCCCCCCCCCCCCCCO.",
+      "OCCCCCCCCCCCCCCSSO",
+      "OCCCCCCCCCCCCCSSSO",
+      "OCCCCCCCCCCCCSSSSO",
+      "OCCCCCCCCCCCSSSSSO",
+      "OCCCCCCCCCCSSSSSSO",
+      "OCCCCCCCCCSSSSSSSO",
+      ".OCCCCCCCSSSSSSSO.",
+      ".OCCCCCCSSSSSSSSO.",
+      "..OCCCCSSSSSSSSO..",
+      "...OCCSSSSSSSSO...",
+      "....OOSSSSSSOO....",
+      "......OTTTTTO.....",
+      "......OTTTTTO.....",
+      "......OTTTTTO....."
+    ]
+  }
+}

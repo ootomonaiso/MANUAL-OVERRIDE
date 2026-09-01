@@ -123,7 +123,7 @@ src/
 ├── components/      # Vue UI コンポーネント
 ├── tutorial/        # チュートリアル画面
 └── data/
-    ├── config/      # 設定JSON（26ファイル: score.json, genres.json, physics.json 等）
+    ├── config/      # 設定JSON（27ファイル: score.json, genres.json, physics.json 等）
     ├── genres/      # ジャンル定義JSON（23ファイル: 22ジャンル + glitch）
     └── cards/       # カードデッキJSON（starter-cards.json 等）
 ```
@@ -200,6 +200,7 @@ src/
 | `extra_movement.json` | 拡張移動フィーチャー（wall jump / dash のパーティクル設定） |
 | `special.json` | 特殊フィーチャー（タワー / ボス撃破 / タイムボーナス） |
 | `puzzle.json` | パズルフィーチャー（グリッドサイズ・フェーズ時間・スコア） |
+| `pixelart.json` | PixelArt化レンダリング（セルサイズ・量子化段数・文字の焼き込み倍率と下限） |
 | `genre_defaults.json` | ジャンル定義のデフォルト値（`normalizeGenreDef` で使用） |
 | `hud_safezone.json` | HUDセーフゾーン比率 |
 | `near_miss.json` | near-miss combo パラメータ |
@@ -288,7 +289,7 @@ src/
 - [x] InputManager 分離（キー入力ロジックを SideScroller から独立）
 - [x] ParticleSystem 分離（パーティクル処理を SideScroller から独立）
 - [x] FeatureSystem インターフェース（Feature 追加が1ファイル+1行で完結）
-- [x] JSON駆動設計（config/ 26ファイル、genres/ 23ファイル）
+- [x] JSON駆動設計（config/ 27ファイル、genres/ 23ファイル）
 - [x] テーマカラーの完全JSON駆動化（CSS ハードコードなし）
 - [x] オフライン完全動作
 - [x] CI/CDパイプライン整備

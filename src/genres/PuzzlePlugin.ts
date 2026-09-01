@@ -7,6 +7,7 @@ import type { GenrePlugin } from '../engine/GenrePlugin'
 import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
 import { DarkThemePlugin } from './BasePlugin'
+import { PixelCanvas } from '../game/render'
 
 export class PuzzlePlugin extends DarkThemePlugin {
   readonly id: GenreId = 'puzzle'
@@ -35,38 +36,34 @@ export class PuzzlePlugin extends DarkThemePlugin {
   ]
 
   override drawFarLayer(_ctx: CanvasRenderingContext2D, _offsetX: number, _W: number, _gY: number): void {
-    // パズルは遠景なし（白背景で視認性を保つ）
+    // パズルは遠景なし（白背景で視認性を保つ）。意図的な空実装のまま維持する
   }
 
   override drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // 方眼紙風のグリッド罫線（白背景上に薄く敷く。数セルごとに太罫を入れて作り込む）
-    ctx.strokeStyle = this._gridColor
-    ctx.lineWidth = 1
+    // 方眼紙風のグリッド罫線。stroke の細線 → px.line（1セル幅）。
+    // 罫線の間隔・主線の周期の計算は無変更
+    const px = new PixelCanvas(ctx)
     const g = this._gridSize
     const startCol = Math.floor(offsetX / g)
     const startX = -(((offsetX % g) + g) % g)
     let col = startCol
     for (let x = startX; x < W; x += g, col++) {
-      ctx.globalAlpha = col % this._majorEvery === 0 ? this._majorAlpha : this._gridAlpha
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, gY); ctx.stroke()
+      const alpha = col % this._majorEvery === 0 ? this._majorAlpha : this._gridAlpha
+      px.withAlpha(alpha, () => px.line(x, 0, x, gY, this._gridColor, 1))
     }
     let row = 0
     for (let y = ((gY % g) + g) % g; y < gY; y += g, row++) {
-      ctx.globalAlpha = row % this._majorEvery === 0 ? this._majorAlpha : this._gridAlpha
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke()
+      const alpha = row % this._majorEvery === 0 ? this._majorAlpha : this._gridAlpha
+      px.withAlpha(alpha, () => px.line(0, y, W, y, this._gridColor, 1))
     }
-    ctx.globalAlpha = 1
   }
 
   override drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, _onGround: boolean, _runCycle: number): void {
-    ctx.fillStyle = '#444488'
-    ctx.fillRect(4, 0, w - 8, h)
-    ctx.fillStyle = '#6666aa'
-    ctx.fillRect(8, 4, w - 16, h * 0.4)
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(w * 0.5, h * 0.15, 8, 8)
-    ctx.fillStyle = '#222'
-    ctx.fillRect(w * 0.52, h * 0.17, 4, 4)
+    // 立体ブロック表現（TetrisPlugin と同じ px.block）に統一
+    const px = new PixelCanvas(ctx)
+    px.block(4, 0, w - 8, h, '#444488')
+    px.rect(w * 0.5, h * 0.15, 8, 8, '#ffffff')
+    px.rect(w * 0.52, h * 0.17, 4, 4, '#222222')
   }
 }
 

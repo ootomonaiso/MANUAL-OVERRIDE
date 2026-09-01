@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "tree_dead",
+  "w": 16,
+  "h": 24,
+  "palette": {
+    "T": "#081408",
+    "O": "#000000"
+  },
+  "frames": {
+    "idle": [
+      ".OO.............",
+      "OTTO............",
+      "OTTO............",
+      ".OTTO.OO....OO..",
+      "..OTTOTTO..OTTO.",
+      "..OTTTTTTOOTTTO.",
+      "...OTTTTTOOTTO..",
+      "..OOTTTTTOTTO...",
+      ".OTTOTTTTTTO....",
+      ".OTTOOTTTTO.....",
+      "..OTTOTTTO.OO...",
+      "...OTTTTTOOTTO..",
+      "...OTTTTTOTTTO..",
+      "....OTTTTTTTO...",
+      ".....OTTTTOO....",
+      ".....OTTTO......",
+      ".....OTTTO......",
+      ".....OTTTO......",
+      ".....OTTTO......",
+      ".....OTTTO......",
+      ".....OTTTO......",
+      ".....OTTTTO.....",
+      ".....OTTTTO.....",
+      ".....OTTTTO....."
+    ]
+  }
+}

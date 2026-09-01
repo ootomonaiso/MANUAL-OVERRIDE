@@ -25,8 +25,139 @@ const SCHEMAS = {
   'difficulty.json':   ['section'],
   'shoot.json':        ['section'],
   'throw.json':        ['section'],
+  'pixelart.json':     ['section', 'size', 'gradientSteps', 'haloSteps',
+                        'haloAlphaFalloff', 'alphaSteps', 'ditherRatioSteps',
+                        'textScale', 'textMinBakePx', 'blockShadeAmount',
+                        'spriteCacheMax', 'textCacheMax'],
   'genre_defaults.json': ['section', 'scoreFormula', 'theme', 'bgColor'],
   'palette_defaults.json': ['section', 'danger', 'dangerGlow', 'safe', 'safeGlow'],
+}
+
+// pixelart.json の数値範囲チェック（docs/pixelart-rebuild/00-rendering-system.md §9）
+const PIXELART_RANGES = {
+  size:             { min: 1, max: 16 },
+  gradientSteps:    { min: 2, max: 32 },
+  haloSteps:        { min: 0, max: 8 },
+  haloAlphaFalloff: { min: 0, max: 1, exclusiveMin: true },
+  alphaSteps:       { min: 2, max: 32 },
+  ditherRatioSteps: { min: 1, max: 32 },
+  textScale:        { min: 1, max: 8 },
+  textMinBakePx:    { min: 1, max: 64 },
+  blockShadeAmount: { min: 0, max: 255 },
+  spriteCacheMax:   { min: 1 },
+  textCacheMax:     { min: 1 },
+}
+
+function validatePixelart() {
+  const path = 'src/data/config/pixelart.json'
+  // 通常の設定ファイル検証（validateFile）とは別の検査であることを明示する。
+  // 同じファイル名で ok() を2回呼ぶと成功件数が二重計上されるため、ラベルを分ける。
+  const rel = `${relPath(path)} (範囲チェック)`
+  const { data, error } = parseJson(path)
+  if (data === null) { fail(rel, `JSON parse error: ${error}`); return }
+
+  const problems = []
+  for (const [key, range] of Object.entries(PIXELART_RANGES)) {
+    const v = data[key]
+    if (v === undefined) {
+      // SCHEMAS 側でも必須キーとして検出されるが、範囲チェックを黙って
+      // 素通りさせないためここでも明示的に失敗させる
+      problems.push(`${key}: 必須キーがありません`)
+      continue
+    }
+    if (typeof v !== 'number' || Number.isNaN(v)) {
+      problems.push(`${key}: number が必要です (${typeof v} が渡されました)`)
+      continue
+    }
+    if (range.exclusiveMin && v <= range.min) {
+      problems.push(`${key} = ${v} は ${range.min} より大きい値が必要です`)
+    } else if (!range.exclusiveMin && range.min !== undefined && v < range.min) {
+      problems.push(`${key} = ${v} は最小値 ${range.min} を下回っています`)
+    }
+    if (range.max !== undefined && v > range.max) {
+      problems.push(`${key} = ${v} は最大値 ${range.max} を超えています`)
+    }
+    if (!Number.isInteger(v) && key !== 'haloAlphaFalloff') {
+      problems.push(`${key} = ${v} は整数である必要があります`)
+    }
+  }
+  if (problems.length > 0) fail(rel, problems.join('\n       '))
+  else ok(rel)
+}
+
+// ── スプライト定義 (src/data/sprites/*.json) ──────────────────────────────
+// schemas/sprite.schema.json を単一の情報源として、必須キー・行整合・パレット参照を検証する。
+// スキーマから読む: required / id の pattern / palette 値の pattern / palette キーの pattern。
+// 行数と文字数の整合（w/h との一致、palette 未定義文字の検出）は JSON Schema では
+// 表現できないため、ここで追加検証する。
+const _spriteSchema = JSON.parse(readFileSync('schemas/sprite.schema.json', 'utf8'))
+const SPRITE_REQUIRED     = _spriteSchema.required
+const SPRITE_ID_PATTERN   = new RegExp(_spriteSchema.properties.id.pattern)
+const SPRITE_PALETTE_VAL  = new RegExp(_spriteSchema.properties.palette.additionalProperties.pattern)
+const SPRITE_PALETTE_KEY  = new RegExp(_spriteSchema.properties.palette.propertyNames.pattern)
+
+function validateSprites() {
+  const spriteIds = new Set()
+  for (const file of walkJson('src/data/sprites')) {
+    const rel = relPath(file)
+    const { data, error } = parseJson(file)
+    if (data === null) { fail(rel, `JSON parse error: ${error}`); continue }
+
+    const problems = []
+    for (const key of SPRITE_REQUIRED) {
+      if (!(key in data)) problems.push(`必須キー "${key}" がありません`)
+    }
+    if (problems.length > 0) { fail(rel, problems.join('\n       ')); continue }
+
+    if (!SPRITE_ID_PATTERN.test(data.id)) {
+      problems.push(`id "${data.id}" が不正です（英小文字で始まり、英小文字・数字・_のみ）`)
+    }
+    if (data.id !== basename(file, '.json')) {
+      problems.push(`id "${data.id}" とファイル名が一致していません`)
+    }
+    if (spriteIds.has(data.id)) {
+      problems.push(`id "${data.id}" が他のスプライトと重複しています`)
+    }
+    spriteIds.add(data.id)
+
+    if (!Number.isInteger(data.w) || data.w < 1) problems.push(`w は 1 以上の整数である必要があります`)
+    if (!Number.isInteger(data.h) || data.h < 1) problems.push(`h は 1 以上の整数である必要があります`)
+
+    const paletteKeys = new Set(Object.keys(data.palette ?? {}))
+    for (const [pk, pv] of Object.entries(data.palette ?? {})) {
+      if (typeof pv !== 'string' || !SPRITE_PALETTE_VAL.test(pv)) {
+        problems.push(`palette."${pk}" の値 "${pv}" が不正です（#rrggbb / #rgb または @スロット名）`)
+      }
+      if (!SPRITE_PALETTE_KEY.test(pk)) {
+        problems.push(`palette のキー "${pk}" が不正です（1文字・"." は透明として予約済み）`)
+      }
+    }
+
+    if (Object.keys(data.frames ?? {}).length === 0) {
+      problems.push(`frames が空です（少なくとも1フレーム必要）`)
+    }
+    for (const [frameName, rows] of Object.entries(data.frames ?? {})) {
+      if (!Array.isArray(rows)) { problems.push(`frames."${frameName}" は配列である必要があります`); continue }
+      if (typeof data.h === 'number' && rows.length !== data.h) {
+        problems.push(`frames."${frameName}": 行数 ${rows.length} が h=${data.h} と一致していません`)
+      }
+      rows.forEach((row, i) => {
+        if (typeof row !== 'string') { problems.push(`frames."${frameName}"[${i}] は文字列である必要があります`); return }
+        if (typeof data.w === 'number' && row.length !== data.w) {
+          problems.push(`frames."${frameName}"[${i}]: 長さ ${row.length} が w=${data.w} と一致していません`)
+        }
+        for (const ch of row) {
+          if (ch !== '.' && !paletteKeys.has(ch)) {
+            problems.push(`frames."${frameName}"[${i}]: 文字 "${ch}" が palette に定義されていません`)
+          }
+        }
+      })
+    }
+
+    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    else ok(rel)
+  }
+  return spriteIds
 }
 
 // Required keys for manual branch files
@@ -327,6 +458,10 @@ for (const file of walkJson('src/data/config')) {
   const name = basename(file)
   validateFile(file, SCHEMAS[name] ?? ['section'])
 }
+validatePixelart()
+
+// Sprite definitions (PixelArt化: docs/pixelart-rebuild/)
+validateSprites()
 
 // Genre definitions (also collects ids for reference checks)
 const genreIds = validateGenres()

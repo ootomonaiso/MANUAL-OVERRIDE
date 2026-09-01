@@ -354,7 +354,7 @@ ending             … ジャンル別エンディングメッセージ + 最終
 
 | ディレクトリ | ファイル数 | 内容 |
 |---|---|---|
-| `src/data/config/` | 26ファイル | スコア比率・ジャンルテーマ色・物理・スポーン・演出・ベイズ等のバランス値 |
+| `src/data/config/` | 27ファイル | スコア比率・ジャンルテーマ色・物理・スポーン・演出・ベイズ等のバランス値 |
 | `src/data/genres/` | 23ファイル | 22ジャンル（起点`base`含む）＋`glitch`（`resolvable:false`、通常到達不可） |
 | `src/data/cards/` | 3デッキ + テンプレート | starter / expansion / surprise の3カードプール |
 

@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "item_weapon",
+  "w": 11,
+  "h": 11,
+  "palette": {
+    "B": "#ddbb55",
+    "D": "#886633",
+    "G": "#ccaa44"
+  },
+  "frames": {
+    "idle": [
+      ".....B.....",
+      ".....B.....",
+      "....BBB....",
+      "....BBB....",
+      "...BBBBB...",
+      "...BBBBB...",
+      "..BBBBBBB..",
+      "DDDDDDDDDDD",
+      ".....D.....",
+      ".....D.....",
+      "....DDD...."
+    ]
+  }
+}

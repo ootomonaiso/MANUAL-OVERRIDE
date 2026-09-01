@@ -10,6 +10,15 @@
 import { GenrePluginBase } from '../engine/GenrePluginBase'
 import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
+import { PixelCanvas } from '../game/render'
+import { PIXELART } from '../data/tunables'
+
+// 山シルエット（drawFarLayer）の描画範囲マージン。スクロール時の端の途切れを防ぐ
+// （旧実装の sin サンプリング step=40 と同じ余白をセル単位で踏襲）
+const FAR_LAYER_MARGIN_CELLS = 10
+
+// プレイヤーの走りアニメーションのフレーム数（run_a / run_b の 2 枚）
+const RUN_FRAME_COUNT = 2
 
 export abstract class DarkThemePlugin extends GenrePluginBase {
   abstract readonly id: GenreId
@@ -22,36 +31,41 @@ export abstract class DarkThemePlugin extends GenrePluginBase {
   abstract readonly spawnTable: readonly SpawnEntry[]
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // 山シルエット（sin 波合成）
-    ctx.globalAlpha = 0.35
-    ctx.fillStyle = this.farLayerColor
-    ctx.beginPath()
-    ctx.moveTo(0, gY)
-    const step = 40
-    for (let sx = -step; sx <= W + step; sx += step) {
-      const wx = sx - offsetX
-      const mh = Math.sin(wx * 0.006) * 90 + Math.sin(wx * 0.0119) * 45 + Math.sin(wx * 0.0241) * 25 + 110
-      ctx.lineTo(sx, gY - mh)
-    }
-    ctx.lineTo(W + step, gY)
-    ctx.closePath()
-    ctx.fill()
-    ctx.globalAlpha = 1
+    // 山シルエット（sin 波合成）。式そのものは変更せず、サンプリングを
+    // セル単位の階段状シルエット（px.ridge）に置き換える
+    const px = new PixelCanvas(ctx)
+    const margin = FAR_LAYER_MARGIN_CELLS * Math.max(1, PIXELART.size)
+    px.withAlpha(0.35, () => {
+      px.ridge(-margin, W + margin, gY, (sx) => {
+        const wx = sx - offsetX
+        return Math.sin(wx * 0.006) * 90 + Math.sin(wx * 0.0119) * 45 + Math.sin(wx * 0.0241) * 25 + 110
+      }, this.farLayerColor)
+    })
   }
 
   drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // 建物シルエット（デフォルト）
-    ctx.globalAlpha = 0.55
-    ctx.fillStyle = this.midLayerColor
-    const sector = Math.floor(offsetX / 300)
-    for (let s = sector - 1; s <= sector + 3; s++) {
-      const h = (s * 2053) & 0xffff
-      const bx = s * 300 - offsetX + (h % 150)
-      const bh = 40 + (h >> 4) % 80
-      const bw = 25 + (h >> 8) % 35
-      ctx.fillRect(bx, gY - bh, bw, bh)
-    }
-    ctx.globalAlpha = 1
+    // 建物シルエット（デフォルト）。ハッシュ・セクタ・視差の計算は変更しない
+    const px = new PixelCanvas(ctx)
+    // 窓の灯りは新しい色を追加せず、既存の starColor（星の色）を流用する
+    const windowColor = this.starColor ?? this.midLayerColor
+    px.withAlpha(0.55, () => {
+      const sector = Math.floor(offsetX / 300)
+      for (let s = sector - 1; s <= sector + 3; s++) {
+        const h = (s * 2053) & 0xffff
+        const bx = s * 300 - offsetX + (h % 150)
+        const bh = 40 + (h >> 4) % 80
+        const bw = 25 + (h >> 8) % 35
+        px.rect(bx, gY - bh, bw, bh, this.midLayerColor)
+
+        // 窓の点（1〜2セル、ハッシュから決定論的に配置してちらつきを防ぐ）
+        const winSize = PIXELART.size * (1 + (h & 1))
+        const winMarginW = Math.max(1, bw - PIXELART.size * 2)
+        const winMarginH = Math.max(1, bh - PIXELART.size * 3)
+        const winX = bx + PIXELART.size + ((h >> 4) % winMarginW)
+        const winY = (gY - bh) + PIXELART.size + ((h >> 8) % winMarginH)
+        px.rect(winX, winY, PIXELART.size, winSize, windowColor)
+      }
+    })
   }
 
   drawPlayer(
@@ -60,62 +74,27 @@ export abstract class DarkThemePlugin extends GenrePluginBase {
     onGround: boolean,
     runCycle: number,
   ): void {
-    const t = runCycle * Math.PI * 2
-    const legSwing = onGround ? Math.sin(t) * 10 : 0
+    const px = new PixelCanvas(ctx)
 
-    ctx.fillStyle = 'rgba(0,0,0,0.25)'
-    ctx.beginPath()
-    ctx.ellipse(w / 2, h + 2, w * 0.4, 4, 0, 0, Math.PI * 2)
-    ctx.fill()
+    // 影（スプライトには含めず、translate/scale された座標系にそのまま残す）
+    px.ellipse(w / 2, h + 2, w * 0.4, 4, 'rgba(0,0,0,0.25)')
 
-    ctx.fillStyle = '#e8e8f8'
-    this._roundRect(ctx, 4, h * 0.38, w - 8, h * 0.38, 4)
-    ctx.fill()
-
-    ctx.fillStyle = '#f0f0ff'
-    ctx.beginPath()
-    ctx.arc(w * 0.55, h * 0.22, h * 0.22, 0, Math.PI * 2)
-    ctx.fill()
-
-    ctx.fillStyle = '#222244'
-    ctx.beginPath()
-    ctx.arc(w * 0.64, h * 0.20, 3.5, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.fillStyle = 'white'
-    ctx.beginPath()
-    ctx.arc(w * 0.65, h * 0.19, 1.2, 0, Math.PI * 2)
-    ctx.fill()
-
-    ctx.strokeStyle = '#cccce0'; ctx.lineWidth = 5; ctx.lineCap = 'round'
-    const armSwing = onGround ? Math.sin(t + Math.PI) * 14 : 0
-    ctx.beginPath()
-    ctx.moveTo(w * 0.3, h * 0.45)
-    ctx.lineTo(w * 0.1 + armSwing * 0.5, h * 0.65 + Math.abs(armSwing) * 0.2)
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.moveTo(w * 0.7, h * 0.45)
-    ctx.lineTo(w * 0.9 - armSwing * 0.5, h * 0.65 + Math.abs(armSwing) * 0.2)
-    ctx.stroke()
-
-    ctx.lineWidth = 6; ctx.strokeStyle = '#aaaacc'
-    ctx.beginPath()
-    ctx.moveTo(w * 0.38, h * 0.75)
-    ctx.lineTo(w * 0.28 - legSwing * 0.4, h * 0.98)
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.moveTo(w * 0.60, h * 0.75)
-    ctx.lineTo(w * 0.72 + legSwing * 0.4, h * 0.98)
-    ctx.stroke()
+    // 既存の引数（onGround / runCycle）だけでフレームを決める。新しい状態は追加しない
+    const frame = onGround
+      ? (Math.floor(runCycle * RUN_FRAME_COUNT) % 2 === 0 ? 'run_a' : 'run_b')
+      : 'jump'
+    px.sprite('player_base', 0, 0, w, h, { frame })
   }
 
   /** デフォルトのビネット・スキャンライン前景 */
   drawForeground(ctx: CanvasRenderingContext2D, _offsetX: number, W: number, H: number, _gY: number): void {
-    // 画面四隅のビネット（没入感向上）
-    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.4, W / 2, H / 2, Math.max(W, H) * 0.75)
-    vg.addColorStop(0, 'rgba(0,0,0,0)')
-    vg.addColorStop(1, 'rgba(0,0,0,0.35)')
-    ctx.fillStyle = vg
-    ctx.fillRect(0, 0, W, H)
+    // 画面四隅のビネット（没入感向上）。段階リングに量子化する
+    const px = new PixelCanvas(ctx)
+    px.bandRadial(
+      W / 2, H / 2, Math.min(W, H) * 0.4, Math.max(W, H) * 0.75,
+      [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0.35)']],
+      PIXELART.gradientSteps,
+    )
   }
 }
 

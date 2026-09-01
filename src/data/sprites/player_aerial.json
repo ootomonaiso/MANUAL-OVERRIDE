@@ -1,0 +1,44 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "player_aerial",
+  "w": 18,
+  "h": 26,
+  "palette": {
+    "W": "#8090a0",
+    "T": "#6c7c8c",
+    "B": "#c0c8d0",
+    "b": "#9da5ad",
+    "C": "#3a5fa0",
+    "O": "#0a0a12"
+  },
+  "frames": {
+    "idle": [
+      "..................",
+      "..................",
+      "...O..............",
+      "..OWO.............",
+      "...OWO............",
+      "....OWO...........",
+      "....OWWO..........",
+      "...OOOWWO.........",
+      "..OTTTOWWOO.......",
+      "...OTTTOWWBOO.....",
+      "...OObbBBBBBBOOO..",
+      "..ObbbbBBBBBCBBBOO",
+      "..ObbbbBBBBCCCBBBB",
+      "..ObbbbBBBBCCCBBBB",
+      "..ObbbbBBBBBCBBBOO",
+      "...OObbBBBBBBOOO..",
+      "...OTTTOWWOOO.....",
+      "..OTTTOWWO........",
+      "...OOOWWO.........",
+      "....OWWO..........",
+      "....OWO...........",
+      "...OWO............",
+      "..OWO.............",
+      "...O..............",
+      "..................",
+      ".................."
+    ]
+  }
+}

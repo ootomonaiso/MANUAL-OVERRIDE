@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "enemy_aerial_missile",
+  "w": 12,
+  "h": 22,
+  "palette": {
+    "M": "@main",
+    "S": "@shade",
+    "N": "#ff5a5a",
+    "O": "#0a0a12"
+  },
+  "frames": {
+    "idle": [
+      "............",
+      "............",
+      "..OOO...OOO.",
+      ".OSSSOOOMMMO",
+      ".OSSSSMMMMMO",
+      ".OSSSSMMMMMO",
+      ".OSSSSMMMMMO",
+      ".OSSSSMMMMMO",
+      ".OSSSSMMMMMO",
+      ".OSSSSMMMMMO",
+      ".OSSSSMMMMMO",
+      ".OSSSSMMMMMO",
+      ".OSSSSMMMMMO",
+      ".OSSSSMMMMMO",
+      ".OSSSSMMMMMO",
+      ".OSSSSMMMMMO",
+      ".OSSSSMMMMMO",
+      ".OSSSSMMMMMO",
+      ".ONNNNNNNNNO",
+      "..ONNNNNNNO.",
+      "...ONNNNNO..",
+      "....ONNNO..."
+    ]
+  }
+}

@@ -11,6 +11,7 @@ import type { GenrePlugin } from '../engine/GenrePlugin'
 import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
 import { TETRIS_COLORS } from '../game/systems/tetris-colors'
+import { PixelCanvas } from '../game/render'
 
 export class TetrisPlugin extends GenrePluginBase {
   readonly id: GenreId = 'tetris'
@@ -34,11 +35,11 @@ export class TetrisPlugin extends GenrePluginBase {
   readonly tetrisColors = TETRIS_COLORS
 
   override drawFarLayer(_ctx: CanvasRenderingContext2D, _offsetX: number, _W: number, _gY: number): void {
-    // 遠景なし（テトリスは暗い背景）
+    // 遠景なし（テトリスは暗い背景）。意図的な空実装のまま維持する
   }
 
   override drawMidLayer(_ctx: CanvasRenderingContext2D, _offsetX: number, _W: number, _gY: number): void {
-    // 中景なし（テトリスはグリッドを描画）
+    // 中景なし（テトリスはグリッドを描画）。意図的な空実装のまま維持する
   }
 
   override drawPlayer(
@@ -47,30 +48,22 @@ export class TetrisPlugin extends GenrePluginBase {
     _onGround: boolean,
     _runCycle: number,
   ): void {
-    // Tテトリミノ風のキャラクター（パープルブロック）
+    // Tテトリミノ風のキャラクター（パープルブロック）。
+    // TetrisFeature.ts の盤面ブロックと同じ立体ブロック表現（px.block）に揃える
+    const px = new PixelCanvas(ctx)
     const blockSize = w / 3
     const cy = h * 0.3
 
     // 上段: 3ブロック横並び
-    ctx.fillStyle = '#a000f0'
-    ctx.fillRect(0, cy, w, blockSize)
-
+    px.block(0, cy, w, blockSize, '#a000f0')
     // 下段: 中央ブロック
-    ctx.fillStyle = '#c040ff'
-    ctx.fillRect(blockSize, cy + blockSize, blockSize, blockSize)
-
-    // ハイライト
-    ctx.fillStyle = 'rgba(255,255,255,0.15)'
-    ctx.fillRect(1, cy + 1, w - 2, blockSize - 2)
-    ctx.fillRect(blockSize + 1, cy + blockSize + 1, blockSize - 2, blockSize - 2)
+    px.block(blockSize, cy + blockSize, blockSize, blockSize, '#c040ff')
 
     // 目
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(w * 0.3, cy + blockSize * 0.2, blockSize * 0.3, blockSize * 0.3)
-    ctx.fillRect(w * 0.7, cy + blockSize * 0.2, blockSize * 0.3, blockSize * 0.3)
-    ctx.fillStyle = '#220033'
-    ctx.fillRect(w * 0.35, cy + blockSize * 0.25, blockSize * 0.2, blockSize * 0.2)
-    ctx.fillRect(w * 0.75, cy + blockSize * 0.25, blockSize * 0.2, blockSize * 0.2)
+    px.rect(w * 0.3, cy + blockSize * 0.2, blockSize * 0.3, blockSize * 0.3, '#ffffff')
+    px.rect(w * 0.7, cy + blockSize * 0.2, blockSize * 0.3, blockSize * 0.3, '#ffffff')
+    px.rect(w * 0.35, cy + blockSize * 0.25, blockSize * 0.2, blockSize * 0.2, '#220033')
+    px.rect(w * 0.75, cy + blockSize * 0.25, blockSize * 0.2, blockSize * 0.2, '#220033')
   }
 }
 
