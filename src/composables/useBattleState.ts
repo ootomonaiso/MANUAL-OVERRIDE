@@ -62,8 +62,23 @@ export function useBattleState() {
 
   const content = BATTLE_CONTENT
 
+  /**
+   * ドメイン層(battleEngine/skillDraft)へ渡す BattleState を返す。
+   *
+   * 【実装時に発見した不具合】当初 toRaw(state) を返していたが、これは誤りだった。
+   * toRaw() は state から生の(非プロキシ)オブジェクトを取り出すため、ドメイン層が
+   * それに対して行う push/プロパティ代入（player.actives.push(...) 等）は Vue の
+   * リアクティブ Proxy の trap を一切経由せず、trigger() が呼ばれないため画面が
+   * 更新されない（実機確認: ドラフトでスキルを選んでも一覧・スロットに反映されず、
+   * 次の描画更新のたびに"たまたま"最新値を読むまで古い表示のまま残る不具合が発生した）。
+   *
+   * 10-state.md の「readonly プロキシへの書き込みが no-op になる」という注意は、
+   * gameState.rules のような readonly() でラップされたプロキシに書き込もうとする
+   * ケースを指しており、本コンポーザブルの state は readonly ではなく通常の
+   * reactive() なので、toRaw() を通さずそのまま渡すのが正しい。
+   */
   function raw(): BattleState {
-    return toRaw(state)
+    return state
   }
 
   function emit(req: EffectRequest): void {

@@ -113,14 +113,19 @@ function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
   }
 }
 
+function endsWithPeriod(tokens: readonly SkillTextToken[]): boolean {
+  const last = tokens[tokens.length - 1]
+  return last?.type === 'plain' && last.text.endsWith('。')
+}
+
 /** 効果データから表示文を自動生成する。レベル倍率を適用済みの実値で表示する */
 export function buildSkillText(def: SkillDef, level: number): SkillTextToken[] {
   const mult = def.kind === 'trait' ? 1 : levelMultiplier(level)
   const out: SkillTextToken[] = []
   def.effect.forEach((node, i) => {
-    if (i > 0) out.push(plain('。'))
+    if (i > 0 && !endsWithPeriod(out)) out.push(plain('。'))
     out.push(...nodeToTokens(node, mult))
   })
-  out.push(plain('。'))
+  if (!endsWithPeriod(out)) out.push(plain('。'))
   return out
 }

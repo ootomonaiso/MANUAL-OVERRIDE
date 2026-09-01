@@ -3,8 +3,8 @@
  * components/battle/BattleScreen.vue
  * rpg ジャンル（ローグライク戦闘）の画面全体レイアウト（docs/genre/rpg/08-ui.md）。
  */
-import { computed, onMounted, ref } from 'vue'
-import { useBattleState, type CombatantView } from '../../composables/useBattleState'
+import { computed, ref } from 'vue'
+import type { useBattleState, CombatantView } from '../../composables/useBattleState'
 import StatusPanel from './StatusPanel.vue'
 import type { StatRowView } from './StatusPanel.vue'
 import SkillListPanel from './SkillListPanel.vue'
@@ -27,12 +27,17 @@ import { STAT_LABEL, CATEGORY_LABEL, buildSkillText } from '../../domain/battle/
 import { STACKS_REQUIRED } from '../../domain/battle/skillDraft'
 import { BATTLE_CONTENT } from '../../data/battleContent'
 
-defineEmits<{ (e: 'give-up'): void }>()
+/**
+ * useBattleState() は App.vue で1度だけ呼び出し、ここへ props として渡す。
+ * ライフサイクル（initRun/reset）は App.vue が lockedGenre の watch で管理する
+ * （01-architecture.md「エッジケース」。この画面自身は初期化を行わない）。
+ */
+const props = defineProps<{
+  battle: ReturnType<typeof useBattleState>
+}>()
 
-const battle = useBattleState()
+const battle = props.battle
 const content = BATTLE_CONTENT
-
-onMounted(() => battle.initRun())
 
 const PERCENT_STATS = new Set<StatKey>(['hitRate', 'evadeRate', 'critRate', 'critDamageMultiplier'])
 
@@ -338,16 +343,14 @@ function labelForCombatant(id: string | undefined): string {
       v-bind="detailView"
       @close="closeDetail"
     />
-
-    <button type="button" class="give-up-btn" @click="$emit('give-up')">ギブアップ</button>
   </div>
 </template>
 
 <style scoped>
 .battle-screen {
-  position: relative;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
   display: flex;
   flex-direction: column;
   background: var(--genre-bg, var(--bg));
@@ -375,6 +378,9 @@ function labelForCombatant(id: string | undefined): string {
   display: flex;
   gap: 12px;
   padding: 8px 12px;
+  /* 画面下部中央の「説明書を投げてゲームを終わらせる」ボタン（App.vue .giveup-area,
+     bottom:16px 付近, z-index:15）と重ならないよう余白を確保する */
+  padding-bottom: 76px;
   overflow: hidden;
 }
 .side-panels {
@@ -407,18 +413,5 @@ function labelForCombatant(id: string | undefined): string {
   display: flex;
   justify-content: center;
   padding: 8px 0;
-}
-.give-up-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 10px;
-  background: none;
-  border: 1px solid var(--genre-border, var(--green-dim));
-  color: var(--genre-text, var(--text));
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  z-index: 50;
 }
 </style>

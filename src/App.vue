@@ -2,6 +2,8 @@
 import { ref, onMounted, onUnmounted, watch, computed, toRaw } from 'vue'
 import { useGameState } from './composables/useGameState'
 import { useManual } from './composables/useManual'
+import { useBattleState } from './composables/useBattleState'
+import BattleScreen from './components/battle/BattleScreen.vue'
 import { SideScroller } from './game/sideScroller'
 import type { GameSnapshot } from './game/sideScroller'
 import Hud from './components/Hud.vue'
@@ -29,6 +31,16 @@ import type { DebugSettings } from './debug/types'
 const gameState = useGameState()
 const manualCtl = useManual(gameState.currentManual)
 const debugCtl = useDebugSettings()
+const battle = useBattleState()
+
+/**
+ * rpg ジャンル確定後、戦闘UIへ移行しているか（01-architecture.md）。
+ * throwing を含むのは、投擲中も背景に Canvas ではなく戦闘結果を残すため。
+ */
+const isBattleMode = computed(() =>
+  gameState.lockedGenre.value === 'rpg'
+  && ['genreLocked', 'throwing'].includes(gameState.phase.value),
+)
 
 /** ローディング状態（初期化完了まで表示） */
 const isLoading = ref(true)
@@ -38,6 +50,7 @@ const reviewPaused = ref(false)
 
 /** アクティブにプレイ中のフェーズ（一時停止レビューや死亡判定の対象） */
 function isActivePlayPhase(): boolean {
+  if (isBattleMode.value) return false
   return ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
 }
 
@@ -152,16 +165,19 @@ let deathBeatTimer: ReturnType<typeof setTimeout> | null = null
 let snapRaf = 0
 function beginSnapshotLoop() {
   function loop() {
-    // scroller が存在しない（タイトル画面等）場合はループ継続のみ
-    if (!scroller) {
+    // scroller が存在しない（タイトル画面等）、または rpg 戦闘モード中（Canvas 非表示・
+    // scroller は一時停止のまま）は、getSnapshot() を呼ばずループ継続のみ行う。
+    // 毎フレーム新しいオブジェクトを snapshot に代入すると、値が変わらなくても
+    // Vue の反応性が毎フレーム発火し続けてしまうため。
+    if (!scroller || isBattleMode.value) {
       snapRaf = requestAnimationFrame(loop)
       return
     }
     snapshot.value = scroller.getSnapshot()
 
     // ジャンル確定後も選択は続行し、矛盾の蓄積次第でゲームが「壊れる」ことがある。
-    // 最初のジャンプまで待つ
-    const activePlay = ['playing', 'tutorial', 'genreLocked'].includes(gameState.phase.value)
+    // 最初のジャンプまで待つ（isActivePlayPhase() は戦闘モード中 false を返す）
+    const activePlay = isActivePlayPhase()
     if (snapshot.value.shouldUpdate !== null && snapshot.value.firstJumpDone && activePlay) {
       scroller.setPaused(true)
       if (!gameState.triggerUpdate()) {
@@ -226,10 +242,26 @@ function onChoose(cardId: string) {
 
 // ─── ギブアップ ───────────────────────────────────────────────────
 function giveUp() {
+  if (isBattleMode.value) {
+    // battle.state.status が 'finished' になるのを watch(battleStatus) が拾って
+    // startThrowing() を呼ぶ（ボス撃破・敗北による自然終了と同じ経路に統一するため、
+    // ここでは直接 startThrowing() を呼ばない）。
+    battle.giveUp()
+    scroller?.setPaused(true)
+    return
+  }
   scroller?.recalcPlayScore()  // 死亡経路と同様に scoreFormula を適用して確定
   scroller?.setPaused(true)
   gameState.startThrowing()
 }
+
+// rpg 戦闘: ボス撃破・敗北・ギブアップのいずれでも battle.state.status が 'finished' になる。
+// 終了経路を一本化し、二重に startThrowing() / onThrowStart 音が鳴らないようにする。
+watch(() => battle.state.status, (status) => {
+  if (status !== 'finished') return
+  if (['throwing', 'ending'].includes(gameState.phase.value)) return
+  gameState.startThrowing()
+})
 
 // ボタンがフォーカス中の Space キーをゲーム操作と区別するため抑制する
 // （Enter はデフォルトで click を発火するため不要）
@@ -249,6 +281,13 @@ function onGiveupClick(e: MouseEvent) {
 
 // ─── 投擲完了 ────────────────────────────────────────────────────
 function onThrown(result: ThrowResult) {
+  // rpg 戦闘モードでは playScore を battle 側から取り、ActionStats は渡さない
+  // （横スクロール前提の統計のため、戦闘の行動傾向とは対応しない。01-architecture.md）。
+  if (isBattleMode.value) {
+    scroller?.stop()
+    gameState.finalizeThrowing(result, battle.playScore.value)
+    return
+  }
   // getStats() を stop() より先に呼ぶ（stop() で内部状態がクリアされるため）
   const gameStats = scroller?.getStats()
   scroller?.stop()  // 投擲後はscrollerループを停止
@@ -270,6 +309,7 @@ function restart() {
     deathBeatTimer = null
   }
   reviewPaused.value = false
+  battle.reset()
   cancelAnimationFrame(snapRaf)
   scroller?.stop()
   scroller = null
@@ -330,6 +370,8 @@ const shouldPause = computed(() => {
   if (reviewPaused.value) return true
   // 説明書非表示時はセンタリング演出が見えないため停止もしない
   if (manualCtl.isCentered.value && debugCtl.debugSettings.showManual) return true
+  // rpg 戦闘モード中は Canvas が非表示のため、常に停止させておく
+  if (isBattleMode.value) return true
   return false
 })
 
@@ -361,7 +403,16 @@ const revealActive = ref(false)
 
 // ─── ジャンル確定時: 加速エフェクト + BGM + オーバーレイ ────
 let genreLockedBoostTimer: ReturnType<typeof setTimeout> | null = null
-watch(() => gameState.lockedGenre.value, (newGenre) => {
+watch(() => gameState.lockedGenre.value, (newGenre, oldGenre) => {
+  // rpg 戦闘モードへ入る／出るタイミングでの戦闘状態の初期化・破棄（01-architecture.md エッジケース）。
+  // 矛盾カードによる glitch への強制上書き等、rpg 確定後に別ジャンルへ変わるケースもここで拾う。
+  if (newGenre === 'rpg') {
+    battle.initRun()
+    scroller?.setPaused(true)
+  } else if (oldGenre === 'rpg') {
+    battle.reset()
+  }
+
   if (!newGenre || !scroller) return
 
   // 画面フラッシュ演出
@@ -415,8 +466,12 @@ onUnmounted(() => {
 
 <template>
   <div class="app-root" :class="gameState.lockedGenre.value ? `genre-locked-root theme-global-${currentTheme}` : ''">
-    <!-- ゲームキャンバス（常に背面） -->
-    <canvas ref="canvasRef" class="game-canvas" />
+    <!-- ゲームキャンバス（常に背面）。rpg 戦闘モード中は非表示（v-show: SideScroller が
+         同じ要素を保持し続けるため v-if では外さない。01-architecture.md） -->
+    <canvas ref="canvasRef" class="game-canvas" v-show="!isBattleMode" />
+
+    <!-- ─── rpg 戦闘UI ─── -->
+    <BattleScreen v-if="isBattleMode" :battle="battle" />
 
     <!-- ─── ローディング画面 ─── -->
     <Transition name="fade">
@@ -481,6 +536,7 @@ onUnmounted(() => {
     <!-- ─── ゲームプレイ中 HUD ─── -->
     <template v-if="showGameUI">
       <Hud
+        v-if="!isBattleMode"
         :distance="snapshot.distance"
         :play-score="snapshot.playScore"
         :kills="snapshot.kills"
@@ -497,7 +553,7 @@ onUnmounted(() => {
 
       <!-- 操作系パネル（歯車 + P・クリックで詳細開閉／変更は赤で注記・仕様 2-D） -->
       <ControlHintBadge
-        v-if="['playing','tutorial','genreLocked'].includes(gameState.phase.value)"
+        v-if="!isBattleMode && ['playing','tutorial','genreLocked'].includes(gameState.phase.value)"
         :controls="gameState.rules.controls"
         :features="gameState.rules.features"
         :scroll-axis="gameState.rules.scrollAxis"
