@@ -25,7 +25,7 @@ jobs:
       created: ${{ steps.detect.outputs.created }}
       tag: ${{ steps.detect.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0  # 既存タグの照合に全履歴＋タグが必要
 
