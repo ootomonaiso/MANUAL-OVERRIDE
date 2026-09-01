@@ -1,0 +1,6 @@
+export { PixelCanvas } from './PixelCanvas'
+export type { GradientStop } from './PixelCanvas'
+export { SpriteRenderer } from './SpriteRenderer'
+export type { SpriteDrawOptions, SpriteSlots } from './SpriteRenderer'
+export { PixelText } from './PixelText'
+export type { PixelTextOptions } from './PixelText'

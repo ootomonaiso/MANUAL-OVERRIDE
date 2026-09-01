@@ -6,7 +6,8 @@
  */
 
 import type { Rect } from '../entities'
-import { SURVIVAL } from '../../data/tunables'
+import { SURVIVAL, PIXELART } from '../../data/tunables'
+import { PixelCanvas } from '../render'
 
 /**
  * melee 攻撃矩形を構築する（プレイヤー中心を軸に左右両方向へ伸びる）。
@@ -46,28 +47,27 @@ export function drawMeleeSwing(
 ): void {
   if (active <= 0) return
 
+  const px = new PixelCanvas(ctx)
   const cx = playerX + playerW / 2
   const cy = playerY + playerH / 2
   const range = SURVIVAL.meleeRange
   const arc = SURVIVAL.meleeArc
   const totalActiveTime = meleeCooldown * SURVIVAL.meleeActiveRatio
+  // 太さ・ハロー幅は実px指定だった既存値をセル単位APIに合わせて変換（値そのものは JSON から読む）
+  const thickness = Math.max(1, Math.round(SURVIVAL.meleeSwingLineWidth / Math.max(1, PIXELART.size)))
+  const haloSteps = Math.max(1, Math.round(SURVIVAL.meleeSwingShadowBlur / Math.max(1, PIXELART.size)))
+  const fadeAlpha = active / totalActiveTime
 
-  ctx.save()
-  ctx.globalAlpha = active / totalActiveTime
-  ctx.strokeStyle = SURVIVAL.meleeSwingStrokeColor
-  ctx.lineWidth = SURVIVAL.meleeSwingLineWidth
-  ctx.shadowColor = SURVIVAL.meleeSwingShadowColor
-  ctx.shadowBlur = SURVIVAL.meleeSwingShadowBlur
+  // px.withAlpha は現在の globalAlpha に乗算するため、ハローも本体もフェードが掛かる
+  px.withAlpha(fadeAlpha, () => {
+    px.halo((expand, c) => {
+      px.arcBlocks(cx, cy, range + expand, -arc / 2, arc / 2, c, thickness)
+      px.arcBlocks(cx, cy, range + expand, Math.PI - arc / 2, Math.PI + arc / 2, c, thickness)
+    }, SURVIVAL.meleeSwingShadowColor, haloSteps)
 
-  // 右方向の弧
-  ctx.beginPath()
-  ctx.arc(cx, cy, range, -arc / 2, arc / 2)
-  ctx.stroke()
-
-  // 左方向の弧
-  ctx.beginPath()
-  ctx.arc(cx, cy, range, Math.PI - arc / 2, Math.PI + arc / 2)
-  ctx.stroke()
-
-  ctx.restore()
+    // 右方向の弧
+    px.arcBlocks(cx, cy, range, -arc / 2, arc / 2, SURVIVAL.meleeSwingStrokeColor, thickness)
+    // 左方向の弧
+    px.arcBlocks(cx, cy, range, Math.PI - arc / 2, Math.PI + arc / 2, SURVIVAL.meleeSwingStrokeColor, thickness)
+  })
 }

@@ -1,3 +1,6 @@
+import { PixelCanvas } from './render'
+import { PIXELART } from '../data/tunables'
+
 export interface Particle {
   x: number; y: number
   vx: number; vy: number
@@ -39,16 +42,15 @@ export class ParticleSystem {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
+    const px = new PixelCanvas(ctx)
     for (const p of this.particles) {
       const alpha = p.life / p.maxLife
-      const size  = p.size * (0.5 + alpha * 0.5)
-      ctx.globalAlpha = alpha
-      ctx.fillStyle = p.color
-      ctx.beginPath()
-      ctx.arc(p.x, p.y, size, 0, Math.PI * 2)
-      ctx.fill()
+      const raw   = p.size * (0.5 + alpha * 0.5)
+      const cells = Math.max(1, Math.round(raw / PIXELART.size)) * PIXELART.size
+      px.withAlpha(alpha, () => {
+        px.rect(p.x - cells / 2, p.y - cells / 2, cells, cells, p.color)
+      })
     }
-    ctx.globalAlpha = 1
   }
 
   clear(): void { this.particles = [] }

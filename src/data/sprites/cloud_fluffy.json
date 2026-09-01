@@ -1,0 +1,29 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "cloud_fluffy",
+  "w": 24,
+  "h": 14,
+  "palette": {
+    "C": "#ffffff",
+    "S": "#d8dde8",
+    "O": "#c0c8d8"
+  },
+  "frames": {
+    "idle": [
+      "......OCCCCCCCCCCO......",
+      ".....OCCCCCCCCCCCCO.....",
+      "....OCCCCCCCCCCCCCCO....",
+      "..OOCCCCCCCCCCCCCCCCOO..",
+      ".OCCCCCCCCCCCCCCCCCCCCO.",
+      ".OCCCCCCCCCCCCCCCCCCCCO.",
+      "OCCCCCCCCCCCCCCCCCCCCCCO",
+      "OCCCCCCCCCCCCCCCCCCCCCCO",
+      "OCCCCCCCCCCCCCCCCCCCCCCO",
+      "OSSSSSSSSSSSSSSSSSSSSSSO",
+      ".OSSSSSSSSSSSSSSSSSSSSO.",
+      ".OSSSSSSSSSSSSSSSSSSSSO.",
+      "..OOSSSSOOOOOOOOSSSSOO..",
+      "....OOOO........OOOO...."
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "player_racecar",
+  "w": 20,
+  "h": 22,
+  "palette": {
+    "B": "#cc4400",
+    "R": "#aa3300",
+    "G": "#88ccff",
+    "H": "#ffee44",
+    "W": "#222222",
+    "U": "#aaaaaa",
+    "O": "#000000"
+  },
+  "frames": {
+    "idle": [
+      "....................",
+      "....................",
+      "....................",
+      "....................",
+      ".....OOOOOOOOOOOO...",
+      "....ORRRRGGGGGGGRO..",
+      "....ORRRRGGGGGGGRO..",
+      "....ORRRRGGGGGGGRO..",
+      "..OOORRRRGGGGGGGROO.",
+      ".OBBBRRRRGGGGGGGRBBO",
+      ".OBBBRRRRRRRRRRRRHHH",
+      ".OBBBBBBBBBBBBBBBHHH",
+      ".OBBBBBBBBBBBBBBBHHH",
+      ".OBBBBBBBBBBBBBBBBBO",
+      ".OBBWWBBBBBBBBWWBBBO",
+      ".OBWWWWBBBBBBWWWWBBO",
+      ".OWWUUWWBBBBWWUUWWBO",
+      ".OWWUUWWBBBBWWUUWWBO",
+      ".OBWWWWBBBBBBWWWWBBO",
+      "..OOWWOOOOOOOOWWOOO.",
+      "....OO........OO....",
+      "...................."
+    ]
+  }
+}

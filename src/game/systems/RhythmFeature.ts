@@ -1,8 +1,9 @@
 import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import type { BeatMarker } from '../entities'
-import { RHYTHM_TUNING } from '../../data/tunables'
+import { RHYTHM_TUNING, UI, PIXELART } from '../../data/tunables'
 import { soundManager } from '../../plugins/SoundManager'
+import { PixelCanvas } from '../render'
 
 interface RhythmState {
   beatInterval: number
@@ -103,20 +104,21 @@ export class RhythmFeature implements FeatureSystem {
   render(ctx: CanvasRenderingContext2D, world: MutableWorld): void {
     if (!world.rules.features.has('beat_hazard') || this.state.beatMarkers.length === 0) return
 
+    const px = new PixelCanvas(ctx)
     const gY = world.canvas.height - 80
-    ctx.save()
+    const s = Math.max(1, PIXELART.size)
+    // setLineDash(UI.beatMarkerDash) の比率をセル単位に丸める。線幅も UI.beatMarkerLineW から
+    const dashLen = Math.max(s, Math.round(UI.beatMarkerDash[0] / s) * s)
+    const gapLen = Math.max(s, Math.round(UI.beatMarkerDash[1] / s) * s)
+    const period = dashLen + gapLen
+    const lineW = Math.max(s, Math.round(UI.beatMarkerLineW / s) * s)
+
     for (const m of this.state.beatMarkers) {
-      ctx.globalAlpha = (m.t / 400) * 0.3
-      ctx.strokeStyle = '#ff00ff'
-      ctx.lineWidth = 2
-      ctx.setLineDash([6, 4])
-      ctx.beginPath()
-      ctx.moveTo(m.x, 0)
-      ctx.lineTo(m.x, gY)
-      ctx.stroke()
+      px.withAlpha((m.t / UI.beatMarkerAlphaDivisor) * UI.beatMarkerMaxAlpha, () => {
+        for (let y = 0; y < gY; y += period) {
+          px.rect(m.x - lineW / 2, y, lineW, Math.min(dashLen, gY - y), UI.beatMarkerColor)
+        }
+      })
     }
-    ctx.setLineDash([])
-    ctx.globalAlpha = 1
-    ctx.restore()
   }
 }

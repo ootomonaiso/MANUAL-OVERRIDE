@@ -15,12 +15,16 @@ import type { GenreId } from '../domain/types'
 import type { Hazard } from '../game/entities'
 import { Item } from '../game/entities'
 import { SURVIVAL } from '../data/tunables'
+import { PixelCanvas } from '../game/render'
 
 // HUD描画の定数（survival.json から読み込み）
 const HUD_BAR_HEIGHT = SURVIVAL.hudBarHeight
 const HUD_TEXT_SIZE = SURVIVAL.hudTextSize
 const HUD_TOP_OFFSET = SURVIVAL.hudTopOffset
 const HUD_BAR_WIDTH = SURVIVAL.hudBarWidth
+
+// プレイヤーの走りアニメーションのフレーム数（run_a / run_b の2枚）
+const SURVIVAL_RUN_FRAME_COUNT = 2
 
 export class SurvivalPlugin extends GenrePluginBase {
   readonly id: GenreId = 'survival'
@@ -75,143 +79,79 @@ export class SurvivalPlugin extends GenrePluginBase {
   // spawnDensity is sourced from JSON config (survival.json) — see genres/index.ts merge
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // 霧がかかった暗い丘シルエット
-    ctx.globalAlpha = 0.18
-    ctx.fillStyle = this.farLayerColor
-    ctx.beginPath()
-    ctx.moveTo(0, gY)
-    const step = 30
-    for (let sx = -step; sx <= W + step; sx += step) {
-      const wx = sx - offsetX
-      const mh = Math.sin(wx * 0.004) * 70 + Math.sin(wx * 0.009) * 35 + Math.sin(wx * 0.019) * 18 + 95
-      ctx.lineTo(sx, gY - mh)
-    }
-    ctx.lineTo(W + step, gY)
-    ctx.closePath()
-    ctx.fill()
-    ctx.globalAlpha = 1
+    // 霧がかかった暗い丘シルエット。式は無変更、サンプリングを px.ridge の階段状にする
+    const px = new PixelCanvas(ctx)
+    px.withAlpha(0.18, () => {
+      px.ridge(-40, W + 40, gY, (sx) => {
+        const wx = sx - offsetX
+        return Math.sin(wx * 0.004) * 70 + Math.sin(wx * 0.009) * 35 + Math.sin(wx * 0.019) * 18 + 95
+      }, this.farLayerColor)
+    })
   }
 
   drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // 枯れ木のシルエット
-    ctx.globalAlpha = 0.5
-    ctx.fillStyle = this.midLayerColor
+    // 枯れ木のシルエット。配置ハッシュは無変更、同じスプライトをサイズ違いで使い回す
+    const px = new PixelCanvas(ctx)
     const sector = Math.floor(offsetX / 180)
-    for (let s = sector - 1; s <= sector + 5; s++) {
-      const h = (s * 1783) & 0xffff
-      const tx = s * 180 - offsetX + (h % 100)
-      const treeH = 55 + (h >> 4) % 60
-      const trunkW = 5 + (h >> 8) % 5
-      // 幹
-      ctx.fillRect(tx - trunkW / 2, gY - treeH, trunkW, treeH * 0.8)
-      // 枝（歪んだ）
-      const branchCount = 2 + (h & 0x3)
-      ctx.strokeStyle = this.midLayerColor
-      ctx.lineWidth = 2.5
-      for (let b = 0; b < branchCount; b++) {
-        const bh2 = (s * 41 + b * 97) & 0xff
-        const branchY = gY - treeH * 0.4 - b * treeH * 0.12
-        const bLen = 15 + bh2 % 20
-        const bDir = bh2 < 128 ? -1 : 1
-        ctx.beginPath()
-        ctx.moveTo(tx, branchY)
-        ctx.lineTo(tx + bDir * bLen, branchY - bLen * 0.5)
-        ctx.stroke()
+    px.withAlpha(0.5, () => {
+      for (let s = sector - 1; s <= sector + 5; s++) {
+        const h = (s * 1783) & 0xffff
+        const tx = s * 180 - offsetX + (h % 100)
+        const treeH = 55 + (h >> 4) % 60
+        const treeW = treeH * (16 / 24) // tree_dead.json のアスペクト比（16x24）を維持
+        px.sprite('tree_dead', tx - treeW / 2, gY - treeH, treeW, treeH)
       }
-    }
-    ctx.globalAlpha = 1
+    })
   }
 
   drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, onGround: boolean, runCycle: number): void {
-    const t = runCycle * Math.PI * 2
-    const legSwing = onGround ? Math.sin(t) * 10 : 0
+    const px = new PixelCanvas(ctx)
 
-    // 影
-    ctx.fillStyle = 'rgba(0,0,0,0.3)'
-    ctx.beginPath()
-    ctx.ellipse(w / 2, h + 2, w * 0.38, 4, 0, 0, Math.PI * 2)
-    ctx.fill()
+    // 影（スプライト外に残す。player_base と同じ方針）
+    px.ellipse(w / 2, h + 2, w * 0.38, 4, 'rgba(0,0,0,0.3)')
 
-    // 体（サバイバー・ダークカラー）
-    ctx.fillStyle = '#3a5228'
-    this._roundRect(ctx, 3, h * 0.4, w - 6, h * 0.38, 3)
-    ctx.fill()
-
-    // リュック
-    ctx.fillStyle = '#2a3c1a'
-    ctx.fillRect(w * 0.1, h * 0.35, w * 0.22, h * 0.36)
-
-    // 頭
-    ctx.fillStyle = '#c4945a'
-    ctx.beginPath()
-    ctx.arc(w * 0.58, h * 0.22, h * 0.2, 0, Math.PI * 2)
-    ctx.fill()
-
-    // ヘルメット
-    ctx.fillStyle = '#2a4a18'
-    ctx.beginPath()
-    ctx.arc(w * 0.58, h * 0.17, h * 0.16, Math.PI, 0)
-    ctx.fill()
-    ctx.fillRect(w * 0.4, h * 0.17, w * 0.36, 5)
-
-    // 目
-    ctx.fillStyle = '#1a1a1a'
-    ctx.beginPath()
-    ctx.arc(w * 0.67, h * 0.22, 2.5, 0, Math.PI * 2)
-    ctx.fill()
-
-    // 脚
-    ctx.lineWidth = 5.5; ctx.strokeStyle = '#2a3c1a'; ctx.lineCap = 'round'
-    ctx.beginPath(); ctx.moveTo(w * 0.38, h * 0.76); ctx.lineTo(w * 0.28 - legSwing * 0.4, h * 0.98); ctx.stroke()
-    ctx.beginPath(); ctx.moveTo(w * 0.60, h * 0.76); ctx.lineTo(w * 0.72 + legSwing * 0.4, h * 0.98); ctx.stroke()
+    const frame = onGround
+      ? (Math.floor(runCycle * SURVIVAL_RUN_FRAME_COUNT) % 2 === 0 ? 'run_a' : 'run_b')
+      : 'jump'
+    px.sprite('player_survival', 0, 0, w, h, { frame })
   }
 
   // ─── ジャンル固有HUD: hungerバー / XPバー / レベル / 武器ダメージ ─
   drawGenreHUD(ctx: CanvasRenderingContext2D, world: MutableWorld, W: number, _H: number): void {
+    const px = new PixelCanvas(ctx)
     const p = world.player
     const padding = SURVIVAL.hudPanelPadding
-    const radius = SURVIVAL.hudPanelRadius
     const x = W - HUD_BAR_WIDTH - HUD_TOP_OFFSET
     let y = HUD_TOP_OFFSET
+    const font = `bold ${HUD_TEXT_SIZE}px "Courier New", monospace`
 
-    // 背景パネル
-    ctx.fillStyle = SURVIVAL.hudPanelBgColor
-    this._roundRect(ctx, x - padding, y - radius, HUD_BAR_WIDTH + padding * 2, 80, radius)
-    ctx.fill()
+    // 背景パネル（角丸を除去し、1セルの枠線を添える）
+    px.rect(x - padding, y, HUD_BAR_WIDTH + padding * 2, 80, SURVIVAL.hudPanelBgColor)
 
     // ── hungerバー ──
-    ctx.font = `bold ${HUD_TEXT_SIZE}px "Courier New", monospace`
-    ctx.fillStyle = SURVIVAL.hudLabelColor
-    ctx.fillText('HUNGER', x, y + HUD_TEXT_SIZE)
+    px.text('HUNGER', x, y + HUD_TEXT_SIZE, { font, fill: SURVIVAL.hudLabelColor })
     y += HUD_TEXT_SIZE + 4
 
     const hungerRatio = p.hunger / SURVIVAL.maxHunger
     const hungerColor = hungerRatio > 0.5 ? SURVIVAL.hudHungerColorHigh : hungerRatio > 0.25 ? SURVIVAL.hudHungerColorMid : SURVIVAL.hudHungerColorLow
-    ctx.fillStyle = SURVIVAL.hudBarBgColor
-    ctx.fillRect(x, y, HUD_BAR_WIDTH, HUD_BAR_HEIGHT)
-    ctx.fillStyle = hungerColor
-    ctx.fillRect(x, y, HUD_BAR_WIDTH * hungerRatio, HUD_BAR_HEIGHT)
+    px.rect(x, y, HUD_BAR_WIDTH, HUD_BAR_HEIGHT, SURVIVAL.hudBarBgColor)
+    px.rect(x, y, HUD_BAR_WIDTH * hungerRatio, HUD_BAR_HEIGHT, hungerColor)
     y += HUD_BAR_HEIGHT + 6
 
     // ── XPバー ──
     // p.currentLevelXp / p.nextLevelXp は SurvivalFeature で同期済み
     const xpRatio = p.nextLevelXp > 0 ? Math.min(1, p.currentLevelXp / p.nextLevelXp) : 0
 
-    ctx.fillStyle = SURVIVAL.hudLabelColor
-    ctx.fillText(`Lv.${p.level}`, x, y + HUD_TEXT_SIZE)
-    ctx.fillStyle = SURVIVAL.hudXpTextColor
-    ctx.fillText(`${p.currentLevelXp}/${p.nextLevelXp}`, x + HUD_BAR_WIDTH - 40, y + HUD_TEXT_SIZE)
+    px.text(`Lv.${p.level}`, x, y + HUD_TEXT_SIZE, { font, fill: SURVIVAL.hudLabelColor })
+    px.text(`${p.currentLevelXp}/${p.nextLevelXp}`, x + HUD_BAR_WIDTH - 40, y + HUD_TEXT_SIZE, { font, fill: SURVIVAL.hudXpTextColor })
     y += HUD_TEXT_SIZE + 4
 
-    ctx.fillStyle = SURVIVAL.hudBarBgColor
-    ctx.fillRect(x, y, HUD_BAR_WIDTH, HUD_BAR_HEIGHT)
-    ctx.fillStyle = SURVIVAL.hudXpBarColor
-    ctx.fillRect(x, y, HUD_BAR_WIDTH * xpRatio, HUD_BAR_HEIGHT)
+    px.rect(x, y, HUD_BAR_WIDTH, HUD_BAR_HEIGHT, SURVIVAL.hudBarBgColor)
+    px.rect(x, y, HUD_BAR_WIDTH * xpRatio, HUD_BAR_HEIGHT, SURVIVAL.hudXpBarColor)
     y += HUD_BAR_HEIGHT + 6
 
     // ── 武器ダメージ ──
-    ctx.fillStyle = SURVIVAL.hudAtkTextColor
-    ctx.fillText(`ATK: ${p.weaponDamage}`, x, y + HUD_TEXT_SIZE)
+    px.text(`ATK: ${p.weaponDamage}`, x, y + HUD_TEXT_SIZE, { font, fill: SURVIVAL.hudAtkTextColor })
   }
 
   // ─── 敵撃破時に食料/武器ドロップ ─────────────────────────────────

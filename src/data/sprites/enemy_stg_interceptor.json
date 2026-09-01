@@ -1,0 +1,34 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "enemy_stg_interceptor",
+  "w": 22,
+  "h": 18,
+  "palette": {
+    "M": "@main",
+    "S": "@shade",
+    "L": "@light",
+    "O": "#0a0a12"
+  },
+  "frames": {
+    "idle": [
+      "......................",
+      "......OOO.............",
+      ".....OSSSOOOOO........",
+      "......OSSSSSSSOOOO....",
+      ".....OOMMMMSSSSSSSO...",
+      "....OMMMMMMMLLLLSSSO..",
+      "..OOMMMMMMMMLLLLLLLO..",
+      ".OMMMMMMMMMMLLLLLLLO..",
+      "OMMMMMMMMMMMLLLLLLLO..",
+      "OMMMMMMMMMMMLLLLLLLO..",
+      ".OMMMMMMMMMMLLLLLLLO..",
+      "..OOMMMMMMMMLLLLLLLO..",
+      "....OMMMMMMMLLLLSSSO..",
+      ".....OOMMMMSSSSSSSO...",
+      "......OSSSSSSSOOOO....",
+      ".....OSSSOOOOO........",
+      "......OOO.............",
+      "......................"
+    ]
+  }
+}

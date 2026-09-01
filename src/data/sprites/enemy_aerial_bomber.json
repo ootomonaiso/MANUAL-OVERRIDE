@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "enemy_aerial_bomber",
+  "w": 26,
+  "h": 16,
+  "palette": {
+    "M": "@main",
+    "S": "@shade",
+    "L": "@light",
+    "N": "#ff7a3c",
+    "O": "#0a0a12"
+  },
+  "frames": {
+    "idle": [
+      "..........................",
+      "..........................",
+      "..........................",
+      "..........................",
+      "..OOOOOOOOOOOOOOOOOOOOOOO.",
+      "OOMMMMMMMMMMMMMMLLLLLLLLLO",
+      "SSMMMMMMMMMMMMMMLLLLLLLLLS",
+      "SSMMMMMMMMMMMMMMLLLLLLLLLS",
+      "SSMMMMMMMMMMMMMMLLLLLLLLLS",
+      "SSMMMMMMMMMMMMMMLLLLLLLLLS",
+      "OOMMMMMMMMMMMMMMLLLLLLLLLO",
+      ".OMMMMMMMMMMMMMMLLLLLLLLLO",
+      "..OOOOOOOOONNNNNOOOOOOOOO.",
+      "...........ONNNO..........",
+      "...........ONNNO..........",
+      "............ONO..........."
+    ]
+  }
+}
