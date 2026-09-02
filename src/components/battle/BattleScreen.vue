@@ -3,9 +3,9 @@
  * components/battle/BattleScreen.vue
  * rpg ジャンル（ローグライク戦闘）の画面全体レイアウト（docs/genre/rpg/08-ui.md）。
  *
- * 画面の主役はキャラクターで、情報はその身体に重ねる。
- * 行動の選択は右側のコマンド（COMMAND → BATTLE → 技）へ集約し、
- * 戦場そのものには常設のパネルを置かない。
+ * 画面の主役はキャラクターで、HP・予告は身体の外（頭上・足元）に置く。
+ * ステータス・スキル一覧は左上に常時表示し、行動の選択はプレイヤー側へ寄せた
+ * コマンド（COMMAND → BATTLE → 技）に集約する。
  */
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import type { useBattleState, CombatantView } from '../../composables/useBattleState'
@@ -19,7 +19,6 @@ import type { CommandEntry } from './CommandMenu.vue'
 import SkillCommandPanel from './SkillCommandPanel.vue'
 import type { SkillCommandEntry } from './SkillCommandPanel.vue'
 import TurnBadge from './TurnBadge.vue'
-import TacticsBanner from './TacticsBanner.vue'
 import BuffStrip from './BuffStrip.vue'
 import type { BuffEntry } from './BuffStrip.vue'
 import CharacterFrame from './CharacterFrame.vue'
@@ -66,9 +65,12 @@ function onResize(): void { viewportHeight.value = window.innerHeight }
 onMounted(() => window.addEventListener('resize', onResize))
 onUnmounted(() => window.removeEventListener('resize', onResize))
 
-const playerSpriteHeight = computed(() => Math.round(viewportHeight.value * 0.4))
+// 頭上の予告・足元のHPプレートを身体の外に出したぶん、全身+プレートが画面に収まるよう
+// 比率を少し抑える（以前は自キャラを画面下端で見切れさせていたが、HPプレートが画面外に
+// はみ出してしまうため、全身を収める配置へ変更した）。
+const playerSpriteHeight = computed(() => Math.round(viewportHeight.value * 0.34))
 function enemySpriteHeight(isBoss: boolean): number {
-  return Math.round(viewportHeight.value * (isBoss ? 0.4 : 0.32))
+  return Math.round(viewportHeight.value * (isBoss ? 0.36 : 0.27))
 }
 
 const PERCENT_STATS = new Set<StatKey>(['hitRate', 'evadeRate', 'critRate', 'critDamageMultiplier'])
@@ -92,7 +94,7 @@ const themeVars = computed(() => {
 })
 
 // ── コマンド ──────────────────────────────────────────────────
-type MenuMode = 'root' | 'battle' | 'focus' | 'info'
+type MenuMode = 'root' | 'battle' | 'focus'
 const menu = ref<MenuMode>('root')
 const pendingAction = ref<PlayerAction | null>(null)
 const hoveredCommand = ref<string | null>(null)
@@ -153,7 +155,9 @@ const skillEntries = computed<SkillCommandEntry[]>(() => {
 function onCommandSelect(id: string): void {
   soundManager.playSfx('battle_skill_select')
   if (id === 'battle') menu.value = 'battle'
-  else if (id === 'info') menu.value = 'info'
+  // INFO は常設のステータス/スキル一覧（要点だけ）とは別に、大きく詳しい表示を
+  // 求める操作。既存の詳細モーダル（openDetail）をそのまま流用する。
+  else if (id === 'info') openDetail(battle.state.player)
 }
 
 function onSkillSelect(id: string): void {
@@ -196,16 +200,20 @@ function onCancel(): void {
 }
 
 // ── 敵の予告 ──────────────────────────────────────────────────
-interface NextPreview { label: string | null; damage: string | null }
+interface NextPreview { label: string | null; damage: string | null; markColor: string }
 
 function nextPreviewOf(e: CombatantView): NextPreview {
   const skillId = battle.nextEnemySkillPreview(e)
   const def = skillId ? content.skills.get(skillId) : undefined
-  if (!def) return { label: null, damage: null }
+  if (!def || def.kind !== 'active') return { label: null, damage: null, markColor: 'var(--battle-diff-muted)' }
   const owned = e.actives.find(a => a.id === skillId)
   const damage = battle.estimateDamageToPlayer(e, skillId as string, owned?.level ?? 1)
   const magnitude = damageMagnitude(damage, playerMaxHp.value)
-  return { label: def.label, damage: magnitude === 'none' ? null : MAGNITUDE_LABEL[magnitude] }
+  return {
+    label: def.label,
+    damage: magnitude === 'none' ? null : MAGNITUDE_LABEL[magnitude],
+    markColor: ELEMENT_COLOR[def.element],
+  }
 }
 
 /** テンプレートから2回呼ばないよう、敵ごとの予告をまとめて作る */
@@ -401,9 +409,29 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
       :battle-number="battle.battleNumber.value"
       :actor-label="currentActorLabel"
     />
-    <TacticsBanner :visible="awaitingInput" text="Decide on tactics!" />
 
-    <div class="battle-field" :class="{ shaking: fx.screenShake.value > 0 }">
+    <div class="hud-left">
+      <StatusPanel
+        :collapsed="battle.state.ui.statusPanelCollapsed"
+        :mode="battle.state.ui.statusPanelMode"
+        :show-diff="battle.state.ui.showBuffDiff"
+        :stats="playerStatRows"
+        @toggle-collapsed="battle.toggleStatusCollapsed()"
+        @toggle-mode="battle.toggleStatusMode()"
+        @toggle-diff="battle.toggleBuffDiff()"
+      />
+      <SkillListPanel
+        :collapsed="battle.state.ui.skillListCollapsed"
+        v-bind="skillListView"
+        @toggle-collapsed="battle.toggleSkillListCollapsed()"
+      />
+    </div>
+
+    <div
+      class="battle-field"
+      :class="{ shaking: fx.screenShake.value > 0 }"
+      :style="{ '--shake-mag': fx.screenShake.value || 1 }"
+    >
       <div class="enemy-line" :style="{ bottom: `${(1 - FLOOR_TOP) * 100}%` }">
         <CharacterFrame
           v-for="(e, i) in battle.state.enemies"
@@ -422,7 +450,9 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
           :popups="fx.popupsOf(e.id)"
           :next-skill-label="enemyPreviews[e.id]?.label ?? null"
           :next-damage-label="enemyPreviews[e.id]?.damage ?? null"
+          :next-mark-color="enemyPreviews[e.id]?.markColor"
           :targetable="menu === 'focus' && e.alive"
+          :idle-seed="i"
           @open-detail="onUnitSelect(e, i)"
         />
       </div>
@@ -477,23 +507,6 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
       </div>
     </div>
 
-    <div v-if="menu === 'info'" class="info-overlay">
-      <StatusPanel
-        :collapsed="false"
-        :mode="battle.state.ui.statusPanelMode"
-        :show-diff="battle.state.ui.showBuffDiff"
-        :stats="playerStatRows"
-        @toggle-collapsed="onCancel"
-        @toggle-mode="battle.toggleStatusMode()"
-        @toggle-diff="battle.toggleBuffDiff()"
-      />
-      <SkillListPanel
-        :collapsed="false"
-        v-bind="skillListView"
-        @toggle-collapsed="onCancel"
-      />
-    </div>
-
     <SkillDraftPanel
       v-if="battle.state.status === 'drafting' || battle.state.status === 'swapping'"
       :options="draftCards"
@@ -543,20 +556,45 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   --battle-frame-border: rgba(255, 255, 255, 0.22);
 }
 
+/* 左上・TURN表示の下に収まる高さから始める。要点だけの小さめ表示にして、
+   詳しい内容は COMMAND の INFO（キャラクター詳細モーダル）に譲る */
+.hud-left {
+  position: absolute;
+  top: 78px;
+  left: 10px;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 152px;
+}
+.hud-left :deep(.status-panel),
+.hud-left :deep(.skill-list-panel) {
+  min-width: 0;
+  font-size: 10px;
+}
+.hud-left :deep(.skill-list-panel) {
+  max-height: 42vh;
+}
+
 .battle-field {
   position: absolute;
   inset: 0;
   z-index: 2;
 }
 .battle-field.shaking {
-  animation: field-shake 220ms ease-in-out;
+  animation: field-shake 280ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
+/* 揺れ幅は emit された shake の強さ（--shake-mag）に比例させる。物理ヒットより
+   クリティカルの方が大きく揺れる、といった差を出すため */
 @keyframes field-shake {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(-7px, 3px); }
-  50% { transform: translate(6px, -4px); }
-  75% { transform: translate(-4px, 2px); }
-  100% { transform: translate(0, 0); }
+  0% { transform: translate(0, 0) scale(1); }
+  16% { transform: translate(calc(var(--shake-mag, 1) * -16px), calc(var(--shake-mag, 1) * 7px)) scale(1.018); }
+  34% { transform: translate(calc(var(--shake-mag, 1) * 13px), calc(var(--shake-mag, 1) * -9px)) scale(1.012); }
+  52% { transform: translate(calc(var(--shake-mag, 1) * -9px), calc(var(--shake-mag, 1) * 6px)) scale(1.008); }
+  70% { transform: translate(calc(var(--shake-mag, 1) * 6px), calc(var(--shake-mag, 1) * -3px)) scale(1.004); }
+  86% { transform: translate(calc(var(--shake-mag, 1) * -2px), calc(var(--shake-mag, 1) * 1px)) scale(1.001); }
+  100% { transform: translate(0, 0) scale(1); }
 }
 
 /* 敵は床の際に立たせる。並ぶときは左右へ広がる */
@@ -569,18 +607,20 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   justify-content: center;
   gap: 40px;
 }
-/* 自キャラは画面下端で見切れるくらい手前に置く */
+/* HPプレートが足元の外（通常のフロー）に付くぶん、画面下部の説明書投擲ボタンと
+   重ならない高さまで持ち上げる */
 .player-slot {
   position: absolute;
   left: 50%;
-  bottom: -3%;
+  bottom: 12%;
   transform: translateX(-50%);
 }
 
+/* プレイヤー側（画面下寄り）に寄せる。説明書パネル（右下）とは高さで避ける */
 .command-area {
   position: absolute;
   right: 26px;
-  top: 28%;
+  top: 46%;
   z-index: 16;
 }
 .focus-hint {
@@ -591,6 +631,7 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   color: #4a2a1e;
   text-align: center;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  animation: menu-pop-in 220ms cubic-bezier(0.2, 1, 0.3, 1);
 }
 .focus-title {
   font-size: 17px;
@@ -611,16 +652,17 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   cursor: pointer;
 }
 
-.info-overlay {
-  position: absolute;
-  left: 16px;
-  top: 10%;
-  z-index: 22;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 260px;
-  max-height: 78vh;
-  overflow-y: auto;
+/*
+ * コマンドの切り替えは Vue の <Transition> ではなく CSS の入場アニメーションだけで表現する。
+ * <Transition mode="out-in"> は退場側の完了検出を getComputedStyle の transition-duration に
+ * 依存しており、happy-dom（単体テスト環境）では実際のトランジションが走らないため退場が
+ * 永久に終わらず、新しいメニューが DOM に現れない状態でテストが詰まる不具合が起きた。
+ * CSS animation は要素が挿入された瞬間に自動再生されるため、この問題を避けられる。
+ * 同名の @keyframes を CommandMenu.vue / SkillCommandPanel.vue にも定義している
+ * （@keyframes は scoped の対象外でグローバルだが、コンポーネント単体で完結させるため）。
+ */
+@keyframes menu-pop-in {
+  from { opacity: 0; transform: translateX(22px) scale(0.95); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
 }
 </style>

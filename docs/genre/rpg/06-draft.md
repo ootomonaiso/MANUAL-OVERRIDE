@@ -100,12 +100,17 @@ export interface OwnedActive {
 | レベル遷移 | 必要な重複取得数 | 累計取得回数 |
 |---|---|---|
 | Lv1（初回取得） | ― | 1回目 |
-| Lv1 → Lv2 | 1個 | 2回目 |
-| Lv2 → Lv3 | 3個 | 5回目 |
-| Lv3 → Lv4（MAX） | 5個 | 10回目 |
+| Lv1 → Lv2 | 2個 | 3回目 |
+| Lv2 → Lv3 | 3個 | 6回目 |
+| Lv3 → Lv4（MAX） | 4個 | 10回目 |
+
+> **改修（実装後）**: 当初 `[0, 1, 3, 5]` だったが、Lv1→Lv2 の1個で `levelMultiplier` が
+> ×1→×3 に跳ね上がり「もう1枚引いただけで3倍」になって強すぎた。初手のジャンプを
+> 緩めて `[0, 2, 3, 4]` に変更した。Lv4到達までの合計必要数（9個）は変えていないため、
+> 下記「効果量」の集中投資 vs 分散投資の比較は変わらない。
 
 ```ts
-const STACKS_REQUIRED = [0, 1, 3, 5] as const   // index = 現在レベル - 1
+const STACKS_REQUIRED = [0, 2, 3, 4] as const   // index = 現在レベル - 1
 
 export function addStack(owned: { level: number; stacks: number }): void {
   if (owned.level >= 4) return                  // MAX。スタックも増やさない

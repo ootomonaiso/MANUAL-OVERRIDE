@@ -43,6 +43,13 @@ const emit = defineEmits<{
   position: relative;
   width: 210px;
   color: #4a2a1e;
+  /* BATTLE の一覧から戻ってきた際に、意思決定へ戻った手応えを出す入場アニメーション。
+     @keyframes menu-pop-in は BattleScreen.vue の説明コメント参照 */
+  animation: menu-pop-in 220ms cubic-bezier(0.2, 1, 0.3, 1);
+}
+@keyframes menu-pop-in {
+  from { opacity: 0; transform: translateX(-18px) scale(0.95); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
 }
 /* 切り抜きは中身だけに掛ける。見出しまで clip すると文字が欠ける */
 .command-box {

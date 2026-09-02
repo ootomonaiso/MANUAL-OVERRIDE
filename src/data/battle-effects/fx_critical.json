@@ -8,7 +8,7 @@
   "visual": {
     "kind": "burst",
     "color": "var(--battle-diff-plus)",
-    "shake": 0.6
+    "shake": 0.85
   },
   "sfx": "battle_critical"
 }

@@ -11,8 +11,13 @@ import { CATEGORY_IDS } from './types'
 // スキルレベルアップ
 // ─────────────────────────────────────────────────────────────
 
-/** index = 現在レベル-1、値 = 次のレベルに必要な重複取得数 */
-export const STACKS_REQUIRED = [0, 1, 3, 5] as const
+/**
+ * index = 現在レベル、値 = 次のレベルに必要な重複取得数。
+ * 当初は [0, 1, 3, 5] だったが、Lv1→Lv2 の1個で levelMultiplier が ×1→×3 に跳ね上がり
+ * 「もう1回引いただけで3倍」になって強すぎたため、初手のジャンプを緩めて [0, 2, 3, 4] にした。
+ * Lv4到達までの合計必要数は9個のままで変えていない（levelMultiplier のバランス根拠を崩さないため）。
+ */
+export const STACKS_REQUIRED = [0, 2, 3, 4] as const
 
 /** 重複取得によりスタックを1つ加算し、必要数に達したらレベルアップさせる（Lv4で頭打ち） */
 export function addStack(owned: { level: number; stacks: number }): void {

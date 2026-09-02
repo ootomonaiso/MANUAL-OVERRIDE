@@ -7,7 +7,8 @@
   "target": "target",
   "visual": {
     "kind": "burst",
-    "color": "var(--battle-category-aegis)"
+    "color": "var(--battle-category-aegis)",
+    "shake": 0.4
   },
   "sfx": "battle_shield_break"
 }

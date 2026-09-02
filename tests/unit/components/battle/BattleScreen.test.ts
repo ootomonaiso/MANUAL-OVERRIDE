@@ -140,19 +140,13 @@ describe('BattleScreen: 初期描画', () => {
     expect(textOf(h.host, '.char-unit.enemy .next-damage')).toMatch(/ダメージ|致命傷/)
   })
 
-  it('自分の手番であることが斜めの帯で示される', () => {
-    const h = mount()
-    expect($(h.host, '.tactics-banner')).not.toBeNull()
-  })
-
   it('左上にターン数が出る', () => {
     const h = mount()
     expect(textOf(h.host, '.turn-badge .turn-value')).toBe('1')
   })
 
-  it('戦場に常設のパネルもドラフトも出ていない', () => {
+  it('ドラフトも詳細もまだ開いていない', () => {
     const h = mount()
-    expect($(h.host, '.info-overlay')).toBeNull()
     expect($(h.host, '.draft-overlay')).toBeNull()
     expect($(h.host, '.detail-overlay')).toBeNull()
   })
@@ -281,26 +275,16 @@ describe('BattleScreen: 被弾の見え方', () => {
   })
 })
 
-describe('BattleScreen: INFO', () => {
-  it('INFO でステータスとスキル一覧が開く', async () => {
+describe('BattleScreen: 常時表示のステータス・スキル一覧', () => {
+  it('ステータスとスキル一覧は最初から表示されている（INFOを押すまでもない）', () => {
     const h = mount()
-    const info = commandItems(h.host).find(b => b.textContent?.includes('INFO')) as HTMLButtonElement
-    info.click()
-    await nextTick()
-    expect($(h.host, '.info-overlay .status-panel')).not.toBeNull()
-    expect($(h.host, '.info-overlay .skill-list-panel')).not.toBeNull()
-    expect($$(h.host, '.info-overlay .stat-row')).toHaveLength(10)
+    expect($(h.host, '.hud-left .status-panel')).not.toBeNull()
+    expect($(h.host, '.hud-left .skill-list-panel')).not.toBeNull()
+    expect($$(h.host, '.hud-left .stat-row')).toHaveLength(10)
   })
-
-  async function openInfo(h: Harness): Promise<void> {
-    const info = commandItems(h.host).find(b => b.textContent?.includes('INFO')) as HTMLButtonElement
-    info.click()
-    await nextTick()
-  }
 
   it('基礎値と実効値の表示を切り替えられる', async () => {
     const h = mount()
-    await openInfo(h)
     const modeButton = $$(h.host, '.status-panel .panel-controls button')[0] as HTMLButtonElement
     expect(modeButton.textContent?.trim()).toBe('実効値')
     modeButton.click()
@@ -310,7 +294,6 @@ describe('BattleScreen: INFO', () => {
 
   it('バフ差分の表示を切り替えられる', async () => {
     const h = mount()
-    await openInfo(h)
     const diffButton = $$(h.host, '.status-panel .panel-controls button')[1] as HTMLButtonElement
     expect(diffButton.textContent?.trim()).toBe('バフオン')
     diffButton.click()
@@ -318,17 +301,15 @@ describe('BattleScreen: INFO', () => {
     expect(($$(h.host, '.status-panel .panel-controls button')[1]).textContent?.trim()).toBe('バフオフ')
   })
 
-  it('所持しているスキルは名前が見える', async () => {
+  it('所持しているスキルは名前が見える', () => {
     const h = mount()
-    await openInfo(h)
     const ownedId = h.battle.state.player.actives[0].id
     const label = BATTLE_CONTENT.skills.get(ownedId)?.label ?? ''
     expect(textOf(h.host, '.skill-list-panel')).toContain(label)
   })
 
-  it('未入手かつ未閲覧のスキルは伏せ字で表示される', async () => {
+  it('未入手かつ未閲覧のスキルは伏せ字で表示される', () => {
     const h = mount()
-    await openInfo(h)
     expect($$(h.host, '.skill-item.unseen').length).toBeGreaterThan(0)
     for (const el of $$(h.host, '.skill-item.unseen')) {
       expect(el.textContent).toContain('？？？')
@@ -337,7 +318,6 @@ describe('BattleScreen: INFO', () => {
 
   it('マウスを乗せただけでは効果文が開かない', async () => {
     const h = mount()
-    await openInfo(h)
     const owned = $$(h.host, '.skill-item.owned')[0]
     owned.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
     owned.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
@@ -347,12 +327,23 @@ describe('BattleScreen: INFO', () => {
 
   it('項目をクリックすると効果文が開く', async () => {
     const h = mount()
-    await openInfo(h)
     const owned = $$(h.host, '.skill-item.owned')[0]
     expect(owned.querySelector('.item-detail')).toBeNull()
     owned.click()
     await nextTick()
     expect($$(h.host, '.skill-item.owned')[0].querySelector('.item-detail')).not.toBeNull()
+  })
+})
+
+describe('BattleScreen: INFO', () => {
+  it('INFO を押すと自キャラの大きく詳しい表示（キャラクター詳細）が開く', async () => {
+    const h = mount()
+    const info = commandItems(h.host).find(b => b.textContent?.includes('INFO')) as HTMLButtonElement
+    info.click()
+    await nextTick()
+    expect($(h.host, '.detail-overlay')).not.toBeNull()
+    expect(textOf(h.host, '.detail-title')).toBe(h.battle.state.player.label)
+    expect($$(h.host, '.detail-overlay .stat-cell')).toHaveLength(10)
   })
 })
 

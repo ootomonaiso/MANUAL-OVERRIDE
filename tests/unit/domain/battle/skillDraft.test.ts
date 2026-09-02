@@ -10,12 +10,14 @@ import {
 } from './_helpers'
 
 describe('skillDraft: スキルレベルアップ', () => {
-  it('必要な重複数は Lv1→2 が1個、Lv2→3 が3個、Lv3→4 が5個', () => {
-    expect(STACKS_REQUIRED).toEqual([0, 1, 3, 5])
+  it('必要な重複数は Lv1→2 が2個、Lv2→3 が3個、Lv3→4 が4個', () => {
+    expect(STACKS_REQUIRED).toEqual([0, 2, 3, 4])
   })
 
   it('必要数に達したらレベルが上がりスタックが繰り越される', () => {
     const owned = { level: 1, stacks: 0 }
+    addStack(owned)
+    expect(owned).toEqual({ level: 1, stacks: 1 })
     addStack(owned)
     expect(owned).toEqual({ level: 2, stacks: 0 })
     addStack(owned)
@@ -210,8 +212,10 @@ describe('skillDraft: ドラフト選択の適用', () => {
     expect(player.passives).toEqual([{ id: 'p1', level: 1, stacks: 0 }])
   })
 
-  it('所持済みパッシブを選ぶとスタックが積まれる', () => {
+  it('所持済みパッシブを選ぶとスタックが積まれる（Lv2には2個目の重複で到達）', () => {
     const player = makePlayer({ passives: [{ id: 'p1', level: 1, stacks: 0 }] })
+    apply(player, { kind: 'passive', id: 'p1' })
+    expect(player.passives).toEqual([{ id: 'p1', level: 1, stacks: 1 }])
     apply(player, { kind: 'passive', id: 'p1' })
     expect(player.passives).toEqual([{ id: 'p1', level: 2, stacks: 0 }])
   })
@@ -228,7 +232,7 @@ describe('skillDraft: ドラフト選択の適用', () => {
     const player = makePlayer({ actives: [{ id: 'a1', level: 1, stacks: 0, cooldown: 0, slotIndex: 2 }] })
     const { result } = apply(player, { kind: 'active', id: 'a1' })
     expect(player.actives).toHaveLength(1)
-    expect(player.actives[0]).toEqual({ id: 'a1', level: 2, stacks: 0, cooldown: 0, slotIndex: 2 })
+    expect(player.actives[0]).toEqual({ id: 'a1', level: 1, stacks: 1, cooldown: 0, slotIndex: 2 })
     expect(result.needsSwapSelection).toBe(false)
   })
 

@@ -8,7 +8,7 @@
   "visual": {
     "kind": "flash",
     "color": "var(--battle-element-physical)",
-    "shake": 0.4
+    "shake": 0.55
   },
   "sfx": "battle_hit_physical"
 }

@@ -8,12 +8,15 @@
  *
  * 遠景（空・地形）と、キャラクターが立つ手前の床は別の平面として重ねる。
  * 床の上端＝プレイヤーの立ち位置なので、比率で決め打ちして DOM 側と合わせる。
+ *
+ * 雲だけ requestAnimationFrame で流す（画面に動きが無いと static な一枚絵に見えるため）。
+ * 稜線・小物・地面は静止したまま、雲の x オフセットだけを時間から計算して毎フレーム描き直す。
  */
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import {
   buildBackdropScene, skyBands, glowRings, mixHex,
   SCENE_W, SCENE_H,
-  type BattleBackgroundDef, type BackdropScene, type BackdropProp,
+  type BattleBackgroundDef, type BackdropScene, type BackdropProp, type BackdropRect,
 } from '../../domain/battle/backdrop'
 
 const props = defineProps<{
@@ -22,7 +25,13 @@ const props = defineProps<{
   floorTop: number
 }>()
 
+/** 雲が画面を1周するのにかかる時間。長いほど「気づいたら流れている」程度の穏やかさになる */
+const CLOUD_DRIFT_LOOP_MS = 52000
+
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+const sceneRef = ref<BackdropScene | null>(null)
+let rafId: number | null = null
+let driftStartMs = 0
 
 const floorStyle = computed(() => {
   const f = props.background?.floor
@@ -85,7 +94,22 @@ function drawProp(ctx: CanvasRenderingContext2D, p: BackdropProp): void {
   ctx.globalAlpha = 1
 }
 
-function drawScene(ctx: CanvasRenderingContext2D, scene: BackdropScene): void {
+/**
+ * 雲は左右ループさせる。1回だけでなく offsetX / offsetX - SCENE_W の2回描くことで、
+ * 画面端で千切れずに次の雲がすぐ続いて見える（1枚だけだと端で消えて再度端から現れるまで間が空く）。
+ */
+function drawClouds(ctx: CanvasRenderingContext2D, clouds: readonly BackdropRect[], offsetX: number): void {
+  for (const c of clouds) {
+    ctx.globalAlpha = c.opacity ?? 1
+    ctx.fillStyle = c.color
+    const baseX = ((c.x + offsetX) % SCENE_W + SCENE_W) % SCENE_W
+    ctx.fillRect(baseX, c.y, c.w, c.h)
+    if (baseX + c.w > SCENE_W) ctx.fillRect(baseX - SCENE_W, c.y, c.w, c.h)
+  }
+  ctx.globalAlpha = 1
+}
+
+function drawScene(ctx: CanvasRenderingContext2D, scene: BackdropScene, cloudOffsetX = 0): void {
   ctx.clearRect(0, 0, SCENE_W, SCENE_H)
   ctx.imageSmoothingEnabled = false
 
@@ -102,12 +126,7 @@ function drawScene(ctx: CanvasRenderingContext2D, scene: BackdropScene): void {
   }
   ctx.globalAlpha = 1
 
-  for (const c of scene.clouds) {
-    ctx.globalAlpha = c.opacity ?? 1
-    ctx.fillStyle = c.color
-    ctx.fillRect(c.x, c.y, c.w, c.h)
-  }
-  ctx.globalAlpha = 1
+  drawClouds(ctx, scene.clouds, cloudOffsetX)
 
   for (const layer of scene.layers) {
     ctx.globalAlpha = layer.opacity
@@ -145,16 +164,42 @@ function drawScene(ctx: CanvasRenderingContext2D, scene: BackdropScene): void {
   }
 }
 
-function render(): void {
-  const canvas = canvasRef.value
-  if (!canvas || !props.background) return
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return   // happy-dom 等 2Dコンテキストを持たない環境では描かない
-  drawScene(ctx, buildBackdropScene(props.background))
+function stopAnimating(): void {
+  if (rafId !== null && typeof window !== 'undefined') window.cancelAnimationFrame(rafId)
+  rafId = null
 }
 
-onMounted(render)
-watch(() => props.background?.id, render)
+function drawFrame(now: number): void {
+  const canvas = canvasRef.value
+  const scene = sceneRef.value
+  const ctx = canvas?.getContext('2d')
+  if (!canvas || !scene || !ctx) { rafId = null; return }   // happy-dom 等 2Dコンテキストを持たない環境では止める
+  const offsetX = ((now - driftStartMs) / CLOUD_DRIFT_LOOP_MS) * SCENE_W
+  drawScene(ctx, scene, offsetX)
+  rafId = window.requestAnimationFrame(drawFrame)
+}
+
+/** rAF 自体が使えない環境（テスト等）では静止した1枚絵だけ描いて終える */
+function startAnimating(): void {
+  if (rafId !== null) return
+  const canvas = canvasRef.value
+  if (!canvas?.getContext('2d')) return
+  if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') return
+  driftStartMs = performance.now()
+  rafId = window.requestAnimationFrame(drawFrame)
+}
+
+function rebuildScene(): void {
+  sceneRef.value = props.background ? buildBackdropScene(props.background) : null
+  const canvas = canvasRef.value
+  const ctx = canvas?.getContext('2d')
+  if (canvas && ctx && sceneRef.value) drawScene(ctx, sceneRef.value, 0)   // rAF が動くまでの一瞬も絵を出しておく
+  startAnimating()
+}
+
+onMounted(rebuildScene)
+onUnmounted(stopAnimating)
+watch(() => props.background?.id, rebuildScene)
 </script>
 
 <template>
@@ -196,14 +241,19 @@ watch(() => props.background?.id, render)
   bottom: 0;
   border-top: 2px solid rgba(0, 0, 0, 0.55);
 }
-/* 床の模様。手前の平面であることを示す薄い格子 */
+/* 床の模様。手前の平面であることを示す薄い格子。ごくゆっくり流して静止画に見せない */
 .backdrop-floor::after {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: -28px 0 0 0;
   opacity: 0.16;
   background-image:
     repeating-linear-gradient(60deg, transparent 0 26px, var(--floor-line) 26px 28px),
     repeating-linear-gradient(-60deg, transparent 0 26px, var(--floor-line) 26px 28px);
+  animation: floor-drift 14s linear infinite;
+}
+@keyframes floor-drift {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 56px 28px, -56px 28px; }
 }
 </style>
