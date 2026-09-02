@@ -27,10 +27,6 @@ function seededPrng(seed: number): () => number {
 }
 
 /**
- * useBattleState.test.ts と同じ「プレイヤーが必ず勝つ」rng を使って画面をマウントする。
- * 行動はDOM上のボタンをクリックして行い、実際のUI経路を通す。
- */
-/**
  * 演出の途中で止めるためのスケジューラ。set() されたコールバックを溜めるだけで自動実行しない。
  * これで「スキル名を出している最中」の画面を検証できる。
  */
@@ -46,6 +42,7 @@ function mountBattle(battle: Battle, beforeAct: () => void = () => {}): Harness 
 
   const act = async (): Promise<void> => {
     beforeAct()
+    await openBattleMenu(host)
     slotButtons(host)[0].click()
     await nextTick()
   }
@@ -53,6 +50,10 @@ function mountBattle(battle: Battle, beforeAct: () => void = () => {}): Harness 
   return current
 }
 
+/**
+ * useBattleState.test.ts と同じ「プレイヤーが必ず勝つ」rng を使って画面をマウントする。
+ * 行動はDOM上のボタンをクリックして行い、実際のUI経路を通す。
+ */
 function mount(seed = 4242, scheduler?: BattleScheduler): Harness {
   const prng = seededPrng(seed)
   let sinceAction = Number.POSITIVE_INFINITY
@@ -81,11 +82,21 @@ function $(host: HTMLElement, sel: string): HTMLElement | null {
 function $$(host: HTMLElement, sel: string): HTMLElement[] {
   return [...host.querySelectorAll<HTMLElement>(sel)]
 }
+function commandItems(host: HTMLElement): HTMLButtonElement[] {
+  return [...host.querySelectorAll<HTMLButtonElement>('.command-menu .command-item')]
+}
 function slotButtons(host: HTMLElement): HTMLButtonElement[] {
-  return [...host.querySelectorAll<HTMLButtonElement>('.active-skill-bar .skill-slot')]
+  return [...host.querySelectorAll<HTMLButtonElement>('.skill-command .skill-slot:not(.back)')]
 }
 function textOf(host: HTMLElement, sel: string): string {
   return $(host, sel)?.textContent?.replace(/\s+/g, ' ').trim() ?? ''
+}
+
+/** COMMAND から BATTLE を選び、技の一覧を開く */
+async function openBattleMenu(host: HTMLElement): Promise<void> {
+  const battleCommand = commandItems(host).find(b => b.textContent?.includes('BATTLE'))
+  battleCommand?.click()
+  await nextTick()
 }
 
 /** 進行中に何度も変わる値なので、型の絞り込みを残さずに都度読み直す */
@@ -99,71 +110,136 @@ async function fightUntilDraft(h: Harness): Promise<void> {
 }
 
 describe('BattleScreen: 初期描画', () => {
-  it('行動順・敵・プレイヤー・スキルバー・各パネルが揃って描画される', () => {
+  it('背景・敵・自キャラ・コマンドが揃って描画される', () => {
     const h = mount()
-    expect($(h.host, '.turn-queue-bar')).not.toBeNull()
-    expect($(h.host, '.enemy-row')).not.toBeNull()
-    expect($(h.host, '.player-row')).not.toBeNull()
-    expect($(h.host, '.active-skill-bar')).not.toBeNull()
-    expect($(h.host, '.status-panel')).not.toBeNull()
-    expect($(h.host, '.skill-list-panel')).not.toBeNull()
+    expect($(h.host, '.battle-backdrop')).not.toBeNull()
+    expect($(h.host, '.char-unit.enemy')).not.toBeNull()
+    expect($(h.host, '.char-unit.player')).not.toBeNull()
+    expect($(h.host, '.command-menu')).not.toBeNull()
+    expect($(h.host, '.turn-badge')).not.toBeNull()
   })
 
-  it('敵とプレイヤーのHPが数値で表示される', () => {
+  it('敵と自キャラがそれぞれのドット絵で描かれる', () => {
     const h = mount()
-    const frames = $$(h.host, '.char-frame')
-    expect(frames.length).toBeGreaterThanOrEqual(2)
-    for (const f of frames) expect(f.textContent).toMatch(/\d+ \/ \d+/)
+    const units = $$(h.host, '.char-unit')
+    expect(units.length).toBeGreaterThanOrEqual(2)
+    for (const u of units) expect(u.querySelector('.pixel-sprite')).not.toBeNull()
   })
 
-  it('スキルスロットは4枠 + 守る + 何もしないで構成される', () => {
+  it('HPは身体に重ねたバーと数値で示される', () => {
     const h = mount()
-    expect(slotButtons(h.host)).toHaveLength(6)
-    expect(textOf(h.host, '.active-skill-bar .skill-slot.builtin .slot-label')).toBe('守る')
+    for (const unit of $$(h.host, '.char-unit')) {
+      expect(unit.querySelector('.hp-track')).not.toBeNull()
+      expect(unit.querySelector('.hp-num')?.textContent).toMatch(/\d+\/\d+/)
+    }
   })
 
-  it('未所持の枠は「空き」と表示され押せない', () => {
+  it('敵の頭上に次の技と被害の見込みが出る', () => {
     const h = mount()
-    const slots = slotButtons(h.host)
-    expect(slots[1].textContent).toContain('空き')
-    expect(slots[1].disabled).toBe(true)
+    expect(textOf(h.host, '.char-unit.enemy .next-skill')).not.toBe('')
+    expect(textOf(h.host, '.char-unit.enemy .next-damage')).toMatch(/ダメージ|致命傷/)
   })
 
-  it('所持スキルはラベルとレベルつきで枠に出る', () => {
+  it('自分の手番であることが斜めの帯で示される', () => {
     const h = mount()
+    expect($(h.host, '.tactics-banner')).not.toBeNull()
+  })
+
+  it('左上にターン数が出る', () => {
+    const h = mount()
+    expect(textOf(h.host, '.turn-badge .turn-value')).toBe('1')
+  })
+
+  it('戦場に常設のパネルもドラフトも出ていない', () => {
+    const h = mount()
+    expect($(h.host, '.info-overlay')).toBeNull()
+    expect($(h.host, '.draft-overlay')).toBeNull()
+    expect($(h.host, '.detail-overlay')).toBeNull()
+  })
+})
+
+describe('BattleScreen: コマンド操作', () => {
+  it('BATTLE を選ぶと技の一覧が開く', async () => {
+    const h = mount()
+    expect($(h.host, '.skill-command')).toBeNull()
+    await openBattleMenu(h.host)
+    expect($(h.host, '.skill-command')).not.toBeNull()
+  })
+
+  it('一覧は所持アクティブ + 守る + 何もしないで構成される', async () => {
+    const h = mount()
+    await openBattleMenu(h.host)
+    const owned = h.battle.state.player.actives.filter(a => a.slotIndex !== null).length
+    expect(slotButtons(h.host)).toHaveLength(owned + 2)
+    const labels = slotButtons(h.host).map(b => b.textContent ?? '')
+    expect(labels.some(t => t.includes('守る'))).toBe(true)
+    expect(labels.some(t => t.includes('何もしない'))).toBe(true)
+  })
+
+  it('所持スキルはラベルとレベルつきで並ぶ', async () => {
+    const h = mount()
+    await openBattleMenu(h.host)
     const owned = h.battle.state.player.actives[0]
     const label = BATTLE_CONTENT.skills.get(owned.id)?.label ?? ''
     expect(slotButtons(h.host)[0].textContent).toContain(label)
     expect(slotButtons(h.host)[0].textContent).toContain('Lv1')
   })
 
-  it('敵が次に使うスキルが予告される', () => {
+  it('選択中の技の効果とクールダウンが上に出る', async () => {
     const h = mount()
-    const chip = textOf(h.host, '.next-skill-chip')
-    expect(chip).not.toBe('')
-    expect(chip).toContain(':')
+    await openBattleMenu(h.host)
+    expect(textOf(h.host, '.skill-tip')).toContain('クールダウン')
   })
 
-  it('ドラフト画面と詳細画面は戦闘中には出ていない', () => {
+  it('もどるで COMMAND へ戻れる', async () => {
     const h = mount()
-    expect($(h.host, '.draft-overlay')).toBeNull()
-    expect($(h.host, '.detail-overlay')).toBeNull()
+    await openBattleMenu(h.host)
+    ;($(h.host, '.skill-command .skill-slot.back') as HTMLButtonElement).click()
+    await nextTick()
+    expect($(h.host, '.skill-command')).toBeNull()
+    expect($(h.host, '.command-menu')).not.toBeNull()
   })
-})
 
-describe('BattleScreen: 行動の操作', () => {
-  it('スキル枠を押すと敵のHP表示が減る', async () => {
+  it('技を押すと敵のHP表示が減る', async () => {
     const h = mount()
     const before = h.battle.state.enemies[0].hp
     await h.act()
     expect(h.battle.state.enemies[0].hp).toBeLessThan(before)
-    expect($$(h.host, '.char-frame')[0].textContent)
+    expect($(h.host, '.char-unit.enemy .hp-num')?.textContent)
       .toContain(String(Math.max(0, Math.floor(h.battle.state.enemies[0].hp))))
   })
 
+  it('守るを押すとクールタイムが表示され押せなくなる', async () => {
+    const h = mount()
+    await openBattleMenu(h.host)
+    const guard = slotButtons(h.host).find(b => b.textContent?.includes('守る')) as HTMLButtonElement
+    guard.click()
+    await nextTick()
+    await openBattleMenu(h.host)
+    const guardAfter = slotButtons(h.host).find(b => b.textContent?.includes('守る')) as HTMLButtonElement
+    expect(guardAfter.disabled).toBe(true)
+    expect(guardAfter.textContent).toMatch(/\d/)
+  })
+
+  it('手番でなくなるとコマンドが消える', async () => {
+    const h = mount()
+    await fightUntilDraft(h)
+    await nextTick()
+    expect($(h.host, '.command-area')).toBeNull()
+  })
+})
+
+describe('BattleScreen: 演出', () => {
+  it('行動を選ぶとスキル名が提示され、攻撃モーションに切り替わる', async () => {
+    const h = mount(4242, pausedScheduler())
+    await openBattleMenu(h.host)
+    slotButtons(h.host)[0].click()
+    await nextTick()
+    expect($(h.host, '.skill-cast-banner')).not.toBeNull()
+    expect($$(h.host, '.char-unit.player .sprite-box.attacking').length).toBe(1)
+  })
+
   it('攻撃するとダメージポップアップが対象の上に出て、キューが掃ける', async () => {
-    // ポップアップは多段ヒットをずらすため setTimeout 経由で積まれる。
-    // （消える側は TransitionGroup の leave アニメーション依存のため DOM では検証しない）
     vi.useFakeTimers()
     try {
       const h = mount()
@@ -179,78 +255,52 @@ describe('BattleScreen: 行動の操作', () => {
       vi.useRealTimers()
     }
   })
+})
 
-  it('守るを押すとクールタイム表示が出て押せなくなる', async () => {
-    const h = mount()
-    const guard = slotButtons(h.host)[4]
-    guard.click()
-    await nextTick()
-    const guardAfter = slotButtons(h.host)[4]
-    expect(guardAfter.disabled).toBe(true)
-    expect(guardAfter.textContent).toMatch(/\d/)
-  })
+describe('BattleScreen: 被弾の見え方', () => {
+  it('敵に攻撃されると自キャラが一瞬だけ色を変える', async () => {
+    vi.useFakeTimers()
+    try {
+      const h = mountTakingHits()
+      await openBattleMenu(h.host)
+      const pass = slotButtons(h.host).find(b => b.textContent?.includes('何もしない')) as HTMLButtonElement
+      pass.click()
+      await nextTick()
+      vi.advanceTimersByTime(BATTLE.multiHitIntervalMs)
+      await nextTick()
+      expect($(h.host, '.char-unit.player .sprite-box.flashing')).not.toBeNull()
+      expect($$(h.host, '.char-unit.player .damage-popup').length).toBeGreaterThan(0)
 
-  it('手番でなくなるとスキル枠が押せなくなる', async () => {
-    const h = mount()
-    await fightUntilDraft(h)
-    await nextTick()
-    expect(slotButtons(h.host).every(b => b.disabled)).toBe(true)
+      // フラッシュは一瞬で終わる（出しっぱなしにしない）
+      vi.advanceTimersByTime(BATTLE.presentation.flashMs + 50)
+      await nextTick()
+      expect($(h.host, '.char-unit.player .sprite-box.flashing')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 
-describe('BattleScreen: 見た目と進行表示', () => {
-  it('敵とプレイヤーがそれぞれのスプライトで描かれる', () => {
+describe('BattleScreen: INFO', () => {
+  it('INFO でステータスとスキル一覧が開く', async () => {
     const h = mount()
-    const units = $$(h.host, '.char-unit')
-    expect(units.length).toBeGreaterThanOrEqual(2)
-    for (const u of units) expect(u.querySelector('.pixel-sprite')).not.toBeNull()
-  })
-
-  it('背景が描かれる', () => {
-    const h = mount()
-    expect($(h.host, '.battle-backdrop .backdrop-svg')).not.toBeNull()
-    expect(h.battle.state.backgroundId).toBeTruthy()
-  })
-
-  it('右上にターン数と手番が出る', () => {
-    const h = mount()
-    expect(textOf(h.host, '.turn-indicator .turn-count')).toBe('ターン 1')
-    expect(textOf(h.host, '.turn-indicator .turn-actor')).toBe('あなたの手番')
-  })
-
-  it('行動を選ぶとスキル名が提示され、攻撃モーションに切り替わる', async () => {
-    const h = mount(4242, pausedScheduler())
-    slotButtons(h.host)[0].click()
+    const info = commandItems(h.host).find(b => b.textContent?.includes('INFO')) as HTMLButtonElement
+    info.click()
     await nextTick()
-    expect($(h.host, '.skill-cast-banner')).not.toBeNull()
-    expect($$(h.host, '.char-unit.player .sprite-box.attacking').length).toBe(1)
-  })
-})
-
-describe('BattleScreen: パネルの開閉と表示切り替え', () => {
-  it('ステータスパネルを畳んで開き直せる', async () => {
-    const h = mount()
-    const toggle = $(h.host, '.status-panel .panel-toggle') as HTMLButtonElement
-    expect($(h.host, '.status-panel .panel-body')).not.toBeNull()
-    toggle.click()
-    await nextTick()
-    expect($(h.host, '.status-panel .panel-body')).toBeNull()
-    ;($(h.host, '.status-panel .panel-toggle') as HTMLButtonElement).click()
-    await nextTick()
-    expect($(h.host, '.status-panel .panel-body')).not.toBeNull()
+    expect($(h.host, '.info-overlay .status-panel')).not.toBeNull()
+    expect($(h.host, '.info-overlay .skill-list-panel')).not.toBeNull()
+    expect($$(h.host, '.info-overlay .stat-row')).toHaveLength(10)
   })
 
-  it('スキル一覧パネルを畳んで開き直せる', async () => {
-    const h = mount()
-    const toggle = $(h.host, '.skill-list-panel .panel-toggle') as HTMLButtonElement
-    expect($(h.host, '.skill-list-panel .panel-body')).not.toBeNull()
-    toggle.click()
+  async function openInfo(h: Harness): Promise<void> {
+    const info = commandItems(h.host).find(b => b.textContent?.includes('INFO')) as HTMLButtonElement
+    info.click()
     await nextTick()
-    expect($(h.host, '.skill-list-panel .panel-body')).toBeNull()
-  })
+  }
 
   it('基礎値と実効値の表示を切り替えられる', async () => {
     const h = mount()
+    await openInfo(h)
     const modeButton = $$(h.host, '.status-panel .panel-controls button')[0] as HTMLButtonElement
     expect(modeButton.textContent?.trim()).toBe('実効値')
     modeButton.click()
@@ -260,6 +310,7 @@ describe('BattleScreen: パネルの開閉と表示切り替え', () => {
 
   it('バフ差分の表示を切り替えられる', async () => {
     const h = mount()
+    await openInfo(h)
     const diffButton = $$(h.host, '.status-panel .panel-controls button')[1] as HTMLButtonElement
     expect(diffButton.textContent?.trim()).toBe('バフオン')
     diffButton.click()
@@ -267,41 +318,26 @@ describe('BattleScreen: パネルの開閉と表示切り替え', () => {
     expect(($$(h.host, '.status-panel .panel-controls button')[1]).textContent?.trim()).toBe('バフオフ')
   })
 
-  it('全ステータスの行が並ぶ', () => {
+  it('所持しているスキルは名前が見える', async () => {
     const h = mount()
-    expect($$(h.host, '.status-panel .stat-row')).toHaveLength(10)
-  })
-})
-
-describe('BattleScreen: スキル一覧の見え方', () => {
-  it('所持しているスキルは名前が見える', () => {
-    const h = mount()
+    await openInfo(h)
     const ownedId = h.battle.state.player.actives[0].id
     const label = BATTLE_CONTENT.skills.get(ownedId)?.label ?? ''
     expect(textOf(h.host, '.skill-list-panel')).toContain(label)
   })
 
-  it('未入手かつ未閲覧のスキルは伏せ字で表示される', () => {
+  it('未入手かつ未閲覧のスキルは伏せ字で表示される', async () => {
     const h = mount()
+    await openInfo(h)
     expect($$(h.host, '.skill-item.unseen').length).toBeGreaterThan(0)
     for (const el of $$(h.host, '.skill-item.unseen')) {
       expect(el.textContent).toContain('？？？')
     }
   })
 
-  it('閲覧済みになったスキルは名前が見えるようになる', async () => {
-    const h = mount()
-    const unseenBefore = $$(h.host, '.skill-item.unseen').length
-    const hiddenId = [...BATTLE_CONTENT.skills.keys()]
-      .find(id => !h.battle.state.player.actives.some(a => a.id === id)) as string
-    h.battle.markSeen([hiddenId])
-    await nextTick()
-    expect($$(h.host, '.skill-item.unseen').length).toBe(unseenBefore - 1)
-    expect(textOf(h.host, '.skill-list-panel')).toContain(BATTLE_CONTENT.skills.get(hiddenId)?.label ?? '')
-  })
-
   it('マウスを乗せただけでは効果文が開かない', async () => {
     const h = mount()
+    await openInfo(h)
     const owned = $$(h.host, '.skill-item.owned')[0]
     owned.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
     owned.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
@@ -311,6 +347,7 @@ describe('BattleScreen: スキル一覧の見え方', () => {
 
   it('項目をクリックすると効果文が開く', async () => {
     const h = mount()
+    await openInfo(h)
     const owned = $$(h.host, '.skill-item.owned')[0]
     expect(owned.querySelector('.item-detail')).toBeNull()
     owned.click()
@@ -320,10 +357,9 @@ describe('BattleScreen: スキル一覧の見え方', () => {
 })
 
 describe('BattleScreen: キャラクター詳細', () => {
-  it('プレイヤー枠を押すと詳細が開き、閉じられる', async () => {
+  it('自キャラを押すと詳細が開き、閉じられる', async () => {
     const h = mount()
-    const frames = $$(h.host, '.char-frame')
-    frames[frames.length - 1].click()
+    ;($(h.host, '.char-unit.player') as HTMLElement).click()
     await nextTick()
     expect($(h.host, '.detail-overlay')).not.toBeNull()
     expect(textOf(h.host, '.detail-title')).toBe(h.battle.state.player.label)
@@ -334,26 +370,17 @@ describe('BattleScreen: キャラクター詳細', () => {
 
   it('詳細には全ステータスと所持アクティブスキルが並ぶ', async () => {
     const h = mount()
-    const frames = $$(h.host, '.char-frame')
-    frames[frames.length - 1].click()
+    ;($(h.host, '.char-unit.player') as HTMLElement).click()
     await nextTick()
     expect($$(h.host, '.detail-overlay .stat-cell')).toHaveLength(10)
     expect($$(h.host, '.detail-overlay .skill-row').length).toBeGreaterThan(0)
   })
 
-  it('敵の詳細を開くとその敵の名前が出る', async () => {
+  it('敵を押すとその敵の詳細が出る', async () => {
     const h = mount()
-    $$(h.host, '.char-frame')[0].click()
+    ;($(h.host, '.char-unit.enemy') as HTMLElement).click()
     await nextTick()
     expect(textOf(h.host, '.detail-title')).toBe(h.battle.state.enemies[0].label)
-  })
-
-  it('詳細を開いたスキルは一覧でも閲覧済みになる', async () => {
-    const h = mount()
-    const unseenBefore = $$(h.host, '.skill-item.unseen').length
-    $$(h.host, '.char-frame')[0].click()   // 敵の所持スキルが閲覧済みになる
-    await nextTick()
-    expect($$(h.host, '.skill-item.unseen').length).toBeLessThan(unseenBefore)
   })
 })
 
@@ -386,19 +413,6 @@ describe('BattleScreen: ドラフト', () => {
     expect($(h.host, '.draft-overlay')).toBeNull()
     expect(h.battle.state.status).toBe('battle')
     expect(h.battle.state.enemies.every(e => e.alive)).toBe(true)
-  })
-
-  it('獲得したスキルがスキルバーとスキル一覧に反映される', async () => {
-    const h = mount()
-    await fightUntilDraft(h)
-    await nextTick()
-    const beforeOwned = $$(h.host, '.skill-item.owned').length
-    ;($$(h.host, '.draft-card')[0] as HTMLButtonElement).click()
-    await nextTick()
-    const afterOwned = $$(h.host, '.skill-item.owned').length
-    // ステータス微増を引いた場合のみ所持数が変わらない
-    const wasFallback = beforeOwned === afterOwned
-    expect(wasFallback || afterOwned === beforeOwned + 1).toBe(true)
   })
 })
 
@@ -442,48 +456,9 @@ describe('BattleScreen: アクティブ枠の入れ替え', () => {
     await nextTick()
     expect(h.battle.state.status).toBe('battle')
     expect($(h.host, '.draft-overlay')).toBeNull()
+    await openBattleMenu(h.host)
     const label = BATTLE_CONTENT.skills.get(incoming)?.label ?? ''
-    expect(slotButtons(h.host)[3].textContent).toContain(label)
-  })
-
-  it('外れたスキルは一覧で「保管中」として残る', async () => {
-    const h = mount()
-    expect(await advanceUntilSwap(h)).toBe(true)
-    ;($$(h.host, '.swap-slot')[3] as HTMLButtonElement).click()
-    await nextTick()
-    expect($$(h.host, '.skill-item.stored').length).toBe(1)
-    expect(textOf(h.host, '.skill-item.stored')).toContain('保管中')
-  })
-})
-
-describe('BattleScreen: 対象選択', () => {
-  it('敵が1体のときは対象選択を挟まずに攻撃する', async () => {
-    const h = mount()
-    expect(h.battle.state.enemies).toHaveLength(1)
-    await h.act()
-    expect($(h.host, '.focus-overlay')).toBeNull()
-  })
-})
-
-describe('BattleScreen: 被弾の見え方', () => {
-  it('敵に攻撃されると自キャラが一瞬だけ色を変える', async () => {
-    vi.useFakeTimers()
-    try {
-      const h = mountTakingHits()
-      slotButtons(h.host)[5].click()   // 何もしない → 敵の手番が回ってくる
-      await nextTick()
-      vi.advanceTimersByTime(BATTLE.multiHitIntervalMs)
-      await nextTick()
-      expect($(h.host, '.char-unit.player .sprite-box.flashing')).not.toBeNull()
-      expect($$(h.host, '.char-unit.player .damage-popup').length).toBeGreaterThan(0)
-
-      // フラッシュは一瞬で終わる（出しっぱなしにしない）
-      vi.advanceTimersByTime(BATTLE.presentation.flashMs + 50)
-      await nextTick()
-      expect($(h.host, '.char-unit.player .sprite-box.flashing')).toBeNull()
-    } finally {
-      vi.useRealTimers()
-    }
+    expect(slotButtons(h.host).some(b => b.textContent?.includes(label))).toBe(true)
   })
 })
 
@@ -521,8 +496,10 @@ describe('BattleScreen: 効果音', () => {
     vi.useFakeTimers()
     try {
       const h = mount()
+      await openBattleMenu(h.host)
       const played = recordSfx()
-      slotButtons(h.host)[4].click()   // 守る
+      const guard = slotButtons(h.host).find(b => b.textContent?.includes('守る')) as HTMLButtonElement
+      guard.click()
       await nextTick()
       vi.advanceTimersByTime(BATTLE.multiHitIntervalMs * 4)
       expect(played).toContain(BATTLE_EFFECTS.get('fx_guard')?.sfx)

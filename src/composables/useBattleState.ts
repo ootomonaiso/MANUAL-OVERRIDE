@@ -26,6 +26,7 @@ import {
 import { buildTurnQueue, previewEnemyNextSkill } from '../domain/battle/turnQueue'
 import { rollDraft, applyDraftChoice, confirmSwap as confirmSwapSkill } from '../domain/battle/skillDraft'
 import { pickBackgroundId } from '../domain/battle/backdrop'
+import { estimateSkillDamage } from '../domain/battle/damagePreview'
 import { BATTLE_CONTENT } from '../data/battleContent'
 import { BATTLE_BACKGROUNDS } from '../data/battleBackgrounds'
 import { BATTLE } from '../data/tunables'
@@ -434,6 +435,19 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   function nextEnemySkillPreview(e: CombatantView): string | null {
     return previewEnemyNextSkill(toRaw(e) as Combatant)
   }
+  /** 敵がそのスキルを使ったとき、プレイヤーがどれくらい削られるかの見積り */
+  function estimateDamageToPlayer(e: CombatantView, skillId: string, level: number): number {
+    const def = content.skills.get(skillId)
+    if (!def) return 0
+    return estimateSkillDamage({
+      source: toRaw(e) as Combatant,
+      target: state.player,
+      skill: def,
+      level,
+      content,
+      getEffective: c => resolveEffectiveStats(c, content),
+    })
+  }
   function draftOptionLabel(opt: DraftOption): { label: string; flavorText: string } | null {
     if (opt.isFallback) return null
     const def = opt.kind === 'trait' ? content.traits.get(opt.id) : content.skills.get(opt.id)
@@ -473,6 +487,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
 
     effectiveOf,
     nextEnemySkillPreview,
+    estimateDamageToPlayer,
     draftOptionLabel,
   }
 }

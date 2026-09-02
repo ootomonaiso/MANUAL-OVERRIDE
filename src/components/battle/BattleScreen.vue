@@ -2,21 +2,26 @@
 /**
  * components/battle/BattleScreen.vue
  * rpg ジャンル（ローグライク戦闘）の画面全体レイアウト（docs/genre/rpg/08-ui.md）。
+ *
+ * 画面の主役はキャラクターで、情報はその身体に重ねる。
+ * 行動の選択は右側のコマンド（COMMAND → BATTLE → 技）へ集約し、
+ * 戦場そのものには常設のパネルを置かない。
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import type { useBattleState, CombatantView } from '../../composables/useBattleState'
 import { useBattlePresentation } from '../../composables/useBattlePresentation'
 import StatusPanel from './StatusPanel.vue'
 import type { StatRowView } from './StatusPanel.vue'
 import SkillListPanel from './SkillListPanel.vue'
 import type { SkillListItemView } from './SkillListPanel.vue'
-import ActiveSkillBar from './ActiveSkillBar.vue'
-import type { ActiveSlotView } from './ActiveSkillBar.vue'
-import FocusSelector from './FocusSelector.vue'
-import type { FocusEnemyView } from './FocusSelector.vue'
-import TurnQueueBar from './TurnQueueBar.vue'
-import type { TurnQueueEntryView, EnemyNextSkillView } from './TurnQueueBar.vue'
-import TurnIndicator from './TurnIndicator.vue'
+import CommandMenu from './CommandMenu.vue'
+import type { CommandEntry } from './CommandMenu.vue'
+import SkillCommandPanel from './SkillCommandPanel.vue'
+import type { SkillCommandEntry } from './SkillCommandPanel.vue'
+import TurnBadge from './TurnBadge.vue'
+import TacticsBanner from './TacticsBanner.vue'
+import BuffStrip from './BuffStrip.vue'
+import type { BuffEntry } from './BuffStrip.vue'
 import CharacterFrame from './CharacterFrame.vue'
 import CharacterDetail from './CharacterDetail.vue'
 import type { DetailStatRow, DetailSkillRow } from './CharacterDetail.vue'
@@ -24,12 +29,14 @@ import SkillDraftPanel from './SkillDraftPanel.vue'
 import type { DraftCardView, SwapSlotView } from './SkillDraftPanel.vue'
 import BattleBackdrop from './BattleBackdrop.vue'
 import SkillCastBanner from './SkillCastBanner.vue'
-import type { StatKey, PlayerAction, SkillDef } from '../../domain/battle/types'
+import type { StatKey, PlayerAction, SkillDef, Element } from '../../domain/battle/types'
 import { STAT_KEYS } from '../../domain/battle/types'
 import { STAT_LABEL, CATEGORY_LABEL, buildSkillText } from '../../domain/battle/skillText'
 import { STACKS_REQUIRED } from '../../domain/battle/skillDraft'
+import { damageMagnitude, MAGNITUDE_LABEL } from '../../domain/battle/damagePreview'
 import { BATTLE_CONTENT } from '../../data/battleContent'
 import { findBattleBackground } from '../../data/battleBackgrounds'
+import { BATTLE } from '../../data/tunables'
 import { soundManager } from '../../plugins/SoundManager'
 
 /**
@@ -44,6 +51,25 @@ const props = defineProps<{
 const battle = props.battle
 const content = BATTLE_CONTENT
 const fx = useBattlePresentation(battle)
+
+/** 背景写真と手前の床の境目。キャラクターの立ち位置もここに合わせる */
+const FLOOR_TOP = 0.62
+const ELEMENT_COLOR: Record<Element, string> = {
+  physical: 'var(--battle-element-physical)',
+  magical: 'var(--battle-element-magical)',
+  special: 'var(--battle-element-special)',
+}
+
+// ── 画面サイズに追従するドット絵の大きさ ─────────────────────
+const viewportHeight = ref(typeof window === 'undefined' ? 800 : window.innerHeight)
+function onResize(): void { viewportHeight.value = window.innerHeight }
+onMounted(() => window.addEventListener('resize', onResize))
+onUnmounted(() => window.removeEventListener('resize', onResize))
+
+const playerSpriteHeight = computed(() => Math.round(viewportHeight.value * 0.4))
+function enemySpriteHeight(isBoss: boolean): number {
+  return Math.round(viewportHeight.value * (isBoss ? 0.4 : 0.32))
+}
 
 const PERCENT_STATS = new Set<StatKey>(['hitRate', 'evadeRate', 'critRate', 'critDamageMultiplier'])
 
@@ -65,77 +91,129 @@ const themeVars = computed(() => {
   return { '--battle-accent': bg.accent, '--battle-panel': bg.panel ?? '#15131e' }
 })
 
-// ── アクティブスキルバー ─────────────────────────────────────
-const activeSlots = computed<(ActiveSlotView | null)[]>(() => {
-  const slots: (ActiveSlotView | null)[] = [null, null, null, null]
-  for (const a of battle.state.player.actives) {
-    if (a.slotIndex === null) continue
-    const def = content.skills.get(a.id)
-    slots[a.slotIndex] = {
-      id: a.id,
-      label: def?.label ?? a.id,
-      level: a.level,
-      stacks: a.stacks,
-      stacksRequired: STACKS_REQUIRED[Math.min(a.level, 3)] ?? 0,
-      cooldown: a.cooldown,
-    }
-  }
-  return slots
+// ── コマンド ──────────────────────────────────────────────────
+type MenuMode = 'root' | 'battle' | 'focus' | 'info'
+const menu = ref<MenuMode>('root')
+const pendingAction = ref<PlayerAction | null>(null)
+const hoveredCommand = ref<string | null>(null)
+
+const awaitingInput = computed(() => battle.isPlayerTurn.value && battle.state.status === 'battle')
+
+watch(awaitingInput, (ready) => {
+  if (ready) { menu.value = 'root'; pendingAction.value = null }
 })
 
-// ── 行動選択 → フォーカス要否判定 ────────────────────────────
-const pendingAction = ref<PlayerAction | null>(null)
+const commandEntries = computed<CommandEntry[]>(() => [
+  { id: 'battle', label: 'BATTLE' },
+  { id: 'info', label: 'INFO' },
+])
 
-const focusEnemies = computed<FocusEnemyView[]>(() =>
-  battle.state.enemies.map((e, i) => ({ index: i, label: e.label, alive: e.alive })),
-)
+const GUARD_DESCRIPTION = `このターンに受けるダメージを${Math.round(BATTLE.guard.cutRate * 100)}%軽減する`
+const DODGE_DESCRIPTION = `このターンの回避率を${Math.round(BATTLE.dodge.evadeBonus * 100)}%上げる`
 
-function onSelectActive(slotIndex: number): void {
+const skillEntries = computed<SkillCommandEntry[]>(() => {
+  const player = battle.state.player
+  const entries: SkillCommandEntry[] = []
+  for (let slot = 0; slot < 4; slot++) {
+    const owned = player.actives.find(a => a.slotIndex === slot)
+    if (!owned) continue
+    const def = content.skills.get(owned.id)
+    if (!def || def.kind !== 'active') continue
+    entries.push({
+      id: `active:${slot}`,
+      label: def.label,
+      markColor: ELEMENT_COLOR[def.element],
+      cooldown: owned.cooldown,
+      disabled: owned.cooldown > 0,
+      note: `Lv${owned.level}`,
+      effectTokens: buildSkillText(def, owned.level),
+    })
+  }
+  const builtin = battle.guardOrDodge.value
+  const builtinCooldown = player.builtinCooldowns[builtin]
+  entries.push({
+    id: `builtin:${builtin}`,
+    label: builtin === 'dodge' ? '避ける' : '守る',
+    markColor: 'var(--battle-category-guard)',
+    cooldown: builtinCooldown,
+    disabled: builtinCooldown > 0,
+    description: builtin === 'dodge' ? DODGE_DESCRIPTION : GUARD_DESCRIPTION,
+  })
+  entries.push({
+    id: 'builtin:pass',
+    label: '何もしない',
+    markColor: 'var(--battle-diff-muted)',
+    cooldown: 0,
+    disabled: false,
+    description: 'この手番は何もせず、次の手番へ送る',
+  })
+  return entries
+})
+
+function onCommandSelect(id: string): void {
+  soundManager.playSfx('battle_skill_select')
+  if (id === 'battle') menu.value = 'battle'
+  else if (id === 'info') menu.value = 'info'
+}
+
+function onSkillSelect(id: string): void {
+  const [kind, value] = id.split(':')
+  soundManager.playSfx('battle_skill_select')
+  if (kind === 'builtin') {
+    battle.selectAction({ kind: 'builtin', action: value as 'guard' | 'dodge' | 'pass' })
+    menu.value = 'root'
+    return
+  }
+  const slotIndex = Number(value)
   const owned = battle.state.player.actives.find(a => a.slotIndex === slotIndex)
   if (!owned) return
   const def = content.skills.get(owned.id)
   if (!def || def.kind !== 'active') return
-  soundManager.playSfx('battle_skill_select')
+
   const aliveCount = battle.state.enemies.filter(e => e.alive).length
   if (def.defaultFocus === 'enemy' && def.focusRange === 'single' && aliveCount > 1) {
     pendingAction.value = { kind: 'active', slotIndex }
-  } else {
-    battle.selectAction({ kind: 'active', slotIndex }, null)
+    menu.value = 'focus'
+    return
   }
-}
-function onFocusSelect(enemyIndex: number): void {
-  if (!pendingAction.value) return
-  battle.selectAction(pendingAction.value, enemyIndex)
-  pendingAction.value = null
-}
-function onFocusCancel(): void {
-  pendingAction.value = null
-}
-function onSelectBuiltin(action: 'guard' | 'pass' | 'dodge'): void {
-  soundManager.playSfx('battle_skill_select')
-  battle.selectAction({ kind: 'builtin', action })
+  battle.selectAction({ kind: 'active', slotIndex }, null)
+  menu.value = 'root'
 }
 
-// ── 行動順・敵の次スキル ──────────────────────────────────────
-const turnQueueView = computed<TurnQueueEntryView[]>(() =>
-  battle.state.turnQueue.map((entry, i) => {
-    const isPlayer = entry.combatantId === battle.state.player.id
-    const enemy = battle.state.enemies.find(e => e.id === entry.combatantId)
-    return {
-      id: entry.combatantId,
-      label: isPlayer ? 'あなた' : (enemy?.label ?? '?'),
-      isPlayer,
-      isCurrent: i === battle.state.turnIndex,
-    }
-  }),
-)
-const enemyNextSkills = computed<EnemyNextSkillView[]>(() =>
-  battle.state.enemies.filter(e => e.alive).map(e => {
-    const skillId = battle.nextEnemySkillPreview(e)
-    const def = skillId ? content.skills.get(skillId) : undefined
-    return { enemyLabel: e.label, skillLabel: def?.label ?? null }
-  }),
-)
+function onUnitSelect(c: CombatantView, enemyIndex: number | null): void {
+  if (menu.value === 'focus' && pendingAction.value && enemyIndex !== null && c.alive) {
+    battle.selectAction(pendingAction.value, enemyIndex)
+    pendingAction.value = null
+    menu.value = 'root'
+    return
+  }
+  openDetail(c)
+}
+
+function onCancel(): void {
+  pendingAction.value = null
+  menu.value = 'root'
+}
+
+// ── 敵の予告 ──────────────────────────────────────────────────
+interface NextPreview { label: string | null; damage: string | null }
+
+function nextPreviewOf(e: CombatantView): NextPreview {
+  const skillId = battle.nextEnemySkillPreview(e)
+  const def = skillId ? content.skills.get(skillId) : undefined
+  if (!def) return { label: null, damage: null }
+  const owned = e.actives.find(a => a.id === skillId)
+  const damage = battle.estimateDamageToPlayer(e, skillId as string, owned?.level ?? 1)
+  const magnitude = damageMagnitude(damage, playerMaxHp.value)
+  return { label: def.label, damage: magnitude === 'none' ? null : MAGNITUDE_LABEL[magnitude] }
+}
+
+/** テンプレートから2回呼ばないよう、敵ごとの予告をまとめて作る */
+const enemyPreviews = computed<Record<string, NextPreview>>(() => {
+  const out: Record<string, NextPreview> = {}
+  for (const e of battle.state.enemies) out[e.id] = nextPreviewOf(e)
+  return out
+})
 
 // ── キャラクター詳細 ──────────────────────────────────────────
 const detailTarget = ref<CombatantView | null>(null)
@@ -175,7 +253,7 @@ const detailView = computed(() => {
   }
 })
 
-// ── スキル一覧パネル ──────────────────────────────────────────
+// ── スキル一覧（INFO の中身） ─────────────────────────────────
 function visibilityOf(id: string, owned: boolean): 'unseen' | 'seen' | 'owned' {
   if (owned) return 'owned'
   return battle.state.seenIds.has(id) ? 'seen' : 'unseen'
@@ -240,6 +318,29 @@ const skillListView = computed(() => {
   return { ownedActives, ownedPassives, ownedTraits, unownedActives, unownedPassives, unownedTraits }
 })
 
+// ── いま効いているもの ────────────────────────────────────────
+const buffEntries = computed<BuffEntry[]>(() => {
+  const player = battle.state.player
+  const out: BuffEntry[] = []
+  for (const t of player.traits) {
+    const def = content.traits.get(t.id)
+    out.push({ id: `trait:${t.id}`, label: def?.label ?? t.id, permanent: true, color: 'var(--battle-accent)' })
+  }
+  for (const m of player.temporary) {
+    const label = m.sourceId === 'guard' ? '防御態勢'
+      : m.sourceId === 'dodge' ? '回避態勢'
+        : m.stat === 'cutRate' ? 'ダメージ軽減'
+          : `${STAT_LABEL[m.stat]}変化`
+    out.push({
+      id: `tmp:${m.sourceId}:${m.stat}`,
+      label,
+      permanent: false,
+      color: (m.flat ?? m.rate ?? 0) < 0 ? 'var(--battle-diff-minus)' : 'var(--battle-diff-plus)',
+    })
+  }
+  return out
+})
+
 // ── ドラフト ──────────────────────────────────────────────────
 const draftCards = computed<DraftCardView[]>(() => {
   if (!battle.state.draftOptions) return []
@@ -264,9 +365,15 @@ const draftCards = computed<DraftCardView[]>(() => {
   })
 })
 
-const swapSlotsView = computed<SwapSlotView[]>(() =>
-  activeSlots.value.map((s, i) => ({ index: i, label: s ? s.label : '空き' })),
-)
+const swapSlotsView = computed<SwapSlotView[]>(() => {
+  const slots: SwapSlotView[] = []
+  for (let i = 0; i < 4; i++) {
+    const owned = battle.state.player.actives.find(a => a.slotIndex === i)
+    const def = owned ? content.skills.get(owned.id) : undefined
+    slots.push({ index: i, label: def?.label ?? '空き' })
+  }
+  return slots
+})
 
 function labelForCombatant(id: string | null | undefined): string {
   if (!id) return ''
@@ -274,7 +381,6 @@ function labelForCombatant(id: string | null | undefined): string {
   return battle.state.enemies.find(e => e.id === id)?.label ?? ''
 }
 
-// ── 進行表示・演出 ────────────────────────────────────────────
 const currentActorLabel = computed(() => {
   if (battle.state.status !== 'battle') return '―'
   if (battle.isPlayerTurn.value) return 'あなたの手番'
@@ -288,94 +394,104 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
 
 <template>
   <div class="battle-screen" :style="themeVars">
-    <BattleBackdrop :background="background" />
+    <BattleBackdrop :background="background" :floor-top="FLOOR_TOP" />
 
-    <TurnQueueBar :entries="turnQueueView" :enemy-next-skills="enemyNextSkills" />
-
-    <TurnIndicator
-      :battle-number="battle.battleNumber.value"
+    <TurnBadge
       :turn-number="battle.turnNumber.value"
+      :battle-number="battle.battleNumber.value"
       :actor-label="currentActorLabel"
-      :is-player-turn="battle.isPlayerTurn.value"
-      :background-label="background?.label ?? ''"
     />
+    <TacticsBanner :visible="awaitingInput" text="Decide on tactics!" />
 
-    <div class="battle-main">
-      <div class="side-panels">
-        <StatusPanel
-          :collapsed="battle.state.ui.statusPanelCollapsed"
-          :mode="battle.state.ui.statusPanelMode"
-          :show-diff="battle.state.ui.showBuffDiff"
-          :stats="playerStatRows"
-          @toggle-collapsed="battle.toggleStatusCollapsed()"
-          @toggle-mode="battle.toggleStatusMode()"
-          @toggle-diff="battle.toggleBuffDiff()"
+    <div class="battle-field" :class="{ shaking: fx.screenShake.value > 0 }">
+      <div class="enemy-line" :style="{ bottom: `${(1 - FLOOR_TOP) * 100}%` }">
+        <CharacterFrame
+          v-for="(e, i) in battle.state.enemies"
+          :key="e.id"
+          side="enemy"
+          :label="e.label"
+          :hp="e.hp"
+          :max-hp="battle.effectiveOf(e).hp"
+          :shield="e.shield"
+          :alive="e.alive"
+          :is-boss="e.isBoss"
+          :sprite-id="e.spriteId"
+          :sprite-height="enemySpriteHeight(e.isBoss)"
+          :attacking="battle.presentation.posingId === e.id"
+          :flash="fx.flashOf(e.id)"
+          :popups="fx.popupsOf(e.id)"
+          :next-skill-label="enemyPreviews[e.id]?.label ?? null"
+          :next-damage-label="enemyPreviews[e.id]?.damage ?? null"
+          :targetable="menu === 'focus' && e.alive"
+          @open-detail="onUnitSelect(e, i)"
         />
-        <SkillListPanel
-          :collapsed="battle.state.ui.skillListCollapsed"
-          v-bind="skillListView"
-          @toggle-collapsed="battle.toggleSkillListCollapsed()"
+      </div>
+
+      <div class="player-slot">
+        <CharacterFrame
+          side="player"
+          :label="battle.state.player.label"
+          :hp="battle.state.player.hp"
+          :max-hp="playerMaxHp"
+          :shield="battle.state.player.shield"
+          :alive="battle.state.player.alive"
+          :sprite-id="battle.state.player.spriteId"
+          :sprite-height="playerSpriteHeight"
+          :attacking="battle.presentation.posingId === battle.state.player.id"
+          :flash="fx.flashOf(battle.state.player.id)"
+          :popups="fx.popupsOf(battle.state.player.id)"
+          @open-detail="onUnitSelect(battle.state.player, null)"
         />
       </div>
 
-      <div class="battle-field" :class="{ shaking: fx.screenShake.value > 0 }">
-        <div class="enemy-row">
-          <CharacterFrame
-            v-for="e in battle.state.enemies"
-            :key="e.id"
-            side="enemy"
-            :label="e.label"
-            :hp="e.hp"
-            :max-hp="battle.effectiveOf(e).hp"
-            :shield="e.shield"
-            :alive="e.alive"
-            :is-boss="e.isBoss"
-            :sprite-id="e.spriteId"
-            :attacking="battle.presentation.posingId === e.id"
-            :flash="fx.flashOf(e.id)"
-            :popups="fx.popupsOf(e.id)"
-            @open-detail="openDetail(e)"
-          />
-        </div>
+      <SkillCastBanner
+        :visible="battle.presentation.phase !== 'idle'"
+        :seq="battle.presentation.seq"
+        :actor-label="bannerActorLabel"
+        :skill-label="battle.presentation.skillLabel"
+        :element="battle.presentation.element"
+        :is-player="battle.presentation.actorIsPlayer"
+      />
+    </div>
 
-        <SkillCastBanner
-          :visible="battle.presentation.phase !== 'idle'"
-          :seq="battle.presentation.seq"
-          :actor-label="bannerActorLabel"
-          :skill-label="battle.presentation.skillLabel"
-          :element="battle.presentation.element"
-          :is-player="battle.presentation.actorIsPlayer"
-        />
+    <BuffStrip :entries="buffEntries" />
 
-        <div v-if="pendingAction" class="focus-overlay">
-          <FocusSelector :enemies="focusEnemies" range-label="対象を1体選択" @select="onFocusSelect" @cancel="onFocusCancel" />
-        </div>
-
-        <div class="player-row">
-          <CharacterFrame
-            side="player"
-            :label="battle.state.player.label"
-            :hp="battle.state.player.hp"
-            :max-hp="playerMaxHp"
-            :shield="battle.state.player.shield"
-            :alive="battle.state.player.alive"
-            :sprite-id="battle.state.player.spriteId"
-            :attacking="battle.presentation.posingId === battle.state.player.id"
-            :flash="fx.flashOf(battle.state.player.id)"
-            :popups="fx.popupsOf(battle.state.player.id)"
-            @open-detail="openDetail(battle.state.player)"
-          />
-        </div>
-
-        <ActiveSkillBar
-          :slots="activeSlots"
-          :guard-or-dodge="battle.guardOrDodge.value"
-          :guard-cooldown="battle.state.player.builtinCooldowns[battle.guardOrDodge.value]"
-          :disabled="!battle.isPlayerTurn.value || pendingAction !== null"
-          @select-active="onSelectActive"
-          @select-builtin="onSelectBuiltin"
-        />
+    <div v-if="awaitingInput" class="command-area">
+      <CommandMenu
+        v-if="menu === 'root'"
+        :entries="commandEntries"
+        :active-id="hoveredCommand"
+        @select="onCommandSelect"
+        @hover="hoveredCommand = $event"
+      />
+      <SkillCommandPanel
+        v-else-if="menu === 'battle'"
+        :entries="skillEntries"
+        @select="onSkillSelect"
+        @cancel="onCancel"
+      />
+      <div v-else-if="menu === 'focus'" class="focus-hint">
+        <div class="focus-title">対象を選ぶ</div>
+        <div class="focus-body">敵をクリックしてください</div>
+        <button type="button" class="focus-cancel" @click="onCancel">もどる</button>
       </div>
+    </div>
+
+    <div v-if="menu === 'info'" class="info-overlay">
+      <StatusPanel
+        :collapsed="false"
+        :mode="battle.state.ui.statusPanelMode"
+        :show-diff="battle.state.ui.showBuffDiff"
+        :stats="playerStatRows"
+        @toggle-collapsed="onCancel"
+        @toggle-mode="battle.toggleStatusMode()"
+        @toggle-diff="battle.toggleBuffDiff()"
+      />
+      <SkillListPanel
+        :collapsed="false"
+        v-bind="skillListView"
+        @toggle-collapsed="onCancel"
+      />
     </div>
 
     <SkillDraftPanel
@@ -401,11 +517,9 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   position: absolute;
   inset: 0;
   z-index: 5;
-  display: flex;
-  flex-direction: column;
+  overflow: hidden;
   color: var(--battle-text);
   font-family: var(--genre-font, var(--font-main));
-  overflow: hidden;
 
   /* ── バトル専用のCSSカスタムプロパティ。子コンポーネント（別スコープ）へも継承される ── */
   --battle-element-physical: #ff7a5c;
@@ -429,61 +543,84 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   --battle-frame-border: rgba(255, 255, 255, 0.22);
 }
 
-.battle-main {
-  position: relative;
-  z-index: 2;
-  flex: 1;
-  display: flex;
-  gap: 12px;
-  padding: 8px 12px;
-  /* 画面下部中央の「説明書を投げてゲームを終わらせる」ボタン（App.vue .giveup-area,
-     bottom:16px 付近, z-index:15）と重ならないよう余白を確保する */
-  padding-bottom: 76px;
-  overflow: hidden;
-}
-.side-panels {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 200px;
-  flex-shrink: 0;
-  overflow-y: auto;
-}
 .battle-field {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: relative;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
 }
 .battle-field.shaking {
-  animation: field-shake 200ms ease-in-out;
+  animation: field-shake 220ms ease-in-out;
 }
 @keyframes field-shake {
   0% { transform: translate(0, 0); }
-  25% { transform: translate(-5px, 2px); }
-  50% { transform: translate(4px, -3px); }
-  75% { transform: translate(-3px, 1px); }
+  25% { transform: translate(-7px, 3px); }
+  50% { transform: translate(6px, -4px); }
+  75% { transform: translate(-4px, 2px); }
   100% { transform: translate(0, 0); }
 }
-.enemy-row {
-  /* 余った縦幅を敵側が占め、その中央に立たせる。
-     上端に貼り付けると背景の空に浮いて見えるため */
-  flex: 1 1 auto;
+
+/* 敵は床の際に立たせる。並ぶときは左右へ広がる */
+.enemy-line {
+  position: absolute;
+  left: 0;
+  right: 0;
   display: flex;
+  align-items: flex-end;
   justify-content: center;
-  align-items: center;
-  gap: 28px;
-  padding-top: 2vh;
+  gap: 40px;
 }
-.player-row {
-  display: flex;
-  justify-content: center;
-  padding-bottom: 6px;
+/* 自キャラは画面下端で見切れるくらい手前に置く */
+.player-slot {
+  position: absolute;
+  left: 50%;
+  bottom: -3%;
+  transform: translateX(-50%);
 }
-.focus-overlay {
+
+.command-area {
+  position: absolute;
+  right: 26px;
+  top: 28%;
+  z-index: 16;
+}
+.focus-hint {
+  width: 210px;
+  padding: 12px 14px;
+  background: #f6e3cf;
+  border: 3px solid #d9564b;
+  color: #4a2a1e;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+.focus-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+.focus-body {
+  margin: 4px 0 8px;
+  font-size: 12px;
+}
+.focus-cancel {
+  padding: 3px 14px;
+  background: transparent;
+  border: 2px solid #c98a5a;
+  font: inherit;
+  font-size: 12px;
+  color: #4a2a1e;
+  cursor: pointer;
+}
+
+.info-overlay {
+  position: absolute;
+  left: 16px;
+  top: 10%;
+  z-index: 22;
   display: flex;
-  justify-content: center;
-  padding: 8px 0;
+  flex-direction: column;
+  gap: 8px;
+  width: 260px;
+  max-height: 78vh;
+  overflow-y: auto;
 }
 </style>

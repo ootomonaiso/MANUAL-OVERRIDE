@@ -35,9 +35,17 @@ describe('buildBackdropScene', () => {
     const scene = buildBackdropScene(defOf('bg_grassland'))
     expect(scene.layers.length).toBeGreaterThan(0)
     for (const layer of scene.layers) {
-      expect(layer.points.length).toBeGreaterThan(0)
+      expect(layer.points.length).toBeGreaterThan(2)
       // 稜線は必ず画面下端まで閉じる（塗り潰しに穴が開かないこと）
-      expect(layer.points.endsWith(`${SCENE_W},${SCENE_H} 0,${SCENE_H}`)).toBe(true)
+      const last = layer.points[layer.points.length - 1]
+      const beforeLast = layer.points[layer.points.length - 2]
+      expect(beforeLast).toEqual({ x: SCENE_W, y: SCENE_H })
+      expect(last).toEqual({ x: 0, y: SCENE_H })
+      for (const pt of layer.points) {
+        // ドットの境界がぼけないよう、座標は整数へ落としてある
+        expect(Number.isInteger(pt.x)).toBe(true)
+        expect(Number.isInteger(pt.y)).toBe(true)
+      }
     }
     expect(scene.ground.y).toBeGreaterThan(0)
     expect(scene.ground.y).toBeLessThan(SCENE_H)
@@ -59,7 +67,16 @@ describe('buildBackdropScene', () => {
   it('背景が違えば地形も違う', () => {
     const a = buildBackdropScene(defOf('bg_wasteland'))
     const b = buildBackdropScene(defOf('bg_ruins'))
-    expect(a.layers[0].points).not.toBe(b.layers[0].points)
+    expect(a.layers[0].points).not.toEqual(b.layers[0].points)
+  })
+
+  it('空・雲・地面のドットが揃う', () => {
+    const scene = buildBackdropScene(defOf('bg_grassland'))
+    expect(scene.clouds.length).toBeGreaterThan(0)
+    expect(scene.speckles.length).toBeGreaterThan(0)
+    for (const s of scene.speckles) {
+      expect(s.y).toBeGreaterThanOrEqual(scene.ground.y)
+    }
   })
 
   it('小物は画面幅の内側に置かれる', () => {

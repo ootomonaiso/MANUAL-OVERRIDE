@@ -1,131 +1,173 @@
 <script setup lang="ts">
 /**
- * 戦闘背景。src/data/battle-backgrounds/*.json を domain/battle/backdrop.ts が
- * SVG プリミティブへ変換した結果を描くだけの層（形の決定はこのファイルでは行わない）。
+ * 戦闘背景。
+ *
+ * 320×180 のキャンバスへ描いてから CSS で拡大し、補間を切って1ドットを数px角の
+ * ブロックとして見せる（docs/pixelart-rebuild/00-rendering-system.md の PixelArt 方針）。
+ * 形の決定は domain/battle/backdrop.ts が行い、ここは描くだけ。
+ *
+ * 遠景（空・地形）と、キャラクターが立つ手前の床は別の平面として重ねる。
+ * 床の上端＝プレイヤーの立ち位置なので、比率で決め打ちして DOM 側と合わせる。
  */
-import { computed } from 'vue'
-import { buildBackdropScene, SCENE_W, SCENE_H, type BattleBackgroundDef, type BackdropProp } from '../../domain/battle/backdrop'
+import { ref, watch, onMounted, computed } from 'vue'
+import {
+  buildBackdropScene, skyBands, glowRings, mixHex,
+  SCENE_W, SCENE_H,
+  type BattleBackgroundDef, type BackdropScene, type BackdropProp,
+} from '../../domain/battle/backdrop'
 
-const props = defineProps<{ background: BattleBackgroundDef | null }>()
+const props = defineProps<{
+  background: BattleBackgroundDef | null
+  /** 床の上端（画面高に対する比）。BattleScreen のキャラ配置と共有する */
+  floorTop: number
+}>()
 
-const scene = computed(() => props.background ? buildBackdropScene(props.background) : null)
-const gradientId = computed(() => `bd-sky-${props.background?.id ?? 'none'}`)
-const groundId = computed(() => `bd-ground-${props.background?.id ?? 'none'}`)
-const glowId = computed(() => `bd-glow-${props.background?.id ?? 'none'}`)
+const canvasRef = ref<HTMLCanvasElement | null>(null)
 
-/** 小物1つぶんの形。種類ごとに数個の矩形・多角形へ落とす */
-interface PropPart { kind: 'rect' | 'poly' | 'ellipse'; d: Record<string, number | string> }
+const floorStyle = computed(() => {
+  const f = props.background?.floor
+  if (!f) return {}
+  return {
+    top: `${props.floorTop * 100}%`,
+    background: `linear-gradient(180deg, ${f.top} 0%, ${f.bottom} 100%)`,
+    '--floor-line': f.line,
+  }
+})
 
-function partsOf(p: BackdropProp): PropPart[] {
+/** 小物1つを矩形の集まりとして描く。円弧を使うと輪郭がぼけるため使わない */
+function drawProp(ctx: CanvasRenderingContext2D, p: BackdropProp): void {
   const s = p.size
-  const half = s * 0.5
+  ctx.globalAlpha = p.opacity
+  ctx.fillStyle = p.color
   switch (p.kind) {
     case 'tree':
-      return [
-        { kind: 'rect', d: { x: p.x - s * 0.06, y: p.y - s * 0.45, width: s * 0.12, height: s * 0.45 } },
-        { kind: 'poly', d: { points: `${p.x},${p.y - s} ${p.x - half * 0.7},${p.y - s * 0.35} ${p.x + half * 0.7},${p.y - s * 0.35}` } },
-      ]
+      ctx.fillRect(Math.round(p.x - s * 0.08), Math.round(p.y - s * 0.45), Math.max(1, Math.round(s * 0.16)), Math.round(s * 0.45))
+      // 三角形の樹冠を段積みの矩形で表す
+      for (let i = 0; i < 4; i++) {
+        const w = s * (0.75 - i * 0.16)
+        const y = p.y - s * (0.45 + i * 0.15)
+        ctx.fillRect(Math.round(p.x - w / 2), Math.round(y - s * 0.16), Math.max(1, Math.round(w)), Math.max(1, Math.round(s * 0.17)))
+      }
+      break
     case 'cactus':
-      return [
-        { kind: 'rect', d: { x: p.x - s * 0.1, y: p.y - s, width: s * 0.2, height: s } },
-        { kind: 'rect', d: { x: p.x - s * 0.34, y: p.y - s * 0.72, width: s * 0.24, height: s * 0.12 } },
-        { kind: 'rect', d: { x: p.x - s * 0.34, y: p.y - s * 0.72, width: s * 0.12, height: s * 0.34 } },
-        { kind: 'rect', d: { x: p.x + s * 0.1, y: p.y - s * 0.85, width: s * 0.24, height: s * 0.12 } },
-        { kind: 'rect', d: { x: p.x + s * 0.22, y: p.y - s * 0.85, width: s * 0.12, height: s * 0.42 } },
-      ]
+      ctx.fillRect(Math.round(p.x - s * 0.1), Math.round(p.y - s), Math.max(1, Math.round(s * 0.2)), Math.round(s))
+      ctx.fillRect(Math.round(p.x - s * 0.34), Math.round(p.y - s * 0.72), Math.max(1, Math.round(s * 0.24)), Math.max(1, Math.round(s * 0.12)))
+      ctx.fillRect(Math.round(p.x - s * 0.34), Math.round(p.y - s * 0.72), Math.max(1, Math.round(s * 0.12)), Math.round(s * 0.34))
+      ctx.fillRect(Math.round(p.x + s * 0.1), Math.round(p.y - s * 0.85), Math.max(1, Math.round(s * 0.24)), Math.max(1, Math.round(s * 0.12)))
+      ctx.fillRect(Math.round(p.x + s * 0.22), Math.round(p.y - s * 0.85), Math.max(1, Math.round(s * 0.12)), Math.round(s * 0.42))
+      break
     case 'pillar':
-      return [
-        { kind: 'rect', d: { x: p.x - s * 0.16, y: p.y - s, width: s * 0.32, height: s } },
-        { kind: 'rect', d: { x: p.x - s * 0.26, y: p.y - s * 0.08, width: s * 0.52, height: s * 0.08 } },
-        { kind: 'rect', d: { x: p.x - s * 0.24, y: p.y - s - s * 0.08, width: s * 0.48, height: s * 0.08 } },
-      ]
+      ctx.fillRect(Math.round(p.x - s * 0.16), Math.round(p.y - s), Math.max(1, Math.round(s * 0.32)), Math.round(s))
+      ctx.fillRect(Math.round(p.x - s * 0.26), Math.round(p.y - s * 0.1), Math.max(1, Math.round(s * 0.52)), Math.max(1, Math.round(s * 0.1)))
+      ctx.fillRect(Math.round(p.x - s * 0.24), Math.round(p.y - s - s * 0.1), Math.max(1, Math.round(s * 0.48)), Math.max(1, Math.round(s * 0.1)))
+      break
     case 'crystal':
-      return [
-        { kind: 'poly', d: { points: `${p.x},${p.y - s} ${p.x + half * 0.5},${p.y - s * 0.45} ${p.x},${p.y} ${p.x - half * 0.5},${p.y - s * 0.45}` } },
-      ]
+      // 上下に尖った菱形を、行ごとの矩形で積む
+      for (let i = 0; i < 6; i++) {
+        const t = i / 5
+        const w = s * 0.5 * (1 - Math.abs(t - 0.45) * 1.8)
+        if (w <= 0) continue
+        ctx.fillRect(Math.round(p.x - w / 2), Math.round(p.y - s + t * s), Math.max(1, Math.round(w)), Math.max(1, Math.round(s / 6)))
+      }
+      break
     case 'bone':
-      return [
-        { kind: 'ellipse', d: { cx: p.x, cy: p.y, rx: s * 0.5, ry: s * 0.16 } },
-      ]
+      ctx.fillRect(Math.round(p.x - s * 0.5), Math.round(p.y - 1), Math.max(2, Math.round(s)), 2)
+      ctx.fillRect(Math.round(p.x - s * 0.5), Math.round(p.y - 2), 2, 3)
+      ctx.fillRect(Math.round(p.x + s * 0.5 - 2), Math.round(p.y - 2), 2, 3)
+      break
     case 'tuft':
     default:
-      return [
-        { kind: 'poly', d: { points: `${p.x},${p.y - s} ${p.x - s * 0.4},${p.y} ${p.x + s * 0.4},${p.y}` } },
-      ]
+      ctx.fillRect(Math.round(p.x), Math.round(p.y - s), 1, Math.max(1, Math.round(s)))
+      ctx.fillRect(Math.round(p.x - 2), Math.round(p.y - s * 0.6), 1, Math.max(1, Math.round(s * 0.6)))
+      ctx.fillRect(Math.round(p.x + 2), Math.round(p.y - s * 0.7), 1, Math.max(1, Math.round(s * 0.7)))
+      break
+  }
+  ctx.globalAlpha = 1
+}
+
+function drawScene(ctx: CanvasRenderingContext2D, scene: BackdropScene): void {
+  ctx.clearRect(0, 0, SCENE_W, SCENE_H)
+  ctx.imageSmoothingEnabled = false
+
+  for (const band of skyBands(scene, scene.ground.y)) {
+    ctx.fillStyle = band.color
+    ctx.fillRect(band.x, band.y, band.w, band.h)
+  }
+
+  // 光源。四角い輪を重ねて、にじみを段階的に表す
+  for (const ring of glowRings(scene)) {
+    ctx.globalAlpha = ring.opacity
+    ctx.fillStyle = ring.color
+    ctx.fillRect(ring.cx - ring.r, ring.cy - ring.r, ring.r * 2, ring.r * 2)
+  }
+  ctx.globalAlpha = 1
+
+  for (const c of scene.clouds) {
+    ctx.globalAlpha = c.opacity ?? 1
+    ctx.fillStyle = c.color
+    ctx.fillRect(c.x, c.y, c.w, c.h)
+  }
+  ctx.globalAlpha = 1
+
+  for (const layer of scene.layers) {
+    ctx.globalAlpha = layer.opacity
+    ctx.fillStyle = layer.color
+    ctx.beginPath()
+    layer.points.forEach((pt, i) => { if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y) })
+    ctx.closePath()
+    ctx.fill()
+  }
+  ctx.globalAlpha = 1
+
+  // 地面。奥から手前へ数段の帯で塗り、遠近をつける
+  const groundH = SCENE_H - scene.ground.y
+  const steps = 8
+  for (let i = 0; i < steps; i++) {
+    const y = scene.ground.y + (groundH * i) / steps
+    ctx.fillStyle = mixHex(scene.ground.top, scene.ground.bottom, i / (steps - 1))
+    ctx.fillRect(0, Math.round(y), SCENE_W, Math.ceil(groundH / steps) + 1)
+  }
+
+  for (const s of scene.speckles) {
+    ctx.globalAlpha = s.opacity ?? 1
+    ctx.fillStyle = s.color
+    ctx.fillRect(s.x, s.y, s.w, s.h)
+  }
+  ctx.globalAlpha = 1
+
+  for (const p of scene.props) drawProp(ctx, p)
+
+  if (scene.fog) {
+    ctx.globalAlpha = scene.fog.opacity
+    ctx.fillStyle = scene.fog.color
+    ctx.fillRect(0, 0, SCENE_W, SCENE_H)
+    ctx.globalAlpha = 1
   }
 }
 
-const propShapes = computed(() => (scene.value?.props ?? []).map(p => ({ prop: p, parts: partsOf(p) })))
+function render(): void {
+  const canvas = canvasRef.value
+  if (!canvas || !props.background) return
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return   // happy-dom 等 2Dコンテキストを持たない環境では描かない
+  drawScene(ctx, buildBackdropScene(props.background))
+}
+
+onMounted(render)
+watch(() => props.background?.id, render)
 </script>
 
 <template>
   <div class="battle-backdrop">
-    <svg
-      v-if="scene"
-      class="backdrop-svg"
-      :viewBox="`0 0 ${SCENE_W} ${SCENE_H}`"
-      preserveAspectRatio="xMidYMid slice"
+    <canvas
+      ref="canvasRef"
+      class="backdrop-canvas"
+      :width="SCENE_W"
+      :height="SCENE_H"
+      :style="{ height: `${floorTop * 100}%` }"
       aria-hidden="true"
-    >
-      <defs>
-        <linearGradient :id="gradientId" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" :stop-color="scene.sky.top" />
-          <stop offset="100%" :stop-color="scene.sky.bottom" />
-        </linearGradient>
-        <linearGradient :id="groundId" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" :stop-color="scene.ground.top" />
-          <stop offset="100%" :stop-color="scene.ground.bottom" />
-        </linearGradient>
-        <radialGradient v-if="scene.glow" :id="glowId">
-          <stop offset="0%" :stop-color="scene.glow.color" stop-opacity="0.95" />
-          <stop offset="100%" :stop-color="scene.glow.color" stop-opacity="0" />
-        </radialGradient>
-      </defs>
-
-      <rect x="0" y="0" :width="SCENE_W" :height="SCENE_H" :fill="`url(#${gradientId})`" />
-
-      <circle
-        v-if="scene.glow"
-        :cx="scene.glow.cx"
-        :cy="scene.glow.cy"
-        :r="scene.glow.r * 3"
-        :fill="`url(#${glowId})`"
-      />
-
-      <polygon
-        v-for="(layer, i) in scene.layers"
-        :key="i"
-        :points="layer.points"
-        :fill="layer.color"
-        :opacity="layer.opacity"
-      />
-
-      <rect
-        x="0"
-        :y="scene.ground.y"
-        :width="SCENE_W"
-        :height="SCENE_H - scene.ground.y"
-        :fill="`url(#${groundId})`"
-      />
-
-      <g v-for="(sp, i) in propShapes" :key="`p${i}`" :opacity="sp.prop.opacity">
-        <template v-for="(part, j) in sp.parts" :key="j">
-          <rect v-if="part.kind === 'rect'" v-bind="part.d" :fill="sp.prop.color" />
-          <polygon v-else-if="part.kind === 'poly'" v-bind="part.d" :fill="sp.prop.color" />
-          <ellipse v-else v-bind="part.d" :fill="sp.prop.color" />
-        </template>
-      </g>
-
-      <rect
-        v-if="scene.fog"
-        x="0"
-        y="0"
-        :width="SCENE_W"
-        :height="SCENE_H"
-        :fill="scene.fog.color"
-        :opacity="scene.fog.opacity"
-      />
-    </svg>
+    />
+    <div class="backdrop-floor" :style="floorStyle" aria-hidden="true" />
   </div>
 </template>
 
@@ -135,10 +177,33 @@ const propShapes = computed(() => (scene.value?.props ?? []).map(p => ({ prop: p
   inset: 0;
   overflow: hidden;
   z-index: 0;
+  background: #000;
 }
-.backdrop-svg {
+.backdrop-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 100%;
   display: block;
+  object-fit: cover;
+  /* 拡大時に補間させない。1ドットをそのままブロックとして見せる */
+  image-rendering: pixelated;
+}
+.backdrop-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-top: 2px solid rgba(0, 0, 0, 0.55);
+}
+/* 床の模様。手前の平面であることを示す薄い格子 */
+.backdrop-floor::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.16;
+  background-image:
+    repeating-linear-gradient(60deg, transparent 0 26px, var(--floor-line) 26px 28px),
+    repeating-linear-gradient(-60deg, transparent 0 26px, var(--floor-line) 26px 28px);
 }
 </style>

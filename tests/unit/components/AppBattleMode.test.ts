@@ -114,9 +114,10 @@ describe('App.vue: rpg 戦闘モードへの切り替え', () => {
   it('戦闘UIは戦闘の初期状態を描画している', async () => {
     const h = mountApp()
     await startWithGenre(h, 'rpg')
-    expect(h.host.querySelectorAll('.char-frame').length).toBeGreaterThanOrEqual(2)
-    expect(h.host.querySelectorAll('.active-skill-bar .skill-slot')).toHaveLength(6)
-    expect(h.host.querySelector('.turn-queue-bar')).not.toBeNull()
+    expect(h.host.querySelectorAll('.char-unit').length).toBeGreaterThanOrEqual(2)
+    expect(h.host.querySelector('.battle-backdrop')).not.toBeNull()
+    expect(h.host.querySelector('.turn-badge')).not.toBeNull()
+    expect(h.host.querySelector('.command-menu')).not.toBeNull()
   })
 })
 

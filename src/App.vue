@@ -577,6 +577,7 @@ onUnmounted(() => {
         :features="gameState.rules.features"
         :highlight="gameState.phase.value === 'tutorial'"
         :layout="hudLayout"
+        :compact="isBattleMode"
         @click="toggleReviewPause"
       />
 

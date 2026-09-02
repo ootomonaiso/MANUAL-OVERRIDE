@@ -4,9 +4,12 @@
  *
  * Canvas ではなく SVG の矩形として描くのは、
  *  - 被弾時の単色シルエット（tint）を再描画なしで差し替えられる
- *  - 拡大しても輪郭が滲まない（shape-rendering="crispEdges"）
  *  - happy-dom（2Dコンテキストを持たない）でもそのまま検証できる
  * ため。横に連続する同色セルは1つの矩形へまとめてから出力する。
+ *
+ * 表示サイズは targetHeight から**整数倍率**を割り出して決める。半端な倍率だと
+ * 1ドットが 3px だったり 4px だったりと不揃いになり、ドット絵に見えなくなるため
+ * （docs/pixelart-rebuild/00-rendering-system.md のグリッドスナップと同じ考え方）。
  */
 import { computed } from 'vue'
 import { SPRITES } from '../../data/sprites'
@@ -16,8 +19,10 @@ const props = withDefaults(defineProps<{
   frame?: string
   /** 指定するとすべてのセルをこの色で塗る（被弾フラッシュのシルエット表現） */
   tint?: string | null
+  /** 描きたいおおよその高さ(px)。ここから1ドットあたりの倍率を整数で決める */
+  targetHeight?: number
   flipX?: boolean
-}>(), { frame: 'idle', tint: null, flipX: false })
+}>(), { frame: 'idle', tint: null, targetHeight: 96, flipX: false })
 
 interface Run { x: number; y: number; w: number; color: string }
 
@@ -50,6 +55,19 @@ function buildRuns(spriteId: string, frame: string): Run[] {
 
 const def = computed(() => SPRITES[props.spriteId])
 
+const scale = computed(() => {
+  const d = def.value
+  if (!d) return 1
+  // floor だと目標より1段階小さくなりがちなので四捨五入する（1ドットの大きさは整数のまま）
+  return Math.max(1, Math.round(props.targetHeight / d.h))
+})
+
+const boxStyle = computed(() => {
+  const d = def.value
+  if (!d) return {}
+  return { width: `${d.w * scale.value}px`, height: `${d.h * scale.value}px` }
+})
+
 const runs = computed<Run[]>(() => {
   const key = `${props.spriteId}|${props.frame}`
   const cached = runCache.get(key)
@@ -66,7 +84,7 @@ const runs = computed<Run[]>(() => {
     class="pixel-sprite"
     :class="{ tinted: tint !== null }"
     :viewBox="`0 0 ${def.w} ${def.h}`"
-    :style="{ transform: flipX ? 'scaleX(-1)' : undefined }"
+    :style="{ ...boxStyle, transform: flipX ? 'scaleX(-1)' : undefined }"
     preserveAspectRatio="xMidYMax meet"
     shape-rendering="crispEdges"
     aria-hidden="true"
@@ -86,8 +104,6 @@ const runs = computed<Run[]>(() => {
 <style scoped>
 .pixel-sprite {
   display: block;
-  width: 100%;
-  height: 100%;
   overflow: visible;
 }
 </style>

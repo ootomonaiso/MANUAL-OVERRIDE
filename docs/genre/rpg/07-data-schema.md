@@ -205,14 +205,19 @@
 | キー | 必須 | 内容 |
 |---|---|---|
 | `sky` / `ground` | ✅ | 空と地面のグラデーション。`ground.baseline` は地平線の高さ（画面高に対する比） |
+| `floor` | ✅ | キャラクターが立つ**手前の床**。背景写真とは別の平面として描く |
+| `clouds` | — | 空に浮かべる雲。矩形の塊として描く |
 | `layers` | ✅ | 稜線。`hills` / `dunes` / `spikes` / `ruins` の4種 |
 | `props` | — | 地面に置く小物。`tree` / `cactus` / `pillar` / `bone` / `crystal` / `tuft` |
 | `glow` / `fog` | — | 光源と空気感 |
 | `accent` / `panel` | ✅ / — | **その場に合わせてUIの色を変える**（`--battle-accent` / `--battle-panel`） |
 | `bossOnly` | — | true ならボス戦専用 |
 
-稜線・小物の実際の座標は `src/domain/battle/backdrop.ts` が id 由来の擬似乱数から組み立てる。
+稜線・雲・小物の実際の座標は `src/domain/battle/backdrop.ts` が id 由来の擬似乱数から組み立てる。
 同じ背景は毎回同じ地形になる（戦うたびに形が変わると「同じ場所」に見えないため）。
+
+描画は 320×180 のキャンバスへ行い、CSS で拡大する（[08-ui.md](08-ui.md)「ドット絵として描く」）。
+座標はすべて整数へ丸めてあるので、拡大してもドットの境界がぼけない。
 
 ---
 

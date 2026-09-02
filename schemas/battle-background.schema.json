@@ -4,7 +4,7 @@
   "title": "RPGジャンル: 戦闘背景定義",
   "description": "src/data/battle-backgrounds/*.json のスキーマ。1ファイル1背景。実際の描画は src/domain/battle/backdrop.ts が行う。",
   "type": "object",
-  "required": ["id", "label", "sky", "ground", "layers", "accent"],
+  "required": ["id", "label", "sky", "ground", "layers", "floor", "accent"],
   "additionalProperties": false,
   "definitions": {
     "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
@@ -65,6 +65,28 @@
         "top": { "$ref": "#/definitions/color" },
         "bottom": { "$ref": "#/definitions/color" },
         "baseline": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "clouds": {
+      "type": "object",
+      "required": ["color", "count"],
+      "additionalProperties": false,
+      "description": "空に浮かべる雲。矩形の塊として描く",
+      "properties": {
+        "color": { "$ref": "#/definitions/color" },
+        "count": { "type": "integer", "minimum": 1, "maximum": 12 },
+        "size": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+      }
+    },
+    "floor": {
+      "type": "object",
+      "required": ["top", "bottom", "line"],
+      "additionalProperties": false,
+      "description": "キャラクターが立つ手前の床。背景写真とは別の平面として描く",
+      "properties": {
+        "top": { "$ref": "#/definitions/color" },
+        "bottom": { "$ref": "#/definitions/color" },
+        "line": { "$ref": "#/definitions/color", "description": "床の模様の線色" }
       }
     },
     "layers": { "type": "array", "maxItems": 6, "items": { "$ref": "#/definitions/layer" } },

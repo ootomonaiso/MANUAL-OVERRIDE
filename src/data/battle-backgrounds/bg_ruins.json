@@ -2,18 +2,68 @@
   "$schema": "../../../schemas/battle-background.schema.json",
   "id": "bg_ruins",
   "label": "崩れた遺跡",
-  "sky": { "top": "#2f3a5c", "bottom": "#8a7f9c" },
-  "glow": { "color": "#dfe4ff", "x": 0.2, "y": 0.16, "r": 0.07 },
-  "ground": { "top": "#5b5568", "bottom": "#26232f", "baseline": 0.67 },
+  "sky": {
+    "top": "#2f3a5c",
+    "bottom": "#8a7f9c"
+  },
+  "glow": {
+    "color": "#dfe4ff",
+    "x": 0.2,
+    "y": 0.16,
+    "r": 0.07
+  },
+  "ground": {
+    "top": "#5b5568",
+    "bottom": "#26232f",
+    "baseline": 0.67
+  },
+  "clouds": {
+    "color": "#8f8aa8",
+    "count": 4,
+    "size": 0.22
+  },
   "layers": [
-    { "shape": "ruins", "color": "#3d3a4e", "baseline": 0.62, "height": 0.2, "segments": 11, "opacity": 0.85 },
-    { "shape": "hills", "color": "#2c2a38", "baseline": 0.66, "height": 0.07, "segments": 7 }
+    {
+      "shape": "ruins",
+      "color": "#3d3a4e",
+      "baseline": 0.62,
+      "height": 0.2,
+      "segments": 11,
+      "opacity": 0.85
+    },
+    {
+      "shape": "hills",
+      "color": "#2c2a38",
+      "baseline": 0.66,
+      "height": 0.07,
+      "segments": 7
+    }
   ],
   "props": [
-    { "kind": "pillar", "color": "#6d6879", "count": 5, "size": 0.22, "baseline": 0.67 },
-    { "kind": "tuft", "color": "#3f4a38", "count": 9, "size": 0.04, "baseline": 0.84 }
+    {
+      "kind": "pillar",
+      "color": "#6d6879",
+      "count": 5,
+      "size": 0.22,
+      "baseline": 0.67
+    },
+    {
+      "kind": "tuft",
+      "color": "#3f4a38",
+      "count": 9,
+      "size": 0.04,
+      "baseline": 0.84
+    }
   ],
-  "fog": { "color": "#9aa0c0", "opacity": 0.12 },
+  "floor": {
+    "top": "#33303f",
+    "bottom": "#1a1822",
+    "line": "#4e4a60"
+  },
+  "fog": {
+    "color": "#9aa0c0",
+    "opacity": 0.12
+  },
   "accent": "#b6a8e0",
   "panel": "#1c1a26"
 }

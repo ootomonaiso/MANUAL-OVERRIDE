@@ -13,7 +13,9 @@ import { gzipSync } from 'zlib'
 // ── Budgets (bytes) ───────────────────────────────────────────────────────
 const BUDGETS = {
   totalJs:   800 * 1024,   // 800 KB
-  totalCss:  100 * 1024,   // 100 KB
+  // 120 KB: rpg 戦闘のUI（背景・キャラクター・コマンド）を足した際に 100KB へ肉薄したため引き上げた。
+  // 画面1枚ぶんのスタイルとしては妥当な範囲で、上限に張り付いたままでは次の変更が通らなくなる。
+  totalCss:  120 * 1024,   // 120 KB
   totalDist: 2000 * 1024,  // 2 MB (entire dist)
 }
 
