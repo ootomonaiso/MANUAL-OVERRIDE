@@ -24,7 +24,11 @@ import {
   buildBattleScoreVars,
 } from '../domain/battle/battleEngine'
 import { buildTurnQueue, previewEnemyNextSkill } from '../domain/battle/turnQueue'
-import { rollDraft, applyDraftChoice, confirmSwap as confirmSwapSkill } from '../domain/battle/skillDraft'
+import {
+  rollDraft, applyDraftChoice, confirmSwap as confirmSwapSkill,
+  accumulateCategoryPoints, categoryContributionsOf,
+} from '../domain/battle/skillDraft'
+import type { CategoryContribution } from '../domain/battle/skillDraft'
 import { pickBackgroundId } from '../domain/battle/backdrop'
 import { estimateSkillDamage } from '../domain/battle/damagePreview'
 import { BATTLE_CONTENT } from '../data/battleContent'
@@ -454,6 +458,14 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     if (!def) return null
     return { label: def.label, flavorText: def.flavorText }
   }
+  /** 所持スキルから貯まっているカテゴリポイントを求める（カテゴリ一覧パネル用） */
+  function categoryPointsOf(c: CombatantView): Record<CategoryId, number> {
+    return accumulateCategoryPoints(toRaw(c) as Combatant, content)
+  }
+  /** カテゴリ1つぶんの内訳（何のスキルが何ポイント効いているか） */
+  function categoryContributions(c: CombatantView, category: CategoryId): CategoryContribution[] {
+    return categoryContributionsOf(toRaw(c) as Combatant, content, category)
+  }
 
   /** 画面右上の通し表示。ラウンド・戦闘数はいずれも0始まりなので+1して数える */
   const turnNumber = computed(() => state.roundCount + 1)
@@ -489,5 +501,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     nextEnemySkillPreview,
     estimateDamageToPlayer,
     draftOptionLabel,
+    categoryPointsOf,
+    categoryContributions,
   }
 }

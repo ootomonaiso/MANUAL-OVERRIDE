@@ -14,6 +14,10 @@ export interface SkillListItemView {
   stored?: boolean
   flavorText?: string
   effectTokens?: SkillTextToken[]
+  /** アクティブのみ。残りクールタイム（0なら使える） */
+  cooldown?: number
+  categoryLabel?: string
+  categoryColor?: string
 }
 
 defineProps<{
@@ -64,8 +68,14 @@ function toggle(id: string) {
             @click="toggle(item.id)"
           >
             <div class="item-row">
+              <span
+                v-if="item.visibility !== 'unseen' && item.categoryLabel"
+                class="item-category"
+                :style="{ '--category-color': item.categoryColor ?? 'var(--battle-accent)' }"
+              >{{ item.categoryLabel }}</span>
               <span class="item-label">{{ item.visibility === 'unseen' ? '？？？' : item.label }}</span>
               <span v-if="item.stored" class="item-badge">保管中</span>
+              <span v-if="item.cooldown" class="item-cooldown">CT{{ item.cooldown }}</span>
               <span v-if="item.level" class="item-level">Lv{{ item.level }}</span>
             </div>
             <div v-if="pinnedId === item.id && item.visibility !== 'unseen'" class="item-detail">
@@ -150,10 +160,28 @@ function toggle(id: string) {
   padding: 0 3px;
   border-radius: var(--radius-sm);
 }
+.item-category {
+  flex-shrink: 0;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+  color: var(--category-color);
+  background: color-mix(in srgb, var(--category-color) 22%, transparent);
+}
+.item-cooldown {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--battle-diff-minus);
+  margin-left: auto;
+}
 .item-level {
   font-size: 9px;
   opacity: 0.7;
   margin-left: auto;
+}
+.item-cooldown + .item-level {
+  margin-left: 0;
 }
 .item-detail {
   font-size: 10px;

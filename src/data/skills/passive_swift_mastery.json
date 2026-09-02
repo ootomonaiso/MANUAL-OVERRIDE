@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "passive_swift_mastery",
+  "label": "疾風の極意",
+  "flavorText": "説明書をめくる指先まで速くなった。",
+  "kind": "passive",
+  "mainCategory": "swift",
+  "subCategories": [],
+  "unlockCondition": { "category": "swift", "points": 10 },
+  "effect": [
+    { "op": "statBoost", "stat": "agi", "rate": 0.1 }
+  ]
+}

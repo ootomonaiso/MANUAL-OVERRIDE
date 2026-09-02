@@ -9,7 +9,15 @@
  */
 import { computed, ref, watch } from 'vue'
 import PixelSprite from './PixelSprite.vue'
+import GlossaryTerm from './GlossaryTerm.vue'
 import type { DamagePopup, FlashKind } from '../../composables/useBattlePresentation'
+
+export interface AffinityPreview {
+  /** 特性由来の弱点・耐性（computeAffinityStage） */
+  affinity: 'weak' | 'resist' | null
+  /** DEF/REFの偏りから見た構造的な相性（弱点・耐性とは別の指標） */
+  effect: 'super' | 'poor' | null
+}
 
 const props = withDefaults(defineProps<{
   label: string
@@ -29,6 +37,8 @@ const props = withDefaults(defineProps<{
   nextSkillLabel?: string | null
   nextDamageLabel?: string | null
   nextMarkColor?: string
+  /** 敵のみ: COMMANDで技をホバー中の相性プレビュー（弱点/耐性・抜群/微妙） */
+  affinityPreview?: AffinityPreview | null
   /** 対象選択中に光らせる */
   targetable?: boolean
   /** 待機モーションの位相をずらすための種。並んだ敵が同じ動きで揺れて見えないようにする */
@@ -36,7 +46,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   attacking: false, flash: null, popups: () => [], isBoss: false,
   nextSkillLabel: null, nextDamageLabel: null, nextMarkColor: 'var(--battle-element-physical)',
-  targetable: false, idleSeed: 0,
+  affinityPreview: null, targetable: false, idleSeed: 0,
 })
 
 const emit = defineEmits<{
@@ -82,12 +92,30 @@ watch(() => props.flash, (kind) => {
     :class="[side, { defeated: !alive, 'is-boss': isBoss, targetable }]"
     @click="emit('open-detail')"
   >
-    <div v-if="side === 'enemy' && alive" class="next-chip">
-      <div class="next-head">NEXT</div>
-      <div class="next-skill">
-        <span class="next-mark" :style="{ background: nextMarkColor }" />{{ nextSkillLabel ?? '何もしていない' }}
+    <div v-if="side === 'enemy' && alive" class="head-stack">
+      <!--
+        affinity-chip は position:absolute で next-chip の上に「浮かせ」ている。
+        通常のフローに乗せると、ホバーの有無で next-chip の高さが変わるたびに
+        頭上の要素全体が伸縮し、只でさえ画面上端に近い敵の頭上スペースから
+        あふれて見切れてしまっていた（実機の getBoundingClientRect で確認）。
+      -->
+      <div
+        v-if="affinityPreview?.affinity || affinityPreview?.effect"
+        class="affinity-chip"
+      >
+        <GlossaryTerm v-if="affinityPreview?.affinity === 'weak'" term-id="weak" class="affinity-tag weak">弱点</GlossaryTerm>
+        <GlossaryTerm v-else-if="affinityPreview?.affinity === 'resist'" term-id="resist" class="affinity-tag resist">耐性</GlossaryTerm>
+        <GlossaryTerm v-if="affinityPreview?.effect === 'super'" term-id="super_effective" class="affinity-tag super">抜群</GlossaryTerm>
+        <GlossaryTerm v-else-if="affinityPreview?.effect === 'poor'" term-id="poor_effective" class="affinity-tag poor">微妙</GlossaryTerm>
       </div>
-      <div v-if="nextDamageLabel" class="next-damage">{{ nextDamageLabel }}</div>
+
+      <div class="next-chip">
+        <div class="next-head">NEXT</div>
+        <div class="next-skill">
+          <span class="next-mark" :style="{ background: nextMarkColor }" />{{ nextSkillLabel ?? '何もしていない' }}
+        </div>
+        <div v-if="nextDamageLabel" class="next-damage">{{ nextDamageLabel }}</div>
+      </div>
     </div>
 
     <div class="sprite-stage">
@@ -344,7 +372,39 @@ watch(() => props.flash, (kind) => {
   -webkit-text-stroke: 2px rgba(0, 0, 0, 0.85);
 }
 
+/* ── 相性プレビュー（COMMANDで技をホバー中のみ出る） ───────── */
+/* .head-stack の通常フローには乗せず、next-chip の上に絶対配置で浮かせる。
+   でないとホバーのたびに頭上スペース全体の高さが変わり、画面上端に近い
+   敵の頭上要素が見切れてしまう（next-chip 側の説明コメントも参照） */
+.affinity-chip {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  margin-bottom: 3px;
+  display: flex;
+  gap: 3px;
+  white-space: nowrap;
+}
+.affinity-tag {
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 999px;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+}
+.affinity-tag.weak { background: color-mix(in srgb, var(--battle-diff-minus) 75%, transparent); }
+.affinity-tag.resist { background: color-mix(in srgb, var(--battle-element-magical) 65%, transparent); }
+.affinity-tag.super { background: color-mix(in srgb, var(--battle-diff-plus) 70%, transparent); color: #1a2e1a; }
+.affinity-tag.poor { background: color-mix(in srgb, var(--battle-diff-muted) 70%, transparent); color: #2a2a2a; }
+
 /* ── 頭上の予告チップ ───────────────────────────────────── */
+.head-stack {
+  position: relative;
+}
 .next-chip {
   display: flex;
   flex-direction: column;

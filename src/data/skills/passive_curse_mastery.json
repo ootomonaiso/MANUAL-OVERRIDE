@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "passive_curse_mastery",
+  "label": "呪詛の心得",
+  "flavorText": "呪いの言葉を、外さず届けられるようになった。",
+  "kind": "passive",
+  "mainCategory": "curse",
+  "subCategories": [],
+  "unlockCondition": { "category": "curse", "points": 10 },
+  "effect": [
+    { "op": "statBoost", "stat": "hitRate", "rate": 0.1 }
+  ]
+}

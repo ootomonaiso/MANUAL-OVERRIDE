@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "passive_combo_mastery",
+  "label": "連撃の極意",
+  "flavorText": "1回で終わらせる理由が、なくなってきた。",
+  "kind": "passive",
+  "mainCategory": "combo",
+  "subCategories": [],
+  "unlockCondition": { "category": "combo", "points": 10 },
+  "effect": [
+    { "op": "statBoost", "stat": "agi", "rate": 0.1 }
+  ]
+}

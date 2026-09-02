@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "passive_might_mastery",
+  "label": "剛撃の極意",
+  "flavorText": "拳を振るうたび、説明書のページがまた1枚めくれる。",
+  "kind": "passive",
+  "mainCategory": "might",
+  "subCategories": [],
+  "unlockCondition": { "category": "might", "points": 10 },
+  "effect": [
+    { "op": "statBoost", "stat": "str", "rate": 0.1 }
+  ]
+}

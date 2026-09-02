@@ -68,6 +68,32 @@ export function affinityMultiplier(stage: number): number {
 }
 
 // ─────────────────────────────────────────────────────────────
+// 相性プレビュー（DEF/REFの偏りから見た構造的な相性）
+// ─────────────────────────────────────────────────────────────
+
+export type EffectivenessHint = 'super' | 'poor' | null
+
+/** DEF と REF の偏りが「五分」とみなせる範囲。これ未満の差では表示を出さない */
+const EFFECTIVENESS_SKEW_THRESHOLD = 0.1
+
+/**
+ * 特性由来の弱点・耐性（computeAffinityStage）とは別に、相手の DEF/REF の
+ * バランスだけから見た構造的な相性を出す。物理はDEF偏重の相手には「微妙」、
+ * REF偏重の相手には「抜群」。魔法はその逆。special は DEF/REF のどちらにも
+ * 一方的に偏らないため対象外。コマンド一覧で技をホバーした時のプレビュー用。
+ */
+export function effectivenessHint(element: Element, targetStats: EffectiveStats): EffectivenessHint {
+  if (element === 'special') return null
+  const total = targetStats.def + targetStats.ref
+  if (total <= 0) return null
+  const skew = (targetStats.def - targetStats.ref) / total
+  if (Math.abs(skew) <= EFFECTIVENESS_SKEW_THRESHOLD) return null
+  const defLeaning = skew > 0
+  if (element === 'physical') return defLeaning ? 'poor' : 'super'
+  return defLeaning ? 'super' : 'poor'
+}
+
+// ─────────────────────────────────────────────────────────────
 // ダメージ
 // ─────────────────────────────────────────────────────────────
 

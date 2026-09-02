@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "passive_aegis_mastery",
+  "label": "加護の心得",
+  "flavorText": "説明書を盾にする角度が、少しずつうまくなった。",
+  "kind": "passive",
+  "mainCategory": "aegis",
+  "subCategories": [],
+  "unlockCondition": { "category": "aegis", "points": 10 },
+  "effect": [
+    { "op": "statBoost", "stat": "def", "rate": 0.1 }
+  ]
+}

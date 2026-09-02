@@ -4,7 +4,10 @@
  */
 
 import { BATTLE } from '../../data/tunables'
-import type { BattleState, BattleContent, Combatant, DraftOption, CategoryId, StatKey } from './types'
+import type {
+  BattleState, BattleContent, Combatant, DraftOption, CategoryId, StatKey,
+  ActiveSkillDef, PassiveSkillDef,
+} from './types'
 import { CATEGORY_IDS } from './types'
 
 // ─────────────────────────────────────────────────────────────
@@ -47,6 +50,15 @@ export function subCategoryWeight(n: number): number {
   return total / n
 }
 
+/** 1つのスキルが、指定カテゴリへ何ポイント寄与するか（主カテゴリはそのまま、副カテゴリは重み付き） */
+function contributionAmount(
+  def: ActiveSkillDef | PassiveSkillDef, category: CategoryId, base: number,
+): number {
+  if (def.mainCategory === category) return base
+  if (def.subCategories.includes(category)) return base * subCategoryWeight(def.subCategories.length)
+  return 0
+}
+
 /** 保管中（slotIndex === null）のアクティブスキルはカテゴリポイントに寄与しない */
 export function accumulateCategoryPoints(player: Combatant, content: BattleContent): Record<CategoryId, number> {
   const points = zeroCategoryPoints()
@@ -70,6 +82,39 @@ export function accumulateCategoryPoints(player: Combatant, content: BattleConte
     for (const sub of def.subCategories) add(sub, base * w)
   }
   return points
+}
+
+export interface CategoryContribution {
+  id: string
+  label: string
+  amount: number
+}
+
+/** カテゴリ1つぶんの内訳。カテゴリ一覧パネルで「何が効いているか」を見せるのに使う */
+export function categoryContributionsOf(
+  player: Combatant, content: BattleContent, category: CategoryId,
+): CategoryContribution[] {
+  const out: CategoryContribution[] = []
+  for (const a of player.actives) {
+    if (a.slotIndex === null) continue
+    const def = content.skills.get(a.id)
+    if (!def || def.kind !== 'active') continue
+    const amount = contributionAmount(def, category, 3 * a.level)
+    if (amount > 0) out.push({ id: a.id, label: def.label, amount })
+  }
+  for (const p of player.passives) {
+    const def = content.skills.get(p.id)
+    if (!def || def.kind !== 'passive') continue
+    const amount = contributionAmount(def, category, 1 * p.level)
+    if (amount > 0) out.push({ id: p.id, label: def.label, amount })
+  }
+  return out.sort((a, b) => b.amount - a.amount)
+}
+
+/** カテゴリ一覧パネルの「次のしきい値」。すべて超えていれば最後のしきい値のまま頭打ちにする */
+export function nextCategoryThreshold(current: number): number {
+  const next = BATTLE.categoryUnlockThresholds.find(t => t > current)
+  return next ?? BATTLE.categoryUnlockThresholds[BATTLE.categoryUnlockThresholds.length - 1]
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "passive_vitality_mastery",
+  "label": "頑強の極意",
+  "flavorText": "説明書の重さにも、もう疲れなくなった。",
+  "kind": "passive",
+  "mainCategory": "vitality",
+  "subCategories": [],
+  "unlockCondition": { "category": "vitality", "points": 10 },
+  "effect": [
+    { "op": "statBoost", "stat": "hp", "rate": 0.1 }
+  ]
+}

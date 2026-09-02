@@ -14,10 +14,13 @@ import StatusPanel from './StatusPanel.vue'
 import type { StatRowView } from './StatusPanel.vue'
 import SkillListPanel from './SkillListPanel.vue'
 import type { SkillListItemView } from './SkillListPanel.vue'
+import CategoryListPanel from './CategoryListPanel.vue'
+import type { CategoryRowView } from './CategoryListPanel.vue'
 import CommandMenu from './CommandMenu.vue'
 import type { CommandEntry } from './CommandMenu.vue'
 import SkillCommandPanel from './SkillCommandPanel.vue'
 import type { SkillCommandEntry } from './SkillCommandPanel.vue'
+import type { AffinityPreview } from './CharacterFrame.vue'
 import TurnBadge from './TurnBadge.vue'
 import BuffStrip from './BuffStrip.vue'
 import type { BuffEntry } from './BuffStrip.vue'
@@ -30,10 +33,11 @@ import BattleBackdrop from './BattleBackdrop.vue'
 import SkillCastBanner from './SkillCastBanner.vue'
 import HelpGuide from './HelpGuide.vue'
 import type { StatKey, PlayerAction, SkillDef, Element } from '../../domain/battle/types'
-import { STAT_KEYS } from '../../domain/battle/types'
+import { STAT_KEYS, CATEGORY_IDS } from '../../domain/battle/types'
 import { STAT_LABEL, CATEGORY_LABEL, CATEGORY_COLOR, buildSkillText } from '../../domain/battle/skillText'
-import { STACKS_REQUIRED } from '../../domain/battle/skillDraft'
+import { STACKS_REQUIRED, nextCategoryThreshold } from '../../domain/battle/skillDraft'
 import { damageMagnitude, MAGNITUDE_LABEL } from '../../domain/battle/damagePreview'
+import { computeAffinityStage, effectivenessHint } from '../../domain/battle/damageCalc'
 import { BATTLE_CONTENT } from '../../data/battleContent'
 import { findBattleBackground } from '../../data/battleBackgrounds'
 import { soundManager } from '../../plugins/SoundManager'
@@ -57,8 +61,11 @@ const fx = useBattlePresentation(battle)
  * 足すと画面の大半を使うため、0.62 のままだと敵の下半身・HPプレートが自キャラの頭に
  * 隠れて見えなくなっていた（実機の getBoundingClientRect で確認）。床を上へ動かして
  * 敵の立ち位置を自キャラから引き離す。
+ * 0.47 → 0.485: 相性プレビュー（弱点/耐性・抜群/微妙）チップを敵の頭上に追加した際、
+ * 画面上端との隙間が足りず見切れていたため、敵をわずかに自キャラ側へ寄せて頭上の
+ * 余白を確保した（自キャラとの間隔はまだ十分空いている）。
  */
-const FLOOR_TOP = 0.47
+const FLOOR_TOP = 0.485
 const ELEMENT_COLOR: Record<Element, string> = {
   physical: 'var(--battle-element-physical)',
   magical: 'var(--battle-element-magical)',
@@ -135,6 +142,7 @@ const skillEntries = computed<SkillCommandEntry[]>(() => {
       id: `active:${slot}`,
       label: def.label,
       markColor: ELEMENT_COLOR[def.element],
+      element: def.element,
       cooldown: owned.cooldown,
       disabled: owned.cooldown > 0,
       note: `Lv${owned.level}`,
@@ -213,6 +221,23 @@ function onUnitSelect(c: CombatantView, enemyIndex: number | null): void {
 function onCancel(): void {
   pendingAction.value = null
   menu.value = 'root'
+}
+
+// ── 相性プレビュー（COMMANDで技をホバー/固定中の弱点・耐性・抜群・微妙） ──────
+const previewedSkill = ref<SkillCommandEntry | null>(null)
+function onSkillPreview(entry: SkillCommandEntry | null): void {
+  previewedSkill.value = entry
+}
+watch(menu, (m) => { if (m !== 'battle') previewedSkill.value = null })
+
+function affinityPreviewOf(e: CombatantView): AffinityPreview | null {
+  const element = previewedSkill.value?.element
+  if (!element || !e.alive) return null
+  const stage = computeAffinityStage(element, e.traits, content.traits)
+  const affinity = stage > 0 ? 'weak' : stage < 0 ? 'resist' : null
+  const effect = effectivenessHint(element, battle.effectiveOf(e))
+  if (!affinity && !effect) return null
+  return { affinity, effect }
 }
 
 // ── 敵の予告 ──────────────────────────────────────────────────
@@ -294,7 +319,9 @@ const skillListView = computed(() => {
     return {
       id: a.id, kind: 'active', label: def?.label ?? a.id, visibility: 'owned',
       level: a.level, stacks: a.stacks, stacksRequired: STACKS_REQUIRED[Math.min(a.level, 3)] ?? 0,
-      stored: a.slotIndex === null,
+      stored: a.slotIndex === null, cooldown: a.cooldown,
+      categoryLabel: def ? CATEGORY_LABEL[def.mainCategory] : undefined,
+      categoryColor: def ? CATEGORY_COLOR[def.mainCategory] : undefined,
       flavorText: def?.flavorText, effectTokens: def ? buildSkillText(def, a.level) : undefined,
     }
   })
@@ -303,6 +330,8 @@ const skillListView = computed(() => {
     return {
       id: p.id, kind: 'passive', label: def?.label ?? p.id, visibility: 'owned',
       level: p.level, stacks: p.stacks, stacksRequired: STACKS_REQUIRED[Math.min(p.level, 3)] ?? 0,
+      categoryLabel: def ? CATEGORY_LABEL[def.mainCategory] : undefined,
+      categoryColor: def ? CATEGORY_COLOR[def.mainCategory] : undefined,
       flavorText: def?.flavorText, effectTokens: def ? buildSkillText(def, p.level) : undefined,
     }
   })
@@ -323,6 +352,8 @@ const skillListView = computed(() => {
     const vis = visibilityOf(def.id, false)
     const item: SkillListItemView = {
       id: def.id, kind: def.kind, label: def.label, visibility: vis,
+      categoryLabel: vis !== 'unseen' ? CATEGORY_LABEL[def.mainCategory] : undefined,
+      categoryColor: vis !== 'unseen' ? CATEGORY_COLOR[def.mainCategory] : undefined,
       flavorText: vis !== 'unseen' ? def.flavorText : undefined,
       effectTokens: vis !== 'unseen' ? buildSkillText(def, 1) : undefined,
     }
@@ -341,6 +372,22 @@ const skillListView = computed(() => {
   }
 
   return { ownedActives, ownedPassives, ownedTraits, unownedActives, unownedPassives, unownedTraits }
+})
+
+// ── カテゴリ一覧（スキル一覧パネルの下） ─────────────────────
+const categoryListCollapsed = ref(false)
+const categoryRows = computed<CategoryRowView[]>(() => {
+  const player = battle.state.player
+  const points = battle.categoryPointsOf(player)
+  return CATEGORY_IDS.map(id => {
+    const current = points[id]
+    const threshold = nextCategoryThreshold(current)
+    return {
+      id, label: CATEGORY_LABEL[id], color: CATEGORY_COLOR[id],
+      current, threshold, maxed: current >= threshold,
+      contributions: battle.categoryContributions(player, id),
+    }
+  })
 })
 
 // ── いま効いているもの ────────────────────────────────────────
@@ -446,6 +493,11 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
         v-bind="skillListView"
         @toggle-collapsed="battle.toggleSkillListCollapsed()"
       />
+      <CategoryListPanel
+        :collapsed="categoryListCollapsed"
+        :rows="categoryRows"
+        @toggle-collapsed="categoryListCollapsed = !categoryListCollapsed"
+      />
     </div>
 
     <div
@@ -472,6 +524,7 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
           :next-skill-label="enemyPreviews[e.id]?.label ?? null"
           :next-damage-label="enemyPreviews[e.id]?.damage ?? null"
           :next-mark-color="enemyPreviews[e.id]?.markColor"
+          :affinity-preview="affinityPreviewOf(e)"
           :targetable="menu === 'focus' && e.alive"
           :idle-seed="i"
           @open-detail="onUnitSelect(e, i)"
@@ -507,7 +560,7 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
 
     <BuffStrip :entries="buffEntries" />
 
-    <div v-if="awaitingInput" class="command-area">
+    <div v-if="awaitingInput" class="command-area" :class="{ wide: menu === 'battle' }">
       <CommandMenu
         v-if="menu === 'root'"
         :entries="commandEntries"
@@ -520,6 +573,7 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
         :entries="skillEntries"
         @select="onSkillSelect"
         @cancel="onCancel"
+        @preview="onSkillPreview"
       />
       <div v-else-if="menu === 'focus'" class="focus-hint">
         <div class="focus-title">対象を選ぶ</div>
@@ -597,12 +651,16 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   width: 152px;
 }
 .hud-left :deep(.status-panel),
-.hud-left :deep(.skill-list-panel) {
+.hud-left :deep(.skill-list-panel),
+.hud-left :deep(.category-list-panel) {
   min-width: 0;
   font-size: 10px;
 }
 .hud-left :deep(.skill-list-panel) {
-  max-height: 42vh;
+  max-height: 32vh;
+}
+.hud-left :deep(.category-list-panel) {
+  max-height: 26vh;
 }
 
 .battle-field {
@@ -650,6 +708,16 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   right: 275px;
   top: 55%;
   z-index: 16;
+}
+/*
+ * BATTLE で開く技の一覧（SkillCommandPanel, 320px）は COMMAND（CommandMenu, 210px）より
+ * 110px 広い。同じ right:275px のままだと左端がその分プレイヤー側へ食い込んで身体と
+ * 被っていた。right を狭めて左端（プレイヤー側の辺）を COMMAND の左端に揃え、
+ * 広がった分は右（説明書パネル側の空き）へ逃がす。
+ * right_wide = right_root + width_root - width_wide = 275 + 210 - 320 = 165
+ */
+.command-area.wide {
+  right: 165px;
 }
 .focus-hint {
   width: 210px;

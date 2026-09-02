@@ -43,8 +43,7 @@ function mountBattle(battle: Battle, beforeAct: () => void = () => {}): Harness 
   const act = async (): Promise<void> => {
     beforeAct()
     await openBattleMenu(host)
-    slotButtons(host)[0].click()
-    await nextTick()
+    await selectSlot(slotButtons(host)[0])
   }
   current = { host, app, battle, act }
   return current
@@ -87,6 +86,13 @@ function commandItems(host: HTMLElement): HTMLButtonElement[] {
 }
 function slotButtons(host: HTMLElement): HTMLButtonElement[] {
   return [...host.querySelectorAll<HTMLButtonElement>('.skill-command .skill-slot:not(.back)')]
+}
+/** 技の選択は2回クリック制（1回目で固定、2回目で発動）になったため、テストからもそれに合わせる */
+async function selectSlot(btn: HTMLButtonElement): Promise<void> {
+  btn.click()
+  await nextTick()
+  btn.click()
+  await nextTick()
 }
 function textOf(host: HTMLElement, sel: string): string {
   return $(host, sel)?.textContent?.replace(/\s+/g, ' ').trim() ?? ''
@@ -207,8 +213,7 @@ describe('BattleScreen: コマンド操作', () => {
     const h = mount()
     await openBattleMenu(h.host)
     const guard = slotButtons(h.host).find(b => b.textContent?.includes('守る')) as HTMLButtonElement
-    guard.click()
-    await nextTick()
+    await selectSlot(guard)
     await openBattleMenu(h.host)
     const guardAfter = slotButtons(h.host).find(b => b.textContent?.includes('守る')) as HTMLButtonElement
     expect(guardAfter.disabled).toBe(true)
@@ -227,8 +232,7 @@ describe('BattleScreen: 演出', () => {
   it('行動を選ぶとスキル名が提示され、攻撃モーションに切り替わる', async () => {
     const h = mount(4242, pausedScheduler())
     await openBattleMenu(h.host)
-    slotButtons(h.host)[0].click()
-    await nextTick()
+    await selectSlot(slotButtons(h.host)[0])
     expect($(h.host, '.skill-cast-banner')).not.toBeNull()
     expect($$(h.host, '.char-unit.player .sprite-box.attacking').length).toBe(1)
   })
@@ -258,8 +262,7 @@ describe('BattleScreen: 被弾の見え方', () => {
       const h = mountTakingHits()
       await openBattleMenu(h.host)
       const pass = slotButtons(h.host).find(b => b.textContent?.includes('何もしていない')) as HTMLButtonElement
-      pass.click()
-      await nextTick()
+      await selectSlot(pass)
       vi.advanceTimersByTime(BATTLE.multiHitIntervalMs)
       await nextTick()
       expect($(h.host, '.char-unit.player .sprite-box.flashing')).not.toBeNull()
@@ -490,8 +493,7 @@ describe('BattleScreen: 効果音', () => {
       await openBattleMenu(h.host)
       const played = recordSfx()
       const guard = slotButtons(h.host).find(b => b.textContent?.includes('守る')) as HTMLButtonElement
-      guard.click()
-      await nextTick()
+      await selectSlot(guard)
       vi.advanceTimersByTime(BATTLE.multiHitIntervalMs * 4)
       expect(played).toContain(BATTLE_EFFECTS.get('fx_guard')?.sfx)
     } finally {

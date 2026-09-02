@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "passive_heal_mastery",
+  "label": "治癒の心得",
+  "flavorText": "痛みの引き方に、いくつかコツがあると気づいた。",
+  "kind": "passive",
+  "mainCategory": "heal",
+  "subCategories": [],
+  "unlockCondition": { "category": "heal", "points": 10 },
+  "effect": [
+    { "op": "statBoost", "stat": "int", "rate": 0.1 }
+  ]
+}

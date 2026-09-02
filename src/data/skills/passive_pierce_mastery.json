@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "passive_pierce_mastery",
+  "label": "貫通の極意",
+  "flavorText": "どこを突けば通るか、見えるようになってきた。",
+  "kind": "passive",
+  "mainCategory": "pierce",
+  "subCategories": [],
+  "unlockCondition": { "category": "pierce", "points": 10 },
+  "effect": [
+    { "op": "statBoost", "stat": "str", "rate": 0.1 }
+  ]
+}
