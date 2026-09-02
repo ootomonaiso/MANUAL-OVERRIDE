@@ -1,7 +1,7 @@
 import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import { Bullet, Hazard, rectsOverlap } from '../entities'
-import { SHOOT, PIXELART } from '../../data/tunables'
+import { SHOOT, BULLET_HELL, PIXELART } from '../../data/tunables'
 import { getGenre, getActiveSystems } from '../../engine/GameRegistry'
 import { soundManager } from '../../plugins/SoundManager'
 import { PixelCanvas } from '../render'
@@ -105,6 +105,23 @@ export class ShootFeature implements FeatureSystem {
     const bx = p.x + p.w / 2
     const by = p.y - SHOOT.bulletHeight
     const spd = SHOOT.bulletSpeed
+
+    // boss_stationary 有効時: 3方向オートエイム（ボスへ照準追従）
+    if (rules.features.has('boss_stationary')) {
+      const W = world.canvas.width
+      const H = world.canvas.height
+      const bossY = BULLET_HELL.boss.yRatio * H
+      const bossX = W / 2
+      const aimAngle = Math.atan2(bossY - p.y, bossX - (p.x + p.w / 2))
+      const sideOffset = BULLET_HELL.autoAim.sideOffsetDeg * Math.PI / 180
+
+      this.state.bullets.push(
+        new Bullet(bx, by, Math.cos(aimAngle) * spd, Math.sin(aimAngle) * spd),
+        new Bullet(bx, by, Math.cos(aimAngle - sideOffset) * spd, Math.sin(aimAngle - sideOffset) * spd),
+        new Bullet(bx, by, Math.cos(aimAngle + sideOffset) * spd, Math.sin(aimAngle + sideOffset) * spd),
+      )
+      return
+    }
 
     if (rules.features.has('three_way') || rules.features.has('spread_shot')) {
       this.state.bullets.push(

@@ -116,7 +116,8 @@
           "survival_hunger",
           "survival_level",
           "survival_melee",
-          "tetris_mode"
+          "tetris_mode",
+          "boss_stationary"
         ]
       }
     },
@@ -157,13 +158,14 @@
           "survival_hunger",
           "survival_level",
           "survival_melee",
-          "tetris_mode"
+          "tetris_mode",
+          "boss_stationary"
         ]
       }
     },
     "scoreFormula": {
       "type": "string",
-      "description": "スコア計算式（JavaScript式）。利用可能な変数: distance, survivedSec, kills, combo, maxCombo, exp, itemsCollected, beatHits, bossKills, stealthBonus, accuracy, deaths"
+      "description": "スコア計算式（JavaScript式）。利用可能な変数: distance, survivedSec, kills, combo, maxCombo, exp, itemsCollected, beatHits, bossKills, stealthBonus, accuracy, deaths, hitsOnBoss, maxHitCombo"
     },
     "manualReveal": {
       "type": "string",
