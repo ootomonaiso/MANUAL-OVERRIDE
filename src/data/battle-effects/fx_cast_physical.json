@@ -5,5 +5,9 @@
   "timing": "onCast",
   "durationMs": 200,
   "target": "source",
-  "visual": { "kind": "flash", "color": "var(--battle-element-physical)" }
+  "visual": {
+    "kind": "flash",
+    "color": "var(--battle-element-physical)"
+  },
+  "sfx": "battle_swing"
 }

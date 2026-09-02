@@ -5,5 +5,9 @@
   "timing": "onMiss",
   "durationMs": 260,
   "target": "target",
-  "visual": { "kind": "float", "color": "var(--battle-diff-muted)" }
+  "visual": {
+    "kind": "float",
+    "color": "var(--battle-diff-muted)"
+  },
+  "sfx": "battle_miss"
 }

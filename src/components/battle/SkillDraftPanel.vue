@@ -90,10 +90,10 @@ const emit = defineEmits<{
   position: relative;
   width: 220px;
   padding: 14px;
-  background: var(--genre-bg, var(--bg-panel));
-  border: 2px solid var(--genre-border, var(--green-dim));
+  background: color-mix(in srgb, var(--battle-panel) 97%, transparent);
+  border: 2px solid var(--battle-frame-border);
   border-radius: var(--radius-md);
-  color: var(--genre-text, var(--text));
+  color: var(--battle-text);
   font-family: var(--genre-font, var(--font-main));
   text-align: left;
   cursor: pointer;
@@ -101,7 +101,7 @@ const emit = defineEmits<{
 }
 .draft-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 6px 16px var(--genre-glow, var(--green-glow));
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--battle-accent) 30%, transparent);
 }
 .draft-card.unlocked {
   border-color: var(--battle-diff-plus);
@@ -150,7 +150,7 @@ const emit = defineEmits<{
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  color: var(--genre-text, var(--text));
+  color: var(--battle-text);
 }
 .swap-hint {
   font-size: 12px;
@@ -161,8 +161,8 @@ const emit = defineEmits<{
 }
 .swap-slot {
   padding: 10px 14px;
-  background: var(--genre-bg, var(--bg-panel));
-  border: 1px solid var(--genre-accent, var(--green));
+  background: color-mix(in srgb, var(--battle-panel) 97%, transparent);
+  border: 1px solid var(--battle-accent);
   border-radius: var(--radius-sm);
   color: inherit;
   cursor: pointer;

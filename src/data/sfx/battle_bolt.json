@@ -1,0 +1,19 @@
+{
+  "id": "battle_bolt",
+  "$comment": "連射する魔弾 — 短く硬い1発ぶん",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "square",
+      "freq": 880,
+      "freqEnd": 420,
+      "durationSec": 0.09,
+      "volume": 0.18,
+      "filter": {
+        "type": "bandpass",
+        "freq": 1400,
+        "q": 2
+      }
+    }
+  ]
+}

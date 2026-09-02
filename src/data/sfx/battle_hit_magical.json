@@ -1,0 +1,25 @@
+{
+  "id": "battle_hit_magical",
+  "$comment": "魔法ヒット — 炸裂ノイズ + 下降する残響",
+  "tracks": [
+    {
+      "kind": "noise",
+      "durationSec": 0.2,
+      "volume": 0.26,
+      "filter": {
+        "type": "bandpass",
+        "freq": 1800,
+        "freqEnd": 500,
+        "q": 1.2
+      }
+    },
+    {
+      "kind": "osc",
+      "wave": "sine",
+      "freq": 700,
+      "freqEnd": 180,
+      "durationSec": 0.28,
+      "volume": 0.24
+    }
+  ]
+}

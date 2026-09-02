@@ -1,0 +1,23 @@
+{
+  "id": "battle_cast_magical",
+  "$comment": "魔法の詠唱 — sine の上昇 + 高域のきらめき",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "sine",
+      "freq": 320,
+      "freqEnd": 900,
+      "durationSec": 0.26,
+      "volume": 0.22
+    },
+    {
+      "kind": "osc",
+      "wave": "triangle",
+      "freq": 960,
+      "freqEnd": 1600,
+      "durationSec": 0.22,
+      "volume": 0.12,
+      "delaySec": 0.06
+    }
+  ]
+}

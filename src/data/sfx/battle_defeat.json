@@ -1,0 +1,29 @@
+{
+  "id": "battle_defeat",
+  "$comment": "敵の撃破 — 崩れ落ちる下降音",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "sawtooth",
+      "freq": 420,
+      "freqEnd": 80,
+      "durationSec": 0.42,
+      "volume": 0.2,
+      "filter": {
+        "type": "lowpass",
+        "freq": 1600,
+        "freqEnd": 300
+      }
+    },
+    {
+      "kind": "noise",
+      "durationSec": 0.3,
+      "volume": 0.16,
+      "filter": {
+        "type": "lowpass",
+        "freq": 900,
+        "freqEnd": 200
+      }
+    }
+  ]
+}

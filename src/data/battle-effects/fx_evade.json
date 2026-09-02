@@ -5,5 +5,9 @@
   "timing": "onMiss",
   "durationMs": 260,
   "target": "target",
-  "visual": { "kind": "flash", "color": "var(--battle-stat)" }
+  "visual": {
+    "kind": "flash",
+    "color": "var(--battle-stat)"
+  },
+  "sfx": "battle_dodge"
 }

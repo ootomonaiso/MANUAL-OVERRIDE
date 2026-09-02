@@ -1,0 +1,22 @@
+{
+  "id": "battle_critical",
+  "$comment": "クリティカル — 鋭いスティンガー（ヒット音に重ねる）",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "square",
+      "freq": 1320,
+      "freqEnd": 880,
+      "durationSec": 0.1,
+      "volume": 0.18
+    },
+    {
+      "kind": "osc",
+      "wave": "square",
+      "freq": 1760,
+      "durationSec": 0.12,
+      "volume": 0.14,
+      "delaySec": 0.06
+    }
+  ]
+}

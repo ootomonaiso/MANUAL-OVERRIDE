@@ -382,6 +382,17 @@ export interface BattleConfig {
   bossBattleIndex: number
   multiHitIntervalMs: number
   initialEnemyCount: { min: number; max: number }
+  /** プレイヤーの見た目に使うスプライトID（src/data/sprites/*.json） */
+  playerSprite: string
+  /** 戦闘演出の尺。0 に近づけるほどテンポは速いが手応えは薄くなる */
+  presentation: {
+    announceMs: number
+    impactMs: number
+    popupMs: number
+    flashMs: number
+    attackPoseMs: number
+    battleEndMs: number
+  }
 }
 
 /** survival.json — サバイバルゲーム固有パラメータ */

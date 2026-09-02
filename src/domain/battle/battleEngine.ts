@@ -37,6 +37,7 @@ function randRange(rng: () => number, min: number, max: number): number {
 function freshCombatant(id: string, label: string, isPlayer: boolean, formationIndex: number): Combatant {
   return {
     id, label, isPlayer,
+    spriteId: '',
     baseStats: {
       hp: 0, str: 0, def: 0, int: 0, ref: 0, agi: 0,
       hitRate: BATTLE.initialStats.hitRate, evadeRate: 0,
@@ -54,6 +55,7 @@ function freshCombatant(id: string, label: string, isPlayer: boolean, formationI
 /** ジャンル確定時: 初期スキル・初期ステータスをランダムに決定してプレイヤーを構築する */
 export function initPlayer(rng: () => number): Combatant {
   const c = freshCombatant('player', 'あなた', true, 0)
+  c.spriteId = BATTLE.playerSprite
   const s = BATTLE.initialStats
   const { id: initialSkillId, favoredStat } = INITIAL_SKILLS[Math.floor(rng() * INITIAL_SKILLS.length)]
 
@@ -73,6 +75,7 @@ export function initPlayer(rng: () => number): Combatant {
 /** 敵定義から Combatant を構築する（毎戦フレッシュに生成。敵はランをまたいで持ち越さない） */
 export function spawnEnemyFromDef(def: import('./types').EnemyDef, formationIndex: number): Combatant {
   const c = freshCombatant(`${def.id}#${formationIndex}`, def.label, false, formationIndex)
+  c.spriteId = def.sprite
   c.baseStats = { ...def.stats }
   c.isBoss = def.isBoss
   c.traits = def.traits.map(id => ({ id }))
@@ -176,8 +179,10 @@ export function useActiveSkill(params: {
   const def = content.skills.get(skillId)
   if (!def || def.kind !== 'active') return
 
+  // onCast タイミングのエフェクトのみここで発火する。onHit 側は damage op が対象ごとに出す
+  //（対象が複数・多段のとき、着弾演出は当たった回数だけ必要になるため）
   for (const fx of def.effects ?? []) {
-    emit({ effectId: fx, targetRef: 'source', combatantId: source.id })
+    emit({ effectId: fx, targetRef: 'source', combatantId: source.id, payload: { skillId: def.id } })
   }
 
   runEffects(def.effect, {

@@ -5,6 +5,8 @@ import { CATEGORY_IDS, STAT_KEYS } from '../../../src/domain/battle/types'
 import type { EffectNode, CategoryId } from '../../../src/domain/battle/types'
 import { buildSkillText } from '../../../src/domain/battle/skillText'
 import { BATTLE } from '../../../src/data/tunables'
+import { SPRITES } from '../../../src/data/sprites'
+import { SFX_DEFS } from '../../../src/framework/SfxLoader'
 import skillSchema from '../../../schemas/battle-skill.schema.json'
 import traitSchema from '../../../schemas/battle-trait.schema.json'
 
@@ -307,6 +309,67 @@ describe('battleContent: 解放条件の到達可能性', () => {
     for (const def of ALL_SKILLS) {
       if (!def.unlockCondition) continue
       expect(freeCategories.has(def.unlockCondition.category), `${def.id}`).toBe(true)
+    }
+  })
+})
+
+describe('battleContent: 見た目（スプライト）の紐付け', () => {
+  it('すべての敵が実在するスプライトを名前で参照している', () => {
+    for (const enemy of ALL_ENEMIES) {
+      expect(enemy.sprite, `${enemy.id}: sprite が未設定`).toBeTruthy()
+      expect(SPRITES[enemy.sprite], `${enemy.id} → ${enemy.sprite}`).toBeDefined()
+    }
+  })
+
+  it('敵・プレイヤーのスプライトは通常時と攻撃時の2フレームを持つ', () => {
+    const ids = [...ALL_ENEMIES.map(e => e.sprite), BATTLE.playerSprite]
+    for (const id of ids) {
+      const def = SPRITES[id]
+      expect(def, id).toBeDefined()
+      expect(Object.keys(def.frames), id).toContain('idle')
+      expect(Object.keys(def.frames), id).toContain('attack')
+    }
+  })
+
+  it('攻撃フレームは通常フレームと別の絵になっている（見た目が変わらない手抜きを弾く）', () => {
+    for (const id of [...ALL_ENEMIES.map(e => e.sprite), BATTLE.playerSprite]) {
+      const def = SPRITES[id]
+      expect(def.frames.attack.join('|'), id).not.toBe(def.frames.idle.join('|'))
+    }
+  })
+
+  it('プレイヤーのスプライトは battle.json で指定されたものを使う', () => {
+    expect(BATTLE.playerSprite).toBeTruthy()
+    expect(SPRITES[BATTLE.playerSprite]).toBeDefined()
+  })
+})
+
+describe('battleContent: 効果音の紐付け', () => {
+  it('エフェクトが指す効果音はすべて実在する', () => {
+    for (const def of BATTLE_EFFECTS.values()) {
+      if (!def.sfx) continue
+      expect(SFX_DEFS[def.sfx], `${def.id} → ${def.sfx}`).toBeDefined()
+    }
+  })
+
+  it('スキル個別の効果音はすべて実在する（スキルごとに音を差し替えられる）', () => {
+    for (const def of ALL_SKILLS) {
+      if (def.kind !== 'active' || !def.sfx) continue
+      for (const id of [def.sfx.cast, def.sfx.impact]) {
+        if (!id) continue
+        expect(SFX_DEFS[id], `${def.id} → ${id}`).toBeDefined()
+      }
+    }
+  })
+
+  it('スキルの effects[] は発動側（onCast）の演出だけを並べる', () => {
+    // 着弾側は damage/heal/shield オペレーションが対象ごとに発行するため、
+    // ここへ書くと使用者自身が被弾したように光ってしまう。
+    for (const def of ALL_SKILLS) {
+      if (def.kind !== 'active') continue
+      for (const fx of def.effects ?? []) {
+        expect(BATTLE_EFFECTS.get(fx)?.timing, `${def.id} → ${fx}`).toBe('onCast')
+      }
     }
   })
 })

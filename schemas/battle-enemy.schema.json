@@ -4,13 +4,18 @@
   "title": "RPGジャンル: 敵定義",
   "description": "src/data/enemies/*.json のスキーマ。docs/genre/rpg/07-data-schema.md 準拠。1ファイル1種。",
   "type": "object",
-  "required": ["id", "label", "flavorText", "stats", "traits", "activeSkills", "passiveSkills", "actionPattern", "isBoss"],
+  "required": ["id", "label", "flavorText", "sprite", "stats", "traits", "activeSkills", "passiveSkills", "actionPattern", "isBoss"],
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": "string" },
     "id": { "type": "string", "pattern": "^enemy_[a-z0-9_]+$" },
     "label": { "type": "string", "minLength": 1 },
     "flavorText": { "type": "string", "minLength": 1 },
+    "sprite": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "src/data/sprites/*.json の id。idle / attack フレームを持つこと（実行時に検証）"
+    },
     "stats": {
       "type": "object",
       "required": ["hp", "str", "def", "int", "ref", "agi", "hitRate", "evadeRate", "critRate", "critDamageMultiplier"],

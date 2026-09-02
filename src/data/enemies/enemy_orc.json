@@ -3,6 +3,7 @@
   "id": "enemy_orc",
   "label": "オーク",
   "flavorText": "分厚い装丁ごと殴りかかってくる。",
+  "sprite": "battle_orc",
   "stats": {
     "hp": 4000, "str": 560, "def": 950, "int": 200, "ref": 400, "agi": 300,
     "hitRate": 0.92, "evadeRate": 0, "critRate": 0.05, "critDamageMultiplier": 1.5

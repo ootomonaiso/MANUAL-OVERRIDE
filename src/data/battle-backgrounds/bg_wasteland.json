@@ -1,0 +1,19 @@
+{
+  "$schema": "../../../schemas/battle-background.schema.json",
+  "id": "bg_wasteland",
+  "label": "禍々しい荒れ地",
+  "sky": { "top": "#2a0e1c", "bottom": "#7a2331" },
+  "glow": { "color": "#ff6a4a", "x": 0.5, "y": 0.22, "r": 0.16 },
+  "ground": { "top": "#4a2028", "bottom": "#170a10", "baseline": 0.65 },
+  "layers": [
+    { "shape": "spikes", "color": "#3a1220", "baseline": 0.58, "height": 0.22, "segments": 13, "opacity": 0.9 },
+    { "shape": "spikes", "color": "#210a14", "baseline": 0.64, "height": 0.14, "segments": 9 }
+  ],
+  "props": [
+    { "kind": "crystal", "color": "#a8324a", "count": 6, "size": 0.13, "baseline": 0.66 },
+    { "kind": "bone", "color": "#c9b8a8", "count": 7, "size": 0.06, "baseline": 0.85 }
+  ],
+  "fog": { "color": "#ff4a3a", "opacity": 0.1 },
+  "accent": "#ff8f6a",
+  "panel": "#25101a"
+}

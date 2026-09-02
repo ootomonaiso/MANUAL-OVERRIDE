@@ -1,0 +1,29 @@
+{
+  "id": "battle_heal",
+  "$comment": "回復 — 上昇する純音の3和音",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "sine",
+      "freq": 523,
+      "durationSec": 0.14,
+      "volume": 0.2
+    },
+    {
+      "kind": "osc",
+      "wave": "sine",
+      "freq": 659,
+      "durationSec": 0.14,
+      "volume": 0.2,
+      "delaySec": 0.08
+    },
+    {
+      "kind": "osc",
+      "wave": "sine",
+      "freq": 784,
+      "durationSec": 0.22,
+      "volume": 0.22,
+      "delaySec": 0.16
+    }
+  ]
+}

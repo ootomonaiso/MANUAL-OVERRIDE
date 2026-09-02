@@ -72,22 +72,25 @@ const emit = defineEmits<{
   gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
+  /* 右下に常駐する説明書パネル（App.vue .manual-panel、幅340px前後）の下に
+     「何もしない」枠が潜り込んで押せなくなるため、その分だけ右を空ける */
+  margin-right: min(340px, 26vw);
 }
 .skill-slot {
   position: relative;
   min-width: 84px;
   padding: 8px 10px;
-  background: var(--genre-bg, var(--bg-panel));
-  border: 1px solid var(--genre-border, var(--green-dim));
+  background: color-mix(in srgb, var(--battle-panel) 84%, transparent);
+  border: 1px solid var(--battle-frame-border);
   border-radius: var(--radius-sm);
-  color: var(--genre-text, var(--text));
+  color: var(--battle-text);
   font-family: var(--genre-font, var(--font-main));
   cursor: pointer;
   transition: background var(--transition-fast), transform var(--transition-fast);
 }
 .skill-slot:hover:not(:disabled) {
   transform: translateY(-2px);
-  background: var(--genre-glow, var(--green-subtle));
+  background: color-mix(in srgb, var(--battle-accent) 22%, transparent);
 }
 .skill-slot:disabled {
   opacity: 0.4;

@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, watch, computed, toRaw } from 'vue'
 import { useGameState } from './composables/useGameState'
 import { useManual } from './composables/useManual'
-import { useBattleState } from './composables/useBattleState'
+import { useBattleState, TIMED_SCHEDULER } from './composables/useBattleState'
 import BattleScreen from './components/battle/BattleScreen.vue'
 import { SideScroller } from './game/sideScroller'
 import type { GameSnapshot } from './game/sideScroller'
@@ -31,7 +31,8 @@ import type { DebugSettings } from './debug/types'
 const gameState = useGameState()
 const manualCtl = useManual(gameState.currentManual)
 const debugCtl = useDebugSettings()
-const battle = useBattleState()
+// 実プレイでは1手番ごとに演出の「間」を挟む（テストは既定の同期スケジューラで即座に解決する）
+const battle = useBattleState({ scheduler: TIMED_SCHEDULER })
 
 /**
  * rpg ジャンル確定後、戦闘UIへ移行しているか（01-architecture.md）。

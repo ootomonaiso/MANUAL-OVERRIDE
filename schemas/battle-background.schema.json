@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "battle-background.schema.json",
+  "title": "RPGジャンル: 戦闘背景定義",
+  "description": "src/data/battle-backgrounds/*.json のスキーマ。1ファイル1背景。実際の描画は src/domain/battle/backdrop.ts が行う。",
+  "type": "object",
+  "required": ["id", "label", "sky", "ground", "layers", "accent"],
+  "additionalProperties": false,
+  "definitions": {
+    "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+    "layer": {
+      "type": "object",
+      "required": ["shape", "color", "baseline", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "shape": { "type": "string", "enum": ["hills", "dunes", "spikes", "ruins"] },
+        "color": { "$ref": "#/definitions/color" },
+        "baseline": { "type": "number", "minimum": 0, "maximum": 1, "description": "稜線の基準位置（画面高に対する比）" },
+        "height": { "type": "number", "minimum": 0, "maximum": 1, "description": "起伏の高さ（画面高に対する比）" },
+        "segments": { "type": "integer", "minimum": 2, "maximum": 64 },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "prop": {
+      "type": "object",
+      "required": ["kind", "color", "count", "size"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "enum": ["tree", "cactus", "pillar", "bone", "crystal", "tuft"] },
+        "color": { "$ref": "#/definitions/color" },
+        "count": { "type": "integer", "minimum": 1, "maximum": 40 },
+        "size": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "baseline": { "type": "number", "minimum": 0, "maximum": 1 },
+        "opacity": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^bg_[a-z0-9_]+$" },
+    "label": { "type": "string", "minLength": 1 },
+    "sky": {
+      "type": "object",
+      "required": ["top", "bottom"],
+      "additionalProperties": false,
+      "properties": { "top": { "$ref": "#/definitions/color" }, "bottom": { "$ref": "#/definitions/color" } }
+    },
+    "glow": {
+      "type": "object",
+      "required": ["color", "x", "y", "r"],
+      "additionalProperties": false,
+      "description": "太陽・月・不吉な光源。x/y/r は画面幅・高に対する比",
+      "properties": {
+        "color": { "$ref": "#/definitions/color" },
+        "x": { "type": "number", "minimum": 0, "maximum": 1 },
+        "y": { "type": "number", "minimum": 0, "maximum": 1 },
+        "r": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+      }
+    },
+    "ground": {
+      "type": "object",
+      "required": ["top", "bottom", "baseline"],
+      "additionalProperties": false,
+      "properties": {
+        "top": { "$ref": "#/definitions/color" },
+        "bottom": { "$ref": "#/definitions/color" },
+        "baseline": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "layers": { "type": "array", "maxItems": 6, "items": { "$ref": "#/definitions/layer" } },
+    "props": { "type": "array", "maxItems": 6, "items": { "$ref": "#/definitions/prop" } },
+    "fog": {
+      "type": "object",
+      "required": ["color", "opacity"],
+      "additionalProperties": false,
+      "properties": { "color": { "$ref": "#/definitions/color" }, "opacity": { "type": "number", "minimum": 0, "maximum": 1 } }
+    },
+    "accent": { "$ref": "#/definitions/color", "description": "この背景でのUIアクセント色" },
+    "panel": { "$ref": "#/definitions/color", "description": "この背景でのパネル地色" },
+    "bossOnly": { "type": "boolean", "description": "true ならボス戦でのみ選ばれる" }
+  }
+}

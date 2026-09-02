@@ -6,13 +6,33 @@
   "kind": "active",
   "element": "physical",
   "mainCategory": "fatal",
-  "subCategories": ["might"],
+  "subCategories": [
+    "might"
+  ],
   "cooldown": 2,
   "defaultFocus": "enemy",
   "focusRange": "single",
-  "effects": ["fx_hit_physical"],
+  "effects": [
+    "fx_cast_physical"
+  ],
   "effect": [
-    { "op": "modifier", "stat": "critRate", "amount": 0.5, "scope": "thisHit" },
-    { "op": "damage", "element": "physical", "scale": { "stat": "str", "rate": 1.1 } }
-  ]
+    {
+      "op": "modifier",
+      "stat": "critRate",
+      "amount": 0.5,
+      "scope": "thisHit"
+    },
+    {
+      "op": "damage",
+      "element": "physical",
+      "scale": {
+        "stat": "str",
+        "rate": 1.1
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing",
+    "impact": "battle_hit_physical"
+  }
 }

@@ -32,6 +32,15 @@
     "defaultFocus": { "type": "string", "enum": ["enemy", "self", "ally"], "description": "active のみ必須" },
     "focusRange": { "type": "string", "enum": ["single", "all", "adjacent3"], "description": "active のみ必須" },
     "effects": { "type": "array", "items": { "type": "string", "pattern": "^fx_[a-z0-9_]+$" } },
+    "sfx": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "このスキル専用の効果音。src/data/sfx/*.json の id を指す（active のみ）",
+      "properties": {
+        "cast": { "type": "string", "minLength": 1 },
+        "impact": { "type": "string", "minLength": 1 }
+      }
+    },
     "unlockCondition": {
       "type": "object",
       "required": ["category", "points"],

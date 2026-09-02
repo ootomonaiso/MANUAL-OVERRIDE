@@ -1,0 +1,24 @@
+{
+  "id": "battle_hit_physical",
+  "$comment": "物理ヒット — 低い胴鳴り + 短い破裂ノイズ",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "triangle",
+      "freq": 180,
+      "freqEnd": 70,
+      "durationSec": 0.16,
+      "volume": 0.34
+    },
+    {
+      "kind": "noise",
+      "durationSec": 0.09,
+      "volume": 0.26,
+      "filter": {
+        "type": "lowpass",
+        "freq": 1800,
+        "freqEnd": 500
+      }
+    }
+  ]
+}

@@ -6,18 +6,33 @@
   "kind": "active",
   "element": "magical",
   "mainCategory": "combo",
-  "subCategories": ["wisdom"],
+  "subCategories": [
+    "wisdom"
+  ],
   "cooldown": 2,
   "defaultFocus": "enemy",
   "focusRange": "single",
-  "effects": ["fx_cast_magical", "fx_hit_magical"],
+  "effects": [
+    "fx_cast_magical"
+  ],
   "effect": [
     {
       "op": "repeat",
       "times": 2,
       "body": [
-        { "op": "damage", "element": "magical", "scale": { "stat": "int", "rate": 0.6 } }
+        {
+          "op": "damage",
+          "element": "magical",
+          "scale": {
+            "stat": "int",
+            "rate": 0.6
+          }
+        }
       ]
     }
-  ]
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_bolt"
+  }
 }

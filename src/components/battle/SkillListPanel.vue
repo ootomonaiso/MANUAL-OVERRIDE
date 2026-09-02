@@ -30,13 +30,11 @@ const emit = defineEmits<{
   (e: 'toggle-collapsed'): void
 }>()
 
+// マウスを乗せただけで開くと、スキル枠へ手を伸ばす途中で一覧が勝手に伸び縮みする。
+// 開閉はクリックだけで行う。
 const pinnedId = ref<string | null>(null)
-const hoveredId = ref<string | null>(null)
 function toggle(id: string) {
   pinnedId.value = pinnedId.value === id ? null : id
-}
-function expandedId(): string | null {
-  return pinnedId.value ?? hoveredId.value
 }
 </script>
 
@@ -62,15 +60,13 @@ function expandedId(): string | null {
             class="skill-item"
             :class="[item.visibility, { stored: item.stored }]"
             @click="toggle(item.id)"
-            @mouseenter="hoveredId = item.id"
-            @mouseleave="hoveredId = null"
           >
             <div class="item-row">
               <span class="item-label">{{ item.visibility === 'unseen' ? '？？？' : item.label }}</span>
               <span v-if="item.stored" class="item-badge">保管中</span>
               <span v-if="item.level" class="item-level">Lv{{ item.level }}</span>
             </div>
-            <div v-if="expandedId() === item.id && item.visibility !== 'unseen'" class="item-detail">
+            <div v-if="pinnedId === item.id && item.visibility !== 'unseen'" class="item-detail">
               <SkillText v-if="item.effectTokens" :tokens="item.effectTokens" />
               <div v-if="item.flavorText" class="item-flavor">「{{ item.flavorText }}」</div>
             </div>
@@ -83,10 +79,10 @@ function expandedId(): string | null {
 
 <style scoped>
 .skill-list-panel {
-  background: var(--genre-bg, var(--bg-panel));
-  border: 1px solid var(--genre-border, var(--green-dim));
+  background: color-mix(in srgb, var(--battle-panel) 84%, transparent);
+  border: 1px solid var(--battle-frame-border);
   border-radius: var(--radius-md);
-  color: var(--genre-text, var(--text));
+  color: var(--battle-text);
   font-family: var(--genre-font, var(--font-main));
   min-width: 180px;
   max-height: 60vh;
@@ -118,7 +114,7 @@ function expandedId(): string | null {
   border-radius: var(--radius-sm);
 }
 .skill-item:hover {
-  background: var(--genre-glow, var(--green-subtle));
+  background: color-mix(in srgb, var(--battle-accent) 22%, transparent);
 }
 .skill-item.unseen .item-label,
 .skill-item.seen .item-label {
@@ -146,7 +142,7 @@ function expandedId(): string | null {
   font-size: 10px;
   opacity: 0.9;
   padding: 4px 0 2px 4px;
-  border-left: 2px solid var(--genre-border, var(--green-dim));
+  border-left: 2px solid var(--battle-frame-border);
   margin-left: 2px;
 }
 .item-flavor {

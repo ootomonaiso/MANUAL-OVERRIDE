@@ -22,5 +22,15 @@
   "fallbackStatBoost": { "hp": 400, "other": 40 },
   "bossBattleIndex": 10,
   "multiHitIntervalMs": 180,
+  "playerSprite": "battle_heroine",
+  "presentation": {
+    "$comment": "1手番の演出尺。announce=スキル名の提示 / impact=効果の解決から次の手番まで",
+    "announceMs": 620,
+    "impactMs": 760,
+    "popupMs": 900,
+    "flashMs": 220,
+    "attackPoseMs": 520,
+    "battleEndMs": 700
+  },
   "initialEnemyCount": { "min": 1, "max": 1 }
 }

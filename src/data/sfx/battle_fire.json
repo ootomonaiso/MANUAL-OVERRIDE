@@ -1,0 +1,28 @@
+{
+  "id": "battle_fire",
+  "$comment": "火炎系スキル — 太いノイズのスweep（skill_fireball 専用）",
+  "tracks": [
+    {
+      "kind": "noise",
+      "durationSec": 0.34,
+      "volume": 0.28,
+      "filter": {
+        "type": "lowpass",
+        "freq": 600,
+        "freqEnd": 3000
+      }
+    },
+    {
+      "kind": "osc",
+      "wave": "sawtooth",
+      "freq": 110,
+      "freqEnd": 60,
+      "durationSec": 0.3,
+      "volume": 0.16,
+      "filter": {
+        "type": "lowpass",
+        "freq": 800
+      }
+    }
+  ]
+}

@@ -32,6 +32,7 @@ const SCHEMAS = {
   'genre_defaults.json': ['section', 'scoreFormula', 'theme', 'bgColor'],
   'palette_defaults.json': ['section', 'danger', 'dangerGlow', 'safe', 'safeGlow'],
   'battle.json': ['section', 'initialStats', 'cut', 'evade', 'affinity', 'guard', 'dodge', 'shield',
+                    'playerSprite', 'presentation',
                   'categoryUnlockThresholds', 'fallbackStatBoost', 'bossBattleIndex', 'multiHitIntervalMs'],
 }
 
@@ -100,6 +101,7 @@ const SPRITE_PALETTE_KEY  = new RegExp(_spriteSchema.properties.palette.property
 
 function validateSprites() {
   const spriteIds = new Set()
+  const spriteFrames = new Map()
   for (const file of walkJson('src/data/sprites')) {
     const rel = relPath(file)
     const { data, error } = parseJson(file)
@@ -156,10 +158,12 @@ function validateSprites() {
       })
     }
 
+    spriteFrames.set(data.id, new Set(Object.keys(data.frames ?? {})))
+
     if (problems.length > 0) fail(rel, problems.join('\n       '))
     else ok(rel)
   }
-  return spriteIds
+  return spriteFrames
 }
 
 // Required keys for manual branch files
@@ -450,6 +454,7 @@ function validateSfx() {
     if (problems.length > 0) fail(rel, problems.join('\n       '))
     else ok(rel)
   }
+  return seenIds
 }
 
 // ── RPG バトルコンテンツ (docs/genre/rpg/07-data-schema.md) ─────────────
@@ -458,12 +463,15 @@ const _battleTraitSchema = JSON.parse(readFileSync('schemas/battle-trait.schema.
 const _battleEnemySchema = JSON.parse(readFileSync('schemas/battle-enemy.schema.json', 'utf8'))
 const _battleEffectSchema = JSON.parse(readFileSync('schemas/battle-effect.schema.json', 'utf8'))
 const ALLOWED_OPS = _battleSkillSchema.allowedOps
+const _battleBackgroundSchema = JSON.parse(readFileSync('schemas/battle-background.schema.json', 'utf8'))
 
 const ajvBattle = new Ajv({ strict: false, allErrors: true })
 const validateSkillSchema = ajvBattle.compile(_battleSkillSchema)
 const validateTraitSchema = ajvBattle.compile(_battleTraitSchema)
 const validateEnemySchema = ajvBattle.compile(_battleEnemySchema)
 const validateEffectSchema = ajvBattle.compile(_battleEffectSchema)
+const validateBackgroundSchema = ajvBattle.compile(_battleBackgroundSchema)
+const PROBLEM_SEPARATOR = String.fromCharCode(10) + '       '
 
 /** effect ノード配列を再帰的に走査し、参照する op / stat / repeat 構造の粗い妥当性を見る */
 function walkEffectNodes(nodes, problems, path = 'effect') {
@@ -491,6 +499,7 @@ function validateBattleSkills() {
   const activeIds = new Set()
   const passiveIds = new Set()
   const referencedEffectIds = new Set()
+  const referencedSfxIds = new Set()
   const seen = new Set()
 
   for (const file of walkJson('src/data/skills')) {
@@ -519,12 +528,16 @@ function validateBattleSkills() {
       passiveIds.add(data.id)
     }
     for (const fx of data.effects ?? []) referencedEffectIds.add(fx)
+    if (data.sfx) {
+      if (data.kind !== 'active') problems.push('sfx は kind="active" のスキルにのみ指定できます')
+      for (const id of [data.sfx.cast, data.sfx.impact]) if (id) referencedSfxIds.add(id)
+    }
     if (Array.isArray(data.effect)) walkEffectNodes(data.effect, problems)
 
     if (problems.length > 0) fail(rel, problems.join('\n       '))
     else ok(rel)
   }
-  return { activeIds, passiveIds, referencedEffectIds }
+  return { activeIds, passiveIds, referencedEffectIds, referencedSfxIds }
 }
 
 /** src/data/traits/*.json を検証する。戻り値: 特性IDの集合 */
@@ -555,7 +568,7 @@ function validateBattleTraits() {
 }
 
 /** src/data/enemies/*.json を検証する（skill/trait の参照整合性を含む） */
-function validateBattleEnemies(activeIds, passiveIds, traitIds) {
+function validateBattleEnemies(activeIds, passiveIds, traitIds, spriteFrames) {
   const seen = new Set()
   let bossCount = 0
 
@@ -573,6 +586,15 @@ function validateBattleEnemies(activeIds, passiveIds, traitIds) {
     if (seen.has(data.id)) problems.push(`id "${data.id}" が他の敵と重複しています`)
     seen.add(data.id)
     if (data.isBoss) bossCount++
+
+    const frames = spriteFrames.get(data.sprite)
+    if (!frames) {
+      problems.push(`sprite: 存在しないスプライト "${data.sprite}" を参照しています（src/data/sprites/）`)
+    } else {
+      for (const required of ['idle', 'attack']) {
+        if (!frames.has(required)) problems.push(`sprite "${data.sprite}" に frames."${required}" がありません`)
+      }
+    }
 
     for (const t of data.traits ?? []) {
       if (!traitIds.has(t)) problems.push(`traits: 存在しない特性 "${t}" を参照しています`)
@@ -604,6 +626,8 @@ function validateBattleEnemies(activeIds, passiveIds, traitIds) {
 /** src/data/battle-effects/*.json を検証する。戻り値: エフェクトIDの集合 */
 function validateBattleEffects() {
   const effectIds = new Set()
+  const effectTimings = new Map()
+  const referencedSfxIds = new Set()
   const seen = new Set()
 
   for (const file of walkJson('src/data/battle-effects')) {
@@ -622,19 +646,69 @@ function validateBattleEffects() {
 
     if (problems.length > 0) fail(rel, problems.join('\n       '))
     else ok(rel)
+    if (data.sfx) referencedSfxIds.add(data.sfx)
     effectIds.add(data.id)
+    effectTimings.set(data.id, data.timing)
   }
-  return effectIds
+  return { effectIds, effectTimings, referencedSfxIds }
 }
 
-function validateBattleEffectReferences(referencedEffectIds, effectIds) {
+/**
+ * スキルの effects[] は「使用者側で鳴らす発動演出」だけを並べる欄。
+ * 着弾側（onHit / onHeal / onShield 等）は damage/heal/shield オペレーションが
+ * 対象ごとに自前で発行するため、ここに書くと使用者自身が被弾したように見えてしまう。
+ */
+function validateBattleEffectReferences(referencedEffectIds, effectIds, effectTimings) {
   const rel = 'src/data/skills/*.json (effects 参照整合性)'
+  const problems = []
   const missing = [...referencedEffectIds].filter(id => !effectIds.has(id))
-  if (missing.length > 0) {
-    fail(rel, `存在しないエフェクトを参照しています: ${missing.join(', ')}`)
-  } else {
-    ok(rel)
+  if (missing.length > 0) problems.push(`存在しないエフェクトを参照しています: ${missing.join(', ')}`)
+  const notCast = [...referencedEffectIds].filter(id => effectIds.has(id) && effectTimings.get(id) !== 'onCast')
+  if (notCast.length > 0) {
+    problems.push(`effects[] には timing="onCast" のエフェクトのみ書けます（着弾演出は効果オペレーションが自動で出します）: ${notCast.join(', ')}`)
   }
+  if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
+  else ok(rel)
+}
+
+/** src/data/battle-backgrounds/*.json を検証する。戻り値: ボス専用でない背景の数 */
+function validateBattleBackgrounds() {
+  const seen = new Set()
+  let normalCount = 0
+  let bossCount = 0
+
+  for (const file of walkJson('src/data/battle-backgrounds')) {
+    const rel = relPath(file)
+    const { data, error } = parseJson(file)
+    if (data === null) { fail(rel, `JSON parse error: ${error}`); continue }
+
+    const problems = []
+    const schemaValid = validateBackgroundSchema(data)
+    if (!schemaValid && validateBackgroundSchema.errors) {
+      for (const err of validateBackgroundSchema.errors) problems.push(`schema: ${err.instancePath || '(root)'} ${err.message}`)
+    }
+    if (data.id !== basename(file, '.json')) problems.push(`id "${data.id}" とファイル名が一致していません`)
+    if (seen.has(data.id)) problems.push(`id "${data.id}" が他の背景と重複しています`)
+    seen.add(data.id)
+    if (data.bossOnly) bossCount++
+    else normalCount++
+
+    if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
+    else ok(rel)
+  }
+
+  const rel = 'src/data/battle-backgrounds/*.json (最低限の構成)'
+  if (normalCount < 2) fail(rel, '通常戦闘用の背景が2種未満です（連戦で場所が変わらなくなります）')
+  else if (bossCount === 0) fail(rel, 'bossOnly:true の背景がありません（ボス戦の場が通常戦と同じになります）')
+  else ok(rel)
+}
+
+/** エフェクト/スキルが参照する SE の id がすべて実在するか */
+function validateBattleSfxReferences(referencedSfxIds, sfxIds) {
+  const rel = 'src/data/{battle-effects,skills}/*.json (sfx 参照整合性)'
+  const missing = [...referencedSfxIds].filter(id => !sfxIds.has(id))
+  if (missing.length > 0) fail(rel, `存在しない効果音を参照しています: ${missing.join(', ')}`)
+  else ok(rel)
 }
 
 // ── Run ──────────────────────────────────────────────────────────────────
@@ -648,7 +722,7 @@ for (const file of walkJson('src/data/config')) {
 validatePixelart()
 
 // Sprite definitions (PixelArt化: docs/pixelart-rebuild/)
-validateSprites()
+const spriteFrames = validateSprites()
 
 // Genre definitions (also collects ids for reference checks)
 const genreIds = validateGenres()
@@ -660,14 +734,25 @@ for (const file of walkJson('src/data/manuals')) {
 validateManualDeckRefs()
 
 // SFX definitions
-validateSfx()
+const sfxIds = validateSfx()
 
 // RPG バトルコンテンツ
-const { activeIds: battleActiveIds, passiveIds: battlePassiveIds, referencedEffectIds: battleReferencedEffectIds } = validateBattleSkills()
+const {
+  activeIds: battleActiveIds,
+  passiveIds: battlePassiveIds,
+  referencedEffectIds: battleReferencedEffectIds,
+  referencedSfxIds: skillReferencedSfxIds,
+} = validateBattleSkills()
 const battleTraitIds = validateBattleTraits()
-validateBattleEnemies(battleActiveIds, battlePassiveIds, battleTraitIds)
-const battleEffectIds = validateBattleEffects()
-validateBattleEffectReferences(battleReferencedEffectIds, battleEffectIds)
+validateBattleEnemies(battleActiveIds, battlePassiveIds, battleTraitIds, spriteFrames)
+const {
+  effectIds: battleEffectIds,
+  effectTimings: battleEffectTimings,
+  referencedSfxIds: effectReferencedSfxIds,
+} = validateBattleEffects()
+validateBattleEffectReferences(battleReferencedEffectIds, battleEffectIds, battleEffectTimings)
+validateBattleSfxReferences([...effectReferencedSfxIds, ...skillReferencedSfxIds], sfxIds)
+validateBattleBackgrounds()
 
 // 説明書ツリー（後方互換データ）の参照整合性: すべての choices[].next が
 // マージ後デッキ内の実在キーを指すか検証する。1.0 からの到達性は検査しない

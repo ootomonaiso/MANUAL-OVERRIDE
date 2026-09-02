@@ -105,6 +105,14 @@ export interface ActiveSkillDef extends SkillDefBase {
   defaultFocus: FocusSide
   focusRange: FocusRange
   effects?: string[]   // 再生するエフェクトID
+  /** このスキル専用の効果音（src/data/sfx/*.json のID）。未指定なら属性ごとの既定音 */
+  sfx?: SkillSfx
+}
+
+/** スキル単位で差し替える効果音。cast = 詠唱/振りかぶり、impact = 着弾 */
+export interface SkillSfx {
+  cast?: string
+  impact?: string
 }
 
 export interface PassiveSkillDef extends SkillDefBase {
@@ -132,6 +140,8 @@ export interface EnemyDef {
   id: string
   label: string
   flavorText: string
+  /** src/data/sprites/*.json の id。見た目の実体はそちらに置き、ここでは名前で参照する */
+  sprite: string
   stats: BattleStats
   traits: string[]
   activeSkills: EnemySkillRefResolved[]
@@ -191,6 +201,8 @@ export interface Combatant {
   id: string
   label: string
   isPlayer: boolean
+  /** 描画に使うスプライトID（EnemyDef.sprite / battle.json の playerSprite 由来） */
+  spriteId: string
 
   baseStats: BattleStats
   hp: number
@@ -287,6 +299,9 @@ export interface BattleState {
 
   status: BattleStatus
 
+  /** 現在の戦闘の背景ID（src/data/battle-backgrounds/*.json） */
+  backgroundId: string | null
+
   draftOptions: DraftOption[] | null
   /** アクティブ枠が全て埋まった状態で新規アクティブを選んだ際、入れ替え先の選択待ちで保持するスキルID */
   pendingSwapSkillId: string | null
@@ -323,7 +338,16 @@ export interface EffectRequest {
   effectId: string
   targetRef: 'source' | 'target' | 'screen'
   combatantId?: string
-  payload?: { text?: string; color?: string }
+  payload?: EffectPayload
+}
+
+export interface EffectPayload {
+  text?: string
+  color?: string
+  /** ダメージがシールドに吸収されたか。演出の色（赤／青）を分ける */
+  absorbedByShield?: boolean
+  /** 発生元のスキルID。効果音のスキル別差し替えに使う */
+  skillId?: string
 }
 
 export interface EffectContext {

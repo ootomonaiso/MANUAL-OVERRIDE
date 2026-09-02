@@ -1,6 +1,13 @@
 import type { BgmConfig } from '../domain/types'
 
 export interface SoundHooks {
+  /**
+   * JSON 定義の SE を id 指定で直接鳴らす。
+   * rpg 戦闘のようにスキルごとに音を差し替える場面では、フックを増やす代わりに
+   * データ（スキル/エフェクトJSON）が持つ id をそのまま渡す。
+   */
+  playSfx?(id: string, freqScale?: number): void
+
   onJump(): void
   onLand(): void
   onShoot(): void
@@ -149,6 +156,8 @@ class SoundManager implements SoundHooks {
   register(impl: Partial<SoundHooks>) {
     this._impl = impl
   }
+
+  playSfx(id: string, freqScale?: number) { this._impl.playSfx?.(id, freqScale) }
 
   onJump() { this._impl.onJump?.() }
   onLand() { this._impl.onLand?.() }

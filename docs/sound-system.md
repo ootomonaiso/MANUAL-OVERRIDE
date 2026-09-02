@@ -27,7 +27,7 @@
 
 | レイヤー | ファイル | 責務 |
 |---|---|---|
-| 定義データ | `src/data/sfx/*.json`（51件） | 効果音1つ = ファイル1つ。何の音をどう鳴らすか |
+| 定義データ | `src/data/sfx/*.json`（75件） | 効果音1つ = ファイル1つ。何の音をどう鳴らすか |
 | ローダー | [SfxLoader.ts](../src/framework/SfxLoader.ts) | `import.meta.glob` で JSON を自動収集し `SFX_DEFS` を構築 |
 | 型定義 | [sfx-types.ts](../src/framework/sfx-types.ts) | JSON スキーマと 1:1 対応する TypeScript 型 |
 | 検証 | [ConfigValidator.ts](../src/framework/ConfigValidator.ts) の `devValidateSfx` | dev 時に不正な定義を `console.warn` |
@@ -288,7 +288,11 @@ onCombo(count: number): void {
 
 ## 6. 未配線の SFX（6件）
 
-`src/data/sfx/` には 51 件の JSON があるが、`SfxSound` のフックから再生されるのは 45 件。以下 6 件は**どこからも呼ばれていない**。
+`src/data/sfx/` には 75 件の JSON があるが、`SfxSound` のフックから再生されるのは 45 件。以下 6 件は**どこからも呼ばれていない**。
+
+なお `battle_*` の 24 件はフック経由ではなく、rpg 戦闘のデータ（`src/data/battle-effects/*.json` の `sfx`、
+`src/data/skills/*.json` の `sfx`）から **id 指定で** `soundManager.playSfx(id)` を呼んで鳴らしている
+（[docs/genre/rpg/09-effects.md](genre/rpg/09-effects.md)）。
 
 `combo_milestone` / `goal_achieved` / `milestone` / `near_miss` / `record_update` / `skin_select`
 
@@ -317,7 +321,7 @@ BGM は SFX とは別系統で、[SoundManager.ts](../src/plugins/SoundManager.t
 
 | ファイル | 検証内容 |
 |---|---|
-| [sfxLoader.test.ts](../tests/unit/sfxLoader.test.ts) | 51件の ID が過不足なく読み込まれるか、`id` とキーの整合性、各トラックの型・値域 |
+| [sfxLoader.test.ts](../tests/unit/sfxLoader.test.ts) | 75件の ID が過不足なく読み込まれるか、`id` とキーの整合性、各トラックの型・値域 |
 | [SfxSound.test.ts](../tests/unit/SfxSound.test.ts) | AudioContext なし環境で全フックが例外を投げないか、未知 ID の安全性、全 SFX の再生、`computeComboFreqScale` の純粋関数テスト |
 | [sfxWiring.test.ts](../tests/unit/sfxWiring.test.ts) | 各ゲームロジックファイルに `soundManager.onXxx()` の呼び出しが存在するか（静的な文字列検査） |
 | `npm run validate` | [validate-json.mjs](../scripts/validate-json.mjs) の `validateSfx()` が `src/data/sfx/` 全件を走査 |

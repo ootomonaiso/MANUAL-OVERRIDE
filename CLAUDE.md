@@ -119,13 +119,17 @@ src/
 │   ├── ParticleSystem.ts # パーティクル生成・更新・描画
 │   ├── entities.ts       # Player・Hazard・Bullet・Item
 │   └── systems/          # FeatureSystem 実装（10種: Shoot / Movement / Rhythm / Rpg / Puzzle / Special / Tetris / Survival / MeleeKill / NearMissCombo）
-├── composables/     # Vue ViewModel（useGameState, useManual, useScoreAnimation）
-├── components/      # Vue UI コンポーネント
+├── composables/     # Vue ViewModel（useGameState, useManual, useScoreAnimation, useBattleState 等）
+├── components/      # Vue UI コンポーネント（battle/ に rpg 戦闘UI）
 ├── tutorial/        # チュートリアル画面
 └── data/
     ├── config/      # 設定JSON（27ファイル: score.json, genres.json, physics.json 等）
     ├── genres/      # ジャンル定義JSON（23ファイル: 22ジャンル + glitch）
-    └── cards/       # カードデッキJSON（starter-cards.json 等）
+    ├── cards/       # カードデッキJSON（starter-cards.json 等）
+    ├── sprites/     # ドット絵JSON（横スクロール用 + 戦闘用 battle_*.json）
+    ├── sfx/         # 効果音JSON（75件）
+    ├── skills/ traits/ enemies/ battle-effects/   # rpg 戦闘のコンテンツ
+    └── battle-backgrounds/  # rpg 戦闘の背景JSON（草原・砂漠・遺跡・荒れ地・ボス専用）
 ```
 
 ### 主要クラス・モジュール
@@ -237,7 +241,7 @@ src/
 
 ### 効果音 (`src/data/sfx/`)
 
-効果音1つにつきJSON 1ファイル（51件）。周波数・長さ・音量をコードに直書きしない。`tracks` 配列で「1つの効果音に複数の音を内包」でき、`delaySec` で重なり方（同時／時間差）を制御する。
+効果音1つにつきJSON 1ファイル（75件）。周波数・長さ・音量をコードに直書きしない。`tracks` 配列で「1つの効果音に複数の音を内包」でき、`delaySec` で重なり方（同時／時間差）を制御する。
 
 ```json
 {

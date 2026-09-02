@@ -5,5 +5,9 @@
   "timing": "onHit",
   "durationMs": 260,
   "target": "target",
-  "visual": { "kind": "burst", "color": "var(--battle-element-magical)" }
+  "visual": {
+    "kind": "burst",
+    "color": "var(--battle-element-magical)"
+  },
+  "sfx": "battle_hit_magical"
 }

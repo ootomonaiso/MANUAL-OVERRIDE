@@ -37,12 +37,15 @@ defineProps<{
 
 <style scoped>
 .turn-queue-bar {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: 4px;
   padding: 6px 10px;
   font-size: 10px;
-  color: var(--genre-text, var(--text));
+  color: var(--battle-text);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
 }
 .queue-row, .next-skills-row {
   display: flex;
@@ -51,14 +54,15 @@ defineProps<{
 }
 .queue-chip {
   padding: 2px 8px;
-  border: 1px solid var(--genre-border, var(--green-dim));
+  background: color-mix(in srgb, var(--battle-panel) 70%, transparent);
+  border: 1px solid var(--battle-frame-border);
   border-radius: 999px;
   opacity: 0.6;
 }
 .queue-chip.current {
   opacity: 1;
-  border-color: var(--genre-accent, var(--green));
-  color: var(--genre-accent, var(--green));
+  border-color: var(--battle-accent);
+  color: var(--battle-accent);
   font-weight: 700;
 }
 .next-skill-chip {

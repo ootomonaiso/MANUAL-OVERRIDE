@@ -3,14 +3,15 @@
  * rpg ジャンル（ローグライク戦闘）の ViewModel。docs/genre/rpg/10-state.md 準拠。
  *
  * ドメインロジック（src/domain/battle/*）はプレーンなオブジェクトを受け取る純粋関数として
- * 実装されている。ここで reactive にラップし、ロジックへ渡す際は toRaw() で素のオブジェクトに
- * 戻す（readonly プロキシへの書き込みが no-op になる過去の不具合を避けるため）。
+ * 実装されている。ここで reactive にラップし、進行の「間」（スキル名の提示 → 効果の解決）を
+ * スケジューラ越しに刻む。スケジューラは差し替え可能で、既定は同期実行なので
+ * テストからは1手番が即座に解決する（演出待ちのためにタイマーを進める必要がない）。
  */
 
 import { reactive, readonly, ref, computed, toRaw, type DeepReadonly } from 'vue'
 import type {
   BattleState, Combatant, PlayerAction, DraftOption, EffectRequest,
-  CategoryId, EffectiveStats,
+  CategoryId, EffectiveStats, Element, ActiveSkillDef,
 } from '../domain/battle/types'
 
 /** state: readonly(state) から UI へ渡る Combatant の実体型（配列も再帰的に readonly になる） */
@@ -24,12 +25,56 @@ import {
 } from '../domain/battle/battleEngine'
 import { buildTurnQueue, previewEnemyNextSkill } from '../domain/battle/turnQueue'
 import { rollDraft, applyDraftChoice, confirmSwap as confirmSwapSkill } from '../domain/battle/skillDraft'
+import { pickBackgroundId } from '../domain/battle/backdrop'
 import { BATTLE_CONTENT } from '../data/battleContent'
+import { BATTLE_BACKGROUNDS } from '../data/battleBackgrounds'
+import { BATTLE } from '../data/tunables'
 import { evalScoreFormula } from '../domain/scoreCalc'
 import type { ScoreVars } from '../domain/types'
 import { GENRES } from '../data/genres'
 
 const RPG_SCORE_FORMULA_FALLBACK = 'battlesWon * 300 + bossDefeated * 3000 + maxSkillLevel * 200 + traitsAcquired * 150'
+
+/**
+ * 「間」の作り方の差し替え口。
+ * 既定（同期実行）ではコールバックが即座に走るため、演出を挟まずに戦闘だけが進む。
+ */
+export interface BattleScheduler {
+  set(fn: () => void, ms: number): number
+  clear(id: number): void
+}
+
+const IMMEDIATE_SCHEDULER: BattleScheduler = {
+  set: (fn) => { fn(); return 0 },
+  clear: () => { /* 同期実行のため取り消すものがない */ },
+}
+
+/** 実時間で待つスケジューラ。App.vue（実プレイ）から渡す */
+export const TIMED_SCHEDULER: BattleScheduler = {
+  set: (fn, ms) => window.setTimeout(fn, ms),
+  clear: (id) => window.clearTimeout(id),
+}
+
+/** 進行中の1手番をUIへ伝える表示専用の状態（BattleState には持たせない） */
+export interface BattlePresentation {
+  phase: 'idle' | 'announce' | 'impact'
+  actorId: string | null
+  actorIsPlayer: boolean
+  skillId: string | null
+  skillLabel: string
+  element: Element | null
+  /** 攻撃モーションを取っている参加者。スプライトを attack フレームへ切り替える */
+  posingId: string | null
+  /** 同じスキルを連続で使ってもアニメーションを撃ち直すための連番 */
+  seq: number
+}
+
+function idlePresentation(): BattlePresentation {
+  return {
+    phase: 'idle', actorId: null, actorIsPlayer: false,
+    skillId: null, skillLabel: '', element: null, posingId: null, seq: 0,
+  }
+}
 
 function zeroCategoryPoints(): Record<CategoryId, number> {
   const out = {} as Record<CategoryId, number>
@@ -44,6 +89,7 @@ function freshState(): BattleState {
     enemies: [],
     turnQueue: [], turnIndex: 0, roundCount: 0,
     status: 'battle',
+    backgroundId: null,
     draftOptions: null,
     pendingSwapSkillId: null,
     categoryPoints: zeroCategoryPoints(),
@@ -54,13 +100,25 @@ function freshState(): BattleState {
   }
 }
 
-export function useBattleState() {
+const BUILTIN_LABEL: Record<'guard' | 'dodge' | 'pass', string> = {
+  guard: '守る', dodge: '避ける', pass: '様子を見る',
+}
+
+export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
+  const scheduler = options.scheduler ?? IMMEDIATE_SCHEDULER
   const state = reactive<BattleState>(freshState())
   const effectQueue = ref<EffectRequest[]>([])
+  const presentation = reactive<BattlePresentation>(idlePresentation())
   let rng: () => number = Math.random
   let initialized = false
 
+  // reset()/giveUp() を跨いだ古いコールバックが新しい状態を書き換えないための世代番号
+  let generation = 0
+  let pendingTimers: number[] = []
+  let seq = 0
+
   const content = BATTLE_CONTENT
+  const timing = BATTLE.presentation
 
   /**
    * ドメイン層(battleEngine/skillDraft)へ渡す BattleState を返す。
@@ -85,10 +143,35 @@ export function useBattleState() {
     effectQueue.value.push(req)
   }
 
+  /**
+   * 演出待ちを1つ積む。世代が変わっていたら実行しない。
+   * 同期スケジューラでは set() の中でコールバックが走り切るため、
+   * 取り消し用のIDを控える前に完了しうる（done で見分ける）。
+   */
+  function after(ms: number, fn: () => void): void {
+    const myGeneration = generation
+    let id = -1
+    let done = false
+    id = scheduler.set(() => {
+      done = true
+      pendingTimers = pendingTimers.filter(t => t !== id)
+      if (myGeneration !== generation) return
+      fn()
+    }, ms)
+    if (!done) pendingTimers.push(id)
+  }
+
+  function cancelPending(): void {
+    for (const id of pendingTimers) scheduler.clear(id)
+    pendingTimers = []
+  }
+
   // ── ライフサイクル ────────────────────────────────────────────
   function initRun(customRng: () => number = Math.random): void {
     if (initialized) return
     initialized = true
+    generation++
+    cancelPending()
     rng = customRng
     const fresh = freshState()
     fresh.player = initPlayer(rng)
@@ -96,12 +179,16 @@ export function useBattleState() {
     state.categoryPoints = zeroCategoryPoints()
     state.seenIds = new Set()
     effectQueue.value = []
+    Object.assign(presentation, idlePresentation())
     startBattle()
   }
 
   function reset(): void {
     initialized = false
+    generation++
+    cancelPending()
     Object.assign(state, freshState())
+    Object.assign(presentation, idlePresentation())
     effectQueue.value = []
   }
 
@@ -110,6 +197,9 @@ export function useBattleState() {
     const r = raw()
     const defs = pickEnemyDefs(content, r.battleIndex, rng)
     state.enemies = defs.map((d, i) => spawnEnemyFromDef(d, i))
+    state.backgroundId = pickBackgroundId(
+      BATTLE_BACKGROUNDS, defs.some(d => d.isBoss), state.backgroundId, rng,
+    )
     state.status = 'battle'
     state.lastBattleEndNotices = []
     startNewRound()
@@ -120,7 +210,7 @@ export function useBattleState() {
     const queue = buildTurnQueue([r.player, ...r.enemies], c => resolveEffectiveStats(c, content).agi)
     state.turnQueue = queue
     state.turnIndex = 0
-    processUntilPlayerTurn()
+    processTurns()
   }
 
   // ── ターン進行 ────────────────────────────────────────────────
@@ -130,28 +220,69 @@ export function useBattleState() {
     return r.enemies.find(e => e.id === id)
   }
 
-  function processUntilPlayerTurn(): void {
+  /** 次に動く参加者を探す。プレイヤーなら入力待ちで抜け、敵なら演出付きで行動させる */
+  function processTurns(): void {
     for (;;) {
-      const r = raw()
-      if (state.turnIndex >= state.turnQueue.length) break
+      if (state.turnIndex >= state.turnQueue.length) { finishRound(); return }
       const entry = state.turnQueue[state.turnIndex]
       const combatant = findCombatant(entry.combatantId)
       if (!combatant || !combatant.alive) { state.turnIndex++; continue }
-      if (combatant.isPlayer) return   // プレイヤーの入力待ち
-
-      enemyTakeTurn({ state: r, content, enemy: combatant, player: r.player, rng, emit })
-      state.turnIndex++
-      const outcome = checkBattleOutcome(r)
-      if (outcome !== 'ongoing') { handleOutcome(outcome); return }
+      if (combatant.isPlayer) { clearPresentation(); return }
+      runEnemyTurn(combatant)
+      return
     }
+  }
+
+  function finishRound(): void {
     endOfRound(raw())
     const outcome = checkBattleOutcome(raw())
     if (outcome !== 'ongoing') { handleOutcome(outcome); return }
     startNewRound()
   }
 
+  function announce(actor: Combatant, skillId: string | null, fallbackLabel = ''): void {
+    const def = skillId ? content.skills.get(skillId) : undefined
+    const active = def && def.kind === 'active' ? (def as ActiveSkillDef) : undefined
+    presentation.phase = 'announce'
+    presentation.actorId = actor.id
+    presentation.actorIsPlayer = actor.isPlayer
+    presentation.skillId = skillId
+    presentation.skillLabel = def?.label ?? fallbackLabel
+    presentation.element = active?.element ?? null
+    presentation.posingId = actor.id
+    presentation.seq = ++seq
+  }
+
+  function clearPresentation(): void {
+    Object.assign(presentation, idlePresentation())
+  }
+
+  function runEnemyTurn(enemy: Combatant): void {
+    const skillId = previewEnemyNextSkill(enemy)
+    announce(enemy, skillId, '様子を見ている')
+    after(timing.announceMs, () => {
+      presentation.phase = 'impact'
+      enemyTakeTurn({ state: raw(), content, enemy, player: raw().player, rng, emit })
+      after(timing.impactMs, () => { afterAction() })
+    })
+  }
+
+  /** 1手番の解決が終わったあと、勝敗を見てから次の手番へ送る */
+  function afterAction(): void {
+    presentation.posingId = null
+    state.turnIndex++
+    const outcome = checkBattleOutcome(raw())
+    if (outcome !== 'ongoing') {
+      clearPresentation()
+      after(timing.battleEndMs, () => { handleOutcome(outcome) })
+      return
+    }
+    processTurns()
+  }
+
   function handleOutcome(outcome: 'won' | 'lost'): void {
     const r = raw()
+    clearPresentation()
     if (outcome === 'won') {
       finishBattleOnVictory(r, content)
       if (r.bossDefeated) {
@@ -185,9 +316,12 @@ export function useBattleState() {
   // ── プレイヤーの行動 ──────────────────────────────────────────
   const isPlayerTurn = computed(() =>
     state.status === 'battle'
+    && presentation.phase === 'idle'
     && state.turnIndex < state.turnQueue.length
     && state.turnQueue[state.turnIndex]?.combatantId === state.player.id,
   )
+
+  const isPresenting = computed(() => presentation.phase !== 'idle')
 
   const guardOrDodge = computed<'guard' | 'dodge'>(() =>
     hasReplaceGuard(raw().player, content) ? 'dodge' : 'guard',
@@ -199,21 +333,36 @@ export function useBattleState() {
     const player = r.player
 
     if (action.kind === 'builtin') {
-      useBuiltinAction(player, action.action)
-    } else {
-      const owned = player.actives.find(a => a.slotIndex === action.slotIndex)
-      if (!owned || owned.cooldown > 0) return
-      const def = content.skills.get(owned.id)
-      if (!def || def.kind !== 'active') return
-      const targets = resolvePlayerFocus({ side: def.defaultFocus, range: def.focusRange }, player, r.enemies, centerEnemyIndex)
-      useActiveSkill({ state: r, content, source: player, skillId: owned.id, level: owned.level, targets, rng, emit })
-      owned.cooldown = def.cooldown
+      announce(player, null, BUILTIN_LABEL[action.action])
+      after(timing.announceMs, () => {
+        presentation.phase = 'impact'
+        useBuiltinAction(player, action.action)
+        if (action.action !== 'pass') {
+          emit({
+            effectId: action.action === 'guard' ? 'fx_guard' : 'fx_evade',
+            targetRef: 'source', combatantId: player.id,
+          })
+        }
+        after(timing.impactMs, () => { afterAction() })
+      })
+      return
     }
 
-    state.turnIndex++
-    const outcome = checkBattleOutcome(r)
-    if (outcome !== 'ongoing') { handleOutcome(outcome); return }
-    processUntilPlayerTurn()
+    const owned = player.actives.find(a => a.slotIndex === action.slotIndex)
+    if (!owned || owned.cooldown > 0) return
+    const def = content.skills.get(owned.id)
+    if (!def || def.kind !== 'active') return
+
+    announce(player, owned.id)
+    after(timing.announceMs, () => {
+      presentation.phase = 'impact'
+      const targets = resolvePlayerFocus(
+        { side: def.defaultFocus, range: def.focusRange }, player, r.enemies, centerEnemyIndex,
+      )
+      useActiveSkill({ state: r, content, source: player, skillId: owned.id, level: owned.level, targets, rng, emit })
+      owned.cooldown = def.cooldown
+      after(timing.impactMs, () => { afterAction() })
+    })
   }
 
   // ── ドラフト ──────────────────────────────────────────────────
@@ -248,6 +397,9 @@ export function useBattleState() {
   // ── 終了 ──────────────────────────────────────────────────────
   function giveUp(): void {
     if (state.status === 'finished') return
+    generation++          // 進行中の演出が終了後の状態を書き換えないようにする
+    cancelPending()
+    clearPresentation()
     state.runOutcome = 'gaveup'
     state.status = 'finished'
     finalizeScore()
@@ -289,12 +441,20 @@ export function useBattleState() {
     return { label: def.label, flavorText: def.flavorText }
   }
 
+  /** 画面右上の通し表示。ラウンド・戦闘数はいずれも0始まりなので+1して数える */
+  const turnNumber = computed(() => state.roundCount + 1)
+  const battleNumber = computed(() => state.battleIndex + 1)
+
   return {
     state: readonly(state),
     effectQueue: readonly(effectQueue),
+    presentation: readonly(presentation),
     playScore: computed(() => state.playScore),
     isPlayerTurn,
+    isPresenting,
     guardOrDodge,
+    turnNumber,
+    battleNumber,
 
     initRun,
     reset,

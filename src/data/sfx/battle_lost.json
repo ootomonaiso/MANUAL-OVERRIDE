@@ -1,0 +1,29 @@
+{
+  "id": "battle_lost",
+  "$comment": "敗北 — 沈む3音",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "triangle",
+      "freq": 392,
+      "durationSec": 0.18,
+      "volume": 0.2
+    },
+    {
+      "kind": "osc",
+      "wave": "triangle",
+      "freq": 311,
+      "durationSec": 0.2,
+      "volume": 0.2,
+      "delaySec": 0.18
+    },
+    {
+      "kind": "osc",
+      "wave": "triangle",
+      "freq": 233,
+      "durationSec": 0.5,
+      "volume": 0.22,
+      "delaySec": 0.38
+    }
+  ]
+}

@@ -16,6 +16,12 @@ const EXPECTED_IDS = [
   'stealth_activate', 'shield_absorb', 'manual_update', 'learning_effect',
   'throw_release', 'throw_grab', 'score_reveal', 'grade_stamp',
   'surprise_ending', 'pause_toggle',
+  // rpg ローグライク戦闘
+  'battle_swing', 'battle_hit_physical', 'battle_cast_magical', 'battle_hit_magical',
+  'battle_cast_special', 'battle_hit_special', 'battle_fire', 'battle_curse', 'battle_bolt',
+  'battle_heal', 'battle_shield_gain', 'battle_shield_break', 'battle_guard', 'battle_dodge',
+  'battle_miss', 'battle_critical', 'battle_weakness', 'battle_resisted', 'battle_defeat',
+  'battle_player_hurt', 'battle_turn_start', 'battle_skill_select', 'battle_victory', 'battle_lost',
 ] as const
 
 const VALID_WAVES = ['sine', 'triangle', 'square', 'sawtooth'] as const
@@ -25,8 +31,8 @@ describe('SfxLoader', () => {
     expect(Object.keys(SFX_DEFS).length).toBeGreaterThan(0)
   })
 
-  it('全51種のSFX id が SFX_DEFS に存在する', () => {
-    expect(EXPECTED_IDS.length).toBe(51)
+  it('全75種のSFX id が SFX_DEFS に存在する', () => {
+    expect(EXPECTED_IDS.length).toBe(75)
     expect(Object.keys(SFX_DEFS).length).toBe(EXPECTED_IDS.length)
     // SFX_DEFS の key 集合と EXPECTED_IDS 集合が完全一致すること（過不足なし）
     const defsKeys = new Set(Object.keys(SFX_DEFS))

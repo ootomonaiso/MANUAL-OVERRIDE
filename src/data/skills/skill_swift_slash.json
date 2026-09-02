@@ -10,8 +10,21 @@
   "cooldown": 1,
   "defaultFocus": "enemy",
   "focusRange": "single",
-  "effects": ["fx_slash", "fx_hit_physical"],
+  "effects": [
+    "fx_slash"
+  ],
   "effect": [
-    { "op": "damage", "element": "physical", "scale": { "stat": "agi", "rate": 0.9 } }
-  ]
+    {
+      "op": "damage",
+      "element": "physical",
+      "scale": {
+        "stat": "agi",
+        "rate": 0.9
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing",
+    "impact": "battle_hit_physical"
+  }
 }

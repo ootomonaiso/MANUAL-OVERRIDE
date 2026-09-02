@@ -3,6 +3,7 @@
   "id": "enemy_cultist",
   "label": "改訂者",
   "flavorText": "他人の説明書を、勝手に書き換えたがる。",
+  "sprite": "battle_cultist",
   "stats": {
     "hp": 3200, "str": 350, "def": 450, "int": 550, "ref": 500, "agi": 400,
     "hitRate": 0.92, "evadeRate": 0, "critRate": 0.05, "critDamageMultiplier": 1.5

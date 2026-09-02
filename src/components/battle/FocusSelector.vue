@@ -42,13 +42,13 @@ const emit = defineEmits<{
   align-items: center;
   gap: 8px;
   padding: 10px;
-  background: var(--genre-bg, var(--bg-panel));
-  border: 1px solid var(--genre-border, var(--green-dim));
+  background: color-mix(in srgb, var(--battle-panel) 84%, transparent);
+  border: 1px solid var(--battle-frame-border);
   border-radius: var(--radius-md);
 }
 .focus-hint {
   font-size: 12px;
-  color: var(--genre-text, var(--text));
+  color: var(--battle-text);
 }
 .focus-targets {
   display: flex;
@@ -59,9 +59,9 @@ const emit = defineEmits<{
 .focus-target {
   padding: 6px 12px;
   background: transparent;
-  border: 1px solid var(--genre-accent, var(--green));
+  border: 1px solid var(--battle-accent);
   border-radius: var(--radius-sm);
-  color: var(--genre-text, var(--text));
+  color: var(--battle-text);
   cursor: pointer;
 }
 .focus-target:disabled {

@@ -5,5 +5,9 @@
   "timing": "onSystem",
   "durationMs": 500,
   "target": "screen",
-  "visual": { "kind": "overlay", "color": "var(--battle-diff-plus)" }
+  "visual": {
+    "kind": "overlay",
+    "color": "var(--battle-diff-plus)"
+  },
+  "sfx": "level_up"
 }

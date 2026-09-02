@@ -5,5 +5,9 @@
   "timing": "onShield",
   "durationMs": 300,
   "target": "target",
-  "visual": { "kind": "overlay", "color": "var(--battle-category-aegis)" }
+  "visual": {
+    "kind": "overlay",
+    "color": "var(--battle-category-aegis)"
+  },
+  "sfx": "battle_shield_gain"
 }

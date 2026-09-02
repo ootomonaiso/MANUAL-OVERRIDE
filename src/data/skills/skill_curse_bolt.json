@@ -10,9 +10,28 @@
   "cooldown": 2,
   "defaultFocus": "enemy",
   "focusRange": "single",
-  "effects": ["fx_debuff", "fx_hit_magical"],
+  "effects": [
+    "fx_cast_special"
+  ],
   "effect": [
-    { "op": "damage", "element": "magical", "scale": { "stat": "int", "rate": 0.5 } },
-    { "op": "modifier", "stat": "def", "rate": -0.15, "scope": "thisBattle", "applyTo": "target" }
-  ]
+    {
+      "op": "damage",
+      "element": "magical",
+      "scale": {
+        "stat": "int",
+        "rate": 0.5
+      }
+    },
+    {
+      "op": "modifier",
+      "stat": "def",
+      "rate": -0.15,
+      "scope": "thisBattle",
+      "applyTo": "target"
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_special",
+    "impact": "battle_curse"
+  }
 }

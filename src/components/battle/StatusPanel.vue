@@ -66,10 +66,10 @@ const rows = computed(() => props.stats.map(s => {
 
 <style scoped>
 .status-panel {
-  background: var(--genre-bg, var(--bg-panel));
-  border: 1px solid var(--genre-border, var(--green-dim));
+  background: color-mix(in srgb, var(--battle-panel) 84%, transparent);
+  border: 1px solid var(--battle-frame-border);
   border-radius: var(--radius-md);
-  color: var(--genre-text, var(--text));
+  color: var(--battle-text);
   font-family: var(--genre-font, var(--font-main));
   min-width: 160px;
 }
@@ -96,7 +96,7 @@ const rows = computed(() => props.stats.map(s => {
   font-size: 9px;
   padding: 2px 6px;
   background: transparent;
-  border: 1px solid var(--genre-border, var(--green-dim));
+  border: 1px solid var(--battle-frame-border);
   color: inherit;
   cursor: pointer;
   border-radius: var(--radius-sm);

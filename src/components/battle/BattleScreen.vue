@@ -5,6 +5,7 @@
  */
 import { computed, ref } from 'vue'
 import type { useBattleState, CombatantView } from '../../composables/useBattleState'
+import { useBattlePresentation } from '../../composables/useBattlePresentation'
 import StatusPanel from './StatusPanel.vue'
 import type { StatRowView } from './StatusPanel.vue'
 import SkillListPanel from './SkillListPanel.vue'
@@ -15,17 +16,21 @@ import FocusSelector from './FocusSelector.vue'
 import type { FocusEnemyView } from './FocusSelector.vue'
 import TurnQueueBar from './TurnQueueBar.vue'
 import type { TurnQueueEntryView, EnemyNextSkillView } from './TurnQueueBar.vue'
+import TurnIndicator from './TurnIndicator.vue'
 import CharacterFrame from './CharacterFrame.vue'
 import CharacterDetail from './CharacterDetail.vue'
 import type { DetailStatRow, DetailSkillRow } from './CharacterDetail.vue'
 import SkillDraftPanel from './SkillDraftPanel.vue'
 import type { DraftCardView, SwapSlotView } from './SkillDraftPanel.vue'
-import BattleEffectLayer from './BattleEffectLayer.vue'
+import BattleBackdrop from './BattleBackdrop.vue'
+import SkillCastBanner from './SkillCastBanner.vue'
 import type { StatKey, PlayerAction, SkillDef } from '../../domain/battle/types'
 import { STAT_KEYS } from '../../domain/battle/types'
 import { STAT_LABEL, CATEGORY_LABEL, buildSkillText } from '../../domain/battle/skillText'
 import { STACKS_REQUIRED } from '../../domain/battle/skillDraft'
 import { BATTLE_CONTENT } from '../../data/battleContent'
+import { findBattleBackground } from '../../data/battleBackgrounds'
+import { soundManager } from '../../plugins/SoundManager'
 
 /**
  * useBattleState() は App.vue で1度だけ呼び出し、ここへ props として渡す。
@@ -38,6 +43,7 @@ const props = defineProps<{
 
 const battle = props.battle
 const content = BATTLE_CONTENT
+const fx = useBattlePresentation(battle)
 
 const PERCENT_STATS = new Set<StatKey>(['hitRate', 'evadeRate', 'critRate', 'critDamageMultiplier'])
 
@@ -50,6 +56,14 @@ function statRows(c: CombatantView): StatRowView[] {
 
 const playerStatRows = computed(() => statRows(battle.state.player))
 const playerMaxHp = computed(() => battle.effectiveOf(battle.state.player).hp)
+
+// ── 背景 ──────────────────────────────────────────────────────
+const background = computed(() => findBattleBackground(battle.state.backgroundId))
+const themeVars = computed(() => {
+  const bg = background.value
+  if (!bg) return {}
+  return { '--battle-accent': bg.accent, '--battle-panel': bg.panel ?? '#15131e' }
+})
 
 // ── アクティブスキルバー ─────────────────────────────────────
 const activeSlots = computed<(ActiveSlotView | null)[]>(() => {
@@ -81,6 +95,7 @@ function onSelectActive(slotIndex: number): void {
   if (!owned) return
   const def = content.skills.get(owned.id)
   if (!def || def.kind !== 'active') return
+  soundManager.playSfx('battle_skill_select')
   const aliveCount = battle.state.enemies.filter(e => e.alive).length
   if (def.defaultFocus === 'enemy' && def.focusRange === 'single' && aliveCount > 1) {
     pendingAction.value = { kind: 'active', slotIndex }
@@ -97,6 +112,7 @@ function onFocusCancel(): void {
   pendingAction.value = null
 }
 function onSelectBuiltin(action: 'guard' | 'pass' | 'dodge'): void {
+  soundManager.playSfx('battle_skill_select')
   battle.selectAction({ kind: 'builtin', action })
 }
 
@@ -252,16 +268,37 @@ const swapSlotsView = computed<SwapSlotView[]>(() =>
   activeSlots.value.map((s, i) => ({ index: i, label: s ? s.label : '空き' })),
 )
 
-function labelForCombatant(id: string | undefined): string {
+function labelForCombatant(id: string | null | undefined): string {
   if (!id) return ''
   if (id === battle.state.player.id) return 'あなた'
   return battle.state.enemies.find(e => e.id === id)?.label ?? ''
 }
+
+// ── 進行表示・演出 ────────────────────────────────────────────
+const currentActorLabel = computed(() => {
+  if (battle.state.status !== 'battle') return '―'
+  if (battle.isPlayerTurn.value) return 'あなたの手番'
+  const id = battle.presentation.actorId ?? battle.state.turnQueue[battle.state.turnIndex]?.combatantId
+  const label = labelForCombatant(id)
+  return label ? `${label}の手番` : '―'
+})
+
+const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.actorId))
 </script>
 
 <template>
-  <div class="battle-screen">
+  <div class="battle-screen" :style="themeVars">
+    <BattleBackdrop :background="background" />
+
     <TurnQueueBar :entries="turnQueueView" :enemy-next-skills="enemyNextSkills" />
+
+    <TurnIndicator
+      :battle-number="battle.battleNumber.value"
+      :turn-number="battle.turnNumber.value"
+      :actor-label="currentActorLabel"
+      :is-player-turn="battle.isPlayerTurn.value"
+      :background-label="background?.label ?? ''"
+    />
 
     <div class="battle-main">
       <div class="side-panels">
@@ -281,20 +318,34 @@ function labelForCombatant(id: string | undefined): string {
         />
       </div>
 
-      <div class="battle-field">
+      <div class="battle-field" :class="{ shaking: fx.screenShake.value > 0 }">
         <div class="enemy-row">
           <CharacterFrame
             v-for="e in battle.state.enemies"
             :key="e.id"
+            side="enemy"
             :label="e.label"
             :hp="e.hp"
             :max-hp="battle.effectiveOf(e).hp"
             :shield="e.shield"
             :alive="e.alive"
             :is-boss="e.isBoss"
+            :sprite-id="e.spriteId"
+            :attacking="battle.presentation.posingId === e.id"
+            :flash="fx.flashOf(e.id)"
+            :popups="fx.popupsOf(e.id)"
             @open-detail="openDetail(e)"
           />
         </div>
+
+        <SkillCastBanner
+          :visible="battle.presentation.phase !== 'idle'"
+          :seq="battle.presentation.seq"
+          :actor-label="bannerActorLabel"
+          :skill-label="battle.presentation.skillLabel"
+          :element="battle.presentation.element"
+          :is-player="battle.presentation.actorIsPlayer"
+        />
 
         <div v-if="pendingAction" class="focus-overlay">
           <FocusSelector :enemies="focusEnemies" range-label="対象を1体選択" @select="onFocusSelect" @cancel="onFocusCancel" />
@@ -302,11 +353,16 @@ function labelForCombatant(id: string | undefined): string {
 
         <div class="player-row">
           <CharacterFrame
+            side="player"
             :label="battle.state.player.label"
             :hp="battle.state.player.hp"
             :max-hp="playerMaxHp"
             :shield="battle.state.player.shield"
             :alive="battle.state.player.alive"
+            :sprite-id="battle.state.player.spriteId"
+            :attacking="battle.presentation.posingId === battle.state.player.id"
+            :flash="fx.flashOf(battle.state.player.id)"
+            :popups="fx.popupsOf(battle.state.player.id)"
             @open-detail="openDetail(battle.state.player)"
           />
         </div>
@@ -321,12 +377,6 @@ function labelForCombatant(id: string | undefined): string {
         />
       </div>
     </div>
-
-    <BattleEffectLayer
-      :queue-length="battle.effectQueue.value.length"
-      :consume="battle.consumeEffect"
-      :label-for="labelForCombatant"
-    />
 
     <SkillDraftPanel
       v-if="battle.state.status === 'drafting' || battle.state.status === 'swapping'"
@@ -353,27 +403,35 @@ function labelForCombatant(id: string | undefined): string {
   z-index: 5;
   display: flex;
   flex-direction: column;
-  background: var(--genre-bg, var(--bg));
-  color: var(--genre-text, var(--text));
+  color: var(--battle-text);
   font-family: var(--genre-font, var(--font-main));
   overflow: hidden;
 
   /* ── バトル専用のCSSカスタムプロパティ。子コンポーネント（別スコープ）へも継承される ── */
-  --battle-element-physical: #c0392b;
-  --battle-element-magical: #2e6fbb;
-  --battle-element-special: #a04fd6;
-  --battle-stat: var(--genre-accent, #c4960a);
-  --battle-number: #e0c060;
-  --battle-diff-plus: #4caf50;
-  --battle-diff-minus: #d94b4b;
-  --battle-diff-muted: #999999;
-  --battle-category-heal: #4caf50;
-  --battle-category-aegis: #4fa3d6;
-  --battle-category-guard: #8b6100;
-  --battle-category-curse: #7a4fd6;
+  --battle-element-physical: #ff7a5c;
+  --battle-element-magical: #6fb4ff;
+  --battle-element-special: #c88bff;
+  --battle-stat: var(--battle-accent);
+  --battle-number: #ffe9a8;
+  --battle-diff-plus: #7ee08a;
+  --battle-diff-minus: #ff6a6a;
+  --battle-diff-muted: #a6a2b0;
+  --battle-category-heal: #7ee08a;
+  --battle-category-aegis: #63b8ff;
+  --battle-category-guard: #e0c46a;
+  --battle-category-curse: #b98bff;
+
+  /* 背景JSONが上書きする（未設定時のフォールバック） */
+  --battle-accent: #e0c46a;
+  --battle-panel: #15131e;
+  --battle-text: #f2ecdd;
+  --battle-boss: #ff8f6a;
+  --battle-frame-border: rgba(255, 255, 255, 0.22);
 }
 
 .battle-main {
+  position: relative;
+  z-index: 2;
   flex: 1;
   display: flex;
   gap: 12px;
@@ -398,16 +456,30 @@ function labelForCombatant(id: string | undefined): string {
   justify-content: space-between;
   position: relative;
 }
+.battle-field.shaking {
+  animation: field-shake 200ms ease-in-out;
+}
+@keyframes field-shake {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-5px, 2px); }
+  50% { transform: translate(4px, -3px); }
+  75% { transform: translate(-3px, 1px); }
+  100% { transform: translate(0, 0); }
+}
 .enemy-row {
+  /* 余った縦幅を敵側が占め、その中央に立たせる。
+     上端に貼り付けると背景の空に浮いて見えるため */
+  flex: 1 1 auto;
   display: flex;
   justify-content: center;
-  gap: 24px;
-  padding-top: 12px;
+  align-items: center;
+  gap: 28px;
+  padding-top: 2vh;
 }
 .player-row {
   display: flex;
   justify-content: center;
-  padding-bottom: 8px;
+  padding-bottom: 6px;
 }
 .focus-overlay {
   display: flex;

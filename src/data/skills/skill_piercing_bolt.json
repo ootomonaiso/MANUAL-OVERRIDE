@@ -6,12 +6,27 @@
   "kind": "active",
   "element": "special",
   "mainCategory": "pierce",
-  "subCategories": ["wisdom"],
+  "subCategories": [
+    "wisdom"
+  ],
   "cooldown": 3,
   "defaultFocus": "enemy",
   "focusRange": "single",
-  "effects": ["fx_cast_special", "fx_hit_special"],
+  "effects": [
+    "fx_cast_special"
+  ],
   "effect": [
-    { "op": "damage", "element": "special", "scale": { "stat": "int", "rate": 0.7 } }
-  ]
+    {
+      "op": "damage",
+      "element": "special",
+      "scale": {
+        "stat": "int",
+        "rate": 0.7
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_bolt"
+  }
 }

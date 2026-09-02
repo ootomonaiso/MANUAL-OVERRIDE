@@ -6,12 +6,27 @@
   "kind": "active",
   "element": "magical",
   "mainCategory": "aegis",
-  "subCategories": ["wisdom"],
+  "subCategories": [
+    "wisdom"
+  ],
   "cooldown": 3,
   "defaultFocus": "self",
   "focusRange": "single",
-  "effects": ["fx_shield_gain"],
+  "effects": [
+    "fx_cast"
+  ],
   "effect": [
-    { "op": "shield", "element": "magical", "scale": { "stat": "int", "rate": 0.8 } }
-  ]
+    {
+      "op": "shield",
+      "element": "magical",
+      "scale": {
+        "stat": "int",
+        "rate": 0.8
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_guard",
+    "impact": "battle_shield_gain"
+  }
 }

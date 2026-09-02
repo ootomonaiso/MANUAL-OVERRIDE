@@ -1,0 +1,23 @@
+{
+  "id": "battle_player_hurt",
+  "$comment": "被弾 — こもった衝撃と短い呻きに相当する低域",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "sine",
+      "freq": 160,
+      "freqEnd": 90,
+      "durationSec": 0.2,
+      "volume": 0.3
+    },
+    {
+      "kind": "noise",
+      "durationSec": 0.1,
+      "volume": 0.18,
+      "filter": {
+        "type": "lowpass",
+        "freq": 800
+      }
+    }
+  ]
+}

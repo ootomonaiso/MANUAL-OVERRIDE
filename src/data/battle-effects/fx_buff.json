@@ -5,5 +5,9 @@
   "timing": "onStatus",
   "durationMs": 260,
   "target": "target",
-  "visual": { "kind": "flash", "color": "var(--battle-diff-plus)" }
+  "visual": {
+    "kind": "flash",
+    "color": "var(--battle-diff-plus)"
+  },
+  "sfx": "battle_weakness"
 }

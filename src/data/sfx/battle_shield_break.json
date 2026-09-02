@@ -1,0 +1,24 @@
+{
+  "id": "battle_shield_break",
+  "$comment": "シールド崩壊 — 硬いものが割れる高域ノイズ",
+  "tracks": [
+    {
+      "kind": "noise",
+      "durationSec": 0.22,
+      "volume": 0.3,
+      "filter": {
+        "type": "highpass",
+        "freq": 2200,
+        "freqEnd": 900
+      }
+    },
+    {
+      "kind": "osc",
+      "wave": "square",
+      "freq": 620,
+      "freqEnd": 200,
+      "durationSec": 0.14,
+      "volume": 0.14
+    }
+  ]
+}

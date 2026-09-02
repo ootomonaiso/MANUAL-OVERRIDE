@@ -96,22 +96,22 @@ function fmt(v: number, isPercent: boolean): string {
   z-index: 40;
 }
 .detail-card {
-  background: var(--genre-bg, var(--bg-panel));
-  border: 2px solid var(--genre-border, var(--green-dim));
+  background: color-mix(in srgb, var(--battle-panel) 97%, transparent);
+  border: 2px solid var(--battle-frame-border);
   border-radius: var(--radius-md);
   padding: 16px 20px;
   width: 92%;
   max-width: 420px;
   max-height: 80vh;
   overflow-y: auto;
-  color: var(--genre-text, var(--text));
+  color: var(--battle-text);
   font-family: var(--genre-font, var(--font-main));
 }
 .detail-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--genre-border, var(--green-dim));
+  border-bottom: 1px solid var(--battle-frame-border);
   padding-bottom: 8px;
   margin-bottom: 10px;
 }

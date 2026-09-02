@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { computed } from 'vue'
-import { useBattleState } from '../../../src/composables/useBattleState'
+import { useBattleState, type BattleScheduler } from '../../../src/composables/useBattleState'
 import { BATTLE_CONTENT } from '../../../src/data/battleContent'
 import { BATTLE } from '../../../src/data/tunables'
 import { GENRES } from '../../../src/data/genres'
@@ -439,5 +439,110 @@ describe('useBattleState: UI 状態', () => {
     expect(battle.effectQueue.value.length).toBeGreaterThan(0)
     battle.reset()
     expect(battle.effectQueue.value).toHaveLength(0)
+  })
+})
+
+describe('useBattleState: 1手番の演出', () => {
+  /** set() されたコールバックを溜めておき、テストから任意の順で進めるスケジューラ */
+  function manualScheduler(): {
+    scheduler: BattleScheduler
+    step: () => boolean
+    runAll: () => void
+    pending: () => number
+  } {
+    const queue = new Map<number, () => void>()
+    let nextId = 1
+    const scheduler: BattleScheduler = {
+      set: (fn) => { const id = nextId++; queue.set(id, fn); return id },
+      clear: (id) => { queue.delete(id) },
+    }
+    const step = (): boolean => {
+      const first = queue.keys().next()
+      if (first.done) return false
+      const fn = queue.get(first.value) as () => void
+      queue.delete(first.value)
+      fn()
+      return true
+    }
+    const runAll = (): void => { for (let i = 0; i < 200 && step(); i++) { /* 溜まった演出を消化する */ } }
+    return { scheduler, step, runAll, pending: () => queue.size }
+  }
+
+  function pacedHarness(): { battle: Battle; sched: ReturnType<typeof manualScheduler> } {
+    const sched = manualScheduler()
+    const battle = useBattleState({ scheduler: sched.scheduler })
+    battle.initRun(() => 0.5)
+    return { battle, sched }
+  }
+
+  it('行動を選ぶとまずスキル名の提示になり、効果はまだ解決していない', () => {
+    const { battle } = pacedHarness()
+    const hpBefore = battle.state.enemies[0].hp
+    battle.selectAction({ kind: 'active', slotIndex: 0 }, null)
+    expect(battle.presentation.phase).toBe('announce')
+    expect(battle.presentation.actorIsPlayer).toBe(true)
+    expect(battle.presentation.skillLabel).not.toBe('')
+    expect(battle.state.enemies[0].hp).toBe(hpBefore)
+  })
+
+  it('提示中は次の行動を受け付けない', () => {
+    const { battle } = pacedHarness()
+    battle.selectAction({ kind: 'active', slotIndex: 0 }, null)
+    expect(battle.isPlayerTurn.value).toBe(false)
+    expect(battle.isPresenting.value).toBe(true)
+    const hp = battle.state.enemies[0].hp
+    battle.selectAction({ kind: 'active', slotIndex: 0 }, null)
+    expect(battle.state.enemies[0].hp).toBe(hp)
+  })
+
+  it('提示が終わると効果が解決し、演出用のエフェクトが積まれる', () => {
+    const { battle, sched } = pacedHarness()
+    const hpBefore = battle.state.enemies[0].hp
+    battle.selectAction({ kind: 'active', slotIndex: 0 }, null)
+    sched.step()
+    expect(battle.presentation.phase).toBe('impact')
+    expect(battle.state.enemies[0].hp).toBeLessThan(hpBefore)
+    expect(battle.effectQueue.value.length).toBeGreaterThan(0)
+  })
+
+  it('敵の手番も同じ順序（提示 → 解決）で進み、攻撃者が誰か分かる', () => {
+    const { battle, sched } = pacedHarness()
+    battle.selectAction({ kind: 'builtin', action: 'pass' })
+    sched.step()   // 提示 → 解決
+    sched.step()   // 解決 → 次の手番（敵の提示）
+    // 敵の方がAGIで劣る初期値なので、プレイヤーの次に敵の手番が来る
+    expect(battle.presentation.phase).toBe('announce')
+    expect(battle.presentation.actorIsPlayer).toBe(false)
+    expect(battle.presentation.actorId).toBe(battle.state.enemies[0].id)
+  })
+
+  it('攻撃者は解決が終わるまで攻撃モーションのままになる', () => {
+    const { battle, sched } = pacedHarness()
+    battle.selectAction({ kind: 'active', slotIndex: 0 }, null)
+    expect(battle.presentation.posingId).toBe(battle.state.player.id)
+    sched.step()
+    expect(battle.presentation.posingId).toBe(battle.state.player.id)
+  })
+
+  it('ギブアップすると保留中の演出は流れず、結果を上書きしない', () => {
+    const { battle, sched } = pacedHarness()
+    battle.selectAction({ kind: 'active', slotIndex: 0 }, null)
+    expect(sched.pending()).toBeGreaterThan(0)
+    battle.giveUp()
+    expect(sched.pending()).toBe(0)
+    sched.runAll()
+    expect(battle.state.status).toBe('finished')
+    expect(battle.state.runOutcome).toBe('gaveup')
+    expect(battle.presentation.phase).toBe('idle')
+  })
+
+  it('戦闘ごとに背景が決まり、直前と同じ場所は続かない', () => {
+    const h = winningHarness()
+    const first = h.battle.state.backgroundId
+    expect(first).toBeTruthy()
+    fightUntilBattleEnds(h)
+    h.battle.selectDraft(0)
+    expect(h.battle.state.backgroundId).toBeTruthy()
+    expect(h.battle.state.backgroundId).not.toBe(first)
   })
 })

@@ -5,5 +5,9 @@
   "timing": "onHeal",
   "durationMs": 300,
   "target": "target",
-  "visual": { "kind": "float", "color": "var(--battle-category-heal)" }
+  "visual": {
+    "kind": "float",
+    "color": "var(--battle-category-heal)"
+  },
+  "sfx": "battle_heal"
 }

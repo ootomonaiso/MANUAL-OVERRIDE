@@ -3,6 +3,7 @@
   "id": "enemy_manual_keeper",
   "label": "説明書の番人",
   "flavorText": "最後のページを、誰にも読ませない。",
+  "sprite": "battle_keeper",
   "stats": {
     "hp": 20000, "str": 900, "def": 2000, "int": 900, "ref": 2000, "agi": 600,
     "hitRate": 0.95, "evadeRate": 0, "critRate": 0.1, "critDamageMultiplier": 2.0

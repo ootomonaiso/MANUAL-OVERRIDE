@@ -51,7 +51,7 @@ export const damageOp: EffectOp = {
 
       const hitChance = computeHitChance(sourceStats.hitRate, targetStats.evadeRate)
       if (!rollHit(hitChance, ctx.rng)) {
-        ctx.emit({ effectId: 'fx_miss', targetRef: 'target', combatantId: target.id })
+        ctx.emit({ effectId: 'fx_miss', targetRef: 'target', combatantId: target.id, payload: { skillId: ctx.skill.id } })
         continue
       }
 
@@ -74,10 +74,11 @@ export const damageOp: EffectOp = {
       const finalDamage = computeFinalDamage({ outgoingDamage: outgoing, finalCutRate, affinityStage })
 
       let shieldBroke = false
+      const absorbedByShield = target.shield > 0
       applyDamage(target, finalDamage, () => { shieldBroke = true })
 
       ctx.emit({ effectId: `fx_hit_${element}`, targetRef: 'target', combatantId: target.id,
-        payload: { text: String(Math.floor(finalDamage)) } })
+        payload: { text: String(Math.floor(finalDamage)), absorbedByShield, skillId: ctx.skill.id } })
       if (isCrit) ctx.emit({ effectId: 'fx_critical', targetRef: 'target', combatantId: target.id })
       if (affinityStage > 0) ctx.emit({ effectId: 'fx_weakness', targetRef: 'target', combatantId: target.id })
       if (affinityStage < 0) ctx.emit({ effectId: 'fx_resisted', targetRef: 'target', combatantId: target.id })

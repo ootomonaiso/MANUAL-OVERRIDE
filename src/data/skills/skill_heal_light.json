@@ -6,12 +6,27 @@
   "kind": "active",
   "element": "magical",
   "mainCategory": "heal",
-  "subCategories": ["wisdom"],
+  "subCategories": [
+    "wisdom"
+  ],
   "cooldown": 2,
   "defaultFocus": "self",
   "focusRange": "single",
-  "effects": ["fx_heal"],
+  "effects": [
+    "fx_cast_magical"
+  ],
   "effect": [
-    { "op": "heal", "element": "magical", "scale": { "stat": "int", "rate": 0.6 } }
-  ]
+    {
+      "op": "heal",
+      "element": "magical",
+      "scale": {
+        "stat": "int",
+        "rate": 0.6
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_heal"
+  }
 }

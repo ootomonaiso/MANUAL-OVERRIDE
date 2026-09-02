@@ -3,6 +3,7 @@
   "id": "enemy_knight",
   "label": "誤植の騎士",
   "flavorText": "何度直しても、同じ場所で止められる。",
+  "sprite": "battle_knight",
   "stats": {
     "hp": 6000, "str": 700, "def": 1400, "int": 300, "ref": 700, "agi": 400,
     "hitRate": 0.93, "evadeRate": 0, "critRate": 0.05, "critDamageMultiplier": 1.5

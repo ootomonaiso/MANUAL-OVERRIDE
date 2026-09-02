@@ -5,5 +5,9 @@
   "timing": "onStatus",
   "durationMs": 240,
   "target": "source",
-  "visual": { "kind": "overlay", "color": "var(--battle-category-guard)" }
+  "visual": {
+    "kind": "overlay",
+    "color": "var(--battle-category-guard)"
+  },
+  "sfx": "battle_guard"
 }

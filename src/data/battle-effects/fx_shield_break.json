@@ -5,5 +5,9 @@
   "timing": "onShield",
   "durationMs": 260,
   "target": "target",
-  "visual": { "kind": "burst", "color": "var(--battle-category-aegis)" }
+  "visual": {
+    "kind": "burst",
+    "color": "var(--battle-category-aegis)"
+  },
+  "sfx": "battle_shield_break"
 }

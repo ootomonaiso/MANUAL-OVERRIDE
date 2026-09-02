@@ -37,7 +37,7 @@ export const shieldOp: EffectOp = {
       applyShield(target, amount)
 
       ctx.emit({ effectId: 'fx_shield_gain', targetRef: 'target', combatantId: target.id,
-        payload: { text: `+${Math.floor(amount)}` } })
+        payload: { text: `+${Math.floor(amount)}`, skillId: ctx.skill.id } })
       if (isCrit) ctx.emit({ effectId: 'fx_critical', targetRef: 'target', combatantId: target.id })
     }
   },

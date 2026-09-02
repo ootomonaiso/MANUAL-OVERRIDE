@@ -57,7 +57,7 @@ export const healOp: EffectOp = {
       applyHeal(target, finalHeal, maxHp)
 
       ctx.emit({ effectId: 'fx_heal', targetRef: 'target', combatantId: target.id,
-        payload: { text: `+${Math.floor(finalHeal)}` } })
+        payload: { text: `+${Math.floor(finalHeal)}`, skillId: ctx.skill.id } })
       if (isCrit) ctx.emit({ effectId: 'fx_critical', targetRef: 'target', combatantId: target.id })
     }
   },

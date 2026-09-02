@@ -29,7 +29,7 @@
     "color": "var(--battle-element-physical)",
     "shake": 0.4
   },
-  "sfx": "melee_hit"
+  "sfx": "battle_hit_physical"
 }
 ```
 
@@ -41,7 +41,7 @@
 | `durationMs` | ✅ | 再生時間 |
 | `target` | ✅ | `source`（発動者） / `target`（対象） / `screen`（画面全体） |
 | `visual` | ✅ | 見た目の指定 |
-| `sfx` | — | `src/data/sfx/*.json` のID。既存の `SfxSound` を再利用 |
+| `sfx` | — | `src/data/sfx/*.json` のID。既存の `SfxSound` を再利用。**スキル側の `sfx` で上書きできる** |
 
 ### `timing`
 
@@ -106,8 +106,12 @@
 スキル定義の `effects` 配列にエフェクトIDを列挙する。
 
 ```jsonc
-{ "id": "skill_triple_strike", "effects": ["fx_slash", "fx_hit_physical"], ... }
+{ "id": "skill_triple_strike", "effects": ["fx_slash"], ... }
 ```
+
+**`effects` に書けるのは `timing: "onCast"` のものだけ**（`validate-json.mjs` で検証する）。
+着弾側（`onHit` / `onHeal` / `onShield`）は効果オペレーションが対象ごとに発行するため、
+ここに書くと**使用者自身が被弾したように光ってしまう**（実際にこの不具合が出た）。
 
 ### 自動再生されるエフェクト
 
@@ -131,18 +135,31 @@
 
 ---
 
-## 再生レイヤー（`BattleEffectLayer.vue`）
+## 再生レイヤー（`composables/useBattlePresentation.ts`）
 
 ```ts
 export interface EffectRequest {
   effectId: string
   targetRef: 'source' | 'target' | 'screen'
   combatantId?: string     // target が source/target の場合
-  payload?: { text?: string; color?: string }   // float 用の数値等
+  payload?: {
+    text?: string                 // float 用の数値等
+    color?: string
+    absorbedByShield?: boolean    // 赤（被弾）と青（シールドで受けた）を分ける
+    skillId?: string              // 効果音のスキル別差し替えに使う
+  }
 }
 ```
 
-`EffectContext.emit()` がキューへ積み、レイヤーが順次再生する。
+`EffectContext.emit()` がキューへ積み、このコンポーザブルが引き取って
+
+- ダメージ／回復のポップアップ（**対象キャラの真上**に出す）
+- 被弾フラッシュ（赤／青／緑）
+- 効果音
+- 画面シェイク
+
+へ振り分ける。DOM座標を追わずに済むよう、ポップアップとフラッシュは
+`CharacterFrame` へ props として渡し、各キャラが自分の分だけ描く。
 
 ### 再生の同期
 
@@ -158,6 +175,19 @@ export interface EffectRequest {
   → キューを順に再生（非同期）
   → 全再生完了後に次の手番へ
 ```
+
+### 1手番の尺
+
+手番そのものも「提示 → 解決」の2段で刻む（[04-battle-flow.md](04-battle-flow.md)）。
+尺は `battle.json` の `presentation` で調整する。
+
+| キー | 意味 |
+|---|---|
+| `announceMs` | スキル名を出してから効果を解決するまで |
+| `impactMs` | 効果の解決から次の手番へ送るまで |
+| `popupMs` | ダメージポップアップが消えるまで |
+| `flashMs` | 被弾フラッシュの長さ |
+| `battleEndMs` | 決着からドラフト／結果表示へ移るまで |
 
 ### 多段ヒットの演出
 
@@ -191,6 +221,25 @@ export interface EffectRequest {
 
 エフェクト定義が存在しない `sfx` を指していたら、検証で弾く。
 
+### スキルごとの差し替え
+
+同じ「魔法ヒット」でも、火球と呪詛では鳴ってほしい音が違う。
+そこでスキル定義に `sfx` を置き、**エフェクト定義の音を上書きできる**ようにしている。
+
+```jsonc
+// src/data/skills/skill_fireball.json
+{ "id": "skill_fireball", "sfx": { "cast": "battle_cast_magical", "impact": "battle_fire" }, ... }
+```
+
+| 場面 | 使う音 |
+|---|---|
+| スキル名の提示 | スキルの `sfx.cast` → 無ければ `battle_turn_start` |
+| 着弾側の演出（`onHit` / `onHeal` / `onShield` / `onMiss` / `onDefeat`） | スキルの `sfx.impact` → 無ければエフェクトの `sfx` |
+| それ以外の演出 | エフェクトの `sfx` |
+
+音を1つ増やすときは `src/data/sfx/xxx.json` を足し、スキルJSONから名前で指すだけでよい
+（TypeScript 側の変更は不要）。`SoundManager` には id 指定で鳴らす `playSfx(id)` を用意してある。
+
 ---
 
 ## エッジケース
@@ -208,16 +257,31 @@ export interface EffectRequest {
 
 | ファイル | 変更 |
 |---|---|
-| `src/data/battle-effects/*.json` | 新規（21件） |
+| `src/data/battle-effects/*.json` | 新規（21件）。すべて `sfx` を持つ |
 | `schemas/battle-effect.schema.json` | 新規 |
-| `src/components/battle/BattleEffectLayer.vue` | 新規 |
+| `src/composables/useBattlePresentation.ts` | 新規（当初案の `BattleEffectLayer.vue` を置き換え） |
+| `src/data/sfx/battle_*.json` | 新規（24件。戦闘用の効果音） |
 | `scripts/validate-json.mjs` | エフェクト検証を追加 |
 | `src/data/config/battle.json` | `multiHitIntervalMs` 等 |
 
-**既存の `SfxSound` / `SoundManager` は変更しない**（既存APIをそのまま呼ぶ）。
+`SoundManager` / `SfxSound` には **id 指定で鳴らす `playSfx(id, freqScale?)` を追加**した。
+スキルごとに音を変えるためにフック（`onXxx()`）を増やし続けるのは現実的でないため、
+データが持つ id をそのまま渡せる口を1つだけ開けている。既存フックの挙動は変えていない。
 
 ---
 
 ## 実装後の記録
 
-（実装完了後に追記）
+### 実装時に見つかった不具合
+
+- **使用者が自分の攻撃で赤く光る**: スキル定義の `effects` に `fx_hit_physical` 等の
+  着弾側エフェクトが並んでおり、`useActiveSkill` がそれを**使用者**に対して発行していた。
+  着弾側は `damage` / `heal` / `shield` オペレーションが対象ごとに発行するため二重でもある。
+  データ側を `onCast` のものだけに直し、`validate-json.mjs` に
+  「`effects` は `timing: "onCast"` のみ」という検証を追加した。
+
+### 音のスキル別差し替え
+
+フックを増やす方式（`onFireball()` のようなメソッドを `SoundHooks` に足す）は、
+スキルが増えるたびにTypeScriptの変更が必要になり「JSONだけで足せる」方針と噛み合わない。
+`SoundManager.playSfx(id)` を1つ足し、**どの音を鳴らすかはJSONが決める**形にした。

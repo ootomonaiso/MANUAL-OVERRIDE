@@ -3,6 +3,7 @@
   "id": "enemy_slime",
   "label": "スライム",
   "flavorText": "説明書の余白から染み出してきた。",
+  "sprite": "battle_slime",
   "stats": {
     "hp": 2000, "str": 350, "def": 400, "int": 200, "ref": 300, "agi": 300,
     "hitRate": 0.9, "evadeRate": 0, "critRate": 0.03, "critDamageMultiplier": 1.5

@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../schemas/battle-background.schema.json",
+  "id": "bg_sanctum",
+  "label": "最終ページの間",
+  "sky": { "top": "#100a1e", "bottom": "#3a2456" },
+  "glow": { "color": "#ffd34d", "x": 0.5, "y": 0.3, "r": 0.2 },
+  "ground": { "top": "#2c2140", "bottom": "#0c0814", "baseline": 0.68 },
+  "layers": [
+    { "shape": "ruins", "color": "#1d1530", "baseline": 0.6, "height": 0.26, "segments": 9, "opacity": 0.95 },
+    { "shape": "hills", "color": "#150f24", "baseline": 0.67, "height": 0.06, "segments": 6 }
+  ],
+  "props": [
+    { "kind": "pillar", "color": "#4a3a6a", "count": 4, "size": 0.3, "baseline": 0.68 },
+    { "kind": "crystal", "color": "#c9a23e", "count": 5, "size": 0.09, "baseline": 0.82 }
+  ],
+  "fog": { "color": "#ffd34d", "opacity": 0.08 },
+  "accent": "#ffd34d",
+  "panel": "#1a1228",
+  "bossOnly": true
+}

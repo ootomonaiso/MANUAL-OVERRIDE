@@ -1,8 +1,9 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { createApp, h, nextTick, type App } from 'vue'
 import BattleScreen from '../../../../src/components/battle/BattleScreen.vue'
-import { useBattleState } from '../../../../src/composables/useBattleState'
-import { BATTLE_CONTENT } from '../../../../src/data/battleContent'
+import { useBattleState, type BattleScheduler } from '../../../../src/composables/useBattleState'
+import { BATTLE_CONTENT, BATTLE_EFFECTS } from '../../../../src/data/battleContent'
+import { soundManager } from '../../../../src/plugins/SoundManager'
 import { BATTLE } from '../../../../src/data/tunables'
 import type { BattleStatus } from '../../../../src/domain/battle/types'
 
@@ -29,27 +30,45 @@ function seededPrng(seed: number): () => number {
  * useBattleState.test.ts と同じ「プレイヤーが必ず勝つ」rng を使って画面をマウントする。
  * 行動はDOM上のボタンをクリックして行い、実際のUI経路を通す。
  */
-function mount(seed = 4242): Harness {
-  const prng = seededPrng(seed)
-  let sinceAction = Number.POSITIVE_INFINITY
-  const battle = useBattleState()
-  battle.initRun(() => {
-    if (sinceAction < 2) { sinceAction++; return 0.94 }
-    return battle.state.enemies.some(e => e.alive) ? 0.99 : prng()
-  })
+/**
+ * 演出の途中で止めるためのスケジューラ。set() されたコールバックを溜めるだけで自動実行しない。
+ * これで「スキル名を出している最中」の画面を検証できる。
+ */
+function pausedScheduler(): BattleScheduler {
+  return { set: () => 0, clear: () => {} }
+}
 
+function mountBattle(battle: Battle, beforeAct: () => void = () => {}): Harness {
   const host = document.createElement('div')
   document.body.appendChild(host)
   const app = createApp({ render: () => h(BattleScreen, { battle }) })
   app.mount(host)
 
   const act = async (): Promise<void> => {
-    sinceAction = 0
+    beforeAct()
     slotButtons(host)[0].click()
     await nextTick()
   }
   current = { host, app, battle, act }
   return current
+}
+
+function mount(seed = 4242, scheduler?: BattleScheduler): Harness {
+  const prng = seededPrng(seed)
+  let sinceAction = Number.POSITIVE_INFINITY
+  const battle = useBattleState({ scheduler })
+  battle.initRun(() => {
+    if (sinceAction < 2) { sinceAction++; return 0.94 }
+    return battle.state.enemies.some(e => e.alive) ? 0.99 : prng()
+  })
+  return mountBattle(battle, () => { sinceAction = 0 })
+}
+
+/** 敵の攻撃が必ず当たる盤面。被弾側の演出を見るために使う */
+function mountTakingHits(): Harness {
+  const battle = useBattleState()
+  battle.initRun(() => 0.5)
+  return mountBattle(battle)
 }
 
 afterEach(() => {
@@ -142,17 +161,19 @@ describe('BattleScreen: 行動の操作', () => {
       .toContain(String(Math.max(0, Math.floor(h.battle.state.enemies[0].hp))))
   })
 
-  it('攻撃するとエフェクトのトーストが積まれ、キューが掃ける', async () => {
-    // トーストは多段ヒットをずらすため setTimeout 経由で積まる。
+  it('攻撃するとダメージポップアップが対象の上に出て、キューが掃ける', async () => {
+    // ポップアップは多段ヒットをずらすため setTimeout 経由で積まれる。
     // （消える側は TransitionGroup の leave アニメーション依存のため DOM では検証しない）
     vi.useFakeTimers()
     try {
       const h = mount()
       await h.act()
       await nextTick()
-      vi.advanceTimersByTime(BATTLE.multiHitIntervalMs * 8)
+      // popupMs を跨ぐと出た端から消えてしまうので、消える前の時点で見る
+      vi.advanceTimersByTime(BATTLE.multiHitIntervalMs * 2)
       await nextTick()
-      expect($$(h.host, '.toast').length).toBeGreaterThan(0)
+      const enemyUnit = $$(h.host, '.char-unit.enemy')[0]
+      expect(enemyUnit.querySelectorAll('.damage-popup').length).toBeGreaterThan(0)
       expect(h.battle.effectQueue.value).toHaveLength(0)   // 引き取った分はキューから消えている
     } finally {
       vi.useRealTimers()
@@ -174,6 +195,35 @@ describe('BattleScreen: 行動の操作', () => {
     await fightUntilDraft(h)
     await nextTick()
     expect(slotButtons(h.host).every(b => b.disabled)).toBe(true)
+  })
+})
+
+describe('BattleScreen: 見た目と進行表示', () => {
+  it('敵とプレイヤーがそれぞれのスプライトで描かれる', () => {
+    const h = mount()
+    const units = $$(h.host, '.char-unit')
+    expect(units.length).toBeGreaterThanOrEqual(2)
+    for (const u of units) expect(u.querySelector('.pixel-sprite')).not.toBeNull()
+  })
+
+  it('背景が描かれる', () => {
+    const h = mount()
+    expect($(h.host, '.battle-backdrop .backdrop-svg')).not.toBeNull()
+    expect(h.battle.state.backgroundId).toBeTruthy()
+  })
+
+  it('右上にターン数と手番が出る', () => {
+    const h = mount()
+    expect(textOf(h.host, '.turn-indicator .turn-count')).toBe('ターン 1')
+    expect(textOf(h.host, '.turn-indicator .turn-actor')).toBe('あなたの手番')
+  })
+
+  it('行動を選ぶとスキル名が提示され、攻撃モーションに切り替わる', async () => {
+    const h = mount(4242, pausedScheduler())
+    slotButtons(h.host)[0].click()
+    await nextTick()
+    expect($(h.host, '.skill-cast-banner')).not.toBeNull()
+    expect($$(h.host, '.char-unit.player .sprite-box.attacking').length).toBe(1)
   })
 })
 
@@ -248,6 +298,15 @@ describe('BattleScreen: スキル一覧の見え方', () => {
     await nextTick()
     expect($$(h.host, '.skill-item.unseen').length).toBe(unseenBefore - 1)
     expect(textOf(h.host, '.skill-list-panel')).toContain(BATTLE_CONTENT.skills.get(hiddenId)?.label ?? '')
+  })
+
+  it('マウスを乗せただけでは効果文が開かない', async () => {
+    const h = mount()
+    const owned = $$(h.host, '.skill-item.owned')[0]
+    owned.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
+    owned.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+    await nextTick()
+    expect($$(h.host, '.skill-item.owned')[0].querySelector('.item-detail')).toBeNull()
   })
 
   it('項目をクリックすると効果文が開く', async () => {
@@ -403,5 +462,72 @@ describe('BattleScreen: 対象選択', () => {
     expect(h.battle.state.enemies).toHaveLength(1)
     await h.act()
     expect($(h.host, '.focus-overlay')).toBeNull()
+  })
+})
+
+describe('BattleScreen: 被弾の見え方', () => {
+  it('敵に攻撃されると自キャラが一瞬だけ色を変える', async () => {
+    vi.useFakeTimers()
+    try {
+      const h = mountTakingHits()
+      slotButtons(h.host)[5].click()   // 何もしない → 敵の手番が回ってくる
+      await nextTick()
+      vi.advanceTimersByTime(BATTLE.multiHitIntervalMs)
+      await nextTick()
+      expect($(h.host, '.char-unit.player .sprite-box.flashing')).not.toBeNull()
+      expect($$(h.host, '.char-unit.player .damage-popup').length).toBeGreaterThan(0)
+
+      // フラッシュは一瞬で終わる（出しっぱなしにしない）
+      vi.advanceTimersByTime(BATTLE.presentation.flashMs + 50)
+      await nextTick()
+      expect($(h.host, '.char-unit.player .sprite-box.flashing')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+describe('BattleScreen: 効果音', () => {
+  afterEach(() => { soundManager.register({}) })
+
+  /** 鳴った SE の id を記録する差し替え実装 */
+  function recordSfx(): string[] {
+    const played: string[] = []
+    soundManager.register({ playSfx: (id: string) => { played.push(id) } })
+    return played
+  }
+
+  it('スキルJSONで指定した音が、発動時と着弾時にそれぞれ鳴る', async () => {
+    vi.useFakeTimers()
+    try {
+      const h = mount()
+      const skillId = h.battle.state.player.actives[0].id
+      const def = BATTLE_CONTENT.skills.get(skillId)
+      if (!def || def.kind !== 'active' || !def.sfx?.cast || !def.sfx?.impact) {
+        throw new Error(`${skillId} に sfx が定義されていません`)
+      }
+      const played = recordSfx()
+      await h.act()
+      await nextTick()
+      vi.advanceTimersByTime(BATTLE.multiHitIntervalMs * 4)
+      expect(played).toContain(def.sfx.cast)
+      expect(played).toContain(def.sfx.impact)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('スキル別の指定がない演出はエフェクトJSONの音を使う', async () => {
+    vi.useFakeTimers()
+    try {
+      const h = mount()
+      const played = recordSfx()
+      slotButtons(h.host)[4].click()   // 守る
+      await nextTick()
+      vi.advanceTimersByTime(BATTLE.multiHitIntervalMs * 4)
+      expect(played).toContain(BATTLE_EFFECTS.get('fx_guard')?.sfx)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

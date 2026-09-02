@@ -10,8 +10,21 @@
   "cooldown": 0,
   "defaultFocus": "enemy",
   "focusRange": "single",
-  "effects": ["fx_cast_magical", "fx_hit_magical"],
+  "effects": [
+    "fx_cast_magical"
+  ],
   "effect": [
-    { "op": "damage", "element": "magical", "scale": { "stat": "int", "rate": 1.0 } }
-  ]
+    {
+      "op": "damage",
+      "element": "magical",
+      "scale": {
+        "stat": "int",
+        "rate": 1.0
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_fire"
+  }
 }

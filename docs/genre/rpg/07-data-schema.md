@@ -83,7 +83,8 @@
 | `cooldown` | ✅ | number ≥ 0 | active | クールタイム |
 | `defaultFocus` | ✅ | `'enemy'｜'self'｜'ally'` | active | 既定の対象side |
 | `focusRange` | ✅ | `'single'｜'all'｜'adjacent3'` | active | 対象範囲 |
-| `effects` | — | string[] | active | 再生するエフェクトID |
+| `effects` | — | string[] | active | 発動時に再生するエフェクトID。**`timing: "onCast"` のもののみ**（着弾側は効果オペレーションが自動で出す） |
+| `sfx` | — | `{cast?, impact?}` | active | このスキル専用の効果音。`src/data/sfx/*.json` の id。未指定ならエフェクト定義の `sfx` を使う |
 | `unlockCondition` | — | `{category, points}` | 全 | カテゴリ特化で解放される場合のみ |
 
 ---
@@ -127,6 +128,7 @@
   "id": "enemy_slime",
   "label": "スライム",
   "flavorText": "説明書の余白から染み出してきた。",
+  "sprite": "battle_slime",
   "stats": {
     "hp": 7000, "str": 650, "def": 2200, "int": 400, "ref": 1800, "agi": 900,
     "hitRate": 0.95, "evadeRate": 0.0, "critRate": 0.05, "critDamageMultiplier": 2.0
@@ -142,12 +144,77 @@
 | キー | 必須 | 内容 |
 |---|---|---|
 | `id` / `label` / `flavorText` | ✅ | — |
+| `sprite` | ✅ | 見た目。`src/data/sprites/*.json` の id を**名前で参照**する。`idle` / `attack` の2フレームが必須 |
 | `stats` | ✅ | 10ステータスの**基礎値**。`evadeRate` は導出値のため 0 固定 |
 | `traits` | ✅ | 特性IDの配列（0個以上） |
 | `activeSkills` | ✅ | 所持アクティブスキル。文字列またはオブジェクト（後述） |
 | `passiveSkills` | ✅ | 所持パッシブスキル。同上 |
 | `actionPattern` | ✅ | 行動パターン。**ループする**。文字列IDのみ。`activeSkills` に含まれるIDのみ |
 | `isBoss` | ✅ | ボスフラグ。撃破でランがクリア終了 |
+
+### 見た目の一元管理（`sprite`）
+
+敵の絵は**敵定義とは別ファイル**（`src/data/sprites/*.json`）に置き、敵定義からは**名前で参照**する。
+スキル・ステータスと同じ場所（敵JSON）に1行足すだけで見た目が追従するため、絵の差し替えは
+スプライト側の編集だけで完結し、逆に敵の使い回しも容易になる。
+
+```jsonc
+// src/data/enemies/enemy_goblin.json
+{ "id": "enemy_goblin", "sprite": "battle_goblin", ... }
+```
+
+```jsonc
+// src/data/sprites/battle_goblin.json（既存の PixelArt スプライト形式をそのまま使う）
+{
+  "id": "battle_goblin",
+  "w": 22, "h": 22,
+  "palette": { "O": "#141a10", "G": "#5f8a3a" },
+  "frames": {
+    "idle":   ["...", "..."],
+    "attack": ["...", "..."]
+  }
+}
+```
+
+`idle` / `attack` の2フレームが必須。攻撃中は `attack` に差し替わり、CSS で相手側へ踏み込む。
+プレイヤーのスプライトIDは `src/data/config/battle.json` の `playerSprite` で指定する。
+
+---
+
+## 背景定義
+
+1ファイル1背景（`src/data/battle-backgrounds/bg_*.json`、スキーマは `schemas/battle-background.schema.json`）。
+戦闘が始まるたびに、ボス戦なら `bossOnly: true` の中から、通常戦ならそれ以外の中から、
+**直前と違うもの**が選ばれる。
+
+```jsonc
+{
+  "id": "bg_wasteland",
+  "label": "禍々しい荒れ地",
+  "sky": { "top": "#2a0e1c", "bottom": "#7a2331" },
+  "glow": { "color": "#ff6a4a", "x": 0.5, "y": 0.22, "r": 0.16 },
+  "ground": { "top": "#4a2028", "bottom": "#170a10", "baseline": 0.65 },
+  "layers": [{ "shape": "spikes", "color": "#3a1220", "baseline": 0.58, "height": 0.22, "segments": 13 }],
+  "props": [{ "kind": "crystal", "color": "#a8324a", "count": 6, "size": 0.13, "baseline": 0.66 }],
+  "fog": { "color": "#ff4a3a", "opacity": 0.1 },
+  "accent": "#ff8f6a",
+  "panel": "#25101a"
+}
+```
+
+| キー | 必須 | 内容 |
+|---|---|---|
+| `sky` / `ground` | ✅ | 空と地面のグラデーション。`ground.baseline` は地平線の高さ（画面高に対する比） |
+| `layers` | ✅ | 稜線。`hills` / `dunes` / `spikes` / `ruins` の4種 |
+| `props` | — | 地面に置く小物。`tree` / `cactus` / `pillar` / `bone` / `crystal` / `tuft` |
+| `glow` / `fog` | — | 光源と空気感 |
+| `accent` / `panel` | ✅ / — | **その場に合わせてUIの色を変える**（`--battle-accent` / `--battle-panel`） |
+| `bossOnly` | — | true ならボス戦専用 |
+
+稜線・小物の実際の座標は `src/domain/battle/backdrop.ts` が id 由来の擬似乱数から組み立てる。
+同じ背景は毎回同じ地形になる（戦うたびに形が変わると「同じ場所」に見えないため）。
+
+---
 
 ### `evadeRate` を書く理由
 
@@ -261,8 +328,11 @@ export function normalizeSkillRef(ref: EnemySkillRef): { id: string; level: numb
 | 14 | `actionPattern` の長さ | 0件（空だと行動できない） |
 | 15 | 敵の `evadeRate` | 0 以外 |
 | 16 | `unlockCondition.category` | 11種以外 |
-| 17 | `effects`（エフェクトID） | `battle-effects/` に存在しないID |
+| 17 | `effects`（エフェクトID） | `battle-effects/` に存在しないID、または `timing !== "onCast"` のID |
 | 18 | ボスの存在 | `isBoss: true` の敵が**1体もない**とランがクリアできない |
+| 19 | **参照整合（スプライト）** | 敵の `sprite` が `src/data/sprites/` に無い、または `idle` / `attack` フレームを欠く |
+| 20 | **参照整合（効果音）** | エフェクトの `sfx`・スキルの `sfx.cast` / `sfx.impact` が `src/data/sfx/` に無い |
+| 21 | 背景の最低構成 | 通常戦用の背景が2種未満、または `bossOnly` の背景が無い |
 
 ### `op` の実在検証について
 

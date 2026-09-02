@@ -1,0 +1,16 @@
+{
+  "id": "battle_dodge",
+  "$comment": "避ける — 素早い空気の抜け",
+  "tracks": [
+    {
+      "kind": "noise",
+      "durationSec": 0.16,
+      "volume": 0.18,
+      "filter": {
+        "type": "highpass",
+        "freq": 1200,
+        "freqEnd": 4000
+      }
+    }
+  ]
+}

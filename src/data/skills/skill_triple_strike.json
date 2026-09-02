@@ -6,21 +6,41 @@
   "kind": "active",
   "element": "physical",
   "mainCategory": "combo",
-  "subCategories": ["might"],
+  "subCategories": [
+    "might"
+  ],
   "cooldown": 2,
   "defaultFocus": "enemy",
   "focusRange": "single",
-  "effects": ["fx_slash", "fx_hit_physical"],
+  "effects": [
+    "fx_slash"
+  ],
   "effect": [
     {
       "op": "repeat",
       "times": 3,
       "body": [
-        { "op": "damage", "element": "physical", "scale": { "stat": "str", "rate": 0.8 } }
+        {
+          "op": "damage",
+          "element": "physical",
+          "scale": {
+            "stat": "str",
+            "rate": 0.8
+          }
+        }
       ],
       "onLastIteration": [
-        { "op": "modifier", "stat": "critRate", "amount": 0.5, "scope": "thisHit" }
+        {
+          "op": "modifier",
+          "stat": "critRate",
+          "amount": 0.5,
+          "scope": "thisHit"
+        }
       ]
     }
-  ]
+  ],
+  "sfx": {
+    "cast": "battle_swing",
+    "impact": "battle_hit_physical"
+  }
 }

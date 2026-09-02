@@ -59,6 +59,7 @@ interface EnemyJson {
   id?: string
   label?: string
   flavorText?: string
+  sprite?: string
   stats?: EnemyDef['stats']
   traits?: string[]
   activeSkills?: unknown[]
@@ -82,6 +83,7 @@ for (const [path, mod] of Object.entries(_enemyModules)) {
     id: raw.id,
     label: raw.label ?? raw.id,
     flavorText: raw.flavorText ?? '',
+    sprite: raw.sprite ?? '',
     stats: raw.stats,
     traits: raw.traits ?? [],
     activeSkills: (raw.activeSkills ?? []).map(normalizeSkillRef),

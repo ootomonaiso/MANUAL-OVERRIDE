@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../schemas/battle-background.schema.json",
+  "id": "bg_grassland",
+  "label": "草原",
+  "sky": { "top": "#5d9fd6", "bottom": "#c8e6f2" },
+  "glow": { "color": "#fff4c4", "x": 0.78, "y": 0.18, "r": 0.09 },
+  "ground": { "top": "#6aa552", "bottom": "#33552c", "baseline": 0.66 },
+  "layers": [
+    { "shape": "hills", "color": "#7fa8c4", "baseline": 0.56, "height": 0.16, "segments": 7, "opacity": 0.55 },
+    { "shape": "hills", "color": "#4f7f52", "baseline": 0.63, "height": 0.12, "segments": 9 }
+  ],
+  "props": [
+    { "kind": "tree", "color": "#2f4d2c", "count": 6, "size": 0.16, "baseline": 0.655, "opacity": 0.9 },
+    { "kind": "tuft", "color": "#4d7a3c", "count": 14, "size": 0.05, "baseline": 0.82 }
+  ],
+  "accent": "#e0c46a",
+  "panel": "#16281c"
+}

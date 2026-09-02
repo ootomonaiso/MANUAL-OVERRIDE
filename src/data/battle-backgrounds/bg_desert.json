@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../schemas/battle-background.schema.json",
+  "id": "bg_desert",
+  "label": "砂漠",
+  "sky": { "top": "#e8a24a", "bottom": "#f7e0a8" },
+  "glow": { "color": "#fff1c0", "x": 0.3, "y": 0.24, "r": 0.13 },
+  "ground": { "top": "#e2c184", "bottom": "#9b7440", "baseline": 0.68 },
+  "layers": [
+    { "shape": "dunes", "color": "#d9a76a", "baseline": 0.58, "height": 0.13, "segments": 5, "opacity": 0.7 },
+    { "shape": "dunes", "color": "#c08e52", "baseline": 0.65, "height": 0.1, "segments": 6 }
+  ],
+  "props": [
+    { "kind": "cactus", "color": "#4a6b3a", "count": 4, "size": 0.14, "baseline": 0.7 },
+    { "kind": "bone", "color": "#e8dfc4", "count": 5, "size": 0.06, "baseline": 0.86 }
+  ],
+  "accent": "#ffce6a",
+  "panel": "#31241a"
+}

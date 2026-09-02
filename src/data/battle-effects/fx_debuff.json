@@ -5,5 +5,9 @@
   "timing": "onStatus",
   "durationMs": 260,
   "target": "target",
-  "visual": { "kind": "flash", "color": "var(--battle-category-curse)" }
+  "visual": {
+    "kind": "flash",
+    "color": "var(--battle-category-curse)"
+  },
+  "sfx": "battle_resisted"
 }

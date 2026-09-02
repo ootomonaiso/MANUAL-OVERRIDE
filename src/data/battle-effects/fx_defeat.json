@@ -5,5 +5,9 @@
   "timing": "onDefeat",
   "durationMs": 400,
   "target": "target",
-  "visual": { "kind": "overlay", "color": "var(--battle-diff-minus)" }
+  "visual": {
+    "kind": "overlay",
+    "color": "var(--battle-diff-minus)"
+  },
+  "sfx": "battle_defeat"
 }

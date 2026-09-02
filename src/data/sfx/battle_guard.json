@@ -1,0 +1,24 @@
+{
+  "id": "battle_guard",
+  "$comment": "守る — 身構える鈍い金属音",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "triangle",
+      "freq": 220,
+      "freqEnd": 160,
+      "durationSec": 0.18,
+      "volume": 0.24
+    },
+    {
+      "kind": "noise",
+      "durationSec": 0.08,
+      "volume": 0.14,
+      "filter": {
+        "type": "bandpass",
+        "freq": 900,
+        "q": 1.4
+      }
+    }
+  ]
+}
