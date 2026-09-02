@@ -23,6 +23,7 @@ import { replaceGuardOp } from './replaceGuard'
 import { healBetweenBattlesOp } from './healBetweenBattles'
 import { effectBoostOp } from './effectBoost'
 import { healTakenOp } from './healTaken'
+import { noopOp } from './noop'
 
 registerOp(damageOp)
 registerOp(healOp)
@@ -36,3 +37,4 @@ registerOp(replaceGuardOp)
 registerOp(healBetweenBattlesOp)
 registerOp(effectBoostOp)
 registerOp(healTakenOp)
+registerOp(noopOp)

@@ -120,6 +120,10 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
     if (req.effectId === 'fx_critical') {
       pushPopup(who, { key: seq++, text: 'CRITICAL', color: def?.visual.color ?? 'var(--battle-number)', isLabel: true })
     }
+    if (req.effectId === 'fx_super_critical') {
+      const stacks = req.payload?.critStacks ?? 2
+      pushPopup(who, { key: seq++, text: `SUPER CRITICAL ×${stacks}`, color: def?.visual.color ?? 'var(--battle-number)', isLabel: true })
+    }
     if (req.effectId === 'fx_weakness') {
       pushPopup(who, { key: seq++, text: '弱点', color: def?.visual.color ?? 'var(--battle-number)', isLabel: true })
     }

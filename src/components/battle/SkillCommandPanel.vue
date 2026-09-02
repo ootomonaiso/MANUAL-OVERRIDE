@@ -79,13 +79,15 @@ const focused = computed(() =>
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transform-origin: right center;
   /* BATTLE を押した瞬間に技の一覧へ踏み込む手応えを出す入場アニメーション。
-     @keyframes menu-pop-in は BattleScreen.vue の説明コメント参照 */
+     @keyframes menu-pop-in は BattleScreen.vue の説明コメント参照
+     （.command-area が right 基準のため、位置がずれて見えないよう scale のみで出現させる） */
   animation: menu-pop-in 220ms cubic-bezier(0.2, 1, 0.3, 1);
 }
 @keyframes menu-pop-in {
-  from { opacity: 0; transform: translateX(22px) scale(0.95); }
-  to { opacity: 1; transform: translateX(0) scale(1); }
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
 }
 .skill-tip {
   padding: 10px 14px;

@@ -5,13 +5,14 @@
 
 import type { EffectContext, EffectNode, EffectOp, StatKey, Element } from '../types'
 import {
-  computeHitChance, rollHit, rollCritical,
+  computeHitChance, rollHit, rollCriticalStacks, criticalMultiplierForStacks,
   computeOutgoingDamage, computeFinalDamage,
   computeFinalCutRate, computeAffinityStage,
   applyDamage,
 } from '../damageCalc'
 import { levelMultiplier, collectEffectMultiplier } from '../stats'
 import { BATTLE } from '../../../data/tunables'
+import { emitCriticalEffect } from './criticalFx'
 
 interface DamageParams {
   element: Element
@@ -55,8 +56,8 @@ export const damageOp: EffectOp = {
         continue
       }
 
-      const isCrit = rollCritical(sourceStats.critRate, ctx.rng)
-      const critMultiplier = isCrit ? sourceStats.critDamageMultiplier : 1
+      const critStacks = rollCriticalStacks(sourceStats.critRate, ctx.rng)
+      const critMultiplier = criticalMultiplierForStacks(sourceStats.critDamageMultiplier, critStacks)
 
       const effectMultiplier = collectEffectMultiplier(ctx.source, element, ctx.content)
       const outgoing = computeOutgoingDamage({
@@ -79,7 +80,7 @@ export const damageOp: EffectOp = {
 
       ctx.emit({ effectId: `fx_hit_${element}`, targetRef: 'target', combatantId: target.id,
         payload: { text: String(Math.floor(finalDamage)), absorbedByShield, skillId: ctx.skill.id } })
-      if (isCrit) ctx.emit({ effectId: 'fx_critical', targetRef: 'target', combatantId: target.id })
+      emitCriticalEffect(ctx, target.id, critStacks)
       if (affinityStage > 0) ctx.emit({ effectId: 'fx_weakness', targetRef: 'target', combatantId: target.id })
       if (affinityStage < 0) ctx.emit({ effectId: 'fx_resisted', targetRef: 'target', combatantId: target.id })
       if (shieldBroke) ctx.emit({ effectId: 'fx_shield_break', targetRef: 'target', combatantId: target.id })

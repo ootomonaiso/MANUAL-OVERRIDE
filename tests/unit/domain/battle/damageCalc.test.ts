@@ -3,12 +3,12 @@ import {
   defenseValueFor, cutRateFromDefense, computeFinalCutRate,
   computeAffinityStage, affinityMultiplier,
   computeOutgoingDamage, computeFinalDamage, computeOutgoingHeal, computeFinalHeal,
-  computeHitChance, rollHit, rollCritical,
+  computeHitChance, rollHit, rollCritical, rollCriticalStacks, criticalMultiplierForStacks,
   applyDamage, applyHeal, applyShield,
 } from '../../../../src/domain/battle/damageCalc'
 import { BATTLE } from '../../../../src/data/tunables'
 import type { TraitDef } from '../../../../src/domain/battle/types'
-import { makeStats, makeCombatant, makeTrait, constRng } from './_helpers'
+import { makeStats, makeCombatant, makeTrait, constRng, seqRng } from './_helpers'
 
 const NO_TRAITS = new Map<string, TraitDef>()
 
@@ -186,6 +186,39 @@ describe('damageCalc: 命中', () => {
 
   it('確率 0 なら決して当たらない', () => {
     expect(rollHit(0, constRng(0))).toBe(false)
+  })
+})
+
+describe('damageCalc: スーパークリティカル（クリティカル率が100%を超えた場合）', () => {
+  it('100%未満は通常のクリティカル判定と同じ（1重 or 0重）', () => {
+    expect(rollCriticalStacks(0.05, constRng(0.049))).toBe(1)
+    expect(rollCriticalStacks(0.05, constRng(0.05))).toBe(0)
+  })
+
+  it('101%なら1重が確定し、残り1%の確率で2重目が乗る', () => {
+    // 1重確定のあと、超過分1%の抽選を引く。十分小さい値なら成功して2重になり、
+    // 続く値が十分大きければそこで止まる（同じ確率で何重にも重なりうる実装のため、
+    // 判定を必ず終わらせる値を後ろに続けておく）。
+    expect(rollCriticalStacks(1.01, seqRng([0.001, 0.999]))).toBe(2)
+    // 十分大きい値なら最初の抽選で失敗し、確定の1重だけで止まる。
+    expect(rollCriticalStacks(1.01, seqRng([0.5, 0.999]))).toBe(1)
+  })
+
+  it('抽選に連続で成功する限り、同じ確率で何重にも重なり続ける', () => {
+    // 0.001 < 0.01 を3回連続で成功させたあと、4回目に 0.999 で失敗させて打ち切る。
+    expect(rollCriticalStacks(1.01, seqRng([0.001, 0.001, 0.001, 0.999]))).toBe(1 + 3)
+  })
+
+  it('250%なら2重が確定し、残り50%の確率で3重目が乗る', () => {
+    expect(rollCriticalStacks(2.5, seqRng([0.49, 0.999]))).toBe(3)
+    expect(rollCriticalStacks(2.5, constRng(0.5))).toBe(2)
+  })
+
+  it('倍率は「クリティカル倍率 ^ 重なった回数」（1重なら通常のクリティカル倍率のまま）', () => {
+    expect(criticalMultiplierForStacks(3, 0)).toBe(1)
+    expect(criticalMultiplierForStacks(3, 1)).toBe(3)
+    expect(criticalMultiplierForStacks(3, 2)).toBe(9)
+    expect(criticalMultiplierForStacks(3, 3)).toBe(27)
   })
 })
 

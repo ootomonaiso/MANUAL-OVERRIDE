@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "skill_stance_guard",
+  "label": "守る",
+  "flavorText": "身を固くして、次の一撃に備える。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "guard",
+  "subCategories": [],
+  "cooldown": 3,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "draftable": false,
+  "effect": [
+    { "op": "modifier", "stat": "cutRate", "amount": 0.5, "scope": "thisTurn" }
+  ]
+}

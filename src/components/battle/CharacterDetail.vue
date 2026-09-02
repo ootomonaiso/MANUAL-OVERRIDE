@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SkillText from './SkillText.vue'
+import GlossaryTerm from './GlossaryTerm.vue'
 import type { SkillTextToken } from '../../domain/battle/skillText'
 
 export interface DetailStatRow {
@@ -47,7 +48,7 @@ function fmt(v: number, isPercent: boolean): string {
         <div class="section-title">ステータス</div>
         <div class="stat-grid">
           <div v-for="s in stats" :key="s.key" class="stat-cell">
-            <span class="stat-name">{{ s.label }}</span>
+            <span class="stat-name"><GlossaryTerm :term-id="s.key">{{ s.label }}</GlossaryTerm></span>
             <span class="stat-values">
               実効 {{ fmt(s.effective, s.isPercent) }} / 基礎 {{ fmt(s.base, s.isPercent) }}
             </span>
@@ -56,7 +57,7 @@ function fmt(v: number, isPercent: boolean): string {
       </div>
 
       <div v-if="actives.length > 0" class="detail-section">
-        <div class="section-title">アクティブスキル</div>
+        <div class="section-title"><GlossaryTerm term-id="active">アクティブスキル</GlossaryTerm></div>
         <div v-for="a in actives" :key="a.id" class="skill-row">
           <div class="skill-row-head">{{ a.label }} <span v-if="a.level">Lv{{ a.level }}</span></div>
           <SkillText :tokens="a.effectTokens" />
@@ -65,7 +66,7 @@ function fmt(v: number, isPercent: boolean): string {
       </div>
 
       <div v-if="passives.length > 0" class="detail-section">
-        <div class="section-title">パッシブスキル</div>
+        <div class="section-title"><GlossaryTerm term-id="passive">パッシブスキル</GlossaryTerm></div>
         <div v-for="p in passives" :key="p.id" class="skill-row">
           <div class="skill-row-head">{{ p.label }} <span v-if="p.level">Lv{{ p.level }}</span></div>
           <SkillText :tokens="p.effectTokens" />
@@ -74,7 +75,7 @@ function fmt(v: number, isPercent: boolean): string {
       </div>
 
       <div v-if="traits.length > 0" class="detail-section">
-        <div class="section-title">特性</div>
+        <div class="section-title"><GlossaryTerm term-id="trait">特性</GlossaryTerm></div>
         <div v-for="t in traits" :key="t.id" class="skill-row">
           <div class="skill-row-head">{{ t.label }}</div>
           <SkillText :tokens="t.effectTokens" />

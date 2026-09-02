@@ -182,7 +182,7 @@ export function levelMultiplier(level: number): number {
 
 ## 常時選択できる行動の定義
 
-「守る」「何もしない」は**アクティブスキル枠を消費しない特別な行動**である。スキル定義としては持たず、エンジン側に組み込む。
+「守る」「何もしていない」「様子を見る」は**アクティブスキル枠を消費しない特別な行動**である。当初はスキル定義を持たずエンジン側だけに組み込む想定だったが、改修後は内容（ラベル・説明文・カテゴリ）をスキルJSONとして持つ（下記「改修（実装後）」参照）。ただし実行そのものはエンジン側の専用パス（`useBuiltinAction()`）を経由し、4つの通常アクティブ枠とは別に扱う。
 
 ```ts
 export type BuiltinAction = 'guard' | 'pass'
@@ -191,12 +191,24 @@ export type BuiltinAction = 'guard' | 'pass'
 | | ID | クールタイム | 効果 |
 |---|---|---|---|
 | 守る | `guard` | 3 | カット率に `+0.5` の実数バフ（`scope: thisTurn`） |
-| 何もしない | `pass` | 0 | 効果なし |
-| 避ける | `dodge` | 3 | 回避率に `+0.5` の実数バフ（`scope: thisTurn`） |
+| 何もしていない | `pass` | 0 | 効果なし |
+| 様子を見る | `dodge` | 3 | 回避率に `+0.5` の実数バフ（`scope: thisTurn`） |
 
 `dodge` は `guard` の置換であり、**両方を同時に持つことはない**。特性 `replaceGuard` を持つ場合のみ `guard` が `dodge` に差し替わる。
 
 値は `battle.json` に置く（[03-damage-calc.md](03-damage-calc.md) の定数表を参照）。
+
+> **改修（実装後）**: プレイフィードバックを受け、この3行動は
+> `src/data/skills/skill_stance_guard.json` / `skill_stance_watch.json` / `skill_stance_idle.json` として、
+> 他のアクティブスキルと同じ `battle-skill.schema.json` 形式で定義し直した（`draftable: false` を付け、
+> `skillDraft.ts` の `buildCandidatePool` がアクティブ/パッシブ双方でこのフラグを見て候補から除外する）。
+> ラベル・フレーバーテキスト・カテゴリ・効果文はこの JSON から生成し、コードへハードコードしない
+> （以前は `GUARD_DESCRIPTION` のような文字列を Vue 側に直書きしていた）。
+> クールタイムの管理・効果の適用そのものは、引き続き `Combatant.builtinCooldowns` と
+> `useBuiltinAction()`（エンジン側）が担う。「内容はJSON、実行はエンジン」という分担にすることで、
+> スキルらしく自然に見せながら、実行モデルの大きな作り替え（4枠に混ぜる等）は避けている。
+> ラベルも `避ける`→`様子を見る`、`何もしない`→`何もしていない` に改めた
+> （`様子を見る` は敵のNEXT表示が使っていた語と統一、`何もしていない` は文字通りの無効果と紛れないようにするため）。
 
 ---
 
@@ -211,7 +223,7 @@ export type BuiltinAction = 'guard' | 'pass'
 
 **クールタイムは 0** とする。
 
-> **決定（Q6）**: 初期スキルが使えないターンがあると序盤が「何もしない」だけになるため **0** とする。
+> **決定（Q6）**: 初期スキルが使えないターンがあると序盤が「何もしていない」だけになるため **0** とする。
 
 初期スキルの選択に応じて、対応する攻撃ステータスが優遇される（[02-stats.md](02-stats.md)）。
 
@@ -284,6 +296,34 @@ export function rollCritical(critRate: number, rng: () => number): boolean {
 ```
 
 デバフ・純粋なバフなど数値量を持たない効果には適用しない。
+
+### スーパークリティカル（実装後に追加）
+
+クリティカル率は元々**上限を設けていない**（[02-stats.md](02-stats.md)）。プレイフィードバックを受け、
+100%を超えた分に意味を持たせる「スーパークリティカル」を追加した。
+
+> **決定**: クリティカル率が101%（1.01）で、クリティカルダメージ倍率が3倍の場合を考える。
+> まずクリティカルが1重確定する。そして、超過分の1%の確率でさらにもう1重乗る（スーパークリティカル）。
+> 成功した場合、同じ確率（この例では1%）でさらにもう1重…と際限なく重なりうる。
+> 倍率は「クリティカルダメージ倍率 ^ 重なった回数」。つまり2重なら`3^2=9`倍、3重なら`3^3=27`倍になる。
+
+```ts
+/** 戻り値はクリティカルが重なった回数（0=なし、1=通常のクリティカル、2以上=スーパークリティカル） */
+export function rollCriticalStacks(critRate: number, rng: () => number): number {
+  if (critRate < 1) return rollCritical(critRate, rng) ? 1 : 0
+  let stacks = Math.floor(critRate)
+  const chance = critRate - stacks
+  while (chance > 0 && rng() < chance) stacks++
+  return stacks
+}
+
+export function criticalMultiplierForStacks(critDamageMultiplier: number, stacks: number): number {
+  return stacks <= 0 ? 1 : Math.pow(critDamageMultiplier, stacks)
+}
+```
+
+ダメージ・回復・シールドの3op（`damage.ts` / `heal.ts` / `shield.ts`）すべてが対象。演出は1重なら
+`fx_critical`、2重以上なら`fx_super_critical`（画面シェイクが大きく、ポップアップに重なった回数を表示）を鳴らし分ける。
 
 ---
 

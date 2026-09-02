@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "skill_stance_idle",
+  "label": "何もしていない",
+  "flavorText": "ただ、その場に立っている。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "vitality",
+  "subCategories": [],
+  "cooldown": 0,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "draftable": false,
+  "effect": [
+    { "op": "noop" }
+  ]
+}

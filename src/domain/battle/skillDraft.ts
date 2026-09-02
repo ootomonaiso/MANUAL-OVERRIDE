@@ -87,6 +87,7 @@ function buildCandidatePool(
   const ownedTraitIds = new Set(player.traits.map(t => t.id))
 
   for (const def of content.skills.values()) {
+    if (def.draftable === false) continue
     if (def.unlockCondition && (points[def.unlockCondition.category] ?? 0) < def.unlockCondition.points) continue
 
     if (def.kind === 'active') {

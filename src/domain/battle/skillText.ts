@@ -12,6 +12,21 @@ export const CATEGORY_LABEL: Record<CategoryId, string> = {
   fatal: '致命', heal: '治癒', aegis: '加護', curse: '呪詛', pierce: '貫通', combo: '連撃',
 }
 
+/** カテゴリごとの目印色。実際の色値は battle-screen の CSS カスタムプロパティ側で定義する */
+export const CATEGORY_COLOR: Record<CategoryId, string> = {
+  vitality: 'var(--battle-category-vitality)',
+  guard: 'var(--battle-category-guard)',
+  might: 'var(--battle-category-might)',
+  wisdom: 'var(--battle-category-wisdom)',
+  swift: 'var(--battle-category-swift)',
+  fatal: 'var(--battle-category-fatal)',
+  heal: 'var(--battle-category-heal)',
+  aegis: 'var(--battle-category-aegis)',
+  curse: 'var(--battle-category-curse)',
+  pierce: 'var(--battle-category-pierce)',
+  combo: 'var(--battle-category-combo)',
+}
+
 export interface SkillTextToken {
   type: 'plain' | 'stat' | 'element' | 'number'
   text: string
@@ -111,7 +126,9 @@ function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
       return [plain('受ける回復量を'), numTok(pct(rate * mult)), plain('上昇させる')]
     }
     case 'replaceGuard':
-      return [plain('「守る」が「避ける」に変化する')]
+      return [plain('「守る」が「様子を見る」に変化する')]
+    case 'noop':
+      return [plain('何もしない')]
     case 'healBetweenBattles': {
       const amount = node.amount as number | undefined
       const rate = node.rate as number | undefined

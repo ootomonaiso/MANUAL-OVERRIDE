@@ -28,14 +28,14 @@ import SkillDraftPanel from './SkillDraftPanel.vue'
 import type { DraftCardView, SwapSlotView } from './SkillDraftPanel.vue'
 import BattleBackdrop from './BattleBackdrop.vue'
 import SkillCastBanner from './SkillCastBanner.vue'
+import HelpGuide from './HelpGuide.vue'
 import type { StatKey, PlayerAction, SkillDef, Element } from '../../domain/battle/types'
 import { STAT_KEYS } from '../../domain/battle/types'
-import { STAT_LABEL, CATEGORY_LABEL, buildSkillText } from '../../domain/battle/skillText'
+import { STAT_LABEL, CATEGORY_LABEL, CATEGORY_COLOR, buildSkillText } from '../../domain/battle/skillText'
 import { STACKS_REQUIRED } from '../../domain/battle/skillDraft'
 import { damageMagnitude, MAGNITUDE_LABEL } from '../../domain/battle/damagePreview'
 import { BATTLE_CONTENT } from '../../data/battleContent'
 import { findBattleBackground } from '../../data/battleBackgrounds'
-import { BATTLE } from '../../data/tunables'
 import { soundManager } from '../../plugins/SoundManager'
 
 /**
@@ -51,8 +51,14 @@ const battle = props.battle
 const content = BATTLE_CONTENT
 const fx = useBattlePresentation(battle)
 
-/** 背景写真と手前の床の境目。キャラクターの立ち位置もここに合わせる */
-const FLOOR_TOP = 0.62
+/**
+ * 背景写真と手前の床の境目。キャラクターの立ち位置もここに合わせる。
+ * 敵の頭上チップ〜HPプレートまでの縦の占有量と、自キャラの頭〜HPプレートまでの占有量を
+ * 足すと画面の大半を使うため、0.62 のままだと敵の下半身・HPプレートが自キャラの頭に
+ * 隠れて見えなくなっていた（実機の getBoundingClientRect で確認）。床を上へ動かして
+ * 敵の立ち位置を自キャラから引き離す。
+ */
+const FLOOR_TOP = 0.47
 const ELEMENT_COLOR: Record<Element, string> = {
   physical: 'var(--battle-element-physical)',
   magical: 'var(--battle-element-magical)',
@@ -110,8 +116,12 @@ const commandEntries = computed<CommandEntry[]>(() => [
   { id: 'info', label: 'INFO' },
 ])
 
-const GUARD_DESCRIPTION = `このターンに受けるダメージを${Math.round(BATTLE.guard.cutRate * 100)}%軽減する`
-const DODGE_DESCRIPTION = `このターンの回避率を${Math.round(BATTLE.dodge.evadeBonus * 100)}%上げる`
+/** 「守る」「様子を見る」「何もしていない」は特別扱いせず、他のスキルと同じくJSONで定義する
+ *  （src/data/skills/skill_stance_*.json）。ただし常設の行動でありドラフトには出さないため、
+ *  draftable: false を付けている（skillDraft.ts の buildCandidatePool 参照）。 */
+const BUILTIN_SKILL_ID: Record<'guard' | 'dodge' | 'pass', string> = {
+  guard: 'skill_stance_guard', dodge: 'skill_stance_watch', pass: 'skill_stance_idle',
+}
 
 const skillEntries = computed<SkillCommandEntry[]>(() => {
   const player = battle.state.player
@@ -133,22 +143,28 @@ const skillEntries = computed<SkillCommandEntry[]>(() => {
   }
   const builtin = battle.guardOrDodge.value
   const builtinCooldown = player.builtinCooldowns[builtin]
-  entries.push({
-    id: `builtin:${builtin}`,
-    label: builtin === 'dodge' ? '避ける' : '守る',
-    markColor: 'var(--battle-category-guard)',
-    cooldown: builtinCooldown,
-    disabled: builtinCooldown > 0,
-    description: builtin === 'dodge' ? DODGE_DESCRIPTION : GUARD_DESCRIPTION,
-  })
-  entries.push({
-    id: 'builtin:pass',
-    label: '何もしない',
-    markColor: 'var(--battle-diff-muted)',
-    cooldown: 0,
-    disabled: false,
-    description: 'この手番は何もせず、次の手番へ送る',
-  })
+  const builtinDef = content.skills.get(BUILTIN_SKILL_ID[builtin])
+  if (builtinDef && builtinDef.kind === 'active') {
+    entries.push({
+      id: `builtin:${builtin}`,
+      label: builtinDef.label,
+      markColor: CATEGORY_COLOR[builtinDef.mainCategory],
+      cooldown: builtinCooldown,
+      disabled: builtinCooldown > 0,
+      effectTokens: buildSkillText(builtinDef, 1),
+    })
+  }
+  const passDef = content.skills.get(BUILTIN_SKILL_ID.pass)
+  if (passDef && passDef.kind === 'active') {
+    entries.push({
+      id: 'builtin:pass',
+      label: passDef.label,
+      markColor: CATEGORY_COLOR[passDef.mainCategory],
+      cooldown: 0,
+      disabled: false,
+      effectTokens: buildSkillText(passDef, 1),
+    })
+  }
   return entries
 })
 
@@ -301,6 +317,7 @@ const skillListView = computed(() => {
   const unownedActives: SkillListItemView[] = []
   const unownedPassives: SkillListItemView[] = []
   for (const def of content.skills.values()) {
+    if (def.draftable === false) continue
     const isOwned = def.kind === 'active' ? ownedActiveIds.has(def.id) : ownedPassiveIds.has(def.id)
     if (isOwned) continue
     const vis = visibilityOf(def.id, false)
@@ -363,10 +380,13 @@ const draftCards = computed<DraftCardView[]>(() => {
       }
     }
     const def = opt.kind === 'trait' ? content.traits.get(opt.id) : content.skills.get(opt.id)
+    const category = def && 'mainCategory' in def ? def.mainCategory : null
     return {
       index, kind: opt.kind, label: meta?.label ?? opt.id, flavorText: meta?.flavorText ?? '',
       effectTokens: def ? buildSkillText(def, opt.currentLevel ? opt.currentLevel + 1 : 1) : [],
-      categoryLabel: def && 'mainCategory' in def && def.mainCategory ? CATEGORY_LABEL[def.mainCategory] : '―',
+      categoryLabel: category ? CATEGORY_LABEL[category] : '―',
+      categoryColor: category ? CATEGORY_COLOR[category] : undefined,
+      categoryId: category ?? undefined,
       levelTransition: opt.currentLevel ? `Lv${opt.currentLevel} → Lv${Math.min(4, opt.currentLevel + 1)}` : undefined,
       isUnlocked: opt.isUnlocked,
     }
@@ -403,6 +423,7 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
 <template>
   <div class="battle-screen" :style="themeVars">
     <BattleBackdrop :background="background" :floor-top="FLOOR_TOP" />
+    <HelpGuide />
 
     <TurnBadge
       :turn-number="battle.turnNumber.value"
@@ -547,6 +568,13 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   --battle-category-aegis: #63b8ff;
   --battle-category-guard: #e0c46a;
   --battle-category-curse: #b98bff;
+  --battle-category-vitality: #8bd46a;
+  --battle-category-might: #ff7a5c;
+  --battle-category-wisdom: #7ac8ff;
+  --battle-category-swift: #4de0c0;
+  --battle-category-fatal: #ff4a6a;
+  --battle-category-pierce: #ffd23a;
+  --battle-category-combo: #ff9ecb;
 
   /* 背景JSONが上書きする（未設定時のフォールバック） */
   --battle-accent: #e0c46a;
@@ -619,8 +647,8 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
 /* プレイヤー側（画面下寄り）に寄せる。説明書パネル（右下）とは高さで避ける */
 .command-area {
   position: absolute;
-  right: 26px;
-  top: 46%;
+  right: 275px;
+  top: 55%;
   z-index: 16;
 }
 .focus-hint {
@@ -631,6 +659,7 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   color: #4a2a1e;
   text-align: center;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  transform-origin: right center;
   animation: menu-pop-in 220ms cubic-bezier(0.2, 1, 0.3, 1);
 }
 .focus-title {
@@ -660,9 +689,14 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
  * CSS animation は要素が挿入された瞬間に自動再生されるため、この問題を避けられる。
  * 同名の @keyframes を CommandMenu.vue / SkillCommandPanel.vue にも定義している
  * （@keyframes は scoped の対象外でグローバルだが、コンポーネント単体で完結させるため）。
+ *
+ * .command-area は right 基準で配置しているため、translateX で横に滑らせると
+ * パネル幅の違い（CommandMenu 210px ⇄ SkillCommandPanel 320px）で「位置がずれた」ように
+ * 見えてしまっていた。right 側を固定端とみなし、scale の起点を transform-origin で
+ * その固定端へ合わせることで、見た目の位置を動かさずに出現させる。
  */
 @keyframes menu-pop-in {
-  from { opacity: 0; transform: translateX(22px) scale(0.95); }
-  to { opacity: 1; transform: translateX(0) scale(1); }
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
 }
 </style>

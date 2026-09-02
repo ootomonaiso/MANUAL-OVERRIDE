@@ -44,21 +44,25 @@ const rows = computed(() => props.stats.map(s => {
     <button type="button" class="panel-toggle" @click="emit('toggle-collapsed')">
       ステータス {{ collapsed ? '▸' : '▾' }}
     </button>
-    <div v-if="!collapsed" class="panel-body">
-      <div class="panel-controls">
-        <button type="button" @click="emit('toggle-mode')">{{ mode === 'base' ? '基礎値' : '実効値' }}</button>
-        <button type="button" @click="emit('toggle-diff')">バフ{{ showDiff ? 'オン' : 'オフ' }}</button>
-      </div>
-      <div class="stat-row" v-for="r in rows" :key="r.key">
-        <span class="stat-name">{{ r.label }}</span>
-        <span class="stat-value">
-          {{ r.primaryText }}
-          <span
-            v-if="showDiff && r.diffText"
-            class="stat-diff"
-            :class="mode === 'effective' ? 'muted' : (r.diffPositive ? 'plus' : 'minus')"
-          >{{ r.diffText }}</span>
-        </span>
+    <div class="panel-collapse">
+      <div class="panel-collapse-inner">
+        <div class="panel-body">
+          <div class="panel-controls">
+            <button type="button" @click="emit('toggle-mode')">{{ mode === 'base' ? '基礎値' : '実効値' }}</button>
+            <button type="button" @click="emit('toggle-diff')">バフ{{ showDiff ? 'オン' : 'オフ' }}</button>
+          </div>
+          <div class="stat-row" v-for="r in rows" :key="r.key">
+            <span class="stat-name">{{ r.label }}</span>
+            <span class="stat-value">
+              {{ r.primaryText }}
+              <span
+                v-if="showDiff && r.diffText"
+                class="stat-diff"
+                :class="mode === 'effective' ? 'muted' : (r.diffPositive ? 'plus' : 'minus')"
+              >{{ r.diffText }}</span>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -83,6 +87,19 @@ const rows = computed(() => props.stats.map(s => {
   font: inherit;
   cursor: pointer;
   font-size: 12px;
+}
+/* 開閉にアニメーションを付ける。中身の高さを事前に知らなくても済むよう、
+   grid-template-rows を 1fr ⇄ 0fr で滑らせる（height:auto は transition できないため） */
+.panel-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 220ms ease;
+}
+.status-panel.collapsed .panel-collapse {
+  grid-template-rows: 0fr;
+}
+.panel-collapse-inner {
+  overflow: hidden;
 }
 .panel-body {
   padding: 0 10px 10px;

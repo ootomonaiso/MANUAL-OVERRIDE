@@ -43,7 +43,9 @@ function toggle(id: string) {
     <button type="button" class="panel-toggle" @click="emit('toggle-collapsed')">
       スキル一覧 {{ collapsed ? '▸' : '▾' }}
     </button>
-    <div v-if="!collapsed" class="panel-body">
+    <div class="panel-collapse">
+    <div class="panel-collapse-inner">
+    <div class="panel-body">
       <template v-for="group in [
         { title: '所持: アクティブ', items: ownedActives },
         { title: '所持: パッシブ', items: ownedPassives },
@@ -74,6 +76,8 @@ function toggle(id: string) {
         </div>
       </template>
     </div>
+    </div>
+    </div>
   </div>
 </template>
 
@@ -98,6 +102,19 @@ function toggle(id: string) {
   font: inherit;
   cursor: pointer;
   font-size: 12px;
+}
+/* 開閉にアニメーションを付ける。中身の高さを事前に知らなくても済むよう、
+   grid-template-rows を 1fr ⇄ 0fr で滑らせる（height:auto は transition できないため） */
+.panel-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 220ms ease;
+}
+.skill-list-panel.collapsed .panel-collapse {
+  grid-template-rows: 0fr;
+}
+.panel-collapse-inner {
+  overflow: hidden;
 }
 .panel-body {
   padding: 0 8px 8px;

@@ -8,7 +8,7 @@
   "additionalProperties": false,
   "allowedOps": ["damage", "heal", "shield", "repeat", "modifier",
                   "statBoost", "elementAffinity", "cutRate", "replaceGuard", "healBetweenBattles",
-                    "effectBoost", "healTaken"],
+                    "effectBoost", "healTaken", "noop"],
   "properties": {
     "$schema": { "type": "string" },
     "id": { "type": "string", "pattern": "^(skill|passive)_[a-z0-9_]+$", "description": "active は skill_ 、passive は passive_ プレフィックス" },
@@ -41,6 +41,7 @@
         "impact": { "type": "string", "minLength": 1 }
       }
     },
+    "draftable": { "type": "boolean", "description": "false なら通常ドラフトに出現しない（守る/様子を見る/何もしていない等、常設の行動用）" },
     "unlockCondition": {
       "type": "object",
       "required": ["category", "points"],
@@ -68,7 +69,7 @@
           "type": "string",
           "enum": ["damage", "heal", "shield", "repeat", "modifier",
                     "statBoost", "elementAffinity", "cutRate", "replaceGuard", "healBetweenBattles",
-                    "effectBoost", "healTaken"]
+                    "effectBoost", "healTaken", "noop"]
         }
       }
     }

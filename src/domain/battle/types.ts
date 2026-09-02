@@ -348,6 +348,8 @@ export interface EffectPayload {
   absorbedByShield?: boolean
   /** 発生元のスキルID。効果音のスキル別差し替えに使う */
   skillId?: string
+  /** fx_super_critical 用: クリティカルが重なった回数（2以上） */
+  critStacks?: number
 }
 
 export interface EffectContext {

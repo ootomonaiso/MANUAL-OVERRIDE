@@ -132,6 +132,26 @@ export function rollCritical(critRate: number, rng: () => number): boolean {
   return rng() < critRate
 }
 
+/**
+ * クリティカル率が100%を超えた分を「スーパークリティカル」の追加抽選に使う。
+ * 例: critRate=1.01（101%）なら通常クリティカルが1重確定し、残り1%で2重目を抽選する。
+ * 抽選に成功した場合は同じ確率（この例では1%）でさらに3重目…と際限なく重ねられる
+ * （確率は毎回同じ値のまま独立試行を繰り返すだけで、幾何級数的に発生率が下がる）。
+ * 戻り値はクリティカルが重なった回数（0=クリティカルなし、1=通常クリティカル、2以上=スーパークリティカル）。
+ */
+export function rollCriticalStacks(critRate: number, rng: () => number): number {
+  if (critRate < 1) return rollCritical(critRate, rng) ? 1 : 0
+  let stacks = Math.floor(critRate)
+  const chance = critRate - stacks
+  while (chance > 0 && rng() < chance) stacks++
+  return stacks
+}
+
+/** スーパークリティカルの倍率 = クリティカル倍率 ^ 重なった回数（1重なら通常のクリティカル倍率と同じ） */
+export function criticalMultiplierForStacks(critDamageMultiplier: number, stacks: number): number {
+  return stacks <= 0 ? 1 : Math.pow(critDamageMultiplier, stacks)
+}
+
 // ─────────────────────────────────────────────────────────────
 // 丸め・HP反映
 // ─────────────────────────────────────────────────────────────

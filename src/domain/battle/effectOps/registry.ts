@@ -49,5 +49,5 @@ export function clearThisBattleModifiers(c: { temporary: TemporaryModifier[] }):
 export const KNOWN_OP_IDS = [
   'damage', 'heal', 'shield', 'repeat', 'modifier',
   'statBoost', 'elementAffinity', 'cutRate', 'replaceGuard', 'healBetweenBattles',
-  'effectBoost', 'healTaken',
+  'effectBoost', 'healTaken', 'noop',
 ] as const

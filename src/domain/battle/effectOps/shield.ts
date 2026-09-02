@@ -5,8 +5,9 @@
  */
 
 import type { EffectNode, EffectOp, StatKey, Element } from '../types'
-import { rollCritical, applyShield } from '../damageCalc'
+import { rollCriticalStacks, criticalMultiplierForStacks, applyShield } from '../damageCalc'
 import { levelMultiplier, collectEffectMultiplier } from '../stats'
+import { emitCriticalEffect } from './criticalFx'
 
 interface ShieldParams {
   element: Element
@@ -29,8 +30,8 @@ export const shieldOp: EffectOp = {
 
     for (const target of ctx.targets) {
       if (!target.alive) continue
-      const isCrit = rollCritical(sourceStats.critRate, ctx.rng)
-      const critMultiplier = isCrit ? sourceStats.critDamageMultiplier : 1
+      const critStacks = rollCriticalStacks(sourceStats.critRate, ctx.rng)
+      const critMultiplier = criticalMultiplierForStacks(sourceStats.critDamageMultiplier, critStacks)
       const effectMultiplier = collectEffectMultiplier(ctx.source, element, ctx.content)
       const amount = referenceValue * scaleRate * critMultiplier * effectMultiplier
 
@@ -38,7 +39,7 @@ export const shieldOp: EffectOp = {
 
       ctx.emit({ effectId: 'fx_shield_gain', targetRef: 'target', combatantId: target.id,
         payload: { text: `+${Math.floor(amount)}`, skillId: ctx.skill.id } })
-      if (isCrit) ctx.emit({ effectId: 'fx_critical', targetRef: 'target', combatantId: target.id })
+      emitCriticalEffect(ctx, target.id, critStacks)
     }
   },
 }

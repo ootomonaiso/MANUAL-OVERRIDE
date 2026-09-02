@@ -85,7 +85,7 @@ watch(() => props.flash, (kind) => {
     <div v-if="side === 'enemy' && alive" class="next-chip">
       <div class="next-head">NEXT</div>
       <div class="next-skill">
-        <span class="next-mark" :style="{ background: nextMarkColor }" />{{ nextSkillLabel ?? '様子を見ている' }}
+        <span class="next-mark" :style="{ background: nextMarkColor }" />{{ nextSkillLabel ?? '何もしていない' }}
       </div>
       <div v-if="nextDamageLabel" class="next-damage">{{ nextDamageLabel }}</div>
     </div>
@@ -128,6 +128,7 @@ watch(() => props.flash, (kind) => {
         <div v-if="shield > 0" class="shield-fill" :style="{ width: `${Math.min(1, shieldRatio) * 100}%` }" />
       </div>
       <span class="hp-num">{{ Math.max(0, Math.floor(hp)) }}/{{ Math.floor(maxHp) }}</span>
+      <span v-if="shield > 0" class="hp-shield-num">+{{ Math.floor(shield) }}</span>
     </div>
   </div>
 </template>
@@ -322,7 +323,11 @@ watch(() => props.flash, (kind) => {
   gap: 2px;
   padding-bottom: 6px;
   pointer-events: none;
-  z-index: 6;
+  /* .char-unit / .sprite-stage はどちらも z-index を持たないため、この値は
+     .battle-field 直下（SkillCastBanner の z-index:20 と同じ階層）で比較される。
+     ダメージ表記は解決フェーズ中もバナーが残っている間ずっと出ているため、
+     バナーより確実に手前へ出す（そうしないと自キャラの数字がバナーの裏に隠れる）。 */
+  z-index: 22;
   white-space: nowrap;
 }
 .damage-popup {
@@ -418,6 +423,14 @@ watch(() => props.flash, (kind) => {
 .hp-num {
   font-size: 11px;
   color: #fff;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+/* シールドの残量を、色つきの数字で明示する（帯だけでは何ポイント残っているか読み取れないため） */
+.hp-shield-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--battle-category-aegis);
   letter-spacing: -0.5px;
   white-space: nowrap;
 }

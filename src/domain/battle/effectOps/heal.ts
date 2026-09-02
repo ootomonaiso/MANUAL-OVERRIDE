@@ -4,8 +4,9 @@
  */
 
 import type { EffectContext, EffectNode, EffectOp, StatKey, Element } from '../types'
-import { computeOutgoingHeal, computeFinalHeal, rollCritical, applyHeal } from '../damageCalc'
+import { computeOutgoingHeal, computeFinalHeal, rollCriticalStacks, criticalMultiplierForStacks, applyHeal } from '../damageCalc'
 import { levelMultiplier, collectEffectMultiplier } from '../stats'
+import { emitCriticalEffect } from './criticalFx'
 
 interface HealParams {
   element: Element
@@ -41,8 +42,8 @@ export const healOp: EffectOp = {
 
     for (const target of ctx.targets) {
       if (!target.alive) continue
-      const isCrit = rollCritical(sourceStats.critRate, ctx.rng)
-      const critMultiplier = isCrit ? sourceStats.critDamageMultiplier : 1
+      const critStacks = rollCriticalStacks(sourceStats.critRate, ctx.rng)
+      const critMultiplier = criticalMultiplierForStacks(sourceStats.critDamageMultiplier, critStacks)
 
       const effectMultiplier = collectEffectMultiplier(ctx.source, element, ctx.content)
       const outgoing = computeOutgoingHeal({
@@ -58,7 +59,7 @@ export const healOp: EffectOp = {
 
       ctx.emit({ effectId: 'fx_heal', targetRef: 'target', combatantId: target.id,
         payload: { text: `+${Math.floor(finalHeal)}`, skillId: ctx.skill.id } })
-      if (isCrit) ctx.emit({ effectId: 'fx_critical', targetRef: 'target', combatantId: target.id })
+      emitCriticalEffect(ctx, target.id, critStacks)
     }
   },
 }

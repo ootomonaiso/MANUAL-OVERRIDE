@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../schemas/battle-skill.schema.json",
+  "id": "skill_stance_watch",
+  "label": "様子を見る",
+  "flavorText": "動かず、相手の呼吸を読む。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "swift",
+  "subCategories": [],
+  "cooldown": 3,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "draftable": false,
+  "effect": [
+    { "op": "modifier", "stat": "evadeRate", "amount": 0.5, "scope": "thisTurn" }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "../../../schemas/battle-effect.schema.json",
+  "id": "fx_super_critical",
+  "label": "スーパークリティカル強調",
+  "timing": "onHit",
+  "durationMs": 420,
+  "target": "target",
+  "visual": {
+    "kind": "burst",
+    "color": "#ffd23a",
+    "shake": 1.4
+  },
+  "sfx": "battle_critical"
+}

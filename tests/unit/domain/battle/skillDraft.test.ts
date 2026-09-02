@@ -140,6 +140,18 @@ describe('skillDraft: ドラフト抽選', () => {
     expect(ids).not.toContain('hidden')
   })
 
+  it('draftable: false のアクティブ/パッシブスキルは候補に出ない（「守る」等の常設行動用）', () => {
+    const hiddenActive = makeActive({ id: 'skill_hidden', draftable: false })
+    const hiddenPassive = makePassive({ id: 'passive_hidden', draftable: false })
+    const ids = rollDraft(
+      makePlayer(),
+      makeContent({ skills: [hiddenActive, hiddenPassive] }),
+      Math.random,
+    ).map(o => o.id)
+    expect(ids).not.toContain('skill_hidden')
+    expect(ids).not.toContain('passive_hidden')
+  })
+
   it('Lv4 に達したスキルは候補から外れる', () => {
     const player = makePlayer({
       actives: [{ id: 'a1', level: 4, stacks: 0, cooldown: 0, slotIndex: 0 }],
@@ -171,8 +183,11 @@ describe('skillDraft: ドラフト抽選', () => {
   })
 
   it('所持済みスキルの候補には現在のレベルとスタックが載る', () => {
+    // 共有の content（a1/a2/p1/t1 の計4候補）だと3択に a1 が入らない回があり
+    // 確率的に失敗しうるため、a1 だけの候補プールで必ず含まれるようにする
+    // （残り2枠はステータス微増のフォールバックで埋まる。それでよい）。
     const player = makePlayer({ actives: [{ id: 'a1', level: 2, stacks: 1, cooldown: 0, slotIndex: 0 }] })
-    const options = rollDraft(player, content, Math.random)
+    const options = rollDraft(player, makeContent({ skills: [a1] }), Math.random)
     const found = options.find(o => o.id === 'a1')
     expect(found).toMatchObject({ currentLevel: 2, currentStacks: 1 })
   })

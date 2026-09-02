@@ -164,7 +164,7 @@ describe('skillText: 補正・宣言的opの表記', () => {
     const guard = makeTrait({ id: 'g', effect: [node('replaceGuard')] })
     const medicRate = makeTrait({ id: 'm1', effect: [node('healBetweenBattles', { rate: 0.15 })] })
     const medicFlat = makeTrait({ id: 'm2', effect: [node('healBetweenBattles', { amount: 500 })] })
-    expect(text(buildSkillText(guard, 1))).toBe('「守る」が「避ける」に変化する。')
+    expect(text(buildSkillText(guard, 1))).toBe('「守る」が「様子を見る」に変化する。')
     expect(text(buildSkillText(medicRate, 1))).toBe('戦闘終了時にHPを15%回復する。')
     expect(text(buildSkillText(medicFlat, 1))).toBe('戦闘終了時にHPを500回復する。')
   })
