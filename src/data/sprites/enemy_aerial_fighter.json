@@ -1,0 +1,37 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "enemy_aerial_fighter",
+  "w": 18,
+  "h": 20,
+  "palette": {
+    "M": "@main",
+    "S": "@shade",
+    "L": "@light",
+    "C": "#2a0a0a",
+    "O": "#0a0a12"
+  },
+  "frames": {
+    "idle": [
+      "..................",
+      "........OOO.......",
+      ".......OLLLO......",
+      "......OLLLLLO.....",
+      ".OOOO.OLLLLLO.OOOO",
+      "OSSSSOOLLLLLOOSSSS",
+      "OSSSSSSLLLLLSSSSSS",
+      ".OSSSSSMMMMMSSSSSO",
+      "..OSSSSMMMMMSSSSO.",
+      "...OSSSMMMMMSSSO..",
+      "....OSSMMMMMSSO...",
+      ".....OSMCCMMSO....",
+      "......OCCCCMO.....",
+      ".......OCCMO......",
+      ".......OMMMO......",
+      ".......OMMMO......",
+      ".......OMMMO......",
+      "........OMMO......",
+      "........OMO.......",
+      "........OMO......."
+    ]
+  }
+}

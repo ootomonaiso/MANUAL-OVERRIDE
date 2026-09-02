@@ -79,6 +79,20 @@ jobs:
           cache: npm
       - run: npm run check-doc-links
 
+  reach-sim:
+    name: Genre Reach Sim
+    runs-on: ubuntu-latest
+    # 確率的シミュレーションのため continue-on-error: true で非ブロック化。
+    # 2ジャンル以上の到達率 0% の場合に exit 1 するが、1ジャンルまでの 0% は許容。
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: node scripts/genre-reach-sim.mjs .
+
 # ══════════════════════════════════════════════════════════
 #  Phase 2 — Build (gates on all Phase 1)
 # ══════════════════════════════════════════════════════════
@@ -281,7 +295,7 @@ jobs:
   ci-ok:
     name: CI OK
     runs-on: ubuntu-latest
-    needs: [build, build-e2e, e2e, lighthouse]
+    needs: [build, build-e2e, e2e, lighthouse, reach-sim]
     if: always()
     permissions:
       contents: read
@@ -297,5 +311,9 @@ jobs:
           fi
           if [[ "${{ needs.e2e.result }}" != "success" ]]; then
             echo "❌ E2E failed"; exit 1
+          fi
+          if [[ "${{ needs.reach-sim.result }}" == "failure" ]]; then
+            echo "❌ Reach sim: 2ジャンル以上の到達率 0%（回帰欠陥の疑い）"
+            exit 1
           fi
           echo "✅ All CI jobs passed"

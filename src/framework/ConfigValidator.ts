@@ -19,7 +19,8 @@ export interface ConfigValidationResult {
 const REQUIRED_SECTIONS: GameConfigSection[] = [
   'physics', 'shoot', 'throw', 'spawn', 'vfx', 'camera', 'background',
   'hazard_vfx', 'ui', 'score', 'difficulty', 'boss', 'rhythm_tuning',
-  'stealth', 'genre_params', 'game_balance', 'genres'
+  'stealth', 'genre_params', 'game_balance', 'genres', 'pixelart',
+  'genre_defaults', 'palette_defaults',
 ]
 
 const REQUIRED_NUMBER_FIELDS: Partial<Record<GameConfigSection, string[]>> = {
@@ -40,6 +41,9 @@ const REQUIRED_NUMBER_FIELDS: Partial<Record<GameConfigSection, string[]>> = {
   stealth: ['stealthAlpha', 'stealthDurationSec', 'stealthCooldownSec', 'detectionRange'],
   genre_params: ['recommendedSingleChoice', 'recommendedMaxPerAxis'],
   game_balance: ['scoreRatioPlay', 'scoreRatioThrow', 'baseScrollSpeed'],
+  pixelart: ['size', 'gradientSteps', 'haloSteps', 'haloAlphaFalloff', 'alphaSteps',
+             'ditherRatioSteps', 'textScale', 'textMinBakePx', 'blockShadeAmount',
+             'spriteCacheMax', 'textCacheMax'],
 }
 
 const RANGE_CHECKS: Array<{
@@ -47,6 +51,8 @@ const RANGE_CHECKS: Array<{
   field: string
   min?: number
   max?: number
+  /** true のとき min は「その値より大きい」を意味する（min 自身は不許可） */
+  exclusiveMin?: boolean
 }> = [
   { section: 'physics',    field: 'jumpVelocity',   max: 0 },
   { section: 'physics',    field: 'jumpCutMultiplier', min: 0, max: 1 },
@@ -98,6 +104,18 @@ const RANGE_CHECKS: Array<{
   { section: 'game_balance', field: 'scoreRatioThrow', min: 0, max: 1 },
   { section: 'game_balance', field: 'baseScrollSpeed', min: 0 },
   { section: 'game_balance', field: 'maxRounds', min: 1 },
+  { section: 'pixelart', field: 'size', min: 1, max: 16 },
+  { section: 'pixelart', field: 'gradientSteps', min: 2, max: 32 },
+  { section: 'pixelart', field: 'haloSteps', min: 0, max: 8 },
+  // 0 は「ハローが即座に消える」ため要領書は 0 < v <= 1 を要求している
+  { section: 'pixelart', field: 'haloAlphaFalloff', min: 0, max: 1, exclusiveMin: true },
+  { section: 'pixelart', field: 'alphaSteps', min: 2, max: 32 },
+  { section: 'pixelart', field: 'ditherRatioSteps', min: 1, max: 32 },
+  { section: 'pixelart', field: 'textScale', min: 1, max: 8 },
+  { section: 'pixelart', field: 'textMinBakePx', min: 1, max: 64 },
+  { section: 'pixelart', field: 'blockShadeAmount', min: 0, max: 255 },
+  { section: 'pixelart', field: 'spriteCacheMax', min: 1 },
+  { section: 'pixelart', field: 'textCacheMax', min: 1 },
 ]
 
 export function validateGameConfig(config: GameConfigMap): ConfigValidationResult {
@@ -124,12 +142,14 @@ export function validateGameConfig(config: GameConfigMap): ConfigValidationResul
   }
 
   // 数値範囲チェック
-  for (const { section, field, min, max } of RANGE_CHECKS) {
+  for (const { section, field, min, max, exclusiveMin } of RANGE_CHECKS) {
     const sec = config[section] as unknown as Record<string, unknown>
     if (!sec) continue
     const val: unknown = sec[field]
     if (typeof val !== 'number') continue
-    if (min !== undefined && val < min) {
+    if (min !== undefined && exclusiveMin && val <= min) {
+      errors.push(`config.${section}.${field} = ${val} は ${min} より大きい値が必要です`)
+    } else if (min !== undefined && !exclusiveMin && val < min) {
       errors.push(`config.${section}.${field} = ${val} は最小値 ${min} を下回っています`)
     }
     if (max !== undefined && val > max) {

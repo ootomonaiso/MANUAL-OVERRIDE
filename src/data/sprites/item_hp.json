@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "item_hp",
+  "w": 11,
+  "h": 11,
+  "palette": {
+    "H": "#ff5555",
+    "L": "#ffaaaa",
+    "G": "#ff8888"
+  },
+  "frames": {
+    "idle": [
+      "..HH...HH..",
+      ".HLHH.HHHH.",
+      "HHHHHHHHHHH",
+      "HHHHHHHHHHH",
+      "HHHHHHHHHHH",
+      ".HHHHHHHHH.",
+      "..HHHHHHH..",
+      "...HHHHH...",
+      "....HHH....",
+      ".....H.....",
+      "..........."
+    ]
+  }
+}

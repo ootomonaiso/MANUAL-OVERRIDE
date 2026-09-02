@@ -1,9 +1,10 @@
 import type { FeatureSystem } from '../../engine/FeatureSystem'
 import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import { Bullet, Hazard, rectsOverlap } from '../entities'
-import { SHOOT, HAZARD_VFX, BULLET_HELL } from '../../data/tunables'
+import { SHOOT, BULLET_HELL, PIXELART } from '../../data/tunables'
 import { getGenre, getActiveSystems } from '../../engine/GameRegistry'
 import { soundManager } from '../../plugins/SoundManager'
+import { PixelCanvas } from '../render'
 
 interface ShootState {
   bullets: Bullet[]
@@ -47,20 +48,27 @@ export class ShootFeature implements FeatureSystem {
   render(ctx: CanvasRenderingContext2D, world: MutableWorld): void {
     if (world.bullets.length === 0) return
     const isVertical = world.rules.scrollAxis === 'y'
+    const px = new PixelCanvas(ctx)
 
-    ctx.save()
-    ctx.shadowColor = '#ffff88'
-    ctx.shadowBlur = HAZARD_VFX.glowBlur * 0.6
-    ctx.fillStyle = '#ffff00'
     for (const b of world.bullets) {
       const sx = isVertical ? b.x : b.x - world.cameraX
+      const x = isVertical ? sx - 2 : sx - 4
+      const y = isVertical ? b.y - 4 : b.y - 2
+      const w = isVertical ? 4 : 8
+      const h = isVertical ? 8 : 4
+
+      // グロー（shadowBlur の代替）。係数(*0.6)は px.halo の共通段数に統一し不要になった
+      px.halo((expand, c) => px.rect(x - expand, y - expand, w + expand * 2, h + expand * 2, c),
+        '#ffff88', PIXELART.haloSteps)
+
+      // 弾本体（2階調のブロック: 中心は明色、両端1セルは中間色）
+      px.rect(x, y, w, h, '#e0e000')
       if (isVertical) {
-        ctx.fillRect(sx - 2, b.y - 4, 4, 8)
+        px.rect(x, y + 1, w, h - 2, '#ffff00')
       } else {
-        ctx.fillRect(sx - 4, b.y - 2, 8, 4)
+        px.rect(x + 1, y, w - 2, h, '#ffff00')
       }
     }
-    ctx.restore()
   }
 
   // ─── 内部: タイマー管理 ──────────────────────────────────────────

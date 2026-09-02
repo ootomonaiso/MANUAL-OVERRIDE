@@ -31,10 +31,10 @@ src/
 | ----------------- | ------------------------------------------- |
 | `id`              | `stg`                                       |
 | `label`           | シューティングゲーム                        |
-| `thresholds`      | `range: 5`, `enemy: 5`                      |
+| `thresholds`      | `range: 4`, `enemy: 4`                      |
 | `enableFeatures`  | `shoot`, `three_way`, `enemy_hp`            |
 | `disableFeatures` | `grid_stop`, `puzzle_solve`                 |
-| `scoreFormula`    | `kills * 120 + distance * 0.5 + combo * 80` |
+| `scoreFormula`    | `kills * 120 + distance * 0.5 + maxCombo * 80` |
 | `theme`           | `stg`                                       |
 | `bgColor`         | `#0d0d1a`                                   |
 | `environment`     | `space`                                     |
@@ -55,8 +55,8 @@ src/
 
 | パラメータ | 閾値  |
 | ---------- | ----- |
-| `range`    | 5以上 |
-| `enemy`    | 5以上 |
+| `range`    | 4以上 |
+| `enemy`    | 4以上 |
 
 ベイズ収束方式（主方式）では、各軸の閾値との乖離量から尤度を計算し事後確率で確定する。
 `range` と `enemy` の両軸を高めに押し上げる選択（「障害物を撃って倒せるようにする」など遠距離・敵対方向のカード）を重ねることでSTGに到達する。
@@ -104,7 +104,7 @@ float エントリは `floatAmpRange` を広めに取り、敵が上下に揺れ
 - 1キルあたり `baseScorePerKill(200) × combo` を加算。連続キルでコンボ倍率が伸びる
 - `comboTimer`（`comboResetTime` = 3.0秒）以内に次のキルがないとコンボは0にリセット
 - スコアポップアップを自機右上に表示
-- 最終スコア式（`scoreFormula`）: `kills * 120 + distance * 0.5 + combo * 80`
+- 最終スコア式（`scoreFormula`）: `kills * 120 + distance * 0.5 + maxCombo * 80`
 
 ### shoot.json の主なチューニング値
 
@@ -162,7 +162,7 @@ float エントリは `floatAmpRange` を広めに取り、敵が上下に揺れ
 ## 今後の改善候補
 
 - 移動速度の変更
-  - 現在、コード上にフックが無いらしいんで断念しました。近いうちにやるかも？
+  - 該当フックは現在 engine 側に存在しないため未対応。実装時は GenrePlugin フックの追加が必要。
 - アイテムの追加
 - チャージショット（`charge_shot`）・拡散ショット（`spread_shot`）・ボム（`bomb`）の本格運用
 - ボス戦の導入（`boss.json` 連携）

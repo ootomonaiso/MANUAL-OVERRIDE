@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "item_exp",
+  "w": 11,
+  "h": 11,
+  "palette": {
+    "S": "#ffcc00",
+    "G": "#ffcc00"
+  },
+  "frames": {
+    "idle": [
+      ".....S.....",
+      ".....S.....",
+      "....SSS....",
+      "...SSSSS...",
+      "..SSSSSSS..",
+      "SSSSSSSSSSS",
+      "..SSSSSSS..",
+      "...SSSSS...",
+      "....SSS....",
+      ".....S.....",
+      ".....S....."
+    ]
+  }
+}

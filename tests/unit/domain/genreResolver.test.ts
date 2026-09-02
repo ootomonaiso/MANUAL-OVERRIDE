@@ -183,7 +183,7 @@ describe('genreResolver - convergence', () => {
     expect(result).toBe('idle')
   })
 
-  it('tetris (combo: 4, craft: 4) が combo + craft カードで収束する', () => {
+  it('tetris (combo: 5, craft: 3) が combo + craft カードで収束する', () => {
     // combo:3+craft:1, combo:3+craft:1, combo:2+craft:1, combo:2+craft:1, combo:2+craft:1
     const params = buildParamsFromCards([
       { combo: 3, craft: 1 },
@@ -192,9 +192,9 @@ describe('genreResolver - convergence', () => {
       { combo: 2, craft: 1 },
       { combo: 2, craft: 1 },
     ])
-    expect(params.combo).toBeGreaterThanOrEqual(4)
-    expect(params.craft).toBeGreaterThanOrEqual(4)
-    // tetrisのthresholdsはcombo:4, craft:4。deviation=0でL=1.0。
+    expect(params.combo).toBeGreaterThanOrEqual(5)
+    expect(params.craft).toBeGreaterThanOrEqual(3)
+    // tetrisのthresholdsはcombo:5, craft:3。deviation=0でL=1.0。
     // ただし他のジャンル（idle: craft:7, puzzle: combo:6）もdeviation=0になる可能性がある
     // 収束するか確率確認
     const progress = resolveGenreProgress(params, GENRES, config)

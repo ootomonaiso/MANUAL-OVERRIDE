@@ -3,6 +3,7 @@ import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import { PLAYER_PHYSICS } from '../../data/gameBalance'
 import { PHYSICS, SCORE, EXTRA_MOVEMENT } from '../../data/tunables'
 import { soundManager } from '../../plugins/SoundManager'
+import { PixelCanvas } from '../render'
 
 const SLIDE_DURATION_SEC = 0.6
 const SLIDE_COOLDOWN_SEC = 0.4
@@ -124,24 +125,37 @@ export class MovementFeature implements FeatureSystem {
   render(ctx: CanvasRenderingContext2D, world: MutableWorld): void {
     const r = world.rules
     const p = world.player
+    const px = new PixelCanvas(ctx)
 
     // ─── ダッシュ軌跡 ──────────────────────────────────────────
+    // 位置(i*10)とサイズは無変更。3枚に段階的な明度差を付けてドット絵らしくする
     if (r.features.has('dash') && this.dash.timer > 0) {
-      ctx.save()
-      ctx.globalAlpha = (this.dash.timer / PLAYER_PHYSICS.dashDurationSec) * EXTRA_MOVEMENT.dashTrailAlphaMax
-      ctx.fillStyle = EXTRA_MOVEMENT.dashTrailParticleColor
-      for (let i = 1; i <= 3; i++) ctx.fillRect(p.x - i * 10, p.y + 6, p.w * 0.8, p.h - 12)
-      ctx.restore()
+      const alpha = (this.dash.timer / PLAYER_PHYSICS.dashDurationSec) * EXTRA_MOVEMENT.dashTrailAlphaMax
+      px.withAlpha(alpha, () => {
+        for (let i = 1; i <= 3; i++) {
+          const shade = this._shade(EXTRA_MOVEMENT.dashTrailParticleColor, -20 * (i - 1))
+          px.rect(p.x - i * 10, p.y + 6, p.w * 0.8, p.h - 12, shade)
+        }
+      })
     }
 
     // ─── スライド中は簡易エフェクト ────────────────────────────
     if (r.features.has('slide') && this.slide.active) {
-      ctx.save()
-      ctx.globalAlpha = 0.3
-      ctx.fillStyle = '#cc9966'
-      ctx.fillRect(p.x, p.y + p.h - 2, p.w, 2)
-      ctx.restore()
+      px.withAlpha(0.3, () => {
+        px.rect(p.x, p.y + p.h - 2, p.w, 2, '#cc9966')
+      })
     }
+  }
+
+  // hex 色を amount だけ増減した rgb 文字列を返す（非 hex はそのまま返す）
+  private _shade(hex: string, amount: number): string {
+    if (!hex.startsWith('#') || hex.length < 7) return hex
+    const r = parseInt(hex.slice(1, 3), 16)
+    const g = parseInt(hex.slice(3, 5), 16)
+    const b = parseInt(hex.slice(5, 7), 16)
+    if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return hex
+    const cl = (v: number): number => Math.max(0, Math.min(255, v + amount))
+    return `rgb(${cl(r)},${cl(g)},${cl(b)})`
   }
 
   private _updateSlide(world: MutableWorld, input: InputSnapshot, _dt: number): void {

@@ -9,6 +9,10 @@
 import { GenrePluginBase } from '../engine/GenrePluginBase'
 import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
+import { PixelCanvas } from '../game/render'
+
+// ダイバーのフィン（バタ足）アニメーションのフレーム数
+const SWIM_FRAME_COUNT = 2
 
 export class AquaticPlugin extends GenrePluginBase {
   readonly id: GenreId = 'aquatic'
@@ -50,165 +54,91 @@ export class AquaticPlugin extends GenrePluginBase {
   ]
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // 遠景：深海底の岩山シルエット
-    ctx.globalAlpha = 0.2
-    ctx.fillStyle = this.farLayerColor
-    ctx.beginPath()
-    ctx.moveTo(0, gY)
-    const step = 35
-    for (let sx = -step; sx <= W + step; sx += step) {
-      const wx = sx - offsetX * 0.05
-      const mh = Math.sin(wx * 0.006) * 65 + Math.sin(wx * 0.014) * 30 + Math.sin(wx * 0.025) * 15 + 80
-      ctx.lineTo(sx, gY - mh)
-    }
-    ctx.lineTo(W + step, gY)
-    ctx.closePath()
-    ctx.fill()
-    ctx.globalAlpha = 1
+    const px = new PixelCanvas(ctx)
 
-    // 光の柱（水面からの光）
+    // 遠景：深海底の岩山シルエット（式は無変更、サンプリングを px.ridge に）
+    px.withAlpha(0.2, () => {
+      px.ridge(-35, W + 35, gY, (sx) => {
+        const wx = sx - offsetX * 0.05
+        return Math.sin(wx * 0.006) * 65 + Math.sin(wx * 0.014) * 30 + Math.sin(wx * 0.025) * 15 + 80
+      }, this.farLayerColor)
+    })
+
+    // 光の柱（水面からの光）。斜めの帯を階段状のブロックで表現する
     const t = performance.now() / 2000
-    ctx.globalAlpha = 0.05
-    ctx.fillStyle = '#88ddff'
-    for (let i = 0; i < 5; i++) {
-      const lx = ((i * W * 0.22 - offsetX * 0.02 + t * 60) % (W + 80)) - 40
-      const beamW = 20 + i * 8
-      ctx.beginPath()
-      ctx.moveTo(lx - beamW / 2, 0)
-      ctx.lineTo(lx + beamW / 2, 0)
-      ctx.lineTo(lx + beamW, gY)
-      ctx.lineTo(lx - beamW, gY)
-      ctx.closePath()
-      ctx.fill()
-    }
-    ctx.globalAlpha = 1
+    px.withAlpha(0.4, () => {
+      for (let i = 0; i < 5; i++) {
+        const lx = ((i * W * 0.22 - offsetX * 0.02 + t * 60) % (W + 80)) - 40
+        const beamW = 20 + i * 8
+        px.dither(lx - beamW, 0, beamW * 2, gY, '#88ddff', 'transparent', 0.5)
+      }
+    })
   }
 
   drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // 中景：珊瑚と海藻
-    ctx.globalAlpha = 0.6
-    const sector = Math.floor(offsetX / 160)
-    for (let s = sector - 1; s <= sector + 5; s++) {
-      const h = (s * 1531) & 0xffff
-      const cx = s * 160 - offsetX + (h % 90)
-      const coralH = 35 + (h >> 4) % 50
-      const coralType = h & 0x3
+    const px = new PixelCanvas(ctx)
 
-      if (coralType === 0) {
-        // ブランチ珊瑚（枝分かれ）
-        ctx.strokeStyle = '#00664a'
-        ctx.lineWidth = 3
-        ctx.beginPath()
-        ctx.moveTo(cx, gY)
-        ctx.lineTo(cx, gY - coralH)
-        ctx.stroke()
-        ctx.lineWidth = 2
-        ctx.beginPath()
-        ctx.moveTo(cx, gY - coralH * 0.5)
-        ctx.lineTo(cx - 12, gY - coralH * 0.8)
-        ctx.stroke()
-        ctx.beginPath()
-        ctx.moveTo(cx, gY - coralH * 0.6)
-        ctx.lineTo(cx + 10, gY - coralH * 0.85)
-        ctx.stroke()
-      } else if (coralType === 1) {
-        // 海藻（くねくね）
-        ctx.strokeStyle = '#004d33'
-        ctx.lineWidth = 2.5
-        ctx.beginPath()
-        ctx.moveTo(cx, gY)
-        for (let y = 0; y <= coralH; y += 8) {
-          const wave = Math.sin(y * 0.3 + s) * 8
-          ctx.lineTo(cx + wave, gY - y)
+    // 中景：珊瑚と海藻（配置ハッシュ・波形の式は無変更）
+    const sector = Math.floor(offsetX / 160)
+    px.withAlpha(0.6, () => {
+      for (let s = sector - 1; s <= sector + 5; s++) {
+        const h = (s * 1531) & 0xffff
+        const cx = s * 160 - offsetX + (h % 90)
+        const coralH = 35 + (h >> 4) % 50
+        const coralType = h & 0x3
+
+        if (coralType === 0) {
+          // ブランチ珊瑚（枝分かれ）
+          px.line(cx, gY, cx, gY - coralH, '#00664a', 1)
+          px.line(cx, gY - coralH * 0.5, cx - 12, gY - coralH * 0.8, '#00664a', 1)
+          px.line(cx, gY - coralH * 0.6, cx + 10, gY - coralH * 0.85, '#00664a', 1)
+        } else if (coralType === 1) {
+          // 海藻（くねくね）。Math.sin による x オフセットはそのまま使い、
+          // 各セグメントを px.line で繋ぐ（スナップによりカクカクした揺れになるのは意図通り）
+          let prevX = cx, prevY = gY
+          for (let y = 8; y <= coralH; y += 8) {
+            const wave = Math.sin(y * 0.3 + s) * 8
+            const nx = cx + wave, ny = gY - y
+            px.line(prevX, prevY, nx, ny, '#004d33', 1)
+            prevX = nx; prevY = ny
+          }
+        } else {
+          // ファン珊瑚（扇形）。弧のストロークを px.arcBlocks に置換
+          px.rect(cx - 2, gY - coralH, 4, coralH, '#003d55')
+          px.arcBlocks(cx, gY - coralH, coralH * 0.35, Math.PI * 1.1, Math.PI * 2, '#005577', 1)
         }
-        ctx.stroke()
-      } else {
-        // ファン珊瑚（扇形）
-        ctx.fillStyle = '#003d55'
-        ctx.fillRect(cx - 2, gY - coralH, 4, coralH)
-        ctx.strokeStyle = '#005577'
-        ctx.lineWidth = 1.5
-        ctx.beginPath()
-        ctx.arc(cx, gY - coralH, coralH * 0.35, Math.PI * 1.1, 0, false)
-        ctx.stroke()
       }
-    }
-    ctx.globalAlpha = 1
+    })
 
     // 泡（上に流れる）
     const t = performance.now() / 1000
-    ctx.globalAlpha = 0.25
-    ctx.fillStyle = '#66ccff'
-    for (let i = 0; i < 8; i++) {
-      const bx = ((i * 120 + offsetX * 0.15) % W + W) % W
-      const by = gY - 30 - ((t * (30 + i * 5) + i * 80) % (gY - 20))
-      const br = 2 + (i % 3)
-      ctx.beginPath()
-      ctx.arc(bx, by, br, 0, Math.PI * 2)
-      ctx.fill()
-    }
-    ctx.globalAlpha = 1
+    px.withAlpha(0.25, () => {
+      for (let i = 0; i < 8; i++) {
+        const bx = ((i * 120 + offsetX * 0.15) % W + W) % W
+        const by = gY - 30 - ((t * (30 + i * 5) + i * 80) % (gY - 20))
+        const br = 2 + (i % 3)
+        px.circle(bx, by, br, '#66ccff')
+      }
+    })
   }
 
   drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, _onGround: boolean, runCycle: number): void {
+    const px = new PixelCanvas(ctx)
     const t = performance.now() / 80
-    const swim = Math.sin(runCycle * Math.PI * 2) * 4
 
     // 影
-    ctx.fillStyle = 'rgba(0,30,60,0.3)'
-    ctx.beginPath()
-    ctx.ellipse(w / 2, h + 2, w * 0.38, 3, 0, 0, Math.PI * 2)
-    ctx.fill()
+    px.ellipse(w / 2, h + 2, w * 0.38, 3, 'rgba(0,30,60,0.3)')
 
-    // ダイバースーツ（青）
-    ctx.fillStyle = '#0044aa'
-    this._roundRect(ctx, 3, h * 0.36, w - 6, h * 0.44, 4)
-    ctx.fill()
+    // フィンのバタ足は onGround を問わず常時アニメーションする（元コードの挙動を踏襲）
+    const frame = Math.floor(runCycle * SWIM_FRAME_COUNT) % 2 === 0 ? 'run_a' : 'run_b'
+    px.sprite('player_diver', 0, 0, w, h, { frame })
 
-    // タンク（酸素ボンベ）
-    ctx.fillStyle = '#226699'
-    ctx.fillRect(w * 0.08, h * 0.34, w * 0.2, h * 0.38)
-
-    // 頭（マスク）
-    ctx.fillStyle = '#003377'
-    ctx.beginPath()
-    ctx.arc(w * 0.58, h * 0.2, h * 0.2, 0, Math.PI * 2)
-    ctx.fill()
-
-    // マスクガラス（透明感）
-    ctx.fillStyle = '#88ccff'
-    ctx.globalAlpha = 0.75
-    ctx.beginPath()
-    ctx.arc(w * 0.62, h * 0.19, h * 0.12, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.globalAlpha = 1
-
-    // フィン（足ひれ）
-    ctx.fillStyle = '#0055cc'
-    ctx.beginPath()
-    ctx.moveTo(w * 0.32, h + swim)
-    ctx.lineTo(w * 0.08, h + 10 + swim)
-    ctx.lineTo(w * 0.26, h - 5 + swim)
-    ctx.closePath()
-    ctx.fill()
-    ctx.beginPath()
-    ctx.moveTo(w * 0.62, h + swim)
-    ctx.lineTo(w * 0.86, h + 10 + swim)
-    ctx.lineTo(w * 0.68, h - 5 + swim)
-    ctx.closePath()
-    ctx.fill()
-
-    // 気泡
+    // 気泡（スプライト外に残す。位置がスプライトの箱の外＝頭上にはみ出すため）
     const bubbleAlpha = 0.5 + Math.sin(t * 0.05) * 0.2
-    ctx.globalAlpha = bubbleAlpha
-    ctx.fillStyle = '#aaddff'
-    ctx.beginPath()
-    ctx.arc(w * 0.78, h * 0.08, 3, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.beginPath()
-    ctx.arc(w * 0.85, h * 0.01, 2, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.globalAlpha = 1
+    px.withAlpha(bubbleAlpha, () => {
+      px.circle(w * 0.78, h * 0.08, 3, '#aaddff')
+      px.circle(w * 0.85, h * 0.01, 2, '#aaddff')
+    })
   }
 }
 

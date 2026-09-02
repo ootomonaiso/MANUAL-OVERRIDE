@@ -149,6 +149,8 @@ if (input.keys.has('z')) { /* Z を長押し */ }
 | `onPlayerJump(world)` | world | ジャンプの瞬間 | ジャンプ連動エフェクト |
 | `onSafeHazardTouch(world, hazard, screenX)` | world, hazard, x | 安全色接触時 | color_touch 得点・消滅 |
 
+> ハザード破壊時の演出フック `onHazardDestroyed` は `FeatureSystem` ではなく `GenrePlugin` インターフェースのメソッド（melee_kill / shoot / survival 等が `plugin.onHazardDestroyed?.()` を呼ぶ）。
+
 ---
 
 ## 実装例: カスタムシュートシステム

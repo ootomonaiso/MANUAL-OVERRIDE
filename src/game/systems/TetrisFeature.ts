@@ -21,6 +21,7 @@ import type { MutableWorld, InputSnapshot } from '../../engine/types'
 import type { ScrollDirection } from '../../domain/types'
 import { TETRIS_COLORS } from './tetris-colors'
 import { soundManager } from '../../plugins/SoundManager'
+import { PixelCanvas } from '../render'
 
 // ─── グリッド定数 ───────────────────────────────────────────────────
 const COLS = 10
@@ -568,29 +569,20 @@ export class TetrisFeature implements FeatureSystem {
     this._calcBoardPosition(W, H)
 
     const { spawnX, spawnY, boardWidth, boardHeight } = this.state
+    const px = new PixelCanvas(ctx)
 
-    ctx.save()
-
-    // ─── ボード背景 ───────────────────────────────────────────
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)'
-    ctx.fillRect(spawnX - 4, spawnY - 4, boardWidth + 8, boardHeight + 8)
+    // ─── ボード背景 ─────────────────────────────────────────
+    // 均一な半透明塗り（00-rendering-system.md D3）のためドット化はせず、座標のスナップのみ
+    px.rect(spawnX - 4, spawnY - 4, boardWidth + 8, boardHeight + 8, 'rgba(0, 0, 0, 0.85)')
 
     // ─── グリッド線 ───────────────────────────────────────────
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)'
-    ctx.lineWidth = 1
     for (let c = 0; c <= COLS; c++) {
       const x = spawnX + c * CELL_SIZE
-      ctx.beginPath()
-      ctx.moveTo(x, spawnY)
-      ctx.lineTo(x, spawnY + boardHeight)
-      ctx.stroke()
+      px.rect(x, spawnY, 1, boardHeight, 'rgba(255, 255, 255, 0.06)')
     }
     for (let r = 0; r <= ROWS; r++) {
       const y = spawnY + r * CELL_SIZE
-      ctx.beginPath()
-      ctx.moveTo(spawnX, y)
-      ctx.lineTo(spawnX + boardWidth, y)
-      ctx.stroke()
+      px.rect(spawnX, y, boardWidth, 1, 'rgba(255, 255, 255, 0.06)')
     }
 
     // ─── 固定ブロック ─────────────────────────────────────────
@@ -598,7 +590,7 @@ export class TetrisFeature implements FeatureSystem {
       for (let c = 0; c < COLS; c++) {
         const color = this.state.grid[r][c]
         if (color === null) continue
-        this._drawBlock(ctx, spawnX + c * CELL_SIZE, spawnY + r * CELL_SIZE, color)
+        this._drawBlock(px, spawnX + c * CELL_SIZE, spawnY + r * CELL_SIZE, color)
       }
     }
 
@@ -609,10 +601,10 @@ export class TetrisFeature implements FeatureSystem {
         const c = this.state.piece.col + dc
         const r = this.state.piece.row + dr
         if (r < 0) continue
-        this._drawBlock(ctx, spawnX + c * CELL_SIZE, spawnY + r * CELL_SIZE, this.state.piece.def.color)
+        this._drawBlock(px, spawnX + c * CELL_SIZE, spawnY + r * CELL_SIZE, this.state.piece.def.color)
       }
 
-      // ゴースト（落下予測位置）
+      // ゴースト（落下予測位置）。計算ロジックは無変更
       const ghost = { ...this.state.piece }
       while (true) {
         const testGhost = { ...ghost, row: ghost.row + 1 }
@@ -623,48 +615,44 @@ export class TetrisFeature implements FeatureSystem {
         }
       }
       const ghostBlocks = getBlocks(ghost)
-      // M3: use save/restore for globalAlpha to prevent corruption
-      ctx.save()
-      ctx.globalAlpha = 0.2
+      // 半透明の塗りつぶしではなく、輪郭のみ（外周1セル）で落下予測位置を示す
       for (const [dc, dr] of ghostBlocks) {
         const c = ghost.col + dc
         const r = ghost.row + dr
         if (r < 0) continue
-        this._drawBlock(ctx, spawnX + c * CELL_SIZE, spawnY + r * CELL_SIZE, this.state.piece.def.color)
+        this._drawGhostBlock(px, spawnX + c * CELL_SIZE, spawnY + r * CELL_SIZE, this.state.piece.def.color)
       }
-      ctx.restore()
     }
 
     // ─── ボーダー ─────────────────────────────────────────────
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
-    ctx.lineWidth = 2
-    ctx.strokeRect(spawnX - 2, spawnY - 2, boardWidth + 4, boardHeight + 4)
+    px.line(spawnX - 2, spawnY - 2, spawnX + boardWidth + 2, spawnY - 2, 'rgba(255, 255, 255, 0.3)', 1)
+    px.line(spawnX - 2, spawnY + boardHeight + 2, spawnX + boardWidth + 2, spawnY + boardHeight + 2, 'rgba(255, 255, 255, 0.3)', 1)
+    px.line(spawnX - 2, spawnY - 2, spawnX - 2, spawnY + boardHeight + 2, 'rgba(255, 255, 255, 0.3)', 1)
+    px.line(spawnX + boardWidth + 2, spawnY - 2, spawnX + boardWidth + 2, spawnY + boardHeight + 2, 'rgba(255, 255, 255, 0.3)', 1)
 
     // ─── スコア表示 ───────────────────────────────────────────
-    ctx.fillStyle = '#ffffff'
-    ctx.font = 'bold 14px "Courier New", monospace'
-    ctx.textAlign = 'right'
-    ctx.fillText(`SCORE: ${this.state.totalScore}`, spawnX + boardWidth + 100, spawnY + 20)
-    ctx.fillText(`LINES: ${this.state.linesCleared}`, spawnX + boardWidth + 100, spawnY + 40)
+    px.text(`SCORE: ${this.state.totalScore}`, spawnX + boardWidth + 100, spawnY + 20, {
+      font: 'bold 14px "Courier New", monospace', fill: '#ffffff', align: 'right',
+    })
+    px.text(`LINES: ${this.state.linesCleared}`, spawnX + boardWidth + 100, spawnY + 40, {
+      font: 'bold 14px "Courier New", monospace', fill: '#ffffff', align: 'right',
+    })
 
     // ─── ゲームオーバー表示 ───────────────────────────────────
     if (this.state.gameOver) {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
-      ctx.fillRect(spawnX, spawnY, boardWidth, boardHeight)
+      // 均一な半透明塗り（D3）のためドット化はせず、座標のスナップのみ
+      px.rect(spawnX, spawnY, boardWidth, boardHeight, 'rgba(0, 0, 0, 0.7)')
 
-      ctx.fillStyle = '#ff4444'
-      ctx.font = 'bold 28px "Courier New", monospace'
-      ctx.textAlign = 'center'
-      ctx.fillText('GAME OVER', spawnX + boardWidth / 2, spawnY + boardHeight / 2 - 10)
-
-      ctx.fillStyle = '#ffffff'
-      ctx.font = '16px "Courier New", monospace'
-      ctx.fillText(`Score: ${this.state.totalScore}`, spawnX + boardWidth / 2, spawnY + boardHeight / 2 + 20)
-      ctx.fillText(`Lines: ${this.state.linesCleared}`, spawnX + boardWidth / 2, spawnY + boardHeight / 2 + 45)
-      ctx.textAlign = 'left'
+      px.text('GAME OVER', spawnX + boardWidth / 2, spawnY + boardHeight / 2 - 10, {
+        font: 'bold 28px "Courier New", monospace', fill: '#ff4444', align: 'center',
+      })
+      px.text(`Score: ${this.state.totalScore}`, spawnX + boardWidth / 2, spawnY + boardHeight / 2 + 20, {
+        font: '16px "Courier New", monospace', fill: '#ffffff', align: 'center',
+      })
+      px.text(`Lines: ${this.state.linesCleared}`, spawnX + boardWidth / 2, spawnY + boardHeight / 2 + 45, {
+        font: '16px "Courier New", monospace', fill: '#ffffff', align: 'center',
+      })
     }
-
-    ctx.restore()
   }
 
   onPlayerHit(): void {
@@ -685,21 +673,21 @@ export class TetrisFeature implements FeatureSystem {
     this.state.boardHeight = boardH
   }
 
-  private _drawBlock(ctx: CanvasRenderingContext2D, x: number, y: number, color: string): void {
+  // 立体ブロック表現（TetrisPlugin のマスコットと同じ px.block に統一）
+  private _drawBlock(px: PixelCanvas, x: number, y: number, color: string): void {
     const inset = 1
-    // メインブロック
-    ctx.fillStyle = color
-    ctx.fillRect(x + inset, y + inset, CELL_SIZE - inset * 2, CELL_SIZE - inset * 2)
+    px.block(x + inset, y + inset, CELL_SIZE - inset * 2, CELL_SIZE - inset * 2, color)
+  }
 
-    // ハイライト（上部・左部）
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)'
-    ctx.fillRect(x + inset, y + inset, CELL_SIZE - inset * 2, 3)
-    ctx.fillRect(x + inset, y + inset, 3, CELL_SIZE - inset * 2)
-
-    // シャドウ（下部・右部）
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)'
-    ctx.fillRect(x + inset, y + CELL_SIZE - inset - 3, CELL_SIZE - inset * 2, 3)
-    ctx.fillRect(x + CELL_SIZE - inset - 3, y + inset, 3, CELL_SIZE - inset * 2)
+  // ゴーストピース: 半透明の塗りつぶしではなく、外周1セルの輪郭のみで落下予測位置を示す
+  private _drawGhostBlock(px: PixelCanvas, x: number, y: number, color: string): void {
+    const inset = 1
+    const w = CELL_SIZE - inset * 2
+    const h = CELL_SIZE - inset * 2
+    px.line(x + inset, y + inset, x + inset + w, y + inset, color, 1)
+    px.line(x + inset, y + inset + h, x + inset + w, y + inset + h, color, 1)
+    px.line(x + inset, y + inset, x + inset, y + inset + h, color, 1)
+    px.line(x + inset + w, y + inset, x + inset + w, y + inset + h, color, 1)
   }
 }
 

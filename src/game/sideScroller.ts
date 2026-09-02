@@ -1,8 +1,8 @@
 import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule, LearningEffect, FeatureId } from '../domain/types'
 import type { MutableWorld, GameStats } from '../engine/types'
-import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup } from './entities'
+import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup, type HazardShape } from './entities'
 import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL, BASE_SCROLL_SPEED, DEFAULT_SCORE_FORMULA } from '../data/gameBalance'
-import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY, HUD_SAFEZONE } from '../data/tunables'
+import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY, PIXELART, HUD_SAFEZONE } from '../data/tunables'
 import { classifyHudLayout, computeSafeZone, type SafeZone } from '../domain/hudLayout'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
 import { resolveWeight } from '../engine/types'
@@ -12,6 +12,8 @@ import { evaluateLearningRules, describeEffect } from '../domain/LearningSystem'
 import { GENRES } from '../data/genres'
 import { InputManager } from './InputManager'
 import { ParticleSystem } from './ParticleSystem'
+import { PixelCanvas } from './render'
+import { SPRITES } from '../data/sprites'
 // ジャンルプラグインとフィーチャーシステムを一括登録
 import '../genres/index'
 import '../game/systems/index'
@@ -58,6 +60,9 @@ const INITIAL_LEARNING_DELAY_SEC = 0.5
 // ミリ秒 → 秒換算（spawnDensity の interval は ms、スクロール計算は px/s で一致させるため）
 const MS_TO_SEC = 1000
 
+// _drawRect の四隅ベベル幅（docs/pixelart-rebuild/01-sideScroller.md「1セル分の階段状ベベル」）
+const HAZARD_RECT_BEVEL_CELLS = 1
+
 // セーフゾーン境界の指数的追従係数。境界値は目標へ 1-exp(-k*dt/transitionSec) で
 // 補間され、約 transitionSec 経過で ~98% に達する（急な出現を防ぐ, 仕様 2-F/3）。
 const SAFE_ZONE_SETTLE_K = 4
@@ -85,6 +90,7 @@ export function isHazardous(beatHazardInverted: boolean, hasBeatHazard: boolean,
 export class SideScroller {
   private canvas: HTMLCanvasElement
   private ctx: CanvasRenderingContext2D
+  private px: PixelCanvas
   private rules: RuntimeRules
   private player: Player
   private hazards: Hazard[] = []
@@ -191,6 +197,7 @@ export class SideScroller {
     const ctx2d = canvas.getContext('2d')
     if (!ctx2d) throw new Error('Canvas 2D context unavailable')
     this.ctx = ctx2d
+    this.px = new PixelCanvas(ctx2d)
     this.rules = rules
 
     const gY = canvas.height - PHYSICS.groundYOffset
@@ -240,6 +247,10 @@ export class SideScroller {
     this._keyStack.clear()
     this._pendingLearningMsg = null
     this._gameStats.beatHazardInverted = false
+    // stealthHidden: ルール差し替え時にリセット（#254 follow-up。
+    // 隠密中のプレイヤーが stealth_mode 無効ジャンルへ確定すると、
+    // フラグが true のまま残り新ジャンルで永久無敵になる問題を防止）
+    this.stealthHidden = false
     // ManualVersion から learningRules を取得
     if (manual?.learningRules) {
       this.learningRules = JSON.parse(JSON.stringify(manual.learningRules))
@@ -650,7 +661,9 @@ export class SideScroller {
         if (!rectsOverlap(p.rect, h.rect)) continue
         const isHazard = isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
         if (isHazard) {
-          if (this.stealthHidden) { /* 隠密中は被弾しない #254 */ }
+          // stealth_mode 無効ジャンル（tetris / tower_def / idle 等）では
+          // 隠密保護を適用しない。#254 follow-up
+          if (this.stealthHidden && r.features.has('stealth_mode')) { /* 隠密中は被弾しない #254 */ }
           else {
             this._onPlayerHit(p)
             if (this.dead) return true
@@ -818,7 +831,9 @@ export class SideScroller {
         if (!rectsOverlap(p.rect, hRect)) continue
         const isHazard = isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
         if (isHazard) {
-          if (this.stealthHidden) { /* 隠密中は被弾しない #254 */ }
+          // stealth_mode 無効ジャンル（tetris / tower_def / idle 等）では
+          // 隠密保護を適用しない。#254 follow-up
+          if (this.stealthHidden && r.features.has('stealth_mode')) { /* 隠密中は被弾しない #254 */ }
           else {
             this._onPlayerHit(p)
             if (this.dead) return true
@@ -887,6 +902,10 @@ export class SideScroller {
     const r = this.rules
     const gY = H - PHYSICS.groundYOffset
 
+    // canvas.width への代入で ctx の状態がリセットされるため毎フレーム設定する
+    // （docs/pixelart-rebuild/00-rendering-system.md §5「imageSmoothingEnabled の扱い」）
+    ctx.imageSmoothingEnabled = false
+
     ctx.save()
     ctx.translate(this.shakeX, this.shakeY)
 
@@ -927,12 +946,8 @@ export class SideScroller {
 
     // ─── スコアポップアップ ───────────────────────────────────────
     for (const sp of this.scorePopups) {
-      ctx.globalAlpha = sp.life
-      ctx.fillStyle = sp.color
-      ctx.font = 'bold 15px "Courier New", monospace'
-      ctx.fillText(sp.text, sp.x, sp.y)
+      this.px.text(sp.text, sp.x, sp.y, { font: UI.popupFont, fill: sp.color, alpha: sp.life })
     }
-    ctx.globalAlpha = 1
 
     // ─── プレイヤー ───────────────────────────────────────────────
     if (!this.dead) this._drawPlayer()
@@ -957,16 +972,13 @@ export class SideScroller {
 
       if (this.deathTimer > UI.deathTextDelayS) {
         const alpha = Math.min(1, (this.deathTimer - UI.deathTextDelayS) * UI.deathTextFadeSpeed)
-        ctx.globalAlpha = alpha
-        ctx.fillStyle = '#ffffff'
-        ctx.font = UI.deathTitleFont
-        ctx.textAlign = 'center'
-        ctx.fillText('GAME OVER', W / 2, H / 2 - 10)
-        ctx.font = UI.deathSubFont
-        ctx.fillStyle = `rgba(255,255,255,${UI.deathSubTextAlpha})`
-        ctx.fillText('説明書を投げてください', W / 2, H / 2 + 28)
-        ctx.textAlign = 'left'
-        ctx.globalAlpha = 1
+        this.px.text('GAME OVER', W / 2, H / 2 - 10, { font: UI.deathTitleFont, fill: '#ffffff', align: 'center', alpha })
+        this.px.text('説明書を投げてください', W / 2, H / 2 + 28, {
+          font: UI.deathSubFont,
+          fill: `rgba(255,255,255,${UI.deathSubTextAlpha})`,
+          align: 'center',
+          alpha,
+        })
       }
     }
 
@@ -1022,11 +1034,7 @@ export class SideScroller {
 
     if (isVertical) {
       // 縦モード: 全画面を空グラデーションで塗り、地面ラインなし
-      const grad = ctx.createLinearGradient(0, 0, 0, H)
-      grad.addColorStop(0, plugin.skyColors[0])
-      grad.addColorStop(1, plugin.skyColors[1])
-      ctx.fillStyle = grad
-      ctx.fillRect(0, 0, W, H)
+      this.px.bandGradient(0, 0, W, H, [[0, plugin.skyColors[0]], [1, plugin.skyColors[1]]], 'v', PIXELART.gradientSteps)
       if (plugin.starColor) {
         this._drawStarField(this.distance * CAMERA.parallaxStars, W, H * 0.9, plugin)
       }
@@ -1042,11 +1050,7 @@ export class SideScroller {
     }
 
     // 空グラデーション
-    const grad = ctx.createLinearGradient(0, 0, 0, gY)
-    grad.addColorStop(0, plugin.skyColors[0])
-    grad.addColorStop(1, plugin.skyColors[1])
-    ctx.fillStyle = grad
-    ctx.fillRect(0, 0, W, gY)
+    this.px.bandGradient(0, 0, W, gY, [[0, plugin.skyColors[0]], [1, plugin.skyColors[1]]], 'v', PIXELART.gradientSteps)
 
     // 星フィールド
     const parallaxStars = plugin.parallax?.stars ?? CAMERA.parallaxStars
@@ -1064,7 +1068,6 @@ export class SideScroller {
   }
 
   private _drawStarField(offsetX: number, W: number, maxY: number, plugin: import('../engine/GenrePlugin').GenrePlugin): void {
-    const ctx = this.ctx
     const cfg = plugin.starConfig
     const sectorW   = BACKGROUND.starSectorWidth
     const density   = cfg?.density    ?? BACKGROUND.starCountPerSector
@@ -1076,7 +1079,7 @@ export class SideScroller {
       : BACKGROUND.starAlphaStep
 
     const sector = Math.floor(offsetX / sectorW)
-    ctx.fillStyle = plugin.starColor ?? '#ffffff'
+    const color = plugin.starColor ?? '#ffffff'
     for (let s = sector - 1; s <= sector + 2; s++) {
       const baseX = s * sectorW - offsetX
       for (let i = 0; i < density; i++) {
@@ -1085,13 +1088,13 @@ export class SideScroller {
         const y = ((h * 22695477 + 1) & 0xffff) % Math.floor(maxY)
         const size = sizeMin + ((h >> 12) % (sizeRange + 1))
         const alpha = alphaMin + ((h >> 8) & 3) * alphaStep
-        ctx.globalAlpha = alpha
-        ctx.beginPath()
-        ctx.arc(x, y, size, 0, Math.PI * 2)
-        ctx.fill()
+        // px.rect が内部でデバイス空間スナップするため、サイズ量子化はここで行わない
+        // （00-rendering-system.md §3 のスナップ規則に一本化する）
+        this.px.withAlpha(alpha, () => {
+          this.px.rect(x - size, y - size, size * 2, size * 2, color)
+        })
       }
     }
-    ctx.globalAlpha = 1
   }
 
   // ─── 環境オーバーレイ（environment 値に応じた色調補正） ─────────────
@@ -1113,25 +1116,18 @@ export class SideScroller {
   }
 
   private _drawGround(W: number, H: number, gY: number, gTop: string, gBot: string): void {
-    const ctx = this.ctx
-    const gGrad = ctx.createLinearGradient(0, gY, 0, H)
-    gGrad.addColorStop(0, gTop)
-    gGrad.addColorStop(1, gBot)
-    ctx.fillStyle = gGrad
-    ctx.fillRect(0, gY, W, H - gY)
+    this.px.bandGradient(0, gY, W, H - gY, [[0, gTop], [1, gBot]], 'v', PIXELART.gradientSteps)
 
     // 地面ライン
     const plugin = getGenre(this.rules.genre)
     const lineAlpha = plugin.groundLineAlpha ?? BACKGROUND.groundLineAlpha
     const dashAlpha = plugin.groundDashAlpha ?? BACKGROUND.dashAlpha
-    ctx.fillStyle = `rgba(255,255,255,${lineAlpha})`
-    ctx.fillRect(0, gY, W, BACKGROUND.groundLineHeight)
+    this.px.rect(0, gY, W, BACKGROUND.groundLineHeight, `rgba(255,255,255,${lineAlpha})`)
 
     // 流れる横ダッシュ模様
     const startX = -(this.cameraX * CAMERA.parallaxGround) % BACKGROUND.dashInterval
-    ctx.fillStyle = `rgba(255,255,255,${dashAlpha})`
     for (let x = startX; x < W; x += BACKGROUND.dashInterval) {
-      ctx.fillRect(x, gY + BACKGROUND.dashOffsetY, BACKGROUND.dashLength, BACKGROUND.dashHeight)
+      this.px.rect(x, gY + BACKGROUND.dashOffsetY, BACKGROUND.dashLength, BACKGROUND.dashHeight, `rgba(255,255,255,${dashAlpha})`)
     }
   }
 
@@ -1197,97 +1193,125 @@ export class SideScroller {
     const hCfg = pluginH.hazardConfig
     const pulseSpd = hCfg?.pulseSpeed    ?? HAZARD_VFX.pulseSpeed
     const pulseAmp = hCfg?.pulseAmplitude ?? HAZARD_VFX.pulseAmplitude
-    const glowBlur = hCfg?.glowBlur      ?? HAZARD_VFX.glowBlur
     const pulse = Math.sin(h.pulse * pulseSpd) * pulseAmp + 1
 
     ctx.save()
 
-    // グロー効果
-    ctx.shadowColor = glow
-    ctx.shadowBlur = glowBlur
+    // ジャンル固有のハザード描画フック。true ならデフォルト描画（形状・HPバー）をスキップ
+    if (pluginH.drawHazard?.(ctx, h, sx, this._getWorld())) {
+      ctx.restore()
+      return
+    }
 
-    ctx.fillStyle = color
+    // グロー効果（shadowBlur の代替。px.halo が段階的に外側へ拡張して重ねる）
+    this._drawHazardHalo(h.shape, sx, y, h.w, h.h, pulse, glow)
 
     switch (h.shape) {
       case 'spike':
-        this._drawSpike(ctx, sx, y, h.w, h.h, color)
+        this._drawSpike(sx, y, h.w, h.h, color)
         break
       case 'pillar':
-        this._drawPillar(ctx, sx, y, h.w, h.h, color)
+        this._drawPillar(sx, y, h.w, h.h, color)
         break
       case 'diamond':
-        this._drawDiamond(ctx, sx + h.w / 2, y + h.h / 2, h.w * 0.5 * pulse, color)
+        this._drawDiamond(sx + h.w / 2, y + h.h / 2, h.w * 0.5 * pulse, color)
         break
       default:
-        this._drawRect(ctx, sx, y, h.w, h.h, color)
+        this._drawRect(sx, y, h.w, h.h, color)
     }
 
-    // STG: HP バー
+    // STG: HP バー（StgPlugin / AerialStgPlugin の HP バーと同じく px.rect で描き、
+    // デバイス空間スナップを効かせる。比率・幅の計算式は変更しない）
     if (r.features.has('enemy_hp') && h.maxHp > 1) {
-      ctx.shadowBlur = 0
       const barW = h.w * (h.hp / h.maxHp)
-      ctx.fillStyle = `rgba(0,0,0,${HAZARD_VFX.hpBarBgAlpha})`
-      ctx.fillRect(sx, y - HAZARD_VFX.hpBarOffsetY, h.w, HAZARD_VFX.hpBarHeight)
-      ctx.fillStyle = barW / h.w > HAZARD_VFX.hpBarThreshold ? HAZARD_VFX.hpBarHighColor : HAZARD_VFX.hpBarLowColor
-      ctx.fillRect(sx, y - HAZARD_VFX.hpBarOffsetY, barW, HAZARD_VFX.hpBarHeight)
+      const barColor = barW / h.w > HAZARD_VFX.hpBarThreshold ? HAZARD_VFX.hpBarHighColor : HAZARD_VFX.hpBarLowColor
+      this.px.rect(sx, y - HAZARD_VFX.hpBarOffsetY, h.w, HAZARD_VFX.hpBarHeight, `rgba(0,0,0,${HAZARD_VFX.hpBarBgAlpha})`)
+      this.px.rect(sx, y - HAZARD_VFX.hpBarOffsetY, barW, HAZARD_VFX.hpBarHeight, barColor)
     }
 
     ctx.restore()
   }
 
-  private _drawRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string): void {
-    // グラデーション付き
-    const grad = ctx.createLinearGradient(x, y, x, y + h)
-    grad.addColorStop(0, this._lighten(color, HAZARD_VFX.lightenTopAmount))
-    grad.addColorStop(1, color)
-    ctx.fillStyle = grad
-    ctx.beginPath()
-    ctx.roundRect ? ctx.roundRect(x, y, w, h, HAZARD_VFX.rectCornerRadius) : ctx.rect(x, y, w, h)
-    ctx.fill()
+  // ハザード形状ごとのブロックハロー（px.halo の draw コールバック）。
+  // 本体描画（_drawSpike 等）と同じ形状輪郭を expand 分だけ拡張して呼び出し側へ渡す。
+  private _drawHazardHalo(shape: HazardShape, x: number, y: number, w: number, h: number, pulse: number, glow: string): void {
+    const px = this.px
+    px.halo((expand, c) => {
+      switch (shape) {
+        case 'spike':
+          px.tri(x - expand, y - expand, w + expand * 2, h + expand * 2, 'up', c)
+          break
+        case 'diamond': {
+          const r = w * 0.5 * pulse + expand
+          const cx = x + w / 2, cy = y + h / 2
+          px.tri(cx - r, cy - r, r * 2, r, 'up', c)
+          px.tri(cx - r, cy, r * 2, r, 'down', c)
+          break
+        }
+        default:
+          px.rect(x - expand, y - expand, w + expand * 2, h + expand * 2, c)
+      }
+    }, glow, PIXELART.haloSteps)
+  }
+
+  private _drawRect(x: number, y: number, w: number, h: number, color: string): void {
+    const px = this.px
+    const light = this._lighten(color, HAZARD_VFX.lightenTopAmount)
+    // 角の切り欠き（roundRect の代替）。角のセルだけ描かずに残すことで階段状ベベルにする
+    const c = HAZARD_RECT_BEVEL_CELLS * Math.max(1, PIXELART.size)
+    if (c > 0 && c * 2 < Math.min(w, h)) {
+      px.bandGradient(x, y + c, w, h - c * 2, [[0, light], [1, color]], 'v', PIXELART.gradientSteps)
+      px.rect(x + c, y, w - c * 2, c, light)
+      px.rect(x + c, y + h - c, w - c * 2, c, color)
+    } else {
+      px.bandGradient(x, y, w, h, [[0, light], [1, color]], 'v', PIXELART.gradientSteps)
+    }
 
     // エッジハイライト
-    ctx.strokeStyle = this._lighten(color, HAZARD_VFX.lightenEdgeAmount)
-    ctx.lineWidth = HAZARD_VFX.edgeHighlightLineW
-    ctx.stroke()
+    const edge = this._lighten(color, HAZARD_VFX.lightenEdgeAmount)
+    const lineCells = Math.max(1, Math.round(HAZARD_VFX.edgeHighlightLineW))
+    px.line(x, y, x + w, y, edge, lineCells)
+    px.line(x, y + h, x + w, y + h, edge, lineCells)
+    px.line(x, y, x, y + h, edge, lineCells)
+    px.line(x + w, y, x + w, y + h, edge, lineCells)
   }
 
-  private _drawSpike(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string): void {
+  private _drawSpike(x: number, y: number, w: number, h: number, color: string): void {
+    const px = this.px
+    px.tri(x, y, w, h, 'up', color)
+
+    const edge = this._lighten(color, HAZARD_VFX.lightenEdgeAmount)
+    const lineCells = Math.max(1, Math.round(HAZARD_VFX.edgeHighlightLineW))
     const cx = x + w / 2
-    ctx.fillStyle = color
-    ctx.beginPath()
-    ctx.moveTo(cx, y)
-    ctx.lineTo(x, y + h)
-    ctx.lineTo(x + w, y + h)
-    ctx.closePath()
-    ctx.fill()
-    ctx.strokeStyle = this._lighten(color, HAZARD_VFX.lightenEdgeAmount)
-    ctx.lineWidth = HAZARD_VFX.edgeHighlightLineW
-    ctx.stroke()
+    px.line(cx, y, x, y + h, edge, lineCells)
+    px.line(cx, y, x + w, y + h, edge, lineCells)
+    px.line(x, y + h, x + w, y + h, edge, lineCells)
   }
 
-  private _drawPillar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string): void {
-    const grad = ctx.createLinearGradient(x, y, x + w, y)
-    grad.addColorStop(0, color)
-    grad.addColorStop(HAZARD_VFX.pillarHighlightStop, this._lighten(color, HAZARD_VFX.pillarHighlightAmount))
-    grad.addColorStop(1, color)
-    ctx.fillStyle = grad
-    ctx.fillRect(x, y, w, h)
-    ctx.fillStyle = this._lighten(color, HAZARD_VFX.lightenEdgeAmount + 10)
-    ctx.fillRect(x - HAZARD_VFX.pillarCapOffset, y, w + HAZARD_VFX.pillarCapOffset * 2, HAZARD_VFX.pillarCapHeight)
+  private _drawPillar(x: number, y: number, w: number, h: number, color: string): void {
+    const px = this.px
+    const highlight = this._lighten(color, HAZARD_VFX.pillarHighlightAmount)
+    px.bandGradient(x, y, w, h, [
+      [0, color],
+      [HAZARD_VFX.pillarHighlightStop, highlight],
+      [1, color],
+    ], 'h', PIXELART.gradientSteps)
+
+    const capColor = this._lighten(color, HAZARD_VFX.lightenEdgeAmount + 10)
+    px.rect(x - HAZARD_VFX.pillarCapOffset, y, w + HAZARD_VFX.pillarCapOffset * 2, HAZARD_VFX.pillarCapHeight, capColor)
   }
 
-  private _drawDiamond(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string): void {
-    ctx.fillStyle = color
-    ctx.beginPath()
-    ctx.moveTo(cx, cy - r)
-    ctx.lineTo(cx + r, cy)
-    ctx.lineTo(cx, cy + r)
-    ctx.lineTo(cx - r, cy)
-    ctx.closePath()
-    ctx.fill()
-    ctx.strokeStyle = this._lighten(color, HAZARD_VFX.lightenEdgeAmount + 10)
-    ctx.lineWidth = HAZARD_VFX.diamondEdgeLineW
-    ctx.stroke()
+  private _drawDiamond(cx: number, cy: number, r: number, color: string): void {
+    const px = this.px
+    px.tri(cx - r, cy - r, r * 2, r, 'up', color)
+    px.tri(cx - r, cy, r * 2, r, 'down', color)
+
+    const edge = this._lighten(color, HAZARD_VFX.lightenEdgeAmount + 10)
+    const lineCells = Math.max(1, Math.round(HAZARD_VFX.diamondEdgeLineW))
+    px.line(cx, cy - r, cx + r, cy, edge, lineCells)
+    px.line(cx + r, cy, cx, cy + r, edge, lineCells)
+    px.line(cx, cy + r, cx - r, cy, edge, lineCells)
+    px.line(cx - r, cy, cx, cy - r, edge, lineCells)
   }
 
   private _lighten(hex: string, amount: number): string {
@@ -1306,72 +1330,17 @@ export class SideScroller {
 
    // ─── アイテム描画 ─────────────────────────────────────────────────
   private _drawItem(item: Item, sx: number): void {
-    const ctx = this.ctx
     const bounce = Math.sin(item.pulse) * 4
     const y = item.y + bounce
+    const id = 'item_' + item.type
+    const glow = SPRITES[id]?.palette.G
 
-    ctx.save()
-    if (item.type === 'exp') {
-      ctx.shadowColor = '#ffcc00'
-      ctx.shadowBlur = 12
-      ctx.fillStyle = '#ffcc00'
-      // 星形
-      this._drawStar(ctx, sx + 11, y + 11, 10, 5, 5)
-    } else if (item.type === 'hp') {
-      ctx.shadowColor = '#ff8888'
-      ctx.shadowBlur = 12
-      ctx.fillStyle = '#ff5555'
-      ctx.beginPath()
-      ctx.arc(sx + 11, y + 11, 9, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.fillStyle = '#ffaaaa'
-      ctx.font = 'bold 11px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.fillText('♥', sx + 11, y + 15)
-    } else if (item.type === 'food') {
-      // 食料: リンゴ形
-      ctx.shadowColor = '#88cc44'
-      ctx.shadowBlur = 10
-      ctx.fillStyle = '#66aa22'
-      ctx.beginPath()
-      ctx.arc(sx + 11, y + 13, 8, 0, Math.PI * 2)
-      ctx.fill()
-      // 葉
-      ctx.fillStyle = '#448800'
-      ctx.beginPath()
-      ctx.ellipse(sx + 13, y + 4, 4, 2, 0.3, 0, Math.PI * 2)
-      ctx.fill()
-    } else if (item.type === 'weapon') {
-      // 武器: 剣形
-      ctx.shadowColor = '#ccaa44'
-      ctx.shadowBlur = 10
-      ctx.fillStyle = '#ddbb55'
-      // 刃
-      ctx.beginPath()
-      ctx.moveTo(sx + 11, y + 2)
-      ctx.lineTo(sx + 14, y + 10)
-      ctx.lineTo(sx + 11, y + 20)
-      ctx.lineTo(sx + 8, y + 10)
-      ctx.closePath()
-      ctx.fill()
-      // 柄
-      ctx.fillStyle = '#886633'
-      ctx.fillRect(sx + 9, y + 19, 4, 5)
-      ctx.fillRect(sx + 6, y + 17, 10, 3)
+    if (glow) {
+      this.px.halo((expand, c) => {
+        this.px.rect(sx - expand, y - expand, item.w + expand * 2, item.h + expand * 2, c)
+      }, glow, PIXELART.haloSteps)
     }
-    ctx.restore()
-  }
-
-  private _drawStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, r1: number, r2: number, points: number): void {
-    ctx.beginPath()
-    for (let i = 0; i < points * 2; i++) {
-      const angle = (i * Math.PI) / points - Math.PI / 2
-      const r = i % 2 === 0 ? r1 : r2
-      i === 0 ? ctx.moveTo(cx + r * Math.cos(angle), cy + r * Math.sin(angle))
-               : ctx.lineTo(cx + r * Math.cos(angle), cy + r * Math.sin(angle))
-    }
-    ctx.closePath()
-    ctx.fill()
+    this.px.sprite(id, sx, y, item.w, item.h)
   }
 
   // ─── スポーン（ジャンルプラグインのテーブルを参照） ───────────────

@@ -1,0 +1,43 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "player_knight",
+  "w": 18,
+  "h": 26,
+  "palette": {
+    "B": "#7777bb",
+    "H": "#9999cc",
+    "V": "#ffdd00",
+    "W": "#e0e0ff",
+    "O": "#000000"
+  },
+  "frames": {
+    "idle": [
+      "....OOOOOOOOOOO...",
+      "...OHHHHHHHHHHHO..",
+      "...OHHHHHHHHHHHO..",
+      "...OHHHHHHHHHHHO..",
+      "...OHHHHHHHHHHHO..",
+      "...OHVVVVVVVVVHO..",
+      "...OHVVVVVVVVVHO..",
+      "...OHHHHHHHHHHHOO.",
+      "...OHHHHHHHHHHHWWO",
+      "..OOHHHHHHHHHHHWWO",
+      ".OBBHHHHHHHHHHHWWO",
+      ".OBBBBBBBBBBBBBWWO",
+      ".OBBBBBBBBBBBBBWWO",
+      ".OBBBBBBBBBBBBBWWO",
+      ".OBBBBBBBBBBBBBWWO",
+      ".OBBBBBBBBBBBBBWWO",
+      ".OBBBBBBBBBBBBBWWO",
+      ".OBBBBBBBBBBBBBWWO",
+      ".OBBBBBBBBBBBBBWWO",
+      ".OBBBBBBBBBBBBBWWO",
+      ".OBBBBBBBBBBBBBWWO",
+      ".OBBBBBBBBBBBBBWWO",
+      ".OBBBBBBBBBBBBBWWO",
+      ".OBBBBBBBBBBBBBBBO",
+      ".OBBBBBBBBBBBBBBBO",
+      ".OBBBBBBBBBBBBBBBO"
+    ]
+  }
+}

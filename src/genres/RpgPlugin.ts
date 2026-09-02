@@ -5,6 +5,7 @@
 
 import { GenrePluginBase } from '../engine/GenrePluginBase'
 import type { SpawnEntry } from '../engine/types'
+import { PixelCanvas } from '../game/render'
 
 export class RpgPlugin extends GenrePluginBase {
   readonly id = 'rpg' as const
@@ -27,51 +28,35 @@ export class RpgPlugin extends GenrePluginBase {
   ]
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // RPG は霧感のある薄い丘
-    ctx.globalAlpha = 0.2
-    ctx.fillStyle = this.farLayerColor
-    ctx.beginPath(); ctx.moveTo(0, gY)
-    const step = 40
-    for (let sx = -step; sx <= W + step; sx += step) {
-      const wx = sx - offsetX
-      const mh = Math.sin(wx * 0.005) * 60 + Math.sin(wx * 0.012) * 30 + 80
-      ctx.lineTo(sx, gY - mh)
-    }
-    ctx.lineTo(W + step, gY); ctx.closePath(); ctx.fill()
-    ctx.globalAlpha = 1
+    // RPG は霧感のある薄い丘。式は無変更、サンプリングを px.ridge に
+    const px = new PixelCanvas(ctx)
+    px.withAlpha(0.2, () => {
+      px.ridge(-40, W + 40, gY, (sx) => {
+        const wx = sx - offsetX
+        return Math.sin(wx * 0.005) * 60 + Math.sin(wx * 0.012) * 30 + 80
+      }, this.farLayerColor)
+    })
   }
 
   drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // 木のシルエット
-    ctx.globalAlpha = 0.55
-    ctx.fillStyle = this.midLayerColor
+    // 木のシルエット → tree_round スプライトをサイズ違いで使い回す。配置ハッシュは無変更
+    const px = new PixelCanvas(ctx)
     const sector = Math.floor(offsetX / 200)
-    for (let s = sector - 1; s <= sector + 4; s++) {
-      const h = (s * 1997) & 0xffff
-      const tx = s * 200 - offsetX + (h % 120)
-      const treeH = 60 + (h >> 4) % 50
-      ctx.fillRect(tx - 4, gY - treeH * 0.4, 8, treeH * 0.4)
-      ctx.beginPath()
-      ctx.arc(tx, gY - treeH * 0.4 - treeH * 0.3, treeH * 0.3, 0, Math.PI * 2)
-      ctx.fill()
-    }
-    ctx.globalAlpha = 1
+    px.withAlpha(0.55, () => {
+      for (let s = sector - 1; s <= sector + 4; s++) {
+        const h = (s * 1997) & 0xffff
+        const tx = s * 200 - offsetX + (h % 120)
+        const treeH = 60 + (h >> 4) % 50
+        const treeW = treeH * (18 / 20) // tree_round.json のアスペクト比（18x20）を維持
+        px.sprite('tree_round', tx - treeW / 2, gY - treeH, treeW, treeH)
+      }
+    })
   }
 
+  // Q7（ユーザー回答済み）によりアニメーションは追加しない。静止1フレームのまま
   drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, _onGround: boolean, _runCycle: number): void {
-    // 騎士
-    ctx.fillStyle = '#7777bb'
-    this._roundRect(ctx, 2, h * 0.4, w - 4, h * 0.55, 3)
-    ctx.fill()
-    ctx.fillStyle = '#9999cc'
-    ctx.fillRect(w * 0.2, h * 0.05, w * 0.6, h * 0.35)
-    ctx.fillStyle = '#ffdd00'
-    ctx.fillRect(w * 0.28, h * 0.18, w * 0.44, 5)
-    ctx.strokeStyle = '#e0e0ff'; ctx.lineWidth = 4
-    ctx.beginPath()
-    ctx.moveTo(w * 0.85, h * 0.3)
-    ctx.lineTo(w * 0.85, h * 0.85)
-    ctx.stroke()
+    const px = new PixelCanvas(ctx)
+    px.sprite('player_knight', 0, 0, w, h)
   }
 }
 

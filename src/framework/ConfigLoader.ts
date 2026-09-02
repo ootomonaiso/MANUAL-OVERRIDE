@@ -5,26 +5,40 @@
  * ManualLoader.ts のパターンを踏襲。
  */
 
-import type { GameConfigMap, GameConfigSection, GenreDefJSON, GenreDefJSONInput } from './config-types'
+import type { GameConfigMap, GameConfigSection, GenreDefJSON, GenreDefJSONInput, GenreDefaultsConfig } from './config-types'
 
-// ジャンル定義の省略可能フィールドのデフォルト値。
-// scripts/preprocess.mjs の検証と対になる（補完はここで一元管理）。
-// 値の定義元: src/data/config/genre_defaults.json
-const GENRE_DEFAULTS = {
-  enableFeatures:  [] as string[],
-  disableFeatures: [] as string[],
-  scoreFormula:    'distance * 1.0 + survivedSec * 5',
-  theme:           'plain',
-  bgColor:         '#1a1a2e',
-} as const
+/**
+ * ジャンル定義の省略可能フィールドのデフォルト値。
+ * scripts/preprocess.mjs の検証と対になる（補完はここで一元管理）。
+ *
+ * 値の定義元: src/data/config/genre_defaults.json
+ * NOTE: normalizeGenreDef 呼び出し時は GAME_CONFIG が未構築のため、
+ *       呼び側（config.ts）から defaults を渡す方式にする。
+ */
+const DEFAULT_GENRE_DEFAULTS: GenreDefaultsConfig = {
+  enableFeatures:  [],
+  disableFeatures: [],
+  scoreFormula: 'distance * 1.0 + survivedSec * 5',
+  theme: 'plain',
+  bgColor: '#1a1a2e',
+}
 
 /**
  * 人間が書いた最小構成のジャンルJSON（id / label / thresholds のみ必須）を
  * 完全な GenreDefJSON に補完する。manualReveal はラベルから自動生成。
+ *
+ * @param defaults - ジャンル定義のデフォルト値（GAME_CONFIG.genre_defaults から取得）
  */
-export function normalizeGenreDef(input: GenreDefJSONInput): GenreDefJSON {
+export function normalizeGenreDef(
+  input: GenreDefJSONInput,
+  defaults: GenreDefaultsConfig = DEFAULT_GENRE_DEFAULTS,
+): GenreDefJSON {
   return {
-    ...GENRE_DEFAULTS,
+    enableFeatures:  defaults.enableFeatures ?? [],
+    disableFeatures: defaults.disableFeatures ?? [],
+    scoreFormula:    defaults.scoreFormula    ?? 'distance * 1.0 + survivedSec * 5',
+    theme:           defaults.theme           ?? 'plain',
+    bgColor:         defaults.bgColor         ?? '#1a1a2e',
     manualReveal: input.manualReveal ?? `これは${input.label}になりました。`,
     ...input,
   }

@@ -132,6 +132,11 @@ export const HUD_SAFEZONE = _c.hud_safezone
 export const SURVIVAL = _c.survival
 
 // ─────────────────────────────────────────────────────────────
+// PIXELART — PixelArt化レンダリング設定
+// ─────────────────────────────────────────────────────────────
+export const PIXELART = _c.pixelart
+
+// ─────────────────────────────────────────────────────────────
 // NEAR_MISS — near-miss combo パラメータ
 // ─────────────────────────────────────────────────────────────
 export const NEAR_MISS = _c.near_miss

@@ -18,7 +18,7 @@
 
 ## 新ジャンルを追加する流れ
 
-3つのステップがあります（型定義の編集は不要 — `GenreId` は `string` 型です）。
+2つのステップがあります（+ 任意の視覚テーマ実装）。型定義の編集は不要 — `GenreId` は `string` 型です。
 
 ### ステップ 1: ジャンル定義をJSONに追加する
 
@@ -49,9 +49,10 @@
 | `scoreFormula` | 最終スコアの計算式（使える変数は後述） |
 | `manualReveal` | 確定時に説明書に書き込まれる宣言文 |
 | `endingFlavor` | 投擲後のエンディング画面に表示される一文 |
-| `theme` | 説明書UIの見た目（`ManualTheme`）。`plain` / `stg` / `rpg` / `puzzle` / `rhythm` / `horror` / `aquatic` / `tetris` など全15種 |
+| `theme` | 説明書UIの見た目（`ManualTheme`）。`plain` / `stg` / `rpg` / `puzzle` / `rhythm` / `horror` / `aquatic` / `tetris` など全16種（+ `glitch`） |
 
 scoreFormula で使える変数: `distance` / `kills` / `combo` / `maxCombo` / `exp` / `beatHits` / `survivedSec` / `accuracy` / `deaths` / `itemsCollected` / `bossKills` / `stealthBonus` / `colorTouches`
+（`combo` は現在コンボ数、`maxCombo` はセッション最大コンボ。既存ジャンルJSONでは `maxCombo` が使われている。）
 
 ### ステップ 2: 視覚テーマを実装する（任意）
 

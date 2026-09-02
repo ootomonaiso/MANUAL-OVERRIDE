@@ -182,6 +182,23 @@ export interface BackgroundConfig {
   buildingRandW: number
 }
 
+/** pixelart.json — PixelArt化レンダリング設定 */
+export interface PixelartConfig {
+  size: number
+  gradientSteps: number
+  haloSteps: number
+  haloAlphaFalloff: number
+  alphaSteps: number
+  ditherRatioSteps: number
+  textScale: number
+  /** 焼き込み後フォントサイズの下限px。textScale はこれを下回らない範囲でのみ効く（§11.4） */
+  textMinBakePx: number
+  /** block() の明暗差（§11.6） */
+  blockShadeAmount: number
+  spriteCacheMax: number
+  textCacheMax: number
+}
+
 /** hazard_vfx.json — ハザード描画 */
 export interface HazardVfxConfig {
   glowBlur: number
@@ -420,6 +437,8 @@ export interface NearMissConfig {
 
 /** genre_defaults.json — ジャンル定義のデフォルト値 */
 export interface GenreDefaultsConfig {
+  enableFeatures: string[]
+  disableFeatures: string[]
   scoreFormula: string
   theme: string
   bgColor: string
@@ -651,6 +670,7 @@ export interface GameConfigMap {
   puzzle: PuzzleConfig
   extra_movement: ExtraMovementConfig
   survival: SurvivalConfig
+  pixelart: PixelartConfig
   near_miss: NearMissConfig
   genre_defaults: GenreDefaultsConfig
   palette_defaults: PaletteDefaultsConfig
