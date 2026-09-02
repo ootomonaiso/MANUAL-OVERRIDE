@@ -113,10 +113,18 @@ export class BulletHellBossFeature implements FeatureSystem {
     // ── 敵弾 × プレイヤー 衝突判定 ──────────────────────────────
     const p = world.player
     if (p.invincible <= 0) {
+      // 弾幕ゲーム用の小さな当たり判定（中心の点）。全矩形では大きすぎる
+      const hb = bh.playerHitbox.radius
+      const hitbox = {
+        x: p.x + p.w / 2 - hb,
+        y: p.y + p.h / 2 - hb,
+        w: hb * 2,
+        h: hb * 2,
+      }
       for (let i = s.enemyBullets.length - 1; i >= 0; i--) {
         const b = s.enemyBullets[i]
         const bulletRect = { x: b.x - b.r, y: b.y - b.r, w: b.r * 2, h: b.r * 2 }
-        if (rectsOverlap(p.rect, bulletRect, 0)) {
+        if (rectsOverlap(hitbox, bulletRect, 0)) {
           applyPlayerHitEffect(world, { particleCount: 6 })
           s.hitCombo = 0
           s.enemyBullets.splice(i, 1)

@@ -26,5 +26,8 @@
   },
   "autoAim": {
     "sideOffsetDeg": 12
+  },
+  "playerHitbox": {
+    "radius": 4
   }
 }

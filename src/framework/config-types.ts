@@ -621,6 +621,9 @@ export interface BulletHellConfig {
   autoAim: {
     sideOffsetDeg: number
   }
+  playerHitbox: {
+    radius: number
+  }
 }
 
 /** GameConfigMap: セクション名 → 設定オブジェクトのマッピング */

@@ -216,6 +216,22 @@ describe('BulletHellBossFeature', () => {
       expect(world.player.hp).toBe(2)
     })
 
+    it('当たり判定は中心の小さな点のみ（矩形端の弾は被弾しない）', () => {
+      const s = (feature as any).state
+      // プレイヤー矩形の角（中心から離れている）に弾を置く。
+      // 矩形全体判定なら被弾するが、中心の小さな当たり判定では被弾しない
+      s.enemyBullets.push({
+        x: world.player.x + world.player.w - 3,
+        y: world.player.y + 3,
+        vx: 0, vy: 0, r: 6,
+      })
+
+      feature.update(world, createMockInput(), 0.016)
+
+      expect(world._hpDelta()).toBe(0)
+      expect(world.player.hp).toBe(3)
+    })
+
     it('被弾で hitCombo がリセットされる', () => {
       const s = (feature as any).state
       s.hitCombo = 5
