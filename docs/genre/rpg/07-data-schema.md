@@ -10,10 +10,10 @@
 
 | ディレクトリ | 内容 | 1ファイルの単位 |
 |---|---|---|
-| `src/data/skills/` | アクティブ・パッシブスキル | 1スキル |
-| `src/data/traits/` | 特性 | 1特性 |
-| `src/data/enemies/` | 敵 | 1種 |
-| `src/data/battle-effects/` | エフェクト定義 | 1エフェクト（[09-effects.md](09-effects.md)） |
+| `src/data/rpg/skills/` | アクティブ・パッシブスキル | 1スキル |
+| `src/data/rpg/traits/` | 特性 | 1特性 |
+| `src/data/rpg/enemies/` | 敵 | 1種 |
+| `src/data/rpg/battle-effects/` | エフェクト定義 | 1エフェクト（[09-effects.md](09-effects.md)） |
 
 `import.meta.glob` による一括ロードとし、`index` ファイルへの手動登録を不要にする（`src/data/sprites.ts` が既に同方式）。
 
@@ -159,7 +159,7 @@
 スプライト側の編集だけで完結し、逆に敵の使い回しも容易になる。
 
 ```jsonc
-// src/data/enemies/enemy_goblin.json
+// src/data/rpg/enemies/enemy_goblin.json
 { "id": "enemy_goblin", "sprite": "battle_goblin", ... }
 ```
 
@@ -183,7 +183,7 @@
 
 ## 背景定義
 
-1ファイル1背景（`src/data/battle-backgrounds/bg_*.json`、スキーマは `schemas/battle-background.schema.json`）。
+1ファイル1背景（`src/data/rpg/battle-backgrounds/bg_*.json`、スキーマは `schemas/battle-background.schema.json`）。
 戦闘が始まるたびに、ボス戦なら `bossOnly: true` の中から、通常戦ならそれ以外の中から、
 **直前と違うもの**が選ばれる。
 
@@ -301,9 +301,9 @@ export function normalizeSkillRef(ref: EnemySkillRef): { id: string; level: numb
 
 | ファイル | 対象 |
 |---|---|
-| `schemas/battle-skill.schema.json` | `src/data/skills/*.json` |
-| `schemas/battle-trait.schema.json` | `src/data/traits/*.json` |
-| `schemas/battle-enemy.schema.json` | `src/data/enemies/*.json` |
+| `schemas/battle-skill.schema.json` | `src/data/rpg/skills/*.json` |
+| `schemas/battle-trait.schema.json` | `src/data/rpg/traits/*.json` |
+| `schemas/battle-enemy.schema.json` | `src/data/rpg/enemies/*.json` |
 
 `$schema` をファイル先頭に書き、エディタ補完を効かせる（既存の `genre.schema.json` と同じ運用）。
 

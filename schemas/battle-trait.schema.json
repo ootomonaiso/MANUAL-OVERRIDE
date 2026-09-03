@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "battle-trait.schema.json",
   "title": "RPGジャンル: 特性定義",
-  "description": "src/data/traits/*.json のスキーマ。docs/genre/rpg/07-data-schema.md 準拠。特性はカテゴリを持たない。1ファイル1特性。",
+  "description": "src/data/rpg/traits/*.json のスキーマ。docs/genre/rpg/07-data-schema.md 準拠。特性はカテゴリを持たない。1ファイル1特性。",
   "type": "object",
   "required": ["id", "label", "flavorText", "kind", "effect"],
   "additionalProperties": false,

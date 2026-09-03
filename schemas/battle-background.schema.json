@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "battle-background.schema.json",
   "title": "RPGジャンル: 戦闘背景定義",
-  "description": "src/data/battle-backgrounds/*.json のスキーマ。1ファイル1背景。実際の描画は src/domain/battle/backdrop.ts が行う。",
+  "description": "src/data/rpg/battle-backgrounds/*.json のスキーマ。1ファイル1背景。実際の描画は src/domain/battle/backdrop.ts が行う。",
   "type": "object",
   "required": ["id", "label", "sky", "ground", "layers", "floor", "accent"],
   "additionalProperties": false,

@@ -863,7 +863,7 @@ STRの実効値   = (1000 + 300) × 1.05         = 1365
 
 技の発動時・命中時などの演出を**エフェクト**として定義し、スキルごとにどのエフェクトを適用するか指定する。エフェクトはIDで参照し、スキル定義の `effects` 配列に列挙する。
 
-エフェクトの定義そのものは1箇所にまとめて管理する（`src/data/battle-effects/*.json` または `config/battle_effects.json` 想定。方式は実装時に決定）。
+エフェクトの定義そのものは1箇所にまとめて管理する（`src/data/rpg/battle-effects/*.json` または `config/battle_effects.json` 想定。方式は実装時に決定）。
 
 | エフェクトID | 発生タイミング | 内容 |
 |---|---|---|
@@ -912,7 +912,7 @@ battlesWon * 300 + bossDefeated * 3000 + maxSkillLevel * 200 + traitsAcquired * 
 
 ## 敵定義（データ設計）
 
-敵は種類ごとに1ファイルのJSONで管理する（`src/data/enemies/{enemy-id}.json` 想定）。
+敵は種類ごとに1ファイルのJSONで管理する（`src/data/rpg/enemies/{enemy-id}.json` 想定）。
 
 ```json
 {

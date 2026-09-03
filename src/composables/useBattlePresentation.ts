@@ -12,7 +12,7 @@
 
 import { ref, reactive, watch, onScopeDispose } from 'vue'
 import type { EffectRequest, EffectTiming } from '../domain/battle/types'
-import { BATTLE_EFFECTS, BATTLE_CONTENT } from '../data/battleContent'
+import { BATTLE_EFFECTS, BATTLE_CONTENT } from '../data/rpg/battleContent'
 import { BATTLE } from '../data/tunables'
 import { soundManager } from '../plugins/SoundManager'
 import type { useBattleState } from './useBattleState'

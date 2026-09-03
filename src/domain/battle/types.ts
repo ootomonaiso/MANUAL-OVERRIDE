@@ -299,7 +299,7 @@ export interface BattleState {
 
   status: BattleStatus
 
-  /** 現在の戦闘の背景ID（src/data/battle-backgrounds/*.json） */
+  /** 現在の戦闘の背景ID（src/data/rpg/battle-backgrounds/*.json） */
   backgroundId: string | null
 
   draftOptions: DraftOption[] | null

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SKILLS, TRAITS, ENEMIES, BATTLE_EFFECTS, BATTLE_CONTENT } from '../../../src/data/battleContent'
+import { SKILLS, TRAITS, ENEMIES, BATTLE_EFFECTS, BATTLE_CONTENT } from '../../../src/data/rpg/battleContent'
 import { KNOWN_OP_IDS } from '../../../src/domain/battle/effectOps'
 import { CATEGORY_IDS, STAT_KEYS } from '../../../src/domain/battle/types'
 import type { EffectNode, CategoryId } from '../../../src/domain/battle/types'
@@ -11,10 +11,10 @@ import skillSchema from '../../../schemas/battle-skill.schema.json'
 import traitSchema from '../../../schemas/battle-trait.schema.json'
 
 /** ファイル名とIDの一致を確かめるため、ローダと同じ glob をテスト側でも張る */
-const skillFiles = import.meta.glob('../../../src/data/skills/*.json', { eager: true })
-const traitFiles = import.meta.glob('../../../src/data/traits/*.json', { eager: true })
-const enemyFiles = import.meta.glob('../../../src/data/enemies/*.json', { eager: true })
-const effectFiles = import.meta.glob('../../../src/data/battle-effects/*.json', { eager: true })
+const skillFiles = import.meta.glob('../../../src/data/rpg/skills/*.json', { eager: true })
+const traitFiles = import.meta.glob('../../../src/data/rpg/traits/*.json', { eager: true })
+const enemyFiles = import.meta.glob('../../../src/data/rpg/enemies/*.json', { eager: true })
+const effectFiles = import.meta.glob('../../../src/data/rpg/battle-effects/*.json', { eager: true })
 
 function basename(path: string): string {
   return path.split('/').pop()?.replace(/\.json$/, '') ?? path

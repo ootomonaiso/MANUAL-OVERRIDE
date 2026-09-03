@@ -1,5 +1,5 @@
 /**
- * src/data/battleContent.ts
+ * src/data/rpg/battleContent.ts
  *
  * rpg ジャンル（ローグライク戦闘）のコンテンツを自動収集する。
  * src/data/config.ts / src/data/sprites.ts と同型のパターン。
@@ -13,7 +13,7 @@
 import type {
   ActiveSkillDef, PassiveSkillDef, TraitDef, EnemyDef, BattleEffectDef,
   BattleContent, EnemySkillRefResolved,
-} from '../domain/battle/types'
+} from '../../domain/battle/types'
 
 type SkillJson = Partial<ActiveSkillDef> & Partial<PassiveSkillDef> & { id?: string; kind?: string }
 

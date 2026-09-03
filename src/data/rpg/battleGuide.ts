@@ -1,6 +1,6 @@
 /**
- * src/data/battleGuide.ts
- * rpg ジャンルの遊び方ガイド・用語集の読み込み（src/data/battle-guide.json）。
+ * src/data/rpg/battleGuide.ts
+ * rpg ジャンルの遊び方ガイド・用語集の読み込み（src/data/rpg/battle-guide.json）。
  * HelpGuide.vue / GlossaryTerm.vue から参照する。
  */
 

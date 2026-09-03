@@ -290,8 +290,8 @@ onCombo(count: number): void {
 
 `src/data/sfx/` には 75 件の JSON があるが、`SfxSound` のフックから再生されるのは 45 件。以下 6 件は**どこからも呼ばれていない**。
 
-なお `battle_*` の 24 件はフック経由ではなく、rpg 戦闘のデータ（`src/data/battle-effects/*.json` の `sfx`、
-`src/data/skills/*.json` の `sfx`）から **id 指定で** `soundManager.playSfx(id)` を呼んで鳴らしている
+なお `battle_*` の 24 件はフック経由ではなく、rpg 戦闘のデータ（`src/data/rpg/battle-effects/*.json` の `sfx`、
+`src/data/rpg/skills/*.json` の `sfx`）から **id 指定で** `soundManager.playSfx(id)` を呼んで鳴らしている
 （[docs/genre/rpg/09-effects.md](genre/rpg/09-effects.md)）。
 
 `combo_milestone` / `goal_achieved` / `milestone` / `near_miss` / `record_update` / `skin_select`

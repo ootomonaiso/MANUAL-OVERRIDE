@@ -1,6 +1,6 @@
 /**
  * domain/battle/backdrop.ts
- * 戦闘背景（src/data/battle-backgrounds/*.json）を描画用のプリミティブへ変換する純粋関数。
+ * 戦闘背景（src/data/rpg/battle-backgrounds/*.json）を描画用のプリミティブへ変換する純粋関数。
  *
  * 出力は「低解像度キャンバスに置く矩形・多角形の座標」であり、実際の描画は
  * BattleBackdrop.vue が 320×180 のキャンバスへ行い、CSS で拡大する

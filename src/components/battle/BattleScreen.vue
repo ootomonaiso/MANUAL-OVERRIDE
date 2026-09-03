@@ -32,6 +32,7 @@ import type { DraftCardView, SwapSlotView } from './SkillDraftPanel.vue'
 import BattleBackdrop from './BattleBackdrop.vue'
 import SkillCastBanner from './SkillCastBanner.vue'
 import HelpGuide from './HelpGuide.vue'
+import { useGlossaryPanel } from '../../composables/useGlossaryPanel'
 import type { PlayerAction, SkillDef, Element } from '../../domain/battle/types'
 import { STAT_KEYS, CATEGORY_IDS } from '../../domain/battle/types'
 import {
@@ -41,8 +42,8 @@ import {
 import { STACKS_REQUIRED, nextCategoryThreshold } from '../../domain/battle/skillDraft'
 import { damageMagnitude, MAGNITUDE_LABEL } from '../../domain/battle/damagePreview'
 import { computeAffinityStage, effectivenessHint } from '../../domain/battle/damageCalc'
-import { BATTLE_CONTENT } from '../../data/battleContent'
-import { findBattleBackground } from '../../data/battleBackgrounds'
+import { BATTLE_CONTENT } from '../../data/rpg/battleContent'
+import { findBattleBackground } from '../../data/rpg/battleBackgrounds'
 import { soundManager } from '../../plugins/SoundManager'
 
 /**
@@ -124,8 +125,8 @@ const commandEntries = computed<CommandEntry[]>(() => [
   { id: 'info', label: 'INFO' },
 ])
 
-/** 「守る」「様子を見る」「何もしていない」は特別扱いせず、他のスキルと同じくJSONで定義する
- *  （src/data/skills/skill_stance_*.json）。ただし常設の行動でありドラフトには出さないため、
+/** 「守る」「避ける」「何もしない」は特別扱いせず、他のスキルと同じくJSONで定義する
+ *  （src/data/rpg/skills/skill_stance_*.json）。ただし常設の行動でありドラフトには出さないため、
  *  draftable: false を付けている（skillDraft.ts の buildCandidatePool 参照）。 */
 const BUILTIN_SKILL_ID: Record<'guard' | 'dodge' | 'pass', string> = {
   guard: 'skill_stance_guard', dodge: 'skill_stance_watch', pass: 'skill_stance_idle',
@@ -268,6 +269,11 @@ const enemyPreviews = computed<Record<string, NextPreview>>(() => {
 // ── INFO パネル（プレイヤー・敵・スキル詳細をまとめた2ペインパネル） ───────
 const infoOpen = ref(false)
 const infoInitialId = ref<string | null>(null)
+
+/** 用語ポップアップの「詳細」でヘルプ本体へ飛ぶ時は、INFOパネルが裏に
+ *  残ってパネルが重なって見えないよう、先に閉じておく。 */
+const { jumpToHelpSignal } = useGlossaryPanel()
+watch(jumpToHelpSignal, () => { infoOpen.value = false })
 
 function skillRowsFrom(
   refs: readonly { id: string; level: number }[], lookup: (id: string) => SkillDef | undefined,

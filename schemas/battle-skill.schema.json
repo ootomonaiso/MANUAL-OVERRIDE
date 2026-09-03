@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "battle-skill.schema.json",
   "title": "RPGジャンル: アクティブ/パッシブスキル定義",
-  "description": "src/data/skills/*.json のスキーマ。docs/genre/rpg/07-data-schema.md 準拠。1ファイル1スキル。",
+  "description": "src/data/rpg/skills/*.json のスキーマ。docs/genre/rpg/07-data-schema.md 準拠。1ファイル1スキル。",
   "type": "object",
   "required": ["id", "label", "flavorText", "kind", "mainCategory", "subCategories", "effect"],
   "additionalProperties": false,

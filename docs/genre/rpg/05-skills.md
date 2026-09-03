@@ -199,7 +199,7 @@ export type BuiltinAction = 'guard' | 'pass'
 値は `battle.json` に置く（[03-damage-calc.md](03-damage-calc.md) の定数表を参照）。
 
 > **改修（実装後）**: プレイフィードバックを受け、この3行動は
-> `src/data/skills/skill_stance_guard.json` / `skill_stance_watch.json` / `skill_stance_idle.json` として、
+> `src/data/rpg/skills/skill_stance_guard.json` / `skill_stance_watch.json` / `skill_stance_idle.json` として、
 > 他のアクティブスキルと同じ `battle-skill.schema.json` 形式で定義し直した（`draftable: false` を付け、
 > `skillDraft.ts` の `buildCandidatePool` がアクティブ/パッシブ双方でこのフラグを見て候補から除外する）。
 > ラベル・フレーバーテキスト・カテゴリ・効果文はこの JSON から生成し、コードへハードコードしない
@@ -388,8 +388,8 @@ export function buildSkillText(skill: SkillDef, level: number): SkillTextToken[]
 |---|---|
 | `src/domain/battle/effectOps/*` | 新規 |
 | `src/domain/battle/types.ts` | 新規 |
-| `src/data/skills/*.json` | 新規 |
-| `src/data/traits/*.json` | 新規 |
+| `src/data/rpg/skills/*.json` | 新規 |
+| `src/data/rpg/traits/*.json` | 新規 |
 
 ---
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { buildBackdropScene, pickBackgroundId, SCENE_W, SCENE_H, type BattleBackgroundDef } from '../../../../src/domain/battle/backdrop'
-import { BATTLE_BACKGROUNDS, findBattleBackground } from '../../../../src/data/battleBackgrounds'
+import { BATTLE_BACKGROUNDS, findBattleBackground } from '../../../../src/data/rpg/battleBackgrounds'
 
 function defOf(id: string): BattleBackgroundDef {
   const found = findBattleBackground(id)

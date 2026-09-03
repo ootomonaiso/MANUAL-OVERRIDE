@@ -8,7 +8,7 @@
 
 技の発動時・命中時などの演出を**エフェクト**として定義し、スキルごとにどれを適用するか指定する。
 
-**エフェクトも後から追加できる構成**にする（スキル・特性のJSONと同じ流儀）。定義を `src/data/battle-effects/` に足すだけで増やせる。
+**エフェクトも後から追加できる構成**にする（スキル・特性のJSONと同じ流儀）。定義を `src/data/rpg/battle-effects/` に足すだけで増やせる。
 
 ---
 
@@ -227,7 +227,7 @@ export interface EffectRequest {
 そこでスキル定義に `sfx` を置き、**エフェクト定義の音を上書きできる**ようにしている。
 
 ```jsonc
-// src/data/skills/skill_fireball.json
+// src/data/rpg/skills/skill_fireball.json
 { "id": "skill_fireball", "sfx": { "cast": "battle_cast_magical", "impact": "battle_fire" }, ... }
 ```
 
@@ -257,7 +257,7 @@ export interface EffectRequest {
 
 | ファイル | 変更 |
 |---|---|
-| `src/data/battle-effects/*.json` | 新規（21件）。すべて `sfx` を持つ |
+| `src/data/rpg/battle-effects/*.json` | 新規（21件）。すべて `sfx` を持つ |
 | `schemas/battle-effect.schema.json` | 新規 |
 | `src/composables/useBattlePresentation.ts` | 新規（当初案の `BattleEffectLayer.vue` を置き換え） |
 | `src/data/sfx/battle_*.json` | 新規（24件。戦闘用の効果音） |

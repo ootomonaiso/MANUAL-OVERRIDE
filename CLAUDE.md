@@ -123,14 +123,19 @@ src/
 ├── components/      # Vue UI コンポーネント（battle/ に rpg 戦闘UI）
 ├── tutorial/        # チュートリアル画面
 └── data/
-    ├── config/      # 設定JSON（27ファイル: score.json, genres.json, physics.json 等）
-    ├── genres/      # ジャンル定義JSON（23ファイル: 22ジャンル + glitch）
-    ├── cards/       # カードデッキJSON（starter-cards.json 等）
-    ├── sprites/     # ドット絵JSON（横スクロール用 + 戦闘用 battle_*.json）
-    ├── sfx/         # 効果音JSON（75件）
-    ├── skills/ traits/ enemies/ battle-effects/   # rpg 戦闘のコンテンツ
-    └── battle-backgrounds/  # rpg 戦闘の背景JSON（草原・砂漠・遺跡・荒れ地・ボス専用）
+    ├── config/      # 設定JSON（27ファイル: score.json, genres.json, physics.json 等。全ジャンル共通）
+    ├── genres/      # ジャンル定義JSON（23ファイル: 22ジャンル + glitch。全ジャンル共通）
+    ├── cards/       # カードデッキJSON（starter-cards.json 等。全ジャンル共通）
+    ├── sprites/     # ドット絵JSON（横スクロール用 + 戦闘用 battle_*.json。全ジャンル共通）
+    ├── sfx/         # 効果音JSON（75件。全ジャンル共通）
+    └── rpg/         # rpg ジャンルの戦闘専用データ（他ジャンルからは参照しない）
+        ├── skills/ traits/ enemies/ battle-effects/   # 戦闘コンテンツ（1ファイル1件、import.meta.glob で自動収集）
+        ├── battle-backgrounds/  # 戦闘背景JSON（草原・砂漠・遺跡・荒れ地・ボス専用）
+        ├── battle-guide.json    # 遊び方ガイド・用語集（HelpGuide.vue / GlossaryTerm.vue が参照）
+        └── battleContent.ts battleBackgrounds.ts battleGuide.ts   # 上記の読み込みローダ（TS）
 ```
+
+`rpg/` 配下は他ジャンルが一切参照しない、rpg 専用のデータ・ローダをまとめたサブディレクトリ。新しいジャンル専用データが増える場合も、同様に `src/data/<genre>/` 配下へ切り出す（ジャンル横断の共通データとは分ける）。
 
 ### 主要クラス・モジュール
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { computed } from 'vue'
 import { useBattleState, type BattleScheduler } from '../../../src/composables/useBattleState'
-import { BATTLE_CONTENT } from '../../../src/data/battleContent'
+import { BATTLE_CONTENT } from '../../../src/data/rpg/battleContent'
 import { BATTLE } from '../../../src/data/tunables'
 import { GENRES } from '../../../src/data/genres'
 import { evalScoreFormula } from '../../../src/domain/scoreCalc'

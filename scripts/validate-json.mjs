@@ -494,7 +494,7 @@ function walkEffectNodes(nodes, problems, path = 'effect') {
   })
 }
 
-/** src/data/skills/*.json を検証する。戻り値: { activeIds, passiveIds, referencedEffectIds } */
+/** src/data/rpg/skills/*.json を検証する。戻り値: { activeIds, passiveIds, referencedEffectIds } */
 function validateBattleSkills() {
   const activeIds = new Set()
   const passiveIds = new Set()
@@ -502,7 +502,7 @@ function validateBattleSkills() {
   const referencedSfxIds = new Set()
   const seen = new Set()
 
-  for (const file of walkJson('src/data/skills')) {
+  for (const file of walkJson('src/data/rpg/skills')) {
     const rel = relPath(file)
     const { data, error } = parseJson(file)
     if (data === null) { fail(rel, `JSON parse error: ${error}`); continue }
@@ -540,12 +540,12 @@ function validateBattleSkills() {
   return { activeIds, passiveIds, referencedEffectIds, referencedSfxIds }
 }
 
-/** src/data/traits/*.json を検証する。戻り値: 特性IDの集合 */
+/** src/data/rpg/traits/*.json を検証する。戻り値: 特性IDの集合 */
 function validateBattleTraits() {
   const traitIds = new Set()
   const seen = new Set()
 
-  for (const file of walkJson('src/data/traits')) {
+  for (const file of walkJson('src/data/rpg/traits')) {
     const rel = relPath(file)
     const { data, error } = parseJson(file)
     if (data === null) { fail(rel, `JSON parse error: ${error}`); continue }
@@ -567,12 +567,12 @@ function validateBattleTraits() {
   return traitIds
 }
 
-/** src/data/enemies/*.json を検証する（skill/trait の参照整合性を含む） */
+/** src/data/rpg/enemies/*.json を検証する（skill/trait の参照整合性を含む） */
 function validateBattleEnemies(activeIds, passiveIds, traitIds, spriteFrames) {
   const seen = new Set()
   let bossCount = 0
 
-  for (const file of walkJson('src/data/enemies')) {
+  for (const file of walkJson('src/data/rpg/enemies')) {
     const rel = relPath(file)
     const { data, error } = parseJson(file)
     if (data === null) { fail(rel, `JSON parse error: ${error}`); continue }
@@ -619,18 +619,18 @@ function validateBattleEnemies(activeIds, passiveIds, traitIds, spriteFrames) {
   }
 
   if (bossCount === 0) {
-    fail('src/data/enemies/*.json', 'isBoss:true の敵が1体もありません（ランがクリアできません）')
+    fail('src/data/rpg/enemies/*.json', 'isBoss:true の敵が1体もありません（ランがクリアできません）')
   }
 }
 
-/** src/data/battle-effects/*.json を検証する。戻り値: エフェクトIDの集合 */
+/** src/data/rpg/battle-effects/*.json を検証する。戻り値: エフェクトIDの集合 */
 function validateBattleEffects() {
   const effectIds = new Set()
   const effectTimings = new Map()
   const referencedSfxIds = new Set()
   const seen = new Set()
 
-  for (const file of walkJson('src/data/battle-effects')) {
+  for (const file of walkJson('src/data/rpg/battle-effects')) {
     const rel = relPath(file)
     const { data, error } = parseJson(file)
     if (data === null) { fail(rel, `JSON parse error: ${error}`); continue }
@@ -659,7 +659,7 @@ function validateBattleEffects() {
  * 対象ごとに自前で発行するため、ここに書くと使用者自身が被弾したように見えてしまう。
  */
 function validateBattleEffectReferences(referencedEffectIds, effectIds, effectTimings) {
-  const rel = 'src/data/skills/*.json (effects 参照整合性)'
+  const rel = 'src/data/rpg/skills/*.json (effects 参照整合性)'
   const problems = []
   const missing = [...referencedEffectIds].filter(id => !effectIds.has(id))
   if (missing.length > 0) problems.push(`存在しないエフェクトを参照しています: ${missing.join(', ')}`)
@@ -671,13 +671,13 @@ function validateBattleEffectReferences(referencedEffectIds, effectIds, effectTi
   else ok(rel)
 }
 
-/** src/data/battle-backgrounds/*.json を検証する。戻り値: ボス専用でない背景の数 */
+/** src/data/rpg/battle-backgrounds/*.json を検証する。戻り値: ボス専用でない背景の数 */
 function validateBattleBackgrounds() {
   const seen = new Set()
   let normalCount = 0
   let bossCount = 0
 
-  for (const file of walkJson('src/data/battle-backgrounds')) {
+  for (const file of walkJson('src/data/rpg/battle-backgrounds')) {
     const rel = relPath(file)
     const { data, error } = parseJson(file)
     if (data === null) { fail(rel, `JSON parse error: ${error}`); continue }
@@ -697,7 +697,7 @@ function validateBattleBackgrounds() {
     else ok(rel)
   }
 
-  const rel = 'src/data/battle-backgrounds/*.json (最低限の構成)'
+  const rel = 'src/data/rpg/battle-backgrounds/*.json (最低限の構成)'
   if (normalCount < 2) fail(rel, '通常戦闘用の背景が2種未満です（連戦で場所が変わらなくなります）')
   else if (bossCount === 0) fail(rel, 'bossOnly:true の背景がありません（ボス戦の場が通常戦と同じになります）')
   else ok(rel)
@@ -705,7 +705,7 @@ function validateBattleBackgrounds() {
 
 /** エフェクト/スキルが参照する SE の id がすべて実在するか */
 function validateBattleSfxReferences(referencedSfxIds, sfxIds) {
-  const rel = 'src/data/{battle-effects,skills}/*.json (sfx 参照整合性)'
+  const rel = 'src/data/rpg/{battle-effects,skills}/*.json (sfx 参照整合性)'
   const missing = [...referencedSfxIds].filter(id => !sfxIds.has(id))
   if (missing.length > 0) fail(rel, `存在しない効果音を参照しています: ${missing.join(', ')}`)
   else ok(rel)

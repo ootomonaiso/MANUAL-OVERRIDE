@@ -1,15 +1,15 @@
 /**
- * src/data/battleBackgrounds.ts
+ * src/data/rpg/battleBackgrounds.ts
  *
- * src/data/battle-backgrounds/*.json を自動収集する。
+ * src/data/rpg/battle-backgrounds/*.json を自動収集する。
  *
  * ── 背景を追加するには ────────────────────────────────────────
- * src/data/battle-backgrounds/bg_xxx.json を1つ置くだけ。
+ * src/data/rpg/battle-backgrounds/bg_xxx.json を1つ置くだけ。
  * 形式は schemas/battle-background.schema.json を参照。
  * ────────────────────────────────────────────────────────────
  */
 
-import type { BattleBackgroundDef } from '../domain/battle/backdrop'
+import type { BattleBackgroundDef } from '../../domain/battle/backdrop'
 
 const _modules = import.meta.glob('./battle-backgrounds/*.json', { eager: true })
 

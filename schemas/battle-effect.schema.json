@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "battle-effect.schema.json",
   "title": "RPGジャンル: 戦闘エフェクト定義",
-  "description": "src/data/battle-effects/*.json のスキーマ。docs/genre/rpg/09-effects.md 準拠。1ファイル1エフェクト。",
+  "description": "src/data/rpg/battle-effects/*.json のスキーマ。docs/genre/rpg/09-effects.md 準拠。1ファイル1エフェクト。",
   "type": "object",
   "required": ["id", "label", "timing", "durationMs", "target", "visual"],
   "additionalProperties": false,
