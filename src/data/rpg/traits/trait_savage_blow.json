@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-trait.schema.json",
+  "$schema": "../../../../schemas/battle-trait.schema.json",
   "id": "trait_savage_blow",
   "label": "荒々しい打撃",
   "flavorText": "手加減という文字を、破り捨てた。",

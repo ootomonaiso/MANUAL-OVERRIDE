@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_heal_light",
   "label": "小治癒",
   "flavorText": "説明書の余白に、傷を閉じる一文があった。",

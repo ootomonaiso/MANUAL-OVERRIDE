@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_stance_guard",
   "label": "守る",
   "flavorText": "身を固くして、次の一撃に備える。",

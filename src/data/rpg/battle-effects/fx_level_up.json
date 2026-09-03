@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-effect.schema.json",
+  "$schema": "../../../../schemas/battle-effect.schema.json",
   "id": "fx_level_up",
   "label": "レベルアップ演出",
   "timing": "onSystem",

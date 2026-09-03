@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-effect.schema.json",
+  "$schema": "../../../../schemas/battle-effect.schema.json",
   "id": "fx_cast_special",
   "label": "特殊属性の発動",
   "timing": "onCast",

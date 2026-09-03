@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-effect.schema.json",
+  "$schema": "../../../../schemas/battle-effect.schema.json",
   "id": "fx_heal",
   "label": "回復演出",
   "timing": "onHeal",

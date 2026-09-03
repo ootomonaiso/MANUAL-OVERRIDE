@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_double_bolt",
   "label": "連弾",
   "flavorText": "一発では言い足りなかった。",

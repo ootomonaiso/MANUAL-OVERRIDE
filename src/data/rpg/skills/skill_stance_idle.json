@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_stance_idle",
   "label": "何もしない",
   "flavorText": "あえて、何もしないでおく。",

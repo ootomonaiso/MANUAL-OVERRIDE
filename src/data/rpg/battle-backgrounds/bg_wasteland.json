@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-background.schema.json",
+  "$schema": "../../../../schemas/battle-background.schema.json",
   "id": "bg_wasteland",
   "label": "禍々しい荒れ地",
   "sky": {

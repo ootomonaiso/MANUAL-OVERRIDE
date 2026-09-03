@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_piercing_bolt",
   "label": "貫く光",
   "flavorText": "説明書の文字が、鎧ごと相手を貫いた。",

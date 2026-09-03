@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-trait.schema.json",
+  "$schema": "../../../../schemas/battle-trait.schema.json",
   "id": "trait_resist_magical",
   "label": "魔法耐性",
   "flavorText": "呪文の類には、もう驚かない。",

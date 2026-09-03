@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "passive_guard_mastery",
   "label": "守勢の極意",
   "flavorText": "身の守り方だけは、誰よりも詳しくなった。",

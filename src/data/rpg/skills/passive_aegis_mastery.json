@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "passive_aegis_mastery",
   "label": "加護の心得",
   "flavorText": "説明書を盾にする角度が、少しずつうまくなった。",

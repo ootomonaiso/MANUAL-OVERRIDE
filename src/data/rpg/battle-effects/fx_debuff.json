@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-effect.schema.json",
+  "$schema": "../../../../schemas/battle-effect.schema.json",
   "id": "fx_debuff",
   "label": "弱体演出",
   "timing": "onStatus",

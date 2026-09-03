@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "passive_iron_will",
   "label": "鉄の意志",
   "flavorText": "折れないことだけが取り柄だった。",

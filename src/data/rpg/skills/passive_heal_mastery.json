@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "passive_heal_mastery",
   "label": "治癒の心得",
   "flavorText": "痛みの引き方に、いくつかコツがあると気づいた。",

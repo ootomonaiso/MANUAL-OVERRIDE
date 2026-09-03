@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_fireball",
   "label": "ファイアボール",
   "flavorText": "説明書の余白に書かれていた呪文。試しに唱えたら、燃えた。",

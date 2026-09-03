@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-enemy.schema.json",
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
   "id": "enemy_slime",
   "label": "スライム",
   "flavorText": "説明書の余白から染み出してきた。",

@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-effect.schema.json",
+  "$schema": "../../../../schemas/battle-effect.schema.json",
   "id": "fx_shield_gain",
   "label": "シールド展開演出",
   "timing": "onShield",

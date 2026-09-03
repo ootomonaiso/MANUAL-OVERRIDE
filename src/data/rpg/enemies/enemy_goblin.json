@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-enemy.schema.json",
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
   "id": "enemy_goblin",
   "label": "ゴブリン",
   "flavorText": "誤字のように、しぶとく湧いてくる。",

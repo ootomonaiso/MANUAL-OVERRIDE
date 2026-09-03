@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-background.schema.json",
+  "$schema": "../../../../schemas/battle-background.schema.json",
   "id": "bg_grassland",
   "label": "草原",
   "sky": {

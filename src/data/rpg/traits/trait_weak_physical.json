@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-trait.schema.json",
+  "$schema": "../../../../schemas/battle-trait.schema.json",
   "id": "trait_weak_physical",
   "label": "物理弱点",
   "flavorText": "殴られると、思ったより効く。",

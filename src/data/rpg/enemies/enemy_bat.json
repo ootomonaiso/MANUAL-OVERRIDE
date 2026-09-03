@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-enemy.schema.json",
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
   "id": "enemy_bat",
   "label": "説明書コウモリ",
   "flavorText": "破り取られたページの端が、羽ばたいている。",

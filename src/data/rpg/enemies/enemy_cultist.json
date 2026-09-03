@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-enemy.schema.json",
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
   "id": "enemy_cultist",
   "label": "改訂者",
   "flavorText": "他人の説明書を、勝手に書き換えたがる。",

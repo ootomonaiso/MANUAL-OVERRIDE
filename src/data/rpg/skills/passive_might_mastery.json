@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "passive_might_mastery",
   "label": "剛撃の極意",
   "flavorText": "拳を振るうたび、説明書のページがまた1枚めくれる。",

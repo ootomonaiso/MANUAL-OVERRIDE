@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-trait.schema.json",
+  "$schema": "../../../../schemas/battle-trait.schema.json",
   "id": "trait_weak_magical",
   "label": "魔法弱点",
   "flavorText": "呪文を浴びると、紙のように燃える。",

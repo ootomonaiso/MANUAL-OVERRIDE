@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "passive_vitality_up",
   "label": "頑丈な綴じ方",
   "flavorText": "背表紙を補強したら、自分まで丈夫になった。",

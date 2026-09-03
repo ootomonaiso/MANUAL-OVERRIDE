@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "passive_swift_mastery",
   "label": "疾風の極意",
   "flavorText": "説明書をめくる指先まで速くなった。",

@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-background.schema.json",
+  "$schema": "../../../../schemas/battle-background.schema.json",
   "id": "bg_ruins",
   "label": "崩れた遺跡",
   "sky": {

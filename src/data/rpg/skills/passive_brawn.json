@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "passive_brawn",
   "label": "腕力自慢",
   "flavorText": "説明書より、腕の方が分厚くなってきた。",

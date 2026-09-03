@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "passive_arcane_mind",
   "label": "深読みの癖",
   "flavorText": "行間まで読むようになった。",

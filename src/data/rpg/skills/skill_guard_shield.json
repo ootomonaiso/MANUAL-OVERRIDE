@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_guard_shield",
   "label": "護りの詞",
   "flavorText": "読み上げると、言葉が薄い壁になった。",

@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_swift_slash",
   "label": "疾風斬り",
   "flavorText": "読み終える前に、もう斬っている。",

@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../schemas/battle-skill.schema.json",
+  "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_triple_strike",
   "label": "三連撃",
   "flavorText": "三度目に賭ける。それが作法だと教わった。",
