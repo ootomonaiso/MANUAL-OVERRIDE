@@ -10,15 +10,14 @@
 import { GenrePluginBase } from '../engine/GenrePluginBase'
 import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
+import type { PlayerAnimState } from '../engine/GenrePlugin'
 import { PixelCanvas } from '../game/render'
 import { PIXELART } from '../data/tunables'
+import { selectPlayerFrame } from './playerBaseAnim'
 
 // 山シルエット（drawFarLayer）の描画範囲マージン。スクロール時の端の途切れを防ぐ
 // （旧実装の sin サンプリング step=40 と同じ余白をセル単位で踏襲）
 const FAR_LAYER_MARGIN_CELLS = 10
-
-// プレイヤーの走りアニメーションのフレーム数（run_a / run_b の 2 枚）
-const RUN_FRAME_COUNT = 2
 
 export abstract class DarkThemePlugin extends GenrePluginBase {
   abstract readonly id: GenreId
@@ -73,17 +72,19 @@ export abstract class DarkThemePlugin extends GenrePluginBase {
     w: number, h: number,
     onGround: boolean,
     runCycle: number,
+    animState?: PlayerAnimState,
   ): void {
     const px = new PixelCanvas(ctx)
 
     // 影（スプライトには含めず、translate/scale された座標系にそのまま残す）
     px.ellipse(w / 2, h + 2, w * 0.4, 4, 'rgba(0,0,0,0.25)')
 
-    // 既存の引数（onGround / runCycle）だけでフレームを決める。新しい状態は追加しない
-    const frame = onGround
-      ? (Math.floor(runCycle * RUN_FRAME_COUNT) % 2 === 0 ? 'run_a' : 'run_b')
-      : 'jump'
-    px.sprite('player_base', 0, 0, w, h, { frame })
+    const s: PlayerAnimState = animState ?? {
+      vx: 0, vy: 0, onGround, runCycle, facing: 1,
+    }
+    const frame = selectPlayerFrame(s)
+    const flipX = s.facing === -1
+    px.sprite('player_base', 0, 0, w, h, { frame, flipX })
   }
 
   /** デフォルトのビネット・スキャンライン前景 */

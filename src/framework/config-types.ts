@@ -137,6 +137,10 @@ export interface VfxConfig {
   invincibleDuration: number
   runCycleRate: number
   hazardPulseRate: number
+  /** 静止判定の速度閾値（px/s）。|vx| < idleThreshold なら idle フレーム。 */
+  idleThreshold: number
+  /** 向き反転のデッドゾーン（px/s）。|vx| 未満では直前方向を保持。 */
+  facingDeadzone: number
 }
 
 /** camera.json — カメラ・視差スクロール */
