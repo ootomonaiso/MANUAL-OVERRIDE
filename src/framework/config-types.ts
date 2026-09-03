@@ -30,7 +30,10 @@ export interface PhysicsConfig {
   jumpBufferFrames: number
   playerMinX: number
   playerMaxXRatio: number
-  airFrictionX: number
+  groundAccel: number
+  groundDecel: number
+  airAccel: number
+  airDecel: number
   dashSpeed: number
   dashDurationSec: number
   dashCooldownSec: number
