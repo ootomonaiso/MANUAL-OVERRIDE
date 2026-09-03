@@ -734,7 +734,8 @@ export class SideScroller {
     const canJumpDouble = isDouble && p.jumpsLeft > 0
     if (this.jumpBufferTimer > 0 && (canJumpCoyote || (canJumpDouble && !p.onGround) || p.onGround)) {
       if (p.jumpsLeft > 0 || this.coyoteTimer > 0) {
-        p.vy = PLAYER_PHYSICS.jumpVelocity
+        const isAirDouble = !p.onGround && this.coyoteTimer <= 0
+        p.vy = isAirDouble ? PLAYER_PHYSICS.doubleJumpVelocity : PLAYER_PHYSICS.jumpVelocity
         p.jumpsLeft = Math.max(0, p.jumpsLeft - 1)
         p.onGround = false
         this.jumpHeld = true

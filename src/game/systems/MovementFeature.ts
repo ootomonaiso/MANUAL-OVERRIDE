@@ -79,6 +79,7 @@ export class MovementFeature implements FeatureSystem {
       : PLAYER_PHYSICS.runSpeed
 
     if (r.scrollAxis === 'y') {
+      // 縦 STG は標準メインキャラの範囲外（NG3）。即座速度設定を維持。
       const moveUp   = r.controls.moveUp   ? input.keys.has(r.controls.moveUp)   : false
       const moveDown = r.controls.moveDown ? input.keys.has(r.controls.moveDown) : false
       p.vx = input.keys.has(r.controls.moveRight) ? runSpeed : input.keys.has(r.controls.moveLeft) ? -runSpeed : 0
@@ -86,9 +87,10 @@ export class MovementFeature implements FeatureSystem {
     } else if (this.dash.timer <= 0 && !this.slide.active) {
       // ダッシュ中は _updateDash が vx を設定済み、スライド中は速度維持
       const isAutoRun = r.features.has('auto_run')
-      p.vx = (isAutoRun || input.keys.has(r.controls.moveRight)) ? runSpeed
-           : input.keys.has(r.controls.moveLeft) ? -runSpeed
-           : 0
+      const targetVx = (isAutoRun || input.keys.has(r.controls.moveRight)) ? runSpeed
+                     : input.keys.has(r.controls.moveLeft) ? -runSpeed
+                     : 0
+      this._applyHorizontalControl(p, targetVx, dt)
     }
   }
 
@@ -156,6 +158,28 @@ export class MovementFeature implements FeatureSystem {
     if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return hex
     const cl = (v: number): number => Math.max(0, Math.min(255, v + amount))
     return `rgb(${cl(r)},${cl(g)},${cl(b)})`
+  }
+
+  private _applyHorizontalControl(p: { vx: number; onGround: boolean }, targetVx: number, dt: number): void {
+    const accel = targetVx !== 0
+      ? (p.onGround ? PHYSICS.groundAccel : PHYSICS.airAccel)
+      : (p.onGround ? PHYSICS.groundDecel : PHYSICS.airDecel)
+
+    if (targetVx !== 0) {
+      // 目標へ加速（超過しない）
+      if (p.vx < targetVx) {
+        p.vx = Math.min(targetVx, p.vx + accel * dt)
+      } else {
+        p.vx = Math.max(targetVx, p.vx - accel * dt)
+      }
+    } else {
+      // 0 へ減速（超過しない）
+      if (p.vx > 0) {
+        p.vx = Math.max(0, p.vx - accel * dt)
+      } else {
+        p.vx = Math.min(0, p.vx + accel * dt)
+      }
+    }
   }
 
   private _updateSlide(world: MutableWorld, input: InputSnapshot, _dt: number): void {
