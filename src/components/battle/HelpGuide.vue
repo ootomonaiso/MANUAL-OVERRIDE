@@ -173,11 +173,17 @@ function goToDetail(): void {
 }
 
 /* クリックした場所の近くにその場で出す簡易説明。透明な全画面キャッチャーで
-   クリック外し/右クリックを拾い、閉じられるようにする（他のパネルと同じ作法）。 */
+   クリック外し/右クリックを拾い、閉じられるようにする（他のパネルと同じ作法）。
+   INFOパネルの上で用語を押すと、ポップアップの背景色（--battle-panel）が
+   INFOパネル自体の背景色と同じため、境界が消えて文字が透けて見える／INFOパネル
+   側の文字と重なって読めない不具合が実機で報告された。キャッチャーに半透明の
+   スクリムを敷いて背後を一段暗くし、カード自体の縁もアクセントカラーで
+   はっきり縁取ることで、どんな背景の上でも独立した層として視認できるようにする。 */
 .term-popup-catcher {
   position: fixed;
   inset: 0;
   z-index: 60;
+  background: rgba(0, 0, 0, 0.5);
 }
 .term-popup {
   position: fixed;
@@ -185,12 +191,12 @@ function goToDetail(): void {
   min-width: 220px;
   max-width: min(360px, calc(100vw - 24px));
   padding: 14px 16px;
-  background: color-mix(in srgb, var(--battle-panel) 97%, transparent);
-  border: 2px solid var(--battle-frame-border);
+  background: color-mix(in srgb, var(--battle-panel) 96%, black);
+  border: 2px solid var(--battle-accent);
   border-radius: var(--radius-md);
   color: var(--battle-text);
   font-family: var(--genre-font, var(--font-main));
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 12px 36px rgba(0, 0, 0, 0.75);
   visibility: hidden;
   opacity: 0;
 }

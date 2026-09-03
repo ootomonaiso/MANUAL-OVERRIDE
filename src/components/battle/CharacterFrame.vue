@@ -591,8 +591,19 @@ watch(() => props.flash, (kind) => {
   white-space: nowrap;
 }
 
-/* ── 敵にかかっているバフ/デバフ（頭上ではなく足元の下、HPプレートの下に積む） ── */
+/* ── 敵にかかっているバフ/デバフ（頭上ではなく足元の下、HPプレートの下に積む） ──
+ * .affinity-chip と同じ理由で position: absolute にしている。通常のフローに乗せると
+ * デバフを重ね掛けするたびに .status-row の高さが伸び、.char-unit 全体の高さが
+ * 変わってしまう。.enemy-line は align-items: flex-end で各キャラを足元基準に
+ * 揃えているため、高さが伸びた分だけ本体（頭上・スプライト）が上へ押し上げられて
+ * 見えていた（実機で複数デバフ重ね掛け時に確認）。.char-unit（position: relative）を
+ * 基準にした絶対配置へ変えることで、チップの増減がキャラの位置に影響しないようにする
+ * （HPプレートが .char-unit の最後のフロー要素であるため、top: 100% はその真下に一致する）。 */
 .status-row {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
