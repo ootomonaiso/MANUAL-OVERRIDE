@@ -13,6 +13,18 @@
 import type { GenreId } from '../domain/types'
 import type { MutableWorld, SpawnEntry } from './types'
 
+/**
+ * プレイヤーアニメーション状態。
+ * drawPlayer に渡され、フレーム選択・向き反転の判定に使用する。
+ */
+export interface PlayerAnimState {
+  vx: number        // 水平速度 px/s（向き・静止/走行判定）
+  vy: number        // 垂直速度 px/s（上昇/落下判定）
+  onGround: boolean // 接地フラグ
+  runCycle: number  // 走行アニメ位相（0〜1 繰り返し、速度連動）
+  facing: 1 | -1    // 最終移動方向（1=右, -1=左）。vx≈0 時は保持
+}
+
 export interface GenrePlugin {
   readonly id: GenreId
 
@@ -171,6 +183,7 @@ export interface GenrePlugin {
     h: number,
     onGround: boolean,
     runCycle: number,
+    animState?: PlayerAnimState,
   ): void
 
   // ─── オプショナルフック ───────────────────────────────────────────

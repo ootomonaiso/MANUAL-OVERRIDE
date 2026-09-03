@@ -6,6 +6,7 @@ import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICU
 import { classifyHudLayout, computeSafeZone, type SafeZone } from '../domain/hudLayout'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
 import { resolveWeight } from '../engine/types'
+import type { PlayerAnimState } from '../engine/GenrePlugin'
 import { soundManager } from '../plugins/SoundManager'
 import { evalScoreFormula, getLastFormulaError } from '../domain/scoreCalc'
 import { evaluateLearningRules, describeEffect } from '../domain/LearningSystem'
@@ -73,6 +74,9 @@ const TRANSITION_EASE_K = 5
 
 // ハザードを可動域内に収める際の内側マージン（px）。従来のスポーン端マージン相当。
 const HAZARD_BAND_MARGIN = 10
+
+// 向き反転のデッドゾーン（px/s）。|vx| 未満では直前方向を保持（#animation-improvement）。
+const FACING_DEADZONE = VFX.facingDeadzone
 
 /**
  * beat_hazard フィーチャー有効時の危険判定。
@@ -157,6 +161,7 @@ export class SideScroller {
   private genreLockFlash = 0
 
   // 死亡演出
+  private facing: 1 | -1 = 1
   private deathTimer = 0
   private deathSlowMo = false
 
@@ -700,6 +705,13 @@ export class SideScroller {
       this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
     }
 
+    // 向き追跡: vx の符号に応じて facing を更新（デッドゾーン内で保持）
+    if (p.vx > FACING_DEADZONE) {
+      this.facing = 1
+    } else if (p.vx < -FACING_DEADZONE) {
+      this.facing = -1
+    }
+
     // gravity === 0: 上下左右に自由移動する STG モード。ジャンプ・重力・着地は行わない
     if (r.gravity === 0) {
       const upKey   = r.controls.moveUp
@@ -1157,7 +1169,11 @@ export class SideScroller {
     }
 
     // ジャンルプラグインに描画を委譲（ここに if/else は一切不要）
-    getGenre(this.rules.genre).drawPlayer(ctx, p.w, p.h, p.onGround, this.runCycle)
+    const animState: PlayerAnimState = {
+      vx: p.vx, vy: p.vy, onGround: p.onGround,
+      runCycle: this.runCycle, facing: this.facing,
+    }
+    getGenre(this.rules.genre).drawPlayer(ctx, p.w, p.h, p.onGround, this.runCycle, animState)
 
     ctx.restore()
   }

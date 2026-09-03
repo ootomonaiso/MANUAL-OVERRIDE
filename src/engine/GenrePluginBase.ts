@@ -13,6 +13,7 @@
  */
 
 import type { GenrePlugin } from './GenrePlugin'
+import type { PlayerAnimState } from './GenrePlugin'
 import type { MutableWorld, SpawnEntry } from './types'
 import type { GenreId } from '../domain/types'
 import type { Hazard } from '../game/entities'
@@ -34,7 +35,7 @@ export abstract class GenrePluginBase implements GenrePlugin {
   // ─── 必須描画フック（サブクラスで実装） ──────────────────────────
   abstract drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void
   abstract drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void
-  abstract drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, onGround: boolean, runCycle: number): void
+  abstract drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, onGround: boolean, runCycle: number, animState?: PlayerAnimState): void
 
   // ─── 共通描画ユーティリティ ──────────────────────────────────────
   protected _roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
