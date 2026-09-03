@@ -378,6 +378,8 @@ export interface BattleConfig {
   /** カテゴリ特化の解放に必要な累計ポイント（段階配列。実装後に持ち越しの暫定値） */
   categoryUnlockThresholds: number[]
   fallbackStatBoost: { hp: number; other: number }
+  /** 戦闘終了時、特性の有無に関わらず無条件で回復する最大HP比率 */
+  postBattleHealRate: number
   /** 何戦目にボスを出すか（実装後に持ち越しの暫定値） */
   bossBattleIndex: number
   multiHitIntervalMs: number

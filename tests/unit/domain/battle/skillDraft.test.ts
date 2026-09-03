@@ -200,6 +200,19 @@ describe('skillDraft: ドラフト抽選', () => {
     const newActive = options.find(o => o.kind === 'active' && !o.isFallback)
     expect(newActive?.requiresSwap).toBe(true)
   })
+
+  it('アクティブ枠が埋まっていても、入れ替え不要な候補（パッシブ・特性）があれば必ず1つは3択に混ざる', () => {
+    // pool は a1/a2（入れ替え必須）, p1（パッシブ）, t1（特性）の4件。
+    // 3択のうち2件は必ず a1/a2 になりうるが、p1/t1 のどちらかは毎回含まれるはず。
+    const player = makePlayer({
+      actives: [0, 1, 2, 3].map(i => ({ id: `slot${i}`, level: 1, stacks: 0, cooldown: 0, slotIndex: i })),
+    })
+    for (let i = 0; i < 30; i++) {
+      const options = rollDraft(player, content, Math.random)
+      const hasSafeOption = options.some(o => !(o.kind === 'active' && o.requiresSwap))
+      expect(hasSafeOption).toBe(true)
+    }
+  })
 })
 
 describe('skillDraft: ドラフト選択の適用', () => {

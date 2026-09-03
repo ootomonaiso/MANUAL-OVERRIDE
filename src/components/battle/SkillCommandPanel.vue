@@ -32,6 +32,9 @@ export interface SkillCommandEntry {
 
 const props = defineProps<{
   entries: SkillCommandEntry[]
+  /** 技を選ぶ最中でも自分のHPを見たいという要望への対応。省略時は表示しない */
+  playerHp?: number
+  playerMaxHp?: number
 }>()
 
 const emit = defineEmits<{
@@ -56,6 +59,11 @@ const focused = computed(() =>
 
 watch(focused, (f) => emit('preview', f), { immediate: true })
 
+const hpRatio = computed(() => {
+  if (!props.playerMaxHp || props.playerMaxHp <= 0) return 0
+  return Math.max(0, Math.min(1, (props.playerHp ?? 0) / props.playerMaxHp))
+})
+
 function onSlotClick(entry: SkillCommandEntry): void {
   if (entry.disabled) return
   if (pinnedId.value === entry.id) {
@@ -77,6 +85,14 @@ function onSlotClick(entry: SkillCommandEntry): void {
         <SkillText v-if="focused.effectTokens" :tokens="focused.effectTokens" />
         <span v-else>{{ focused.description }}</span>
       </div>
+    </div>
+
+    <div v-if="playerMaxHp" class="skill-hp">
+      <span class="skill-hp-label">HP</span>
+      <div class="skill-hp-track">
+        <div class="skill-hp-fill" :style="{ width: `${hpRatio * 100}%` }" />
+      </div>
+      <span class="skill-hp-num">{{ Math.max(0, Math.floor(playerHp ?? 0)) }}/{{ Math.floor(playerMaxHp) }}</span>
     </div>
 
     <div class="skill-list">
@@ -158,6 +174,39 @@ function onSlotClick(entry: SkillCommandEntry): void {
   border: 3px solid #c98a5a;
   clip-path: polygon(22px 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%, 0 22px);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+.skill-hp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  margin-bottom: 4px;
+  background: #f6e3cf;
+  border: 2px solid #c98a5a;
+  border-radius: var(--radius-sm);
+  color: #4a2a1e;
+}
+.skill-hp-label {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.75;
+}
+.skill-hp-track {
+  position: relative;
+  flex: 1;
+  height: 7px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.skill-hp-fill {
+  height: 100%;
+  background: linear-gradient(180deg, #ffd07a 0%, #e88a2a 55%, #b4550f 100%);
+  transition: width 320ms ease-out;
+}
+.skill-hp-num {
+  font-size: 11px;
+  white-space: nowrap;
 }
 .skill-slot {
   display: flex;

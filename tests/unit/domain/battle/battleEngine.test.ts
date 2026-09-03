@@ -398,11 +398,26 @@ describe('battleEngine: 勝利時の後処理', () => {
     return { state: makeState({ player, enemies: [makeCombatant({ id: 'e0', alive: false })] }), player }
   }
 
-  it('現在HPとシールドは次の戦闘へ持ち越される', () => {
+  it('現在HPとシールドは次の戦闘へ持ち越される（無条件回復ぶんは加算される）', () => {
     const { state, player } = wonState()
     finishBattleOnVictory(state, content)
-    expect(player.hp).toBe(4000)
+    expect(player.hp).toBe(6000)   // 4000 + 無条件回復(10000 × postBattleHealRate)
     expect(player.shield).toBe(250)
+  })
+
+  it('特性がなくても戦闘終了時に無条件で最大HPの一定割合を回復し、記録される', () => {
+    const { state, player } = wonState()
+    finishBattleOnVictory(state, content)
+    expect(player.hp).toBe(4000 + Math.floor(BATTLE.postBattleHealRate * 10000))
+    expect(state.lastBattleEndNotices).toHaveLength(1)
+    expect(state.lastBattleEndNotices[0]).toContain('戦闘後の回復')
+  })
+
+  it('無条件回復は最大HPを超えない（既に満タンなら通知も出ない）', () => {
+    const { state, player } = wonState({ hp: 10000 })
+    finishBattleOnVictory(state, content)
+    expect(player.hp).toBe(10000)
+    expect(state.lastBattleEndNotices).toEqual([])
   })
 
   it('クールタイムはすべてリセットされる', () => {
@@ -435,6 +450,15 @@ describe('battleEngine: 勝利時の後処理', () => {
     expect(state.bossDefeated).toBe(false)
   })
 
+  it('勝利するたびリロール回数が1増える', () => {
+    const { state } = wonState()
+    expect(state.rerollCharges).toBe(0)
+    finishBattleOnVictory(state, content)
+    expect(state.rerollCharges).toBe(1)
+    finishBattleOnVictory(state, content)
+    expect(state.rerollCharges).toBe(2)
+  })
+
   it('ボスを倒したら bossDefeated が立つ', () => {
     const { state } = wonState()
     state.enemies = [makeCombatant({ id: 'boss', alive: false, isBoss: true })]
@@ -442,14 +466,15 @@ describe('battleEngine: 勝利時の後処理', () => {
     expect(state.bossDefeated).toBe(true)
   })
 
-  it('healBetweenBattles 特性で戦闘間に回復し、その旨が記録される', () => {
+  it('healBetweenBattles 特性で戦闘間に回復し、その旨が記録される（無条件回復と加算される）', () => {
     const medic = makeTrait({ id: 'medic', effect: [node('healBetweenBattles', { rate: 0.2 })] })
     const c = makeContent({ traits: [medic] })
     const { state, player } = wonState({ traits: [{ id: 'medic' }] })
     finishBattleOnVictory(state, c)
-    expect(player.hp).toBe(6000)   // 4000 + 10000 × 0.2
-    expect(state.lastBattleEndNotices).toHaveLength(1)
-    expect(state.lastBattleEndNotices[0]).toContain('2000')
+    // 4000 + 無条件回復(10000×postBattleHealRate) + 特性回復(10000×0.2)
+    expect(player.hp).toBe(4000 + Math.floor(BATTLE.postBattleHealRate * 10000) + 2000)
+    expect(state.lastBattleEndNotices).toHaveLength(2)
+    expect(state.lastBattleEndNotices.join(' ')).toContain('2000')
   })
 
   it('戦闘間回復は最大HPを超えない', () => {
@@ -460,8 +485,8 @@ describe('battleEngine: 勝利時の後処理', () => {
     expect(player.hp).toBe(10000)
   })
 
-  it('回復特性を持たなければ通知は空のまま', () => {
-    const { state } = wonState()
+  it('回復が何も発生しなければ（満タンなら）通知は空のまま', () => {
+    const { state } = wonState({ hp: 10000 })
     state.lastBattleEndNotices = ['前回の残骸']
     finishBattleOnVictory(state, content)
     expect(state.lastBattleEndNotices).toEqual([])

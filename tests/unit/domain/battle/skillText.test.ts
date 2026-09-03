@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  buildSkillText, STAT_LABEL, ELEMENT_LABEL, CATEGORY_LABEL,
+  buildSkillText, describeTemporaryModifier, STAT_LABEL, ELEMENT_LABEL, CATEGORY_LABEL,
   type SkillTextToken,
 } from '../../../../src/domain/battle/skillText'
 import { STAT_KEYS, CATEGORY_IDS } from '../../../../src/domain/battle/types'
@@ -21,6 +21,24 @@ describe('skillText: ラベル表', () => {
 
   it('全属性に表示名がある', () => {
     expect(Object.keys(ELEMENT_LABEL).sort()).toEqual(['magical', 'physical', 'special'])
+  })
+})
+
+describe('skillText: バフ・デバフ表示', () => {
+  it('正の増減はバフ、負の増減はデバフとして扱う', () => {
+    expect(describeTemporaryModifier({ stat: 'str', flat: 100, scope: 'thisBattle', sourceId: 'x' }).isBuff).toBe(true)
+    expect(describeTemporaryModifier({ stat: 'def', rate: -0.15, scope: 'thisBattle', sourceId: 'y' }).isBuff).toBe(false)
+  })
+
+  it('守る・避けるは専用ラベルになる', () => {
+    expect(describeTemporaryModifier({ stat: 'cutRate', flat: 0.5, scope: 'thisTurn', sourceId: 'guard' }).label).toBe('防御態勢')
+    expect(describeTemporaryModifier({ stat: 'evadeRate', flat: 0.5, scope: 'thisTurn', sourceId: 'dodge' }).label).toBe('回避態勢')
+  })
+
+  it('スコープごとに継続表示が変わる', () => {
+    expect(describeTemporaryModifier({ stat: 'str', flat: 1, scope: 'thisTurn', sourceId: 'x' }).scopeLabel).toBe('このターンのみ')
+    expect(describeTemporaryModifier({ stat: 'str', flat: 1, scope: 'thisBattle', sourceId: 'x' }).scopeLabel).toBe('この戦闘中')
+    expect(describeTemporaryModifier({ stat: 'str', flat: 1, scope: 'permanent', sourceId: 'x' }).scopeLabel).toBe('永続')
   })
 })
 

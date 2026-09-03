@@ -4,7 +4,7 @@
  * 表示される数値はスキルレベルの倍率を適用済みの実値にする。
  */
 
-import type { SkillDef, EffectNode, StatKey, Element, CategoryId } from './types'
+import type { SkillDef, EffectNode, StatKey, Element, CategoryId, ModifierScope, TemporaryModifier } from './types'
 import { levelMultiplier } from './stats'
 
 export const CATEGORY_LABEL: Record<CategoryId, string> = {
@@ -143,6 +143,31 @@ function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
 function endsWithPeriod(tokens: readonly SkillTextToken[]): boolean {
   const last = tokens[tokens.length - 1]
   return last?.type === 'plain' && last.text.endsWith('。')
+}
+
+// ─────────────────────────────────────────────────────────────
+// バフ・デバフ表示（一時効果を「今かかっているもの」として見せる）
+// ─────────────────────────────────────────────────────────────
+
+const MODIFIER_SCOPE_LABEL: Record<ModifierScope, string> = {
+  thisHit: 'この一撃のみ', thisTurn: 'このターンのみ', thisBattle: 'この戦闘中', permanent: '永続',
+}
+
+export interface TemporaryModifierView {
+  label: string
+  isBuff: boolean
+  scopeLabel: string
+}
+
+/** 一時効果1件をバフ/デバフ表示用に変換する。BuffStrip・敵の状態表示の両方で使う */
+export function describeTemporaryModifier(m: TemporaryModifier): TemporaryModifierView {
+  const magnitude = m.flat ?? m.rate ?? 0
+  const isBuff = magnitude >= 0
+  const label = m.sourceId === 'guard' ? '防御態勢'
+    : m.sourceId === 'dodge' ? '回避態勢'
+      : m.stat === 'cutRate' ? 'ダメージ軽減'
+        : `${STAT_LABEL[m.stat]}${isBuff ? '上昇' : '低下'}`
+  return { label, isBuff, scopeLabel: MODIFIER_SCOPE_LABEL[m.scope] }
 }
 
 /** 効果データから表示文を自動生成する。レベル倍率を適用済みの実値で表示する */

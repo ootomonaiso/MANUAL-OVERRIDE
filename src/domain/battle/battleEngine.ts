@@ -278,6 +278,18 @@ export function finishBattleOnVictory(state: BattleState, content: BattleContent
   player.builtinCooldowns = { guard: 0, dodge: 0 }
 
   state.lastBattleEndNotices = []
+
+  // 特性の有無に関わらず、戦闘終了ごとに無条件で最大HPの一定割合を回復する
+  // （HPが不足しがちだったプレイフィードバックを受けた常設の救済措置。healBetweenBattles
+  // 特性による回復とは別枠で加算される）
+  {
+    const eff = resolveEffectiveStats(player, content)
+    const amount = Math.floor(BATTLE.postBattleHealRate * eff.hp)
+    const before = player.hp
+    player.hp = Math.min(eff.hp, player.hp + amount)
+    if (player.hp > before) state.lastBattleEndNotices.push(`戦闘後の回復で${player.hp - before}回復した`)
+  }
+
   for (const t of player.traits) {
     const def = content.traits.get(t.id)
     if (!def) continue
@@ -296,6 +308,7 @@ export function finishBattleOnVictory(state: BattleState, content: BattleContent
   state.battlesWon++
   if (wonBoss) state.bossDefeated = true
   state.battleIndex++
+  state.rerollCharges++
 }
 
 // ─────────────────────────────────────────────────────────────

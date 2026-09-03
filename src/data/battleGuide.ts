@@ -7,6 +7,7 @@
 import raw from './battle-guide.json'
 
 export interface GuideSection {
+  id: string
   title: string
   body: string[]
 }

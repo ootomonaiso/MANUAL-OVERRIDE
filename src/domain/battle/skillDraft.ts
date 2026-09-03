@@ -181,6 +181,11 @@ function shuffle<T>(arr: readonly T[], rng: () => number): T[] {
   return a
 }
 
+/** アクティブ枠が全て埋まっていて、なおかつ入れ替え不要な候補（パッシブ・特性・所持スキルの重複取得） */
+function requiresSwap(opt: DraftOption): boolean {
+  return opt.kind === 'active' && opt.requiresSwap === true
+}
+
 /** 撃破後の3択を抽選する。重複しない3件。候補が足りなければステータス微増で埋める */
 export function rollDraft(player: Combatant, content: BattleContent, rng: () => number): DraftOption[] {
   const points = accumulateCategoryPoints(player, content)
@@ -188,6 +193,15 @@ export function rollDraft(player: Combatant, content: BattleContent, rng: () => 
 
   const picked: DraftOption[] = []
   const usedIds = new Set<string>()
+
+  // アクティブ枠が全て埋まっている時、3択が「入れ替えないと選べないアクティブ」だけに
+  // なると、変えたくない編成でも強制的に入れ替えを迫られてしまう。入れ替え不要な候補が
+  // プールに1つでもあれば、それを最初の1枠として確保しておく。
+  if (isSlotsFull(player)) {
+    const safe = pool.find(opt => !requiresSwap(opt))
+    if (safe) { picked.push(safe); usedIds.add(safe.id) }
+  }
+
   for (const opt of pool) {
     if (picked.length >= 3) break
     if (usedIds.has(opt.id)) continue

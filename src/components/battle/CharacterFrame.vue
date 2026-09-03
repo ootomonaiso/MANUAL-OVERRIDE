@@ -31,6 +31,8 @@ const props = withDefaults(defineProps<{
   spriteHeight: number
   attacking?: boolean
   flash?: FlashKind | null
+  /** クリティカル（スーパークリティカル含む）で被弾した瞬間だけ true。演出を派手にする */
+  critical?: boolean
   popups?: DamagePopup[]
   isBoss?: boolean
   /** 敵のみ: 次に使う技と、その被害の見込み */
@@ -39,14 +41,16 @@ const props = withDefaults(defineProps<{
   nextMarkColor?: string
   /** 敵のみ: COMMANDで技をホバー中の相性プレビュー（弱点/耐性・抜群/微妙） */
   affinityPreview?: AffinityPreview | null
+  /** 敵のみ: 今かかっているバフ/デバフ（呪詛弾のDEF低下など）。プレイヤー側は BuffStrip に集約する */
+  statusEffects?: { label: string; isBuff: boolean; scopeLabel: string }[]
   /** 対象選択中に光らせる */
   targetable?: boolean
   /** 待機モーションの位相をずらすための種。並んだ敵が同じ動きで揺れて見えないようにする */
   idleSeed?: number
 }>(), {
-  attacking: false, flash: null, popups: () => [], isBoss: false,
+  attacking: false, flash: null, critical: false, popups: () => [], isBoss: false,
   nextSkillLabel: null, nextDamageLabel: null, nextMarkColor: 'var(--battle-element-physical)',
-  affinityPreview: null, targetable: false, idleSeed: 0,
+  affinityPreview: null, statusEffects: () => [], targetable: false, idleSeed: 0,
 })
 
 const emit = defineEmits<{
@@ -70,12 +74,14 @@ const idleStyle = computed(() => ({ '--idle-delay': `${-(props.idleSeed * 0.55)}
 /**
  * 着弾の飛散とリング。フラッシュが立つたびに撒き直す。
  * 角度は固定値で、CSS変数として各粒へ渡す（乱数だと毎回描き直しになる）。
+ * ヒットの見た目を強めてほしいというフィードバックを受け、既定の12方向から
+ * 24方向へ倍増した（等間隔の角度を計算式で生成し、値を書き並べる手間を避ける）。
  */
-const BURST_DIRECTIONS = [
-  [0, -1], [0.5, -0.87], [0.87, -0.5], [1, 0],
-  [0.87, 0.5], [0.5, 0.87], [0, 1], [-0.5, 0.87],
-  [-0.87, 0.5], [-1, 0], [-0.87, -0.5], [-0.5, -0.87],
-] as const
+const BURST_DOT_COUNT = 24
+const BURST_DIRECTIONS = Array.from({ length: BURST_DOT_COUNT }, (_, i) => {
+  const angle = (i / BURST_DOT_COUNT) * Math.PI * 2
+  return [Math.sin(angle), -Math.cos(angle)] as const
+})
 
 const burstKey = ref(0)
 const burstColor = ref<string>('#ffffff')
@@ -94,19 +100,30 @@ watch(() => props.flash, (kind) => {
   >
     <div v-if="side === 'enemy' && alive" class="head-stack">
       <!--
-        affinity-chip は position:absolute で next-chip の上に「浮かせ」ている。
-        通常のフローに乗せると、ホバーの有無で next-chip の高さが変わるたびに
-        頭上の要素全体が伸縮し、只でさえ画面上端に近い敵の頭上スペースから
-        あふれて見切れてしまっていた（実機の getBoundingClientRect で確認）。
+        affinity-chip は position:absolute で next-chip の「左」に浮かせている。
+        当初は next-chip の上に積んでいたが、頭上スペースは画面上端ぎりぎりまで
+        使っており、1行だけでも実機で数px はみ出て見切れることを
+        getBoundingClientRect で確認した（2行になるボス戦等ではさらに悪化する）。
+        縦へ積むと head-stack 全体の高さが伸びて画面上端を突き破ってしまうため、
+        next-chip と同じ高さの範囲に収まる「横」へ逃がしている。
       -->
       <div
         v-if="affinityPreview?.affinity || affinityPreview?.effect"
         class="affinity-chip"
       >
-        <GlossaryTerm v-if="affinityPreview?.affinity === 'weak'" term-id="weak" class="affinity-tag weak">弱点</GlossaryTerm>
-        <GlossaryTerm v-else-if="affinityPreview?.affinity === 'resist'" term-id="resist" class="affinity-tag resist">耐性</GlossaryTerm>
-        <GlossaryTerm v-if="affinityPreview?.effect === 'super'" term-id="super_effective" class="affinity-tag super">抜群</GlossaryTerm>
-        <GlossaryTerm v-else-if="affinityPreview?.effect === 'poor'" term-id="poor_effective" class="affinity-tag poor">微妙</GlossaryTerm>
+        <!--
+          弱点/耐性（特性由来）と抜群/微妙（DEF/REFの偏り由来）は別の指標なのに
+          見た目がほぼ同じバッジだったため区別しづらいというフィードバックを受け、
+          行を分けたうえで前者は丸バッジ・後者は菱形バッジと形自体を変えている。
+        -->
+        <div v-if="affinityPreview?.affinity" class="affinity-row">
+          <GlossaryTerm v-if="affinityPreview.affinity === 'weak'" term-id="weak" class="affinity-tag pill weak">▲弱点</GlossaryTerm>
+          <GlossaryTerm v-else term-id="resist" class="affinity-tag pill resist">▼耐性</GlossaryTerm>
+        </div>
+        <div v-if="affinityPreview?.effect" class="affinity-row">
+          <GlossaryTerm v-if="affinityPreview.effect === 'super'" term-id="super_effective" class="affinity-tag diamond super"><span>◆抜群</span></GlossaryTerm>
+          <GlossaryTerm v-else term-id="poor_effective" class="affinity-tag diamond poor"><span>◇微妙</span></GlossaryTerm>
+        </div>
       </div>
 
       <div class="next-chip">
@@ -123,8 +140,14 @@ watch(() => props.flash, (kind) => {
       <div class="sprite-box" :class="{ attacking, flashing: flash !== null }" :style="idleStyle">
         <PixelSprite :sprite-id="spriteId" :frame="frame" :tint="tint" :target-height="spriteHeight" />
         <template v-if="flash">
-          <div :key="`ring-${burstKey}`" class="hit-ring" :style="{ '--ring-color': burstColor }" />
-          <div :key="`burst-${burstKey}`" class="hit-burst">
+          <div
+            :key="`ring-${burstKey}`"
+            class="hit-ring"
+            :class="{ critical }"
+            :style="{ '--ring-color': burstColor }"
+          />
+          <div v-if="critical" :key="`crit-ring-${burstKey}`" class="crit-ring" />
+          <div :key="`burst-${burstKey}`" class="hit-burst" :class="{ critical }">
             <span
               v-for="(d, i) in BURST_DIRECTIONS"
               :key="i"
@@ -157,6 +180,15 @@ watch(() => props.flash, (kind) => {
       </div>
       <span class="hp-num">{{ Math.max(0, Math.floor(hp)) }}/{{ Math.floor(maxHp) }}</span>
       <span v-if="shield > 0" class="hp-shield-num">+{{ Math.floor(shield) }}</span>
+    </div>
+
+    <div v-if="alive && statusEffects.length > 0" class="status-row">
+      <span
+        v-for="s in statusEffects"
+        :key="s.label"
+        class="status-chip"
+        :class="{ buff: s.isBuff, debuff: !s.isBuff }"
+      >{{ s.isBuff ? '▲' : '▼' }}{{ s.label }}<span class="status-scope">{{ s.scopeLabel }}</span></span>
     </div>
   </div>
 </template>
@@ -312,6 +344,34 @@ watch(() => props.flash, (kind) => {
   0% { transform: scale(0.3); opacity: 0.9; }
   100% { transform: scale(4.2); opacity: 0; }
 }
+/* クリティカル時はリングを一回り大きく、より長く見せる */
+.hit-ring.critical {
+  border-width: 4px;
+  animation-name: ring-expand-critical;
+  animation-duration: 460ms;
+}
+@keyframes ring-expand-critical {
+  0% { transform: scale(0.3); opacity: 1; }
+  100% { transform: scale(6); opacity: 0; }
+}
+/* クリティカル専用: 金色のリングをもう1本、逆位相で重ねて派手さを足す */
+.crit-ring {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border-radius: 50%;
+  border: 3px solid #ffd23a;
+  z-index: 2;
+  pointer-events: none;
+  animation: crit-ring-expand 520ms ease-out forwards;
+}
+@keyframes crit-ring-expand {
+  0% { transform: scale(0.2); opacity: 1; }
+  100% { transform: scale(7.5); opacity: 0; }
+}
 .hit-burst {
   position: absolute;
   left: 50%;
@@ -334,10 +394,28 @@ watch(() => props.flash, (kind) => {
   height: 14px;
   margin: -7px 0 0 -7px;
 }
+/* クリティカル時は飛散量そのもの（距離・粒サイズ）を一回り増やす */
+.hit-burst.critical .burst-dot {
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  animation-name: burst-fly-critical;
+  animation-duration: 460ms;
+}
+.hit-burst.critical .burst-dot.big {
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+}
 @keyframes burst-fly {
   0% { transform: translate(0, 0) scale(1.5); opacity: 1; }
   70% { opacity: 1; }
-  100% { transform: translate(calc(var(--dx) * 78px), calc(var(--dy) * 78px - 14px)) scale(0.2); opacity: 0; }
+  100% { transform: translate(calc(var(--dx) * 90px), calc(var(--dy) * 90px - 16px)) scale(0.2); opacity: 0; }
+}
+@keyframes burst-fly-critical {
+  0% { transform: translate(0, 0) scale(1.8); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translate(calc(var(--dx) * 130px), calc(var(--dy) * 130px - 22px)) scale(0.2); opacity: 0; }
 }
 
 .popup-layer {
@@ -378,23 +456,41 @@ watch(() => props.flash, (kind) => {
    敵の頭上要素が見切れてしまう（next-chip 側の説明コメントも参照） */
 .affinity-chip {
   position: absolute;
-  left: 50%;
-  bottom: 100%;
-  transform: translateX(-50%);
-  margin-bottom: 3px;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  white-space: nowrap;
+}
+.affinity-row {
   display: flex;
   gap: 3px;
-  white-space: nowrap;
 }
 .affinity-tag {
   padding: 1px 6px;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  border-radius: 999px;
   color: #fff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
   white-space: nowrap;
+}
+/* 弱点/耐性（特性由来）は丸いバッジ */
+.affinity-tag.pill {
+  border-radius: 999px;
+}
+/* 抜群/微妙（DEF・REFの偏り由来）は角を落とした菱形風にして、見た目でも別指標だと分かるようにする */
+.affinity-tag.diamond {
+  border-radius: 3px;
+  transform: skewX(-12deg);
+}
+.affinity-tag.diamond :deep(span) {
+  display: inline-block;
+  transform: skewX(12deg);
 }
 .affinity-tag.weak { background: color-mix(in srgb, var(--battle-diff-minus) 75%, transparent); }
 .affinity-tag.resist { background: color-mix(in srgb, var(--battle-element-magical) 65%, transparent); }
@@ -493,6 +589,35 @@ watch(() => props.flash, (kind) => {
   color: var(--battle-category-aegis);
   letter-spacing: -0.5px;
   white-space: nowrap;
+}
+
+/* ── 敵にかかっているバフ/デバフ（頭上ではなく足元の下、HPプレートの下に積む） ── */
+.status-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 4px;
+  max-width: 200px;
+}
+.status-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 999px;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+}
+.status-chip.buff { background: color-mix(in srgb, var(--battle-diff-plus) 70%, transparent); }
+.status-chip.debuff { background: color-mix(in srgb, var(--battle-diff-minus) 70%, transparent); }
+.status-scope {
+  font-size: 8px;
+  font-weight: 400;
+  opacity: 0.85;
 }
 
 .popup-enter-active {

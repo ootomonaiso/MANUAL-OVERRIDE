@@ -98,6 +98,7 @@ function freshState(): BattleState {
     draftOptions: null,
     pendingSwapSkillId: null,
     categoryPoints: zeroCategoryPoints(),
+    rerollCharges: 0,
     seenIds: new Set(),
     ui: { statusPanelMode: 'effective', showBuffDiff: true, statusPanelCollapsed: false, skillListCollapsed: false },
     playScore: 0,
@@ -399,6 +400,14 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     state.status = 'drafting'
   }
 
+  /** ドラフトの3択を引き直す。リロール回数を1消費する */
+  function rerollDraft(): void {
+    const r = raw()
+    if (r.status !== 'drafting' || r.rerollCharges <= 0) return
+    state.rerollCharges--
+    state.draftOptions = rollDraft(r.player, content, rng)
+  }
+
   // ── 終了 ──────────────────────────────────────────────────────
   function giveUp(): void {
     if (state.status === 'finished') return
@@ -488,6 +497,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     selectDraft,
     confirmSwap,
     cancelSwap,
+    rerollDraft,
     giveUp,
 
     toggleStatusMode,

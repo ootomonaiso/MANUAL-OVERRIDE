@@ -308,6 +308,9 @@ export interface BattleState {
 
   categoryPoints: Record<CategoryId, number>
 
+  /** ドラフトの引き直し回数。戦闘に勝つたび1増え、使うと1減る */
+  rerollCharges: number
+
   seenIds: Set<string>
 
   ui: {

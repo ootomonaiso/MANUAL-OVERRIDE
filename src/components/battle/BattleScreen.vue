@@ -25,8 +25,8 @@ import TurnBadge from './TurnBadge.vue'
 import BuffStrip from './BuffStrip.vue'
 import type { BuffEntry } from './BuffStrip.vue'
 import CharacterFrame from './CharacterFrame.vue'
-import CharacterDetail from './CharacterDetail.vue'
-import type { DetailStatRow, DetailSkillRow } from './CharacterDetail.vue'
+import InfoPanel from './InfoPanel.vue'
+import type { InfoSkillRow, InfoCharacterView } from './InfoPanel.vue'
 import SkillDraftPanel from './SkillDraftPanel.vue'
 import type { DraftCardView, SwapSlotView } from './SkillDraftPanel.vue'
 import BattleBackdrop from './BattleBackdrop.vue'
@@ -34,7 +34,9 @@ import SkillCastBanner from './SkillCastBanner.vue'
 import HelpGuide from './HelpGuide.vue'
 import type { StatKey, PlayerAction, SkillDef, Element } from '../../domain/battle/types'
 import { STAT_KEYS, CATEGORY_IDS } from '../../domain/battle/types'
-import { STAT_LABEL, CATEGORY_LABEL, CATEGORY_COLOR, buildSkillText } from '../../domain/battle/skillText'
+import {
+  STAT_LABEL, CATEGORY_LABEL, CATEGORY_COLOR, buildSkillText, describeTemporaryModifier,
+} from '../../domain/battle/skillText'
 import { STACKS_REQUIRED, nextCategoryThreshold } from '../../domain/battle/skillDraft'
 import { damageMagnitude, MAGNITUDE_LABEL } from '../../domain/battle/damagePreview'
 import { computeAffinityStage, effectivenessHint } from '../../domain/battle/damageCalc'
@@ -264,13 +266,14 @@ const enemyPreviews = computed<Record<string, NextPreview>>(() => {
   return out
 })
 
-// ── キャラクター詳細 ──────────────────────────────────────────
-const detailTarget = ref<CombatantView | null>(null)
+// ── INFO パネル（プレイヤー・敵・スキル詳細をまとめた2ペインパネル） ───────
+const infoOpen = ref(false)
+const infoInitialId = ref<string | null>(null)
 
 function skillRowsFrom(
   refs: readonly { id: string; level: number }[], lookup: (id: string) => SkillDef | undefined,
-): DetailSkillRow[] {
-  const rows: DetailSkillRow[] = []
+): InfoSkillRow[] {
+  const rows: InfoSkillRow[] = []
   for (const r of refs) {
     const def = lookup(r.id)
     if (!def) continue
@@ -279,28 +282,42 @@ function skillRowsFrom(
   return rows
 }
 
+/** 敵のみ自身のアクティブ/パッシブ/特性を内包する（プレイヤーの分は別グループの
+ *  トップレベルナビとして表示するため、ここでは持たせない） */
+function characterViewOf(c: CombatantView): InfoCharacterView {
+  const isEnemyC = c.id !== battle.state.player.id
+  return {
+    id: c.id, label: c.label, spriteId: c.spriteId,
+    hp: c.hp, maxHp: battle.effectiveOf(c).hp, isBoss: c.isBoss,
+    stats: statRows(c),
+    skills: isEnemyC ? {
+      actives: skillRowsFrom(c.actives.filter(a => a.slotIndex !== null), id => content.skills.get(id)),
+      passives: skillRowsFrom(c.passives, id => content.skills.get(id)),
+      traits: skillRowsFrom(c.traits.map(t => ({ id: t.id, level: 1 })), id => content.traits.get(id)),
+    } : undefined,
+  }
+}
+
 function openDetail(c: CombatantView): void {
+  const isPlayerC = c.id === battle.state.player.id
   battle.markSeen([
     ...c.traits.map(t => t.id),
     ...c.passives.map(p => p.id),
     ...c.actives.map(a => a.id),
   ])
-  detailTarget.value = c
+  infoInitialId.value = isPlayerC ? 'player' : `enemy:${c.id}`
+  infoOpen.value = true
 }
-function closeDetail(): void { detailTarget.value = null }
+function closeDetail(): void { infoOpen.value = false }
 
-const detailView = computed(() => {
-  const c = detailTarget.value
-  if (!c) return null
-  const stats: DetailStatRow[] = statRows(c)
-  return {
-    title: c.label,
-    stats,
-    traits: skillRowsFrom(c.traits.map(t => ({ id: t.id, level: 1 })), id => content.traits.get(id)),
-    passives: skillRowsFrom(c.passives, id => content.skills.get(id)),
-    actives: skillRowsFrom(c.actives.filter(a => a.slotIndex !== null), id => content.skills.get(id)),
-  }
-})
+const infoPlayerView = computed<InfoCharacterView>(() => characterViewOf(battle.state.player))
+const infoEnemyViews = computed<InfoCharacterView[]>(() => battle.state.enemies.map(characterViewOf))
+const infoActives = computed<InfoSkillRow[]>(() =>
+  skillRowsFrom(battle.state.player.actives.filter(a => a.slotIndex !== null), id => content.skills.get(id)))
+const infoPassives = computed<InfoSkillRow[]>(() =>
+  skillRowsFrom(battle.state.player.passives, id => content.skills.get(id)))
+const infoTraits = computed<InfoSkillRow[]>(() =>
+  skillRowsFrom(battle.state.player.traits.map(t => ({ id: t.id, level: 1 })), id => content.traits.get(id)))
 
 // ── スキル一覧（INFO の中身） ─────────────────────────────────
 function visibilityOf(id: string, owned: boolean): 'unseen' | 'seen' | 'owned' {
@@ -399,19 +416,23 @@ const buffEntries = computed<BuffEntry[]>(() => {
     out.push({ id: `trait:${t.id}`, label: def?.label ?? t.id, permanent: true, color: 'var(--battle-accent)' })
   }
   for (const m of player.temporary) {
-    const label = m.sourceId === 'guard' ? '防御態勢'
-      : m.sourceId === 'dodge' ? '回避態勢'
-        : m.stat === 'cutRate' ? 'ダメージ軽減'
-          : `${STAT_LABEL[m.stat]}変化`
+    const view = describeTemporaryModifier(m)
     out.push({
       id: `tmp:${m.sourceId}:${m.stat}`,
-      label,
+      label: view.label,
       permanent: false,
-      color: (m.flat ?? m.rate ?? 0) < 0 ? 'var(--battle-diff-minus)' : 'var(--battle-diff-plus)',
+      isBuff: view.isBuff,
+      scopeLabel: view.scopeLabel,
+      color: view.isBuff ? 'var(--battle-diff-plus)' : 'var(--battle-diff-minus)',
     })
   }
   return out
 })
+
+/** 敵にかかっているバフ/デバフ（呪詛弾のDEF低下など）。頭上のバッジで見える化する */
+function statusEffectsOf(c: CombatantView): { label: string; isBuff: boolean; scopeLabel: string }[] {
+  return c.temporary.map(describeTemporaryModifier)
+}
 
 // ── ドラフト ──────────────────────────────────────────────────
 const draftCards = computed<DraftCardView[]>(() => {
@@ -428,13 +449,28 @@ const draftCards = computed<DraftCardView[]>(() => {
     }
     const def = opt.kind === 'trait' ? content.traits.get(opt.id) : content.skills.get(opt.id)
     const category = def && 'mainCategory' in def ? def.mainCategory : null
+
+    // 所持済み(currentLevel あり)を選び直した時、実際にレベルが上がるのは
+    // 必要スタック数に届く時だけ（skillDraft.ts の addStack 参照）。届かない場合に
+    // 「次レベルの効果・Lv遷移」を無条件表示すると、選べば即レベルアップするように
+    // 誤認させてしまうため、届くかどうかで表示を分ける。
+    const currentLevel = opt.currentLevel ?? 0
+    const currentStacks = opt.currentStacks ?? 0
+    const required = currentLevel > 0 && currentLevel < 4 ? STACKS_REQUIRED[currentLevel] : 0
+    const willLevelUp = required > 0 && currentStacks + 1 >= required
+    const displayLevel = currentLevel === 0 ? 1 : willLevelUp ? currentLevel + 1 : currentLevel
+
     return {
       index, kind: opt.kind, label: meta?.label ?? opt.id, flavorText: meta?.flavorText ?? '',
-      effectTokens: def ? buildSkillText(def, opt.currentLevel ? opt.currentLevel + 1 : 1) : [],
+      effectTokens: def ? buildSkillText(def, displayLevel) : [],
       categoryLabel: category ? CATEGORY_LABEL[category] : '―',
       categoryColor: category ? CATEGORY_COLOR[category] : undefined,
       categoryId: category ?? undefined,
-      levelTransition: opt.currentLevel ? `Lv${opt.currentLevel} → Lv${Math.min(4, opt.currentLevel + 1)}` : undefined,
+      levelTransition: currentLevel === 0
+        ? undefined
+        : willLevelUp
+          ? `Lv${currentLevel} → Lv${currentLevel + 1}`
+          : `スタック ${currentStacks + 1}/${required}`,
       isUnlocked: opt.isUnlocked,
     }
   })
@@ -456,12 +492,15 @@ function labelForCombatant(id: string | null | undefined): string {
   return battle.state.enemies.find(e => e.id === id)?.label ?? ''
 }
 
+/**
+ * TURN の帯に添える「今動いている人」の名前だけを返す（「〜の手番です」という
+ * 文には寄せない。TURN という見出し語がすでに文脈を示しているため、繰り返さない）。
+ */
 const currentActorLabel = computed(() => {
-  if (battle.state.status !== 'battle') return '―'
-  if (battle.isPlayerTurn.value) return 'あなたの手番'
+  if (battle.state.status !== 'battle') return ''
+  if (battle.isPlayerTurn.value) return 'あなた'
   const id = battle.presentation.actorId ?? battle.state.turnQueue[battle.state.turnIndex]?.combatantId
-  const label = labelForCombatant(id)
-  return label ? `${label}の手番` : '―'
+  return labelForCombatant(id)
 })
 
 const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.actorId))
@@ -473,6 +512,7 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
     <HelpGuide />
 
     <TurnBadge
+      v-if="battle.state.status === 'battle'"
       :turn-number="battle.turnNumber.value"
       :battle-number="battle.battleNumber.value"
       :actor-label="currentActorLabel"
@@ -511,20 +551,22 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
           :key="e.id"
           side="enemy"
           :label="e.label"
-          :hp="e.hp"
+          :hp="fx.displayedHpOf(e.id)"
           :max-hp="battle.effectiveOf(e).hp"
           :shield="e.shield"
-          :alive="e.alive"
+          :alive="fx.displayedAliveOf(e.id)"
           :is-boss="e.isBoss"
           :sprite-id="e.spriteId"
           :sprite-height="enemySpriteHeight(e.isBoss)"
           :attacking="battle.presentation.posingId === e.id"
           :flash="fx.flashOf(e.id)"
+          :critical="fx.criticalOf(e.id)"
           :popups="fx.popupsOf(e.id)"
           :next-skill-label="enemyPreviews[e.id]?.label ?? null"
           :next-damage-label="enemyPreviews[e.id]?.damage ?? null"
           :next-mark-color="enemyPreviews[e.id]?.markColor"
           :affinity-preview="affinityPreviewOf(e)"
+          :status-effects="statusEffectsOf(e)"
           :targetable="menu === 'focus' && e.alive"
           :idle-seed="i"
           @open-detail="onUnitSelect(e, i)"
@@ -535,14 +577,15 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
         <CharacterFrame
           side="player"
           :label="battle.state.player.label"
-          :hp="battle.state.player.hp"
+          :hp="fx.displayedHpOf(battle.state.player.id)"
           :max-hp="playerMaxHp"
           :shield="battle.state.player.shield"
-          :alive="battle.state.player.alive"
+          :alive="fx.displayedAliveOf(battle.state.player.id)"
           :sprite-id="battle.state.player.spriteId"
           :sprite-height="playerSpriteHeight"
           :attacking="battle.presentation.posingId === battle.state.player.id"
           :flash="fx.flashOf(battle.state.player.id)"
+          :critical="fx.criticalOf(battle.state.player.id)"
           :popups="fx.popupsOf(battle.state.player.id)"
           @open-detail="onUnitSelect(battle.state.player, null)"
         />
@@ -571,6 +614,8 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
       <SkillCommandPanel
         v-else-if="menu === 'battle'"
         :entries="skillEntries"
+        :player-hp="battle.state.player.hp"
+        :player-max-hp="playerMaxHp"
         @select="onSkillSelect"
         @cancel="onCancel"
         @preview="onSkillPreview"
@@ -587,14 +632,22 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
       :options="draftCards"
       :swapping="battle.state.status === 'swapping'"
       :swap-slots="swapSlotsView"
+      :notices="battle.state.lastBattleEndNotices"
+      :reroll-charges="battle.state.rerollCharges"
       @select="battle.selectDraft"
       @confirm-swap="battle.confirmSwap"
       @cancel-swap="battle.cancelSwap"
+      @reroll="battle.rerollDraft()"
     />
 
-    <CharacterDetail
-      v-if="detailView"
-      v-bind="detailView"
+    <InfoPanel
+      v-if="infoOpen"
+      :player="infoPlayerView"
+      :enemies="infoEnemyViews"
+      :actives="infoActives"
+      :passives="infoPassives"
+      :traits="infoTraits"
+      :initial-section-id="infoInitialId"
       @close="closeDetail"
     />
   </div>

@@ -154,7 +154,7 @@ describe('BattleScreen: 初期描画', () => {
   it('ドラフトも詳細もまだ開いていない', () => {
     const h = mount()
     expect($(h.host, '.draft-overlay')).toBeNull()
-    expect($(h.host, '.detail-overlay')).toBeNull()
+    expect($(h.host, '.info-shell-overlay')).toBeNull()
   })
 })
 
@@ -201,12 +201,22 @@ describe('BattleScreen: コマンド操作', () => {
   })
 
   it('技を押すと敵のHP表示が減る', async () => {
-    const h = mount()
-    const before = h.battle.state.enemies[0].hp
-    await h.act()
-    expect(h.battle.state.enemies[0].hp).toBeLessThan(before)
-    expect($(h.host, '.char-unit.enemy .hp-num')?.textContent)
-      .toContain(String(Math.max(0, Math.floor(h.battle.state.enemies[0].hp))))
+    // 表示HPはヒットの再生（later、実タイマー）に合わせて段階的に真の値へ近づく
+    // （多段ヒットを一気に反映しない仕様。下の『段階的に』のテスト参照）ので、
+    // ここではタイマーを進めてから最終的な表示を確認する。
+    vi.useFakeTimers()
+    try {
+      const h = mount()
+      const before = h.battle.state.enemies[0].hp
+      await h.act()
+      vi.advanceTimersByTime(BATTLE.multiHitIntervalMs)
+      await nextTick()
+      expect(h.battle.state.enemies[0].hp).toBeLessThan(before)
+      expect($(h.host, '.char-unit.enemy .hp-num')?.textContent)
+        .toContain(String(Math.max(0, Math.floor(h.battle.state.enemies[0].hp))))
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('守るを押すとクールタイムが表示され押せなくなる', async () => {
@@ -339,42 +349,60 @@ describe('BattleScreen: 常時表示のステータス・スキル一覧', () =>
 })
 
 describe('BattleScreen: INFO', () => {
-  it('INFO を押すと自キャラの大きく詳しい表示（キャラクター詳細）が開く', async () => {
+  it('INFO を押すと大きな2ペインのINFOパネルが開き、プレイヤーステータスが初期表示される', async () => {
     const h = mount()
     const info = commandItems(h.host).find(b => b.textContent?.includes('INFO')) as HTMLButtonElement
     info.click()
     await nextTick()
-    expect($(h.host, '.detail-overlay')).not.toBeNull()
-    expect(textOf(h.host, '.detail-title')).toBe(h.battle.state.player.label)
-    expect($$(h.host, '.detail-overlay .stat-cell')).toHaveLength(10)
+    expect($(h.host, '.info-shell-overlay')).not.toBeNull()
+    expect(textOf(h.host, '.info-shell-title')).toBe('INFO')
+    expect($$(h.host, '.info-shell-content .stat-cell')).toHaveLength(10)
   })
 })
 
-describe('BattleScreen: キャラクター詳細', () => {
-  it('自キャラを押すと詳細が開き、閉じられる', async () => {
+describe('BattleScreen: INFOパネル', () => {
+  it('自キャラを押すとINFOが開き、閉じられる', async () => {
     const h = mount()
     ;($(h.host, '.char-unit.player') as HTMLElement).click()
     await nextTick()
-    expect($(h.host, '.detail-overlay')).not.toBeNull()
-    expect(textOf(h.host, '.detail-title')).toBe(h.battle.state.player.label)
-    ;($(h.host, '.detail-close') as HTMLButtonElement).click()
+    expect($(h.host, '.info-shell-overlay')).not.toBeNull()
+    expect($$(h.host, '.info-shell-content .stat-cell')).toHaveLength(10)
+    ;($(h.host, '.info-shell-close') as HTMLButtonElement).click()
     await nextTick()
-    expect($(h.host, '.detail-overlay')).toBeNull()
+    expect($(h.host, '.info-shell-overlay')).toBeNull()
   })
 
-  it('詳細には全ステータスと所持アクティブスキルが並ぶ', async () => {
+  it('左のナビからアクティブスキルを選ぶと効果文が表示される', async () => {
     const h = mount()
     ;($(h.host, '.char-unit.player') as HTMLElement).click()
     await nextTick()
-    expect($$(h.host, '.detail-overlay .stat-cell')).toHaveLength(10)
-    expect($$(h.host, '.detail-overlay .skill-row').length).toBeGreaterThan(0)
+    const ownedId = h.battle.state.player.actives[0].id
+    const label = BATTLE_CONTENT.skills.get(ownedId)?.label ?? ''
+
+    // 「アクティブスキル」グループ見出しを開かないと子のナビ項目は描画されない
+    const groupTitle = $$(h.host, '.info-shell-nav .nav-group-title')
+      .find(b => b.textContent?.includes('アクティブスキル')) as HTMLButtonElement
+    expect(groupTitle).toBeTruthy()
+    groupTitle.click()
+    await nextTick()
+
+    const navItems = $$(h.host, '.info-shell-nav .nav-item.child')
+    const activeNav = navItems.find(b => b.textContent?.trim() === label) as HTMLButtonElement
+    expect(activeNav).toBeTruthy()
+    activeNav.click()
+    await nextTick()
+    expect($(h.host, '.info-shell-content .skill-row')).not.toBeNull()
+    expect(textOf(h.host, '.info-shell-content .skill-row-head')).toContain(label)
   })
 
-  it('敵を押すとその敵の詳細が出る', async () => {
+  it('敵を押すとその敵のセクションが初期表示され、ステータスが見える', async () => {
     const h = mount()
     ;($(h.host, '.char-unit.enemy') as HTMLElement).click()
     await nextTick()
-    expect(textOf(h.host, '.detail-title')).toBe(h.battle.state.enemies[0].label)
+    expect($(h.host, '.info-shell-overlay')).not.toBeNull()
+    const activeNav = $(h.host, '.info-shell-nav .nav-item.active')
+    expect(activeNav?.textContent?.trim()).toBe(h.battle.state.enemies[0].label)
+    expect($$(h.host, '.info-shell-content .stat-cell')).toHaveLength(10)
   })
 })
 

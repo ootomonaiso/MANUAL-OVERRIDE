@@ -77,6 +77,9 @@ function toggle(id: string) {
               <span v-if="item.stored" class="item-badge">保管中</span>
               <span v-if="item.cooldown" class="item-cooldown">CT{{ item.cooldown }}</span>
               <span v-if="item.level" class="item-level">Lv{{ item.level }}</span>
+              <span v-if="item.level && item.level < 4 && item.stacksRequired" class="item-stacks">
+                {{ item.stacks }}/{{ item.stacksRequired }}
+              </span>
             </div>
             <div v-if="pinnedId === item.id && item.visibility !== 'unseen'" class="item-detail">
               <SkillText v-if="item.effectTokens" :tokens="item.effectTokens" />
@@ -182,6 +185,13 @@ function toggle(id: string) {
 }
 .item-cooldown + .item-level {
   margin-left: 0;
+}
+.item-stacks {
+  font-size: 8px;
+  opacity: 0.6;
+}
+.item-level + .item-stacks {
+  margin-left: -3px;
 }
 .item-detail {
   font-size: 10px;

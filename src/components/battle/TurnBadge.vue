@@ -11,7 +11,7 @@ defineProps<{
   <div class="turn-badge">
     <div class="turn-caption">TURN</div>
     <div class="turn-value">{{ turnNumber }}</div>
-    <div class="turn-sub">第{{ battleNumber }}戦 / {{ actorLabel }}</div>
+    <div class="turn-sub">第{{ battleNumber }}戦<template v-if="actorLabel"> / {{ actorLabel }}</template></div>
   </div>
 </template>
 

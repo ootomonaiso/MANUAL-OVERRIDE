@@ -107,6 +107,7 @@ export function makeState(over: Partial<BattleState> = {}): BattleState {
     draftOptions: null,
     pendingSwapSkillId: null,
     categoryPoints: zeroPoints(),
+    rerollCharges: 0,
     seenIds: new Set(),
     ui: { statusPanelMode: 'effective', showBuffDiff: true, statusPanelCollapsed: false, skillListCollapsed: false },
     playScore: 0,

@@ -21,22 +21,38 @@ export interface SwapSlotView {
   label: string
 }
 
-defineProps<{
+withDefaults(defineProps<{
   options: DraftCardView[]
   swapping: boolean
   swapSlots: SwapSlotView[]
-}>()
+  /** 戦闘終了時に起きた回復などの通知（回復特性・無条件回復）。空なら何も出さない */
+  notices?: readonly string[]
+  /** 残りリロール回数。0 ならボタンを無効化する */
+  rerollCharges?: number
+}>(), { notices: () => [], rerollCharges: 0 })
 
 const emit = defineEmits<{
   (e: 'select', index: number): void
   (e: 'confirm-swap', slotIndex: number): void
   (e: 'cancel-swap'): void
+  (e: 'reroll'): void
 }>()
 </script>
 
 <template>
   <div class="draft-overlay">
-    <div v-if="!swapping" class="draft-cards">
+    <div v-if="notices.length > 0" class="draft-notices">
+      <div v-for="(n, i) in notices" :key="i" class="draft-notice">✚ {{ n }}</div>
+    </div>
+
+    <div v-if="!swapping" class="draft-cards-area">
+      <button
+        type="button"
+        class="draft-reroll"
+        :disabled="rerollCharges <= 0"
+        @click="emit('reroll')"
+      >リロール（残り{{ rerollCharges }}）</button>
+      <div class="draft-cards">
       <div
         v-for="opt in options"
         :key="opt.index"
@@ -65,6 +81,7 @@ const emit = defineEmits<{
         <div class="card-effect"><SkillText :tokens="opt.effectTokens" /></div>
         <div class="card-flavor">「{{ opt.flavorText }}」</div>
       </div>
+      </div>
     </div>
 
     <div v-else class="swap-picker">
@@ -89,9 +106,41 @@ const emit = defineEmits<{
   inset: 0;
   background: rgba(0, 0, 0, 0.8);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   z-index: 35;
+}
+.draft-notices {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.draft-notice {
+  font-size: 13px;
+  color: var(--battle-diff-plus);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+}
+.draft-cards-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.draft-reroll {
+  align-self: flex-end;
+  padding: 6px 14px;
+  background: color-mix(in srgb, var(--battle-panel) 90%, transparent);
+  border: 1px solid var(--battle-accent);
+  border-radius: var(--radius-sm);
+  color: var(--battle-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+.draft-reroll:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 .draft-cards {
   display: flex;
@@ -194,11 +243,16 @@ const emit = defineEmits<{
   cursor: pointer;
 }
 .swap-cancel {
-  font-size: 10px;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  text-decoration: underline;
+  padding: 8px 20px;
+  background: color-mix(in srgb, var(--battle-panel) 97%, transparent);
+  border: 1px solid var(--text-muted);
+  border-radius: var(--radius-sm);
+  color: var(--battle-text);
+  font-size: 12px;
   cursor: pointer;
+}
+.swap-cancel:hover {
+  border-color: var(--battle-accent);
+  color: var(--battle-accent);
 }
 </style>

@@ -20,6 +20,7 @@
   "shield": { "cutRate": 0.2, "cutRateVsSpecial": 0.4 },
   "categoryUnlockThresholds": [10, 20, 35],
   "fallbackStatBoost": { "hp": 400, "other": 40 },
+  "postBattleHealRate": 0.2,
   "bossBattleIndex": 10,
   "multiHitIntervalMs": 180,
   "playerSprite": "battle_heroine",

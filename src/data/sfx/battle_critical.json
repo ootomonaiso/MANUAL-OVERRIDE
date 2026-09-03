@@ -1,6 +1,6 @@
 {
   "id": "battle_critical",
-  "$comment": "クリティカル — 鋭いスティンガー（ヒット音に重ねる）",
+  "$comment": "クリティカル — 鋭いスティンガー（ヒット音に重ねる）。派手さの要望を受け、3音目の高音きらめきを追加し音量も少し強めた",
   "tracks": [
     {
       "kind": "osc",
@@ -8,15 +8,24 @@
       "freq": 1320,
       "freqEnd": 880,
       "durationSec": 0.1,
-      "volume": 0.18
+      "volume": 0.24
     },
     {
       "kind": "osc",
       "wave": "square",
       "freq": 1760,
       "durationSec": 0.12,
-      "volume": 0.14,
+      "volume": 0.2,
       "delaySec": 0.06
+    },
+    {
+      "kind": "osc",
+      "wave": "triangle",
+      "freq": 2640,
+      "freqEnd": 3520,
+      "durationSec": 0.08,
+      "volume": 0.16,
+      "delaySec": 0.1
     }
   ]
 }

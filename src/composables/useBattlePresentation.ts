@@ -37,8 +37,38 @@ const POPUP_COLOR_SHIELD = 'var(--battle-category-aegis)'
 export function useBattlePresentation(battle: ReturnType<typeof useBattleState>) {
   const popups = reactive(new Map<string, DamagePopup[]>())
   const flashes = reactive(new Map<string, FlashKind>())
+  const criticals = reactive(new Map<string, boolean>())
   const screenShake = ref(0)
   const timing = BATTLE.presentation
+
+  // ── 表示用HP・生死（多段ヒットを段階的に見せる） ──────────────
+  // 効果解決（ロジック）は同期で即座に完了するため、3連撃のようなスキルは
+  // 1回目のヒットで battle.state 上のHPが最終値まで一気に減り、alive も即 false に
+  // なる（damageCalc.ts の applyDamage 参照）。これをそのまま画面へ出すと、
+  // 「3発の合計で倒せる敵が1発目で死んだように見える」演出になってしまう。
+  // ここでは表示専用のHP・生死を別に持ち、fx_hit_* の再生（later() で間隔を空けて
+  // 呼ばれる play()）に合わせて少しずつ真の値へ近づけることで、見た目の減り方を
+  // ヒットのタイミングに合わせる。
+  const displayedHp = reactive(new Map<string, number>())
+  const displayedAlive = reactive(new Map<string, boolean>())
+  const hpStepDelta = new Map<string, number>()
+  const hpStepRemaining = new Map<string, number>()
+  /**
+   * fx_critical/fx_super_critical は fx_hit_* とは別のキュー要素として、少し遅れて
+   * 再生される（drain の段間隔ぶん）。被弾フラッシュと同時にクリティカル演出を
+   * 出したいので、バッチの時点で「このヒットはクリティカルだった」と分かる分は
+   * 先に印を付けておき、fx_hit_* の再生と同時に発火させる。
+   */
+  const criticalHitReqs = new WeakSet<EffectRequest>()
+
+  function trueHpOf(id: string): number {
+    if (battle.state.player.id === id) return battle.state.player.hp
+    return battle.state.enemies.find(e => e.id === id)?.hp ?? 0
+  }
+  function trueAliveOf(id: string): boolean {
+    if (battle.state.player.id === id) return battle.state.player.alive
+    return battle.state.enemies.find(e => e.id === id)?.alive ?? true
+  }
 
   let seq = 0
   let timers: number[] = []
@@ -100,6 +130,26 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
     }
 
     const who = req.combatantId
+    if (who) {
+      if (req.effectId.startsWith('fx_hit_')) {
+        if (criticalHitReqs.has(req)) {
+          criticals.set(who, true)
+          later(timing.flashMs, () => { criticals.delete(who) })
+        }
+        const remaining = hpStepRemaining.get(who) ?? 0
+        if (remaining <= 1) {
+          displayedHp.set(who, trueHpOf(who))
+          hpStepRemaining.delete(who)
+        } else {
+          displayedHp.set(who, (displayedHp.get(who) ?? trueHpOf(who)) + (hpStepDelta.get(who) ?? 0))
+          hpStepRemaining.set(who, remaining - 1)
+        }
+      } else if (req.effectId === 'fx_heal') {
+        displayedHp.set(who, trueHpOf(who))
+      } else if (req.effectId === 'fx_defeat') {
+        displayedAlive.set(who, false)
+      }
+    }
     if (!who) return
 
     const kind = flashKindOf(req)
@@ -116,6 +166,10 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
         ? POPUP_COLOR_SHIELD
         : (def?.visual.color ?? 'var(--battle-number)')
       pushPopup(who, { key: seq++, text, color, isLabel: text === 'MISS' })
+    }
+    if (req.effectId === 'fx_critical' || req.effectId === 'fx_super_critical') {
+      criticals.set(who, true)
+      later(timing.flashMs, () => { criticals.delete(who) })
     }
     if (req.effectId === 'fx_critical') {
       pushPopup(who, { key: seq++, text: 'CRITICAL', color: def?.visual.color ?? 'var(--battle-number)', isLabel: true })
@@ -134,14 +188,42 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
 
   /** キューに積まれた分をまとめて引き取り、多段ヒットは間隔を空けて再生する */
   function drain(): void {
-    let index = 0
+    const pending: EffectRequest[] = []
     let req = battle.consumeEffect()
-    while (req) {
-      const current = req
-      later(index * BATTLE.multiHitIntervalMs, () => { play(current) })
-      index++
-      req = battle.consumeEffect()
+    while (req) { pending.push(req); req = battle.consumeEffect() }
+
+    // 対象ごとに今回何回ヒットするかを先に数え、表示HPを1ヒットぶんずつ真の値へ
+    // 近づける歩幅を決める（同じ対象への複数ヒットが均等な減り方に見えるようにする）
+    const hitCounts = new Map<string, number>()
+    for (const r of pending) {
+      if (r.combatantId && r.effectId.startsWith('fx_hit_')) {
+        hitCounts.set(r.combatantId, (hitCounts.get(r.combatantId) ?? 0) + 1)
+      }
     }
+    for (const [id, count] of hitCounts) {
+      const before = displayedHp.has(id) ? (displayedHp.get(id) as number) : trueHpOf(id)
+      displayedHp.set(id, before)
+      hpStepDelta.set(id, (trueHpOf(id) - before) / count)
+      hpStepRemaining.set(id, count)
+    }
+
+    for (let i = 0; i < pending.length; i++) {
+      const r = pending[i]
+      if (!r.combatantId || !r.effectId.startsWith('fx_hit_')) continue
+      for (let j = i + 1; j < pending.length; j++) {
+        const next = pending[j]
+        if (next.combatantId !== r.combatantId) continue
+        if (next.effectId.startsWith('fx_hit_')) break
+        if (next.effectId === 'fx_critical' || next.effectId === 'fx_super_critical') {
+          criticalHitReqs.add(r)
+          break
+        }
+      }
+    }
+
+    pending.forEach((r, index) => {
+      later(index * BATTLE.multiHitIntervalMs, () => { play(r) })
+    })
   }
 
   watch(() => battle.effectQueue.value.length, (length) => { if (length > 0) drain() })
@@ -159,6 +241,15 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
 
   watch(() => battle.state.status, (status, previous) => {
     if (status === previous) return
+    // 新しい戦闘の開始時、前の戦闘の敵IDが再利用されうる（spawnEnemyFromDef は
+    // 「defId#formationIndex」で命名するため）。表示専用HPを持ち越すと、
+    // 新しい敵が前の戦闘の残りHPのまま出現して見えてしまうためクリアする。
+    if (status === 'battle' && (previous === 'drafting' || previous === 'swapping')) {
+      displayedHp.clear()
+      displayedAlive.clear()
+      hpStepDelta.clear()
+      hpStepRemaining.clear()
+    }
     if (status === 'drafting') soundManager.playSfx('battle_victory')
     if (status === 'finished' && battle.state.runOutcome === 'lost') soundManager.playSfx('battle_lost')
   })
@@ -168,6 +259,9 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
   return {
     popupsOf: (combatantId: string): DamagePopup[] => popups.get(combatantId) ?? [],
     flashOf: (combatantId: string): FlashKind | null => flashes.get(combatantId) ?? null,
+    criticalOf: (combatantId: string): boolean => criticals.get(combatantId) ?? false,
+    displayedHpOf: (combatantId: string): number => displayedHp.get(combatantId) ?? trueHpOf(combatantId),
+    displayedAliveOf: (combatantId: string): boolean => displayedAlive.get(combatantId) ?? trueAliveOf(combatantId),
     screenShake,
   }
 }

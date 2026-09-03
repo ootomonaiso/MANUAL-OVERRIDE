@@ -261,6 +261,41 @@ describe('useBattleState: ドラフト', () => {
   })
 })
 
+describe('useBattleState: ドラフトの引き直し', () => {
+  it('勝利するたびリロール回数が1増える', () => {
+    const h = winningHarness()
+    expect(h.battle.state.rerollCharges).toBe(0)
+    fightUntilBattleEnds(h)
+    expect(h.battle.state.rerollCharges).toBe(1)
+  })
+
+  it('リロールすると回数が1減り、3択が引き直される', () => {
+    const h = winningHarness()
+    fightUntilBattleEnds(h)
+    expect(h.battle.state.rerollCharges).toBe(1)
+    h.battle.rerollDraft()
+    expect(h.battle.state.rerollCharges).toBe(0)
+    expect(h.battle.state.draftOptions).toHaveLength(3)
+  })
+
+  it('残り回数が0ならリロールしても何も起きない', () => {
+    const h = winningHarness()
+    fightUntilBattleEnds(h)
+    h.battle.rerollDraft()
+    const before = h.battle.state.draftOptions
+    h.battle.rerollDraft()
+    expect(h.battle.state.rerollCharges).toBe(0)
+    expect(h.battle.state.draftOptions).toBe(before)
+  })
+
+  it('ドラフト中でなければリロールは無視される', () => {
+    const h = winningHarness()
+    h.battle.rerollDraft()
+    expect(h.battle.state.rerollCharges).toBe(0)
+    expect(h.battle.state.status).toBe('battle')
+  })
+})
+
 describe('useBattleState: アクティブ枠の入れ替え', () => {
   /** 未所持アクティブを優先して取り続け、枠が埋まって入れ替えを要求される所まで進める */
   function advanceUntilSwapRequested(h: { battle: Battle; act: () => void }): boolean {
