@@ -175,15 +175,16 @@ function goToDetail(): void {
 /* クリックした場所の近くにその場で出す簡易説明。透明な全画面キャッチャーで
    クリック外し/右クリックを拾い、閉じられるようにする（他のパネルと同じ作法）。
    INFOパネルの上で用語を押すと、ポップアップの背景色（--battle-panel）が
-   INFOパネル自体の背景色と同じため、境界が消えて文字が透けて見える／INFOパネル
-   側の文字と重なって読めない不具合が実機で報告された。キャッチャーに半透明の
-   スクリムを敷いて背後を一段暗くし、カード自体の縁もアクセントカラーで
-   はっきり縁取ることで、どんな背景の上でも独立した層として視認できるようにする。 */
+   INFOパネル自体の背景色とほぼ同じ暗さで、スクリム＋アクセント縁取りだけでは
+   「暗い画面の上のわずかに暗いカード」にしかならず、実機で「不完全」「暗くて
+   前面に出ているように見えない」と報告された。ダークテーマの中で確実に浮き上がる
+   のは色の濃淡ではなく明暗の反転だと判断し、このゲームの核（白背景+黒文字の
+   説明書）に立ち返って、ポップアップ自体を明るい紙面の色にした。 */
 .term-popup-catcher {
   position: fixed;
   inset: 0;
-  z-index: 60;
-  background: rgba(0, 0, 0, 0.5);
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.55);
 }
 .term-popup {
   position: fixed;
@@ -191,12 +192,12 @@ function goToDetail(): void {
   min-width: 220px;
   max-width: min(360px, calc(100vw - 24px));
   padding: 14px 16px;
-  background: color-mix(in srgb, var(--battle-panel) 96%, black);
+  background: #f6f1e2;
   border: 2px solid var(--battle-accent);
   border-radius: var(--radius-md);
-  color: var(--battle-text);
+  color: #2a2116;
   font-family: var(--genre-font, var(--font-main));
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 12px 36px rgba(0, 0, 0, 0.75);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 14px 40px rgba(0, 0, 0, 0.85);
   visibility: hidden;
   opacity: 0;
 }
@@ -207,7 +208,7 @@ function goToDetail(): void {
 .term-popup-title {
   font-size: 15px;
   font-weight: 700;
-  color: var(--battle-accent);
+  color: color-mix(in srgb, var(--battle-accent) 70%, #2a2116);
   margin-bottom: 8px;
   letter-spacing: 0.5px;
 }
@@ -215,7 +216,7 @@ function goToDetail(): void {
   font-size: 13px;
   line-height: 1.7;
   margin: 0 0 12px;
-  opacity: 0.92;
+  opacity: 0.88;
 }
 .term-popup-actions {
   display: flex;
@@ -223,15 +224,16 @@ function goToDetail(): void {
 }
 .term-popup-detail {
   padding: 5px 14px;
-  background: color-mix(in srgb, var(--battle-accent) 22%, transparent);
+  background: color-mix(in srgb, var(--battle-accent) 24%, transparent);
   border: 1px solid var(--battle-accent);
   border-radius: var(--radius-sm);
-  color: var(--battle-text);
+  color: #2a2116;
   font: inherit;
   font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
 }
 .term-popup-detail:hover {
-  background: color-mix(in srgb, var(--battle-accent) 36%, transparent);
+  background: color-mix(in srgb, var(--battle-accent) 42%, transparent);
 }
 </style>
