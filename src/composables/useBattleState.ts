@@ -107,7 +107,7 @@ function freshState(): BattleState {
 }
 
 const BUILTIN_LABEL: Record<'guard' | 'dodge' | 'pass', string> = {
-  guard: '守る', dodge: '避ける', pass: '何もしない',
+  guard: '守る', dodge: '避ける', pass: '様子を見る',
 }
 
 export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {

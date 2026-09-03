@@ -127,7 +127,7 @@ src/
     ├── genres/      # ジャンル定義JSON（23ファイル: 22ジャンル + glitch。全ジャンル共通）
     ├── cards/       # カードデッキJSON（starter-cards.json 等。全ジャンル共通）
     ├── sprites/     # ドット絵JSON（横スクロール用 + 戦闘用 battle_*.json。全ジャンル共通）
-    ├── sfx/         # 効果音JSON（75件。全ジャンル共通）
+    ├── sfx/         # 効果音JSON（76件。全ジャンル共通）
     └── rpg/         # rpg ジャンルの戦闘専用データ（他ジャンルからは参照しない）
         ├── skills/ traits/ enemies/ battle-effects/   # 戦闘コンテンツ（1ファイル1件、import.meta.glob で自動収集）
         ├── battle-backgrounds/  # 戦闘背景JSON（草原・砂漠・遺跡・荒れ地・ボス専用）
@@ -246,7 +246,7 @@ src/
 
 ### 効果音 (`src/data/sfx/`)
 
-効果音1つにつきJSON 1ファイル（75件）。周波数・長さ・音量をコードに直書きしない。`tracks` 配列で「1つの効果音に複数の音を内包」でき、`delaySec` で重なり方（同時／時間差）を制御する。
+効果音1つにつきJSON 1ファイル（76件）。周波数・長さ・音量をコードに直書きしない。`tracks` 配列で「1つの効果音に複数の音を内包」でき、`delaySec` で重なり方（同時／時間差）を制御する。
 
 ```json
 {

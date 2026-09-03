@@ -1,8 +1,8 @@
 {
   "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_stance_idle",
-  "label": "何もしない",
-  "flavorText": "あえて、何もしないでおく。",
+  "label": "様子を見る",
+  "flavorText": "動かず、相手の出方をうかがう。",
   "kind": "active",
   "element": "physical",
   "mainCategory": "vitality",

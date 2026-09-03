@@ -129,7 +129,7 @@ watch(() => props.flash, (kind) => {
       <div class="next-chip">
         <div class="next-head">NEXT</div>
         <div class="next-skill">
-          <span class="next-mark" :style="{ background: nextMarkColor }" />{{ nextSkillLabel ?? '何もしない' }}
+          <span class="next-mark" :style="{ background: nextMarkColor }" />{{ nextSkillLabel ?? '様子を見る' }}
         </div>
         <div v-if="nextDamageLabel" class="next-damage">{{ nextDamageLabel }}</div>
       </div>

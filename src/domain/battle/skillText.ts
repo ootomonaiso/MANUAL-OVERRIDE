@@ -147,7 +147,7 @@ function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
     case 'replaceGuard':
       return [plain('「守る」が「避ける」に変化する')]
     case 'noop':
-      return [plain('何もしない')]
+      return [plain('様子を見る')]
     case 'healBetweenBattles': {
       const amount = node.amount as number | undefined
       const rate = node.rate as number | undefined

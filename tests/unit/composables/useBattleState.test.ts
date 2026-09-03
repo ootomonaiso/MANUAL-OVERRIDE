@@ -47,7 +47,7 @@ function winningHarness(seed = 12345): { battle: Battle; act: () => void } {
   return { battle, act }
 }
 
-/** 敵の攻撃が必ず当たるハーネス（プレイヤーは「何もしない」を選び続けて敗北する） */
+/** 敵の攻撃が必ず当たるハーネス（プレイヤーは「様子を見る」を選び続けて敗北する） */
 function losingHarness(): { battle: Battle; pass: () => void } {
   const battle = useBattleState()
   battle.initRun(() => 0.5)
@@ -190,7 +190,7 @@ describe('useBattleState: プレイヤーの行動', () => {
     expect(battle.state.player.builtinCooldowns.guard).toBeGreaterThan(0)
   })
 
-  it('何もしないを選んでも手番は進む', () => {
+  it('様子を見るを選んでも手番は進む', () => {
     const { battle } = winningHarness()
     const round = battle.state.roundCount
     battle.selectAction({ kind: 'builtin', action: 'pass' })

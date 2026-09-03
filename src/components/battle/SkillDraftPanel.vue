@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import SkillText from './SkillText.vue'
 import GlossaryTerm from './GlossaryTerm.vue'
 import type { SkillTextToken } from '../../domain/battle/skillText'
@@ -23,7 +24,7 @@ export interface SwapSlotView {
   label: string
 }
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   options: DraftCardView[]
   swapping: boolean
   swapSlots: SwapSlotView[]
@@ -39,6 +40,27 @@ const emit = defineEmits<{
   (e: 'cancel-swap'): void
   (e: 'reroll'): void
 }>()
+
+/**
+ * リロールの「いま切り直している感」は、音（親側でSFXを鳴らす）だけでなく
+ * ここでも見た目で出す。カードは v-for のキー（opt.index）がリロール前後で
+ * 変わらないため、Vueは既存DOMを再利用して中身だけ差し替える。そのままだと
+ * 差し替わった瞬間が分からず地味なので、クリックした瞬間だけ一時的にクラスを
+ * 付けてシャッフル風のアニメーションを重ねる（実データの更新タイミングとは
+ * 独立して、見た目の演出だけをこのコンポーネント内で完結させている）。
+ */
+const rerollPulse = ref(false)
+const REROLL_PULSE_MS = 460
+
+function onRerollClick(): void {
+  if (props.rerollCharges <= 0) return
+  rerollPulse.value = false
+  // 同じ値への再代入では Vue のクラス束縛が変化を検知できないため、
+  // 一度 false に戻してから次のフレームで true にする
+  requestAnimationFrame(() => { rerollPulse.value = true })
+  setTimeout(() => { rerollPulse.value = false }, REROLL_PULSE_MS)
+  emit('reroll')
+}
 </script>
 
 <template>
@@ -51,10 +73,19 @@ const emit = defineEmits<{
       <button
         type="button"
         class="draft-reroll"
+        :class="{ pulsing: rerollPulse }"
         :disabled="rerollCharges <= 0"
-        @click="emit('reroll')"
-      >リロール（残り{{ rerollCharges }}）</button>
-      <div class="draft-cards">
+        @click="onRerollClick"
+      >
+        <svg class="reroll-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 12a8 8 0 0 1 13.66-5.66L20 8" />
+          <path d="M20 3v5h-5" />
+          <path d="M20 12a8 8 0 0 1-13.66 5.66L4 16" />
+          <path d="M4 21v-5h5" />
+        </svg>
+        <span>リロール（残り{{ rerollCharges }}）</span>
+      </button>
+      <div class="draft-cards" :class="{ shuffling: rerollPulse }">
       <div
         v-for="opt in options"
         :key="opt.index"
@@ -136,6 +167,9 @@ const emit = defineEmits<{
 }
 .draft-reroll {
   align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 6px 14px;
   background: color-mix(in srgb, var(--battle-panel) 90%, transparent);
   border: 1px solid var(--battle-accent);
@@ -143,10 +177,34 @@ const emit = defineEmits<{
   color: var(--battle-text);
   font-size: 12px;
   cursor: pointer;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+}
+.draft-reroll:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--battle-accent) 24%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--battle-accent) 55%, transparent);
 }
 .draft-reroll:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+}
+.reroll-icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  transition: transform 220ms ease-out;
+}
+/* ホバーで少し回して「押せば回る」を予感させ、クリック時（pulsing）は1回転させて
+   実際にリロードした手応えを出す。回転量が中途半端だと不自然なので、ホバーは
+   ちょうど半周弱に留めてクリック時の1回転と混ざっても違和感が出ないようにしている。 */
+.draft-reroll:hover:not(:disabled) .reroll-icon {
+  transform: rotate(150deg);
+}
+.draft-reroll.pulsing .reroll-icon {
+  animation: reroll-spin 460ms ease-out;
+}
+@keyframes reroll-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 .draft-cards {
   display: flex;
@@ -172,6 +230,22 @@ const emit = defineEmits<{
 .draft-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 6px 16px color-mix(in srgb, var(--battle-accent) 30%, transparent);
+}
+/* リロールの瞬間だけ、カードを軽く沈めて薄くしてから弾ませる。中身の差し替え
+   自体はリロール直後にほぼ同時進行で起きる（キー(opt.index)がリロール前後で
+   変わらないため DOM は再利用され、中身だけ書き換わる）ため、このアニメーションは
+   「切り替わった」ことを見た目で伝える演出。3枚が同時に動くと単調なので、
+   カードごとに開始をわずかにずらして「シャッフルした」感を出している。 */
+.draft-cards.shuffling .draft-card {
+  animation: card-shuffle 420ms ease-out both;
+}
+.draft-cards.shuffling .draft-card:nth-child(2) { animation-delay: 40ms; }
+.draft-cards.shuffling .draft-card:nth-child(3) { animation-delay: 80ms; }
+@keyframes card-shuffle {
+  0% { transform: scale(1) rotate(0deg) translateY(0); opacity: 1; }
+  30% { transform: scale(0.88) rotate(-4deg) translateY(6px); opacity: 0.25; }
+  65% { transform: scale(1.03) rotate(3deg) translateY(-3px); opacity: 0.9; }
+  100% { transform: scale(1) rotate(0deg) translateY(0); opacity: 1; }
 }
 .draft-card.unlocked {
   border-color: var(--battle-diff-plus);

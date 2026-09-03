@@ -1,6 +1,8 @@
 <script setup lang="ts">
 /**
- * 画面左下に積む、いま効いているもの（特性・一時的なバフ/デバフ）の一覧。
+ * プレイヤー自身の足元（HPプレートの真下）に積む、いま効いているもの
+ * （特性・一時的なバフ/デバフ）の一覧。敵の頭上/足元バッジと同じく、本人の
+ * 見た目に紐づく位置に置くことで「誰の効果か」が一目でわかるようにしている。
  * 戦闘中は数字より「何が効いているか」の方を早く読みたいので、名前だけを並べる。
  * バフ（上昇）とデバフ（低下）は矢印と色で見分けられるようにし、一時効果には
  * いつまで効くか（このターンのみ／この戦闘中）も添える。
@@ -41,19 +43,22 @@ defineProps<{
 <style scoped>
 .buff-strip {
   position: absolute;
-  left: 12px;
-  bottom: 14px;
-  z-index: 14;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  margin-top: 4px;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 3px;
   pointer-events: none;
+  white-space: nowrap;
 }
 .buff-item {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 13px;
+  font-size: 12px;
   color: #f2ecdd;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
 }

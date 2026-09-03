@@ -252,7 +252,7 @@ describe('battleEngine: スキル使用', () => {
   })
 })
 
-describe('battleEngine: 組み込み行動（守る・避ける・何もしない）', () => {
+describe('battleEngine: 組み込み行動（守る・避ける・様子を見る）', () => {
   it('守るとカット率の一時効果が付きクールタイムに入る', () => {
     const c = makePlayer()
     useBuiltinAction(c, 'guard')
@@ -271,7 +271,7 @@ describe('battleEngine: 組み込み行動（守る・避ける・何もしな�
     expect(c.builtinCooldowns.dodge).toBe(BATTLE.dodge.cooldown)
   })
 
-  it('何もしないは状態を変えない', () => {
+  it('様子を見るは状態を変えない', () => {
     const c = makePlayer()
     useBuiltinAction(c, 'pass')
     expect(c.temporary).toEqual([])

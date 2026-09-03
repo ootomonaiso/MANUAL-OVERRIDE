@@ -49,8 +49,16 @@ export interface InfoCharacterView {
   }
 }
 
+export interface InfoEffectRow {
+  label: string
+  isBuff: boolean
+  scopeLabel: string
+}
+
 const props = defineProps<{
   player: InfoCharacterView
+  /** プレイヤーに今かかっている一時的なバフ/デバフ（呪詛弾のDEF低下など）。永続の特性は traits 側で表示するため含まない */
+  playerEffects: InfoEffectRow[]
   enemies: InfoCharacterView[]
   actives: InfoSkillRow[]
   passives: InfoSkillRow[]
@@ -136,6 +144,34 @@ function hpPct(c: InfoCharacterView): number {
         <div v-for="s in player.stats" :key="s.key" class="stat-cell">
           <span class="stat-name"><GlossaryTerm :term-id="s.key">{{ s.label }}</GlossaryTerm></span>
           <span class="stat-values">実効 {{ fmt(s.effective, s.isPercent) }} / 基礎 {{ fmt(s.base, s.isPercent) }}</span>
+        </div>
+      </div>
+
+      <div v-if="playerEffects.length > 0" class="info-skill-group">
+        <div class="info-skill-group-title">現在の効果</div>
+        <div class="effect-chip-row">
+          <span
+            v-for="e in playerEffects"
+            :key="e.label"
+            class="effect-chip"
+            :class="{ buff: e.isBuff, debuff: !e.isBuff }"
+          >{{ e.isBuff ? '▲' : '▼' }}{{ e.label }}<span class="effect-scope">{{ e.scopeLabel }}</span></span>
+        </div>
+      </div>
+
+      <div v-if="passives.length > 0" class="info-skill-group">
+        <div class="info-skill-group-title"><GlossaryTerm term-id="passive">パッシブ</GlossaryTerm></div>
+        <div v-for="p in passives" :key="p.id" class="skill-row">
+          <div class="skill-row-head">{{ p.label }} <span v-if="p.level">Lv{{ p.level }}</span></div>
+          <SkillText :tokens="p.effectTokens" />
+        </div>
+      </div>
+
+      <div v-if="traits.length > 0" class="info-skill-group">
+        <div class="info-skill-group-title"><GlossaryTerm term-id="trait">特性</GlossaryTerm></div>
+        <div v-for="t in traits" :key="t.id" class="skill-row">
+          <div class="skill-row-head">{{ t.label }}</div>
+          <SkillText :tokens="t.effectTokens" />
         </div>
       </div>
     </div>
@@ -239,6 +275,28 @@ function hpPct(c: InfoCharacterView): number {
 .info-skill-group {
   border-top: 1px solid var(--battle-frame-border);
   padding-top: 10px;
+}
+.effect-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.effect-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  color: #fff;
+}
+.effect-chip.buff { background: color-mix(in srgb, var(--battle-diff-plus) 55%, transparent); }
+.effect-chip.debuff { background: color-mix(in srgb, var(--battle-diff-minus) 55%, transparent); }
+.effect-scope {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.85;
 }
 .info-skill-group-title {
   font-size: 11px;

@@ -166,14 +166,14 @@ describe('BattleScreen: コマンド操作', () => {
     expect($(h.host, '.skill-command')).not.toBeNull()
   })
 
-  it('一覧は所持アクティブ + 守る + 何もしないで構成される', async () => {
+  it('一覧は所持アクティブ + 守る + 様子を見るで構成される', async () => {
     const h = mount()
     await openBattleMenu(h.host)
     const owned = h.battle.state.player.actives.filter(a => a.slotIndex !== null).length
     expect(slotButtons(h.host)).toHaveLength(owned + 2)
     const labels = slotButtons(h.host).map(b => b.textContent ?? '')
     expect(labels.some(t => t.includes('守る'))).toBe(true)
-    expect(labels.some(t => t.includes('何もしない'))).toBe(true)
+    expect(labels.some(t => t.includes('様子を見る'))).toBe(true)
   })
 
   it('所持スキルはラベルとレベルつきで並ぶ', async () => {
@@ -271,7 +271,7 @@ describe('BattleScreen: 被弾の見え方', () => {
     try {
       const h = mountTakingHits()
       await openBattleMenu(h.host)
-      const pass = slotButtons(h.host).find(b => b.textContent?.includes('何もしない')) as HTMLButtonElement
+      const pass = slotButtons(h.host).find(b => b.textContent?.includes('様子を見る')) as HTMLButtonElement
       await selectSlot(pass)
       vi.advanceTimersByTime(BATTLE.multiHitIntervalMs)
       await nextTick()
@@ -435,6 +435,52 @@ describe('BattleScreen: ドラフト', () => {
     expect($(h.host, '.draft-overlay')).toBeNull()
     expect(h.battle.state.status).toBe('battle')
     expect(h.battle.state.enemies.every(e => e.alive)).toBe(true)
+  })
+
+  it('リロールを押すと専用の効果音が鳴り、カードの中身が変わる', async () => {
+    const h = mount()
+    await fightUntilDraft(h)
+    await nextTick()
+    expect(h.battle.state.rerollCharges).toBeGreaterThan(0)
+    const before = (h.battle.state.draftOptions ?? []).map(o => o.id)
+    const played: string[] = []
+    soundManager.register({ playSfx: (id: string) => { played.push(id) } })
+    ;($(h.host, '.draft-reroll') as HTMLButtonElement).click()
+    await nextTick()
+    expect(played).toContain('battle_draft_reroll')
+    const after = (h.battle.state.draftOptions ?? []).map(o => o.id)
+    expect(after).not.toEqual(before)
+    soundManager.register({})
+  })
+
+  it('リロール直後はカード一覧に演出用のクラスが付き、時間経過で消える', async () => {
+    vi.useFakeTimers()
+    try {
+      const h = mount()
+      await fightUntilDraft(h)
+      await nextTick()
+      ;($(h.host, '.draft-reroll') as HTMLButtonElement).click()
+      vi.advanceTimersByTime(16) // requestAnimationFrame 相当の1フレームぶん進める
+      await nextTick()
+      expect($(h.host, '.draft-cards')?.classList.contains('shuffling')).toBe(true)
+      vi.advanceTimersByTime(1000)
+      await nextTick()
+      expect($(h.host, '.draft-cards')?.classList.contains('shuffling')).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('リロール回数が0のときはボタンが無効化される', async () => {
+    const h = mount()
+    await fightUntilDraft(h)
+    await nextTick()
+    for (let i = 0; i < 10 && h.battle.state.rerollCharges > 0; i++) {
+      ;($(h.host, '.draft-reroll') as HTMLButtonElement).click()
+      await nextTick()
+    }
+    expect(h.battle.state.rerollCharges).toBe(0)
+    expect(($(h.host, '.draft-reroll') as HTMLButtonElement).disabled).toBe(true)
   })
 })
 

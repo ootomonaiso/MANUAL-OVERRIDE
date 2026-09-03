@@ -22,6 +22,7 @@ const EXPECTED_IDS = [
   'battle_heal', 'battle_shield_gain', 'battle_shield_break', 'battle_guard', 'battle_dodge',
   'battle_miss', 'battle_critical', 'battle_weakness', 'battle_resisted', 'battle_defeat',
   'battle_player_hurt', 'battle_turn_start', 'battle_skill_select', 'battle_victory', 'battle_lost',
+  'battle_draft_reroll',
 ] as const
 
 const VALID_WAVES = ['sine', 'triangle', 'square', 'sawtooth'] as const
@@ -31,8 +32,8 @@ describe('SfxLoader', () => {
     expect(Object.keys(SFX_DEFS).length).toBeGreaterThan(0)
   })
 
-  it('全75種のSFX id が SFX_DEFS に存在する', () => {
-    expect(EXPECTED_IDS.length).toBe(75)
+  it('全76種のSFX id が SFX_DEFS に存在する', () => {
+    expect(EXPECTED_IDS.length).toBe(76)
     expect(Object.keys(SFX_DEFS).length).toBe(EXPECTED_IDS.length)
     // SFX_DEFS の key 集合と EXPECTED_IDS 集合が完全一致すること（過不足なし）
     const defsKeys = new Set(Object.keys(SFX_DEFS))

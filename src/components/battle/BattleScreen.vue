@@ -125,7 +125,7 @@ const commandEntries = computed<CommandEntry[]>(() => [
   { id: 'info', label: 'INFO' },
 ])
 
-/** 「守る」「避ける」「何もしない」は特別扱いせず、他のスキルと同じくJSONで定義する
+/** 「守る」「避ける」「様子を見る」は特別扱いせず、他のスキルと同じくJSONで定義する
  *  （src/data/rpg/skills/skill_stance_*.json）。ただし常設の行動でありドラフトには出さないため、
  *  draftable: false を付けている（skillDraft.ts の buildCandidatePool 参照）。 */
 const BUILTIN_SKILL_ID: Record<'guard' | 'dodge' | 'pass', string> = {
@@ -439,6 +439,11 @@ function statusEffectsOf(c: CombatantView): { label: string; isBuff: boolean; sc
   return c.temporary.map(describeTemporaryModifier)
 }
 
+function onRerollDraft(): void {
+  soundManager.playSfx('battle_draft_reroll')
+  battle.rerollDraft()
+}
+
 // ── ドラフト ──────────────────────────────────────────────────
 const draftCards = computed<DraftCardView[]>(() => {
   if (!battle.state.draftOptions) return []
@@ -596,6 +601,15 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
           :popups="fx.popupsOf(battle.state.player.id)"
           @open-detail="onUnitSelect(battle.state.player, null)"
         />
+        <!--
+          以前は .battle-field 左下の隅（プレイヤーの見た目と無関係な位置）に固定していたが、
+          「位置が分かりづらい」というフィードバックを受け、敵の頭上/足元バッジと同じ発想で
+          プレイヤー自身の足元（HPプレートの真下）に寄せた。.player-slot は position: absolute
+          かつ bottom 基準のため、通常のフローに乗せると .status-row と同じ理由（このファイル内
+          CharacterFrame.vue 参照）でプレイヤー本体が押し上げられてしまう。BuffStrip 側を
+          .player-slot 基準の絶対配置にすることでそれを避けている。
+        -->
+        <BuffStrip :entries="buffEntries" />
       </div>
 
       <SkillCastBanner
@@ -607,8 +621,6 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
         :is-player="battle.presentation.actorIsPlayer"
       />
     </div>
-
-    <BuffStrip :entries="buffEntries" />
 
     <div v-if="awaitingInput" class="command-area" :class="{ wide: menu === 'battle' }">
       <CommandMenu
@@ -644,12 +656,13 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
       @select="battle.selectDraft"
       @confirm-swap="battle.confirmSwap"
       @cancel-swap="battle.cancelSwap"
-      @reroll="battle.rerollDraft()"
+      @reroll="onRerollDraft"
     />
 
     <InfoPanel
       v-if="infoOpen"
       :player="infoPlayerView"
+      :player-effects="statusEffectsOf(battle.state.player)"
       :enemies="infoEnemyViews"
       :actives="infoActives"
       :passives="infoPassives"
