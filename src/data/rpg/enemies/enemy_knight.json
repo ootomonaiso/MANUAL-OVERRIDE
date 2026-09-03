@@ -8,7 +8,7 @@
     "hp": 6000, "str": 700, "def": 1400, "int": 300, "ref": 700, "agi": 400,
     "hitRate": 0.93, "evadeRate": 0, "critRate": 0.05, "critDamageMultiplier": 1.5
   },
-  "traits": ["trait_resist_physical", "trait_resist_magical"],
+  "traits": ["trait_resist_physical"],
   "activeSkills": [{ "id": "skill_strike", "level": 2 }, "skill_guard_shield"],
   "passiveSkills": [],
   "actionPattern": ["skill_strike", "skill_guard_shield", "skill_strike"],
