@@ -38,8 +38,15 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
   const popups = reactive(new Map<string, DamagePopup[]>())
   const flashes = reactive(new Map<string, FlashKind>())
   const criticals = reactive(new Map<string, boolean>())
+  /** クリティカル時、キャラクター単体の演出だけでなく戦場全体を一瞬光らせる（派手さの要望対応） */
+  const screenCriticalFlash = ref(false)
   const screenShake = ref(0)
   const timing = BATTLE.presentation
+
+  function triggerScreenCriticalFlash(): void {
+    screenCriticalFlash.value = true
+    later(timing.flashMs + 80, () => { screenCriticalFlash.value = false })
+  }
 
   // ── 表示用HP・生死（多段ヒットを段階的に見せる） ──────────────
   // 効果解決（ロジック）は同期で即座に完了するため、3連撃のようなスキルは
@@ -135,6 +142,7 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
         if (criticalHitReqs.has(req)) {
           criticals.set(who, true)
           later(timing.flashMs, () => { criticals.delete(who) })
+          triggerScreenCriticalFlash()
         }
         const remaining = hpStepRemaining.get(who) ?? 0
         if (remaining <= 1) {
@@ -170,6 +178,7 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
     if (req.effectId === 'fx_critical' || req.effectId === 'fx_super_critical') {
       criticals.set(who, true)
       later(timing.flashMs, () => { criticals.delete(who) })
+      triggerScreenCriticalFlash()
     }
     if (req.effectId === 'fx_critical') {
       pushPopup(who, { key: seq++, text: 'CRITICAL', color: def?.visual.color ?? 'var(--battle-number)', isLabel: true })
@@ -263,5 +272,6 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
     displayedHpOf: (combatantId: string): number => displayedHp.get(combatantId) ?? trueHpOf(combatantId),
     displayedAliveOf: (combatantId: string): boolean => displayedAlive.get(combatantId) ?? trueAliveOf(combatantId),
     screenShake,
+    screenCriticalFlash,
   }
 }

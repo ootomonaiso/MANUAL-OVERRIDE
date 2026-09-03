@@ -166,14 +166,14 @@ describe('BattleScreen: コマンド操作', () => {
     expect($(h.host, '.skill-command')).not.toBeNull()
   })
 
-  it('一覧は所持アクティブ + 守る + 何もしていないで構成される', async () => {
+  it('一覧は所持アクティブ + 守る + 何もしないで構成される', async () => {
     const h = mount()
     await openBattleMenu(h.host)
     const owned = h.battle.state.player.actives.filter(a => a.slotIndex !== null).length
     expect(slotButtons(h.host)).toHaveLength(owned + 2)
     const labels = slotButtons(h.host).map(b => b.textContent ?? '')
     expect(labels.some(t => t.includes('守る'))).toBe(true)
-    expect(labels.some(t => t.includes('何もしていない'))).toBe(true)
+    expect(labels.some(t => t.includes('何もしない'))).toBe(true)
   })
 
   it('所持スキルはラベルとレベルつきで並ぶ', async () => {
@@ -271,7 +271,7 @@ describe('BattleScreen: 被弾の見え方', () => {
     try {
       const h = mountTakingHits()
       await openBattleMenu(h.host)
-      const pass = slotButtons(h.host).find(b => b.textContent?.includes('何もしていない')) as HTMLButtonElement
+      const pass = slotButtons(h.host).find(b => b.textContent?.includes('何もしない')) as HTMLButtonElement
       await selectSlot(pass)
       vi.advanceTimersByTime(BATTLE.multiHitIntervalMs)
       await nextTick()

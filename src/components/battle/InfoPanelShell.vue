@@ -50,7 +50,7 @@ function groupIsOpen(section: InfoNavSection): boolean {
 </script>
 
 <template>
-  <div class="info-shell-overlay" @click.self="emit('close')">
+  <div class="info-shell-overlay" @click.self="emit('close')" @contextmenu.prevent="emit('close')">
     <div class="info-shell-card">
       <div class="info-shell-header">
         <span class="info-shell-title">{{ title }}</span>
@@ -93,8 +93,16 @@ function groupIsOpen(section: InfoNavSection): boolean {
 </template>
 
 <style scoped>
+/*
+ * position: fixed にしているのは意図的。呼び出し元（HelpGuide.vue の右上アイコンなど）は
+ * それ自身が position:absolute かつ幅・高さを持たない小さな要素であることがあり、
+ * その場合 position:absolute; inset:0 の containing block はビューポートではなく
+ * その小さな要素（例: 34×34pxのアイコンボタン）に縮んでしまい、パネル全体がアイコンの
+ * 近くに小さく崩れて表示・見切れる不具合になっていた（実機で確認）。fixed であれば
+ * transform 等を持たない祖先を挟んでもビューポート基準で中央表示される。
+ */
 .info-shell-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.72);
   display: flex;

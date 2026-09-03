@@ -109,7 +109,7 @@ function onSlotClick(entry: SkillCommandEntry): void {
       >
         <span class="slot-mark" :style="{ background: entry.markColor }" />
         <span class="slot-label">{{ entry.label }}</span>
-        <span v-if="pinnedId === entry.id" class="slot-confirm">もう一度で発動</span>
+        <span v-if="pinnedId === entry.id" class="slot-confirm">{{ hoveredId === entry.id ? '確定' : '選択中' }}</span>
         <span v-else-if="entry.cooldown > 0" class="slot-cooldown">{{ entry.cooldown }}</span>
         <span v-else-if="entry.note" class="slot-note">{{ entry.note }}</span>
       </button>

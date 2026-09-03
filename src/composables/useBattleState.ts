@@ -8,7 +8,7 @@
  * テストからは1手番が即座に解決する（演出待ちのためにタイマーを進める必要がない）。
  */
 
-import { reactive, readonly, ref, computed, toRaw, type DeepReadonly } from 'vue'
+import { reactive, readonly, ref, computed, type DeepReadonly } from 'vue'
 import type {
   BattleState, Combatant, PlayerAction, DraftOption, EffectRequest,
   CategoryId, EffectiveStats, Element, ActiveSkillDef,
@@ -107,7 +107,7 @@ function freshState(): BattleState {
 }
 
 const BUILTIN_LABEL: Record<'guard' | 'dodge' | 'pass', string> = {
-  guard: '守る', dodge: '様子を見る', pass: '何もしていない',
+  guard: '守る', dodge: '避ける', pass: '何もしない',
 }
 
 export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
@@ -208,6 +208,9 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     )
     state.status = 'battle'
     state.lastBattleEndNotices = []
+    // roundCount はターン表示（turnNumber）の元。リセットしないとラン全体を通して
+    // 増え続け、2戦目以降「前の戦闘の続きから始まっているように見える」（実機で確認）。
+    state.roundCount = 0
     startNewRound()
   }
 
@@ -441,19 +444,29 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
 
   // ── 表示用ヘルパー ────────────────────────────────────────────
   // readonly(state) 経由で渡ってくる Combatant は配列も含め deep readonly になる。
-  // toRaw() は実行時には素のオブジェクトを返すが型は保持するため、ここで明示的に戻す。
+  //
+  // 【実装時に発見した不具合】当初は toRaw(c) で素のオブジェクトへ戻してから
+  // resolveEffectiveStats 等の純粋な参照関数に渡していたが、これは表示上のバグの
+  // 原因だった。toRaw() は Vue のリアクティブ Proxy を完全に迂回するため、
+  // その先で読む c.passives / c.traits / c.temporary への依存が一切追跡されない。
+  // 結果、これらを使う computed（実効ステータスの表示など）はパッシブ/特性を
+  // 取得しても再計算されず、初回評価時点の値のまま固まってしまっていた
+  // （実機確認: パッシブを取ってもステータスパネル・INFO の実効値が更新されない）。
+  // toRaw は元々「Combatant 型が要求する可変配列と DeepReadonly の配列の型不一致」を
+  // 逃がすためだけに使っていた（これらの関数はどれも c を読むだけで書き換えない）ので、
+  // リアクティビティを保ったまま型だけ迂回する `as unknown as Combatant` に置き換える。
   function effectiveOf(c: CombatantView): EffectiveStats {
-    return resolveEffectiveStats(toRaw(c) as Combatant, content)
+    return resolveEffectiveStats(c as unknown as Combatant, content)
   }
   function nextEnemySkillPreview(e: CombatantView): string | null {
-    return previewEnemyNextSkill(toRaw(e) as Combatant)
+    return previewEnemyNextSkill(e as unknown as Combatant)
   }
   /** 敵がそのスキルを使ったとき、プレイヤーがどれくらい削られるかの見積り */
   function estimateDamageToPlayer(e: CombatantView, skillId: string, level: number): number {
     const def = content.skills.get(skillId)
     if (!def) return 0
     return estimateSkillDamage({
-      source: toRaw(e) as Combatant,
+      source: e as unknown as Combatant,
       target: state.player,
       skill: def,
       level,
@@ -469,11 +482,11 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   }
   /** 所持スキルから貯まっているカテゴリポイントを求める（カテゴリ一覧パネル用） */
   function categoryPointsOf(c: CombatantView): Record<CategoryId, number> {
-    return accumulateCategoryPoints(toRaw(c) as Combatant, content)
+    return accumulateCategoryPoints(c as unknown as Combatant, content)
   }
   /** カテゴリ1つぶんの内訳（何のスキルが何ポイント効いているか） */
   function categoryContributions(c: CombatantView, category: CategoryId): CategoryContribution[] {
-    return categoryContributionsOf(toRaw(c) as Combatant, content, category)
+    return categoryContributionsOf(c as unknown as Combatant, content, category)
   }
 
   /** 画面右上の通し表示。ラウンド・戦闘数はいずれも0始まりなので+1して数える */

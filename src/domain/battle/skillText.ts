@@ -44,6 +44,21 @@ export const ELEMENT_LABEL: Record<Element, string> = {
   physical: '物理', magical: '魔法', special: '特殊',
 }
 
+/**
+ * 割合として読むべきステータス（0.05 = 5% のように、値そのものが既に比率）。
+ * modifier/statBoost の amount（flat 加算）でもこれらの stat には %表示を使う
+ * （例: critRate に amount:0.5 を足すスキルが「+0.5」という生の小数で表示され
+ * 分かりにくいという指摘があった。cutRate も同じ理由で対象に含める）。
+ * BattleScreen.vue のステータス表示でも同じ判定に使うため、ここで一元管理する。
+ */
+export const PERCENT_STAT_KEYS: ReadonlySet<StatKey> = new Set<StatKey>([
+  'hitRate', 'evadeRate', 'critRate', 'critDamageMultiplier',
+])
+
+function isPercentStat(stat: StatKey | 'cutRate'): boolean {
+  return stat === 'cutRate' || PERCENT_STAT_KEYS.has(stat as StatKey)
+}
+
 function pct(n: number): string {
   return `${Math.round(n * 1000) / 10}%`
 }
@@ -97,14 +112,18 @@ function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
       const rate = node.rate as number | undefined
       const statLabel = stat === 'cutRate' ? plain('カット率') : statTok(stat)
       const applyTo = (node.applyTo as string | undefined) === 'target' ? '対象' : '自分'
-      const valueTok = amount !== undefined ? numTok(`+${amount * mult}`) : numTok(`${pct((rate ?? 0) * mult)}`)
+      const valueTok = amount !== undefined
+        ? (isPercentStat(stat) ? numTok(pct(amount * mult)) : numTok(`+${amount * mult}`))
+        : numTok(pct((rate ?? 0) * mult))
       return [plain(`${applyTo}の`), statLabel, plain('を'), valueTok, plain('変化させる')]
     }
     case 'statBoost': {
       const stat = node.stat as StatKey
       const amount = node.amount as number | undefined
       const rate = node.rate as number | undefined
-      const valueTok = amount !== undefined ? numTok(`+${amount * mult}`) : numTok(pct((rate ?? 0) * mult))
+      const valueTok = amount !== undefined
+        ? (isPercentStat(stat) ? numTok(pct(amount * mult)) : numTok(`+${amount * mult}`))
+        : numTok(pct((rate ?? 0) * mult))
       return [statTok(stat), plain('を'), valueTok, plain('上昇させる')]
     }
     case 'elementAffinity': {
@@ -126,7 +145,7 @@ function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
       return [plain('受ける回復量を'), numTok(pct(rate * mult)), plain('上昇させる')]
     }
     case 'replaceGuard':
-      return [plain('「守る」が「様子を見る」に変化する')]
+      return [plain('「守る」が「避ける」に変化する')]
     case 'noop':
       return [plain('何もしない')]
     case 'healBetweenBattles': {

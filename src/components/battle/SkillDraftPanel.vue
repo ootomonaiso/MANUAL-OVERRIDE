@@ -13,6 +13,8 @@ export interface DraftCardView {
   categoryColor?: string
   categoryId?: string
   levelTransition?: string
+  /** true なら levelTransition は「今回は上がらない」進捗表示。緑で強調しない */
+  levelTransitionMuted?: boolean
   isUnlocked?: boolean
 }
 
@@ -77,7 +79,11 @@ const emit = defineEmits<{
           <GlossaryTerm v-if="opt.categoryId" :term-id="opt.categoryId">{{ opt.categoryLabel }}</GlossaryTerm>
           <template v-else>{{ opt.categoryLabel }}</template>
         </div>
-        <div v-if="opt.levelTransition" class="card-level">{{ opt.levelTransition }}</div>
+        <div
+          v-if="opt.levelTransition"
+          class="card-level"
+          :class="{ muted: opt.levelTransitionMuted }"
+        >{{ opt.levelTransition }}</div>
         <div class="card-effect"><SkillText :tokens="opt.effectTokens" /></div>
         <div class="card-flavor">「{{ opt.flavorText }}」</div>
       </div>
@@ -210,6 +216,11 @@ const emit = defineEmits<{
   font-size: 12px;
   color: var(--battle-diff-plus);
   margin-bottom: 6px;
+}
+/* 今回選んでもレベルは上がらない（スタック進捗のみ）ケースは、上昇時と同じ緑で
+   強調すると「選べば上がる」ように誤読されるため、控えめな色にする */
+.card-level.muted {
+  color: var(--battle-diff-muted);
 }
 .card-effect {
   font-size: 13px;

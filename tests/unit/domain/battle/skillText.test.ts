@@ -111,7 +111,7 @@ describe('skillText: repeat の表記', () => {
 
   it('繰り返し回数と内側の効果、最後の1回の特例が書き出される', () => {
     expect(text(buildSkillText(triple, 1)))
-      .toBe('3回繰り返す（物理属性ダメージ: STRの80%分。）最後の1回のみ: 自分のクリティカル率を+0.5変化させる。')
+      .toBe('3回繰り返す（物理属性ダメージ: STRの80%分。）最後の1回のみ: 自分のクリティカル率を50%変化させる。')
   })
 
   it('末尾が句点で終わっているときに句点を重ねない', () => {
@@ -159,16 +159,23 @@ describe('skillText: 補正・宣言的opの表記', () => {
     expect(text(buildSkillText(skill, 1))).toBe('対象のDEFを-20%変化させる。')
   })
 
-  it('cutRate 指定は「カット率」と表示される', () => {
+  it('cutRate 指定は「カット率」と表示され、amountでも%表示になる', () => {
     const skill = makeActive({ id: 's', effect: [node('modifier', { stat: 'cutRate', amount: 0.2, scope: 'thisTurn' })] })
-    expect(text(buildSkillText(skill, 1))).toContain('カット率')
+    expect(text(buildSkillText(skill, 1))).toBe('自分のカット率を20%変化させる。')
   })
 
-  it('statBoost は上昇として書かれる', () => {
+  it('critRate等の割合ステータスは amount 指定でも%表示になる（生の小数のまま出さない）', () => {
+    const skill = makeActive({ id: 's', effect: [node('modifier', { stat: 'critRate', amount: 0.5, scope: 'thisHit' })] })
+    expect(text(buildSkillText(skill, 1))).toBe('自分のクリティカル率を50%変化させる。')
+  })
+
+  it('statBoost は上昇として書かれる。割合ステータスは amount 指定でも%表示になる', () => {
     const flat = makePassive({ id: 'p1', effect: [node('statBoost', { stat: 'def', amount: 800 })] })
     const rate = makePassive({ id: 'p2', effect: [node('statBoost', { stat: 'agi', rate: 0.15 })] })
+    const critFlat = makePassive({ id: 'p3', effect: [node('statBoost', { stat: 'critRate', amount: 0.05 })] })
     expect(text(buildSkillText(flat, 1))).toBe('DEFを+800上昇させる。')
     expect(text(buildSkillText(rate, 1))).toBe('AGIを15%上昇させる。')
+    expect(text(buildSkillText(critFlat, 1))).toBe('クリティカル率を5%上昇させる。')
   })
 
   it('弱点・耐性の特性が読める文になる', () => {
@@ -182,7 +189,7 @@ describe('skillText: 補正・宣言的opの表記', () => {
     const guard = makeTrait({ id: 'g', effect: [node('replaceGuard')] })
     const medicRate = makeTrait({ id: 'm1', effect: [node('healBetweenBattles', { rate: 0.15 })] })
     const medicFlat = makeTrait({ id: 'm2', effect: [node('healBetweenBattles', { amount: 500 })] })
-    expect(text(buildSkillText(guard, 1))).toBe('「守る」が「様子を見る」に変化する。')
+    expect(text(buildSkillText(guard, 1))).toBe('「守る」が「避ける」に変化する。')
     expect(text(buildSkillText(medicRate, 1))).toBe('戦闘終了時にHPを15%回復する。')
     expect(text(buildSkillText(medicFlat, 1))).toBe('戦闘終了時にHPを500回復する。')
   })

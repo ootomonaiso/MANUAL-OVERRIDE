@@ -156,6 +156,7 @@ describe('useBattleState: リアクティビティ', () => {
     act()
     expect(queued.value).toBeGreaterThan(0)
   })
+
 })
 
 describe('useBattleState: プレイヤーの行動', () => {
@@ -579,5 +580,21 @@ describe('useBattleState: 1手番の演出', () => {
     h.battle.selectDraft(0)
     expect(h.battle.state.backgroundId).toBeTruthy()
     expect(h.battle.state.backgroundId).not.toBe(first)
+  })
+
+  // effectiveOf 等の表示用ヘルパーが内部で toRaw(c) を経由していたため、その先で読む
+  // passives/traits/temporary への依存が Vue のリアクティビティに一切追跡されず、
+  // これらに依存する computed（ステータスパネル/INFOの実効値表示など）がパッシブ取得後も
+  // 更新されない不具合があった。temporary モディファイア（避ける選択時の回避率一時バフ）を
+  // 使い、ドラフトのRNGに依存しない形で再発を検知する。
+  // pacedHarness で announce→impact の1段だけ進め、useBuiltinAction がバフを
+  // 付けた直後（endOfRound で thisTurn スコープが消える前）の値を見る。
+  it('避ける選択の一時的な回避率バフが effectiveOf の computed に反映される', () => {
+    const { battle, sched } = pacedHarness()
+    const evadeRate = computed(() => battle.effectiveOf(battle.state.player).evadeRate)
+    const before = evadeRate.value
+    battle.selectAction({ kind: 'builtin', action: 'dodge' })
+    sched.step()
+    expect(evadeRate.value).toBeGreaterThan(before)
   })
 })

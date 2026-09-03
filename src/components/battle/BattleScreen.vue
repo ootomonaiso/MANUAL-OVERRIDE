@@ -32,10 +32,11 @@ import type { DraftCardView, SwapSlotView } from './SkillDraftPanel.vue'
 import BattleBackdrop from './BattleBackdrop.vue'
 import SkillCastBanner from './SkillCastBanner.vue'
 import HelpGuide from './HelpGuide.vue'
-import type { StatKey, PlayerAction, SkillDef, Element } from '../../domain/battle/types'
+import type { PlayerAction, SkillDef, Element } from '../../domain/battle/types'
 import { STAT_KEYS, CATEGORY_IDS } from '../../domain/battle/types'
 import {
   STAT_LABEL, CATEGORY_LABEL, CATEGORY_COLOR, buildSkillText, describeTemporaryModifier,
+  PERCENT_STAT_KEYS,
 } from '../../domain/battle/skillText'
 import { STACKS_REQUIRED, nextCategoryThreshold } from '../../domain/battle/skillDraft'
 import { damageMagnitude, MAGNITUDE_LABEL } from '../../domain/battle/damagePreview'
@@ -88,12 +89,10 @@ function enemySpriteHeight(isBoss: boolean): number {
   return Math.round(viewportHeight.value * (isBoss ? 0.36 : 0.27))
 }
 
-const PERCENT_STATS = new Set<StatKey>(['hitRate', 'evadeRate', 'critRate', 'critDamageMultiplier'])
-
 function statRows(c: CombatantView): StatRowView[] {
   const eff = battle.effectiveOf(c)
   return STAT_KEYS.map(k => ({
-    key: k, label: STAT_LABEL[k], base: c.baseStats[k], effective: eff[k], isPercent: PERCENT_STATS.has(k),
+    key: k, label: STAT_LABEL[k], base: c.baseStats[k], effective: eff[k], isPercent: PERCENT_STAT_KEYS.has(k),
   }))
 }
 
@@ -470,7 +469,8 @@ const draftCards = computed<DraftCardView[]>(() => {
         ? undefined
         : willLevelUp
           ? `Lv${currentLevel} → Lv${currentLevel + 1}`
-          : `スタック ${currentStacks + 1}/${required}`,
+          : `スタック ${currentStacks + 1}/${required}（今回はレベル据え置き）`,
+      levelTransitionMuted: currentLevel !== 0 && !willLevelUp,
       isUnlocked: opt.isUnlocked,
     }
   })
@@ -545,6 +545,7 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
       :class="{ shaking: fx.screenShake.value > 0 }"
       :style="{ '--shake-mag': fx.screenShake.value || 1 }"
     >
+      <div v-if="fx.screenCriticalFlash.value" class="critical-screen-flash" />
       <div class="enemy-line" :style="{ bottom: `${(1 - FLOOR_TOP) * 100}%` }">
         <CharacterFrame
           v-for="(e, i) in battle.state.enemies"
@@ -697,7 +698,9 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   position: absolute;
   top: 78px;
   left: 10px;
-  z-index: 15;
+  /* ドラフト画面（.draft-overlay, z-index:35）より手前に出し、ドラフト中も
+     ステータス・所持スキルを確認できるようにする */
+  z-index: 36;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -720,6 +723,24 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   position: absolute;
   inset: 0;
   z-index: 2;
+}
+/* クリティカル演出をキャラクター単体に留めず戦場全体で一瞬光らせる（派手さの要望対応） */
+.critical-screen-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, #fff6d0 85%, transparent) 0%,
+    color-mix(in srgb, #ffd23a 45%, transparent) 45%,
+    transparent 78%
+  );
+  animation: critical-flash-fade 380ms ease-out forwards;
+}
+@keyframes critical-flash-fade {
+  0% { opacity: 0.95; }
+  100% { opacity: 0; }
 }
 .battle-field.shaking {
   animation: field-shake 280ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
