@@ -265,6 +265,19 @@ src/
 
 ---
 
+## content-editor（rpgコンテンツのGUIエディタ）
+
+`src/data/rpg/{skills,traits,enemies,battle-effects,battle-backgrounds}/*.json` をGUIで編集する開発専用ツール。`npm run content-editor` で起動する。
+
+- アクティブ/パッシブスキル・特性・敵（ステータス・所持スキル・行動パターン）・戦闘エフェクト・戦闘背景を、`schemas/battle-*.schema.json` から自動生成したフォームで編集する
+- 保存は dev サーバー側の Vite plugin（[scripts/contentEditorPlugin.mjs](scripts/contentEditorPlugin.mjs)、`apply: 'serve'` で本番ビルドには含まれない）が ajv でスキーマ検証してから `src/data/rpg/` へ書き込む。検証に失敗すると書き込まれず、エラー内容がGUIに出る
+- フォームが扱いにくい箇所（`effect[]` のop固有フィールド等）は「JSONとして直接編集」で生JSONに切り替えられる
+- 保存は1ファイル単位のスキーマ検証のみ行う。他ファイルからのID参照整合性までは見ないため、**保存後は `npm run validate` も実行すること**
+
+詳細: [docs/content-editor.md](docs/content-editor.md)
+
+---
+
 ## 結末の演出
 
 投擲後、ジャンルに応じたエンディングメッセージと、最終的な取説が出てくる

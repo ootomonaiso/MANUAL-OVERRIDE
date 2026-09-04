@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>content-editor — RPGコンテンツエディタ</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 16px;
+      background: #14161c; color: #d8dce6;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 13px;
+    }
+    h1 { font-size: 16px; margin: 0 0 4px; }
+    h2 { font-size: 15px; margin: 0; }
+    .note { color: #6b7280; margin: 4px 0 16px; }
+
+    .layout { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; height: calc(100vh - 90px); }
+    .panel { background: #1b1e27; border: 1px solid #2a2f3a; border-radius: 6px; padding: 12px; }
+    .sidebar { display: flex; flex-direction: column; gap: 10px; height: 100%; overflow: hidden; }
+
+    #tabs { display: flex; flex-direction: column; gap: 4px; }
+    .tab-btn {
+      background: #232838; color: #d8dce6; border: 1px solid #2f3648; border-radius: 4px;
+      padding: 6px 10px; cursor: pointer; text-align: left; font: inherit;
+    }
+    .tab-btn:hover { background: #2c3349; }
+    .tab-btn.active { background: #2c3c5c; border-color: #5b8def; }
+
+    #entry-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+    .entry-btn {
+      display: flex; align-items: baseline; gap: 6px;
+      background: #191c24; color: #d8dce6; border: 1px solid #262b38; border-radius: 4px;
+      padding: 5px 8px; cursor: pointer; text-align: left; font: inherit; font-size: 12px;
+    }
+    .entry-btn:hover { background: #232838; }
+    .entry-btn.active { background: #2c3c5c; border-color: #5b8def; }
+    .entry-btn.broken { color: #e05661; }
+    .entry-id { color: #8fa3c8; white-space: nowrap; }
+    .entry-name { color: #d8dce6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .badge { margin-left: auto; font-size: 9px; padding: 1px 5px; border-radius: 8px; }
+    .badge.boss { background: #5c2c2c; color: #ff9a9a; }
+
+    button.small {
+      background: #2c3349; color: #d8dce6; border: 1px solid #3a4258; border-radius: 4px;
+      padding: 4px 10px; cursor: pointer; font: inherit; font-size: 12px;
+    }
+    button.small:hover { background: #38415c; }
+    button.small.primary { background: #2c5c3c; border-color: #5bef8d; }
+    button.small.danger { background: #5c2c2c; border-color: #ef5b5b; }
+    button.small:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    #new-btn { width: 100%; }
+
+    .editor-panel { height: 100%; overflow-y: auto; }
+    .editor-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .editor-header h2 { flex: 1; }
+
+    .status-box { display: none; padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; white-space: pre-wrap; font-size: 12px; }
+    .status-box.ok { background: #1c3324; border: 1px solid #2c5c3c; color: #9ee6b0; }
+    .status-box.error { background: #331c1c; border: 1px solid #5c2c2c; color: #ffb0b0; }
+
+    .form-root { display: flex; flex-direction: column; gap: 10px; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field-label { font-size: 11px; color: #8fa3c8; }
+    .const-value { color: #6b7280; font-style: italic; padding: 4px 0; }
+
+    input[type="text"], input[type="number"], select, textarea {
+      background: #12141b; color: #d8dce6;
+      border: 1px solid #2a2f3a; border-radius: 4px; padding: 6px 8px; font: inherit; font-size: 12px;
+      width: 100%;
+    }
+    textarea { font-family: "Consolas", "Courier New", monospace; resize: vertical; }
+    input[type="checkbox"] { width: auto; }
+
+    .nested-object {
+      border-left: 2px solid #2f3648; padding: 8px 0 8px 12px; margin-top: 2px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+    .checkbox-item { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+
+    .string-list, .skill-ref-list { display: flex; flex-direction: column; gap: 6px; }
+    .string-row { display: flex; gap: 6px; align-items: center; }
+    .string-row select { flex: 1; }
+    .string-row input[type="text"] { flex: 1; }
+    .level-input { width: 60px !important; flex: none; }
+
+    .object-array { display: flex; flex-direction: column; gap: 10px; }
+    .object-array-card { border: 1px solid #2a2f3a; border-radius: 6px; padding: 10px; background: #191c24; }
+    .object-array-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: #8fa3c8; }
+    .object-array-head span:first-child { font-weight: bold; }
+
+    .color-field { display: flex; gap: 6px; align-items: center; }
+    .color-field input[type="color"] { width: 40px; padding: 2px; }
+    .color-text { flex: 1; }
+
+    .json-raw { width: 100%; min-height: 60vh; }
+    .json-sub { width: 100%; }
+  </style>
+</head>
+<body>
+  <h1>content-editor <span style="color:#5b8def">▸</span> RPGコンテンツエディタ</h1>
+  <p class="note">
+    開発専用（本番ビルドには含まれない）。保存は <code>schemas/battle-*.schema.json</code> で検証してから
+    <code>src/data/rpg/</code> 配下へ書き込む。保存後は参照整合性の確認に <code>npm run validate</code> も実行すること。
+  </p>
+
+  <div class="layout">
+    <div class="panel sidebar">
+      <div id="tabs"></div>
+      <button type="button" id="new-btn" class="small primary">＋ 新規作成</button>
+      <div id="entry-list"></div>
+    </div>
+
+    <div class="panel editor-panel">
+      <div id="status-box" class="status-box"></div>
+      <div id="editor-host"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/tools/contentEditor.ts"></script>
+</body>
+</html>
