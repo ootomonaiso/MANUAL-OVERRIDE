@@ -122,6 +122,23 @@ export const EFFECT_OP_SKELETONS: Readonly<Record<string, Record<string, unknown
 
 export const ALLOWED_EFFECT_OPS = Object.keys(EFFECT_OP_SKELETONS)
 
+/** op 選択欄に添える日本語ラベル（値そのものは変えない。表示だけ添える） */
+export const EFFECT_OP_LABEL: Readonly<Record<string, string>> = {
+  damage: 'ダメージ',
+  heal: '回復',
+  shield: 'シールド付与',
+  repeat: '繰り返し',
+  modifier: '一時補正',
+  statBoost: 'ステータス強化（常時）',
+  elementAffinity: '弱点・耐性付与',
+  cutRate: '被ダメージ軽減',
+  replaceGuard: '「守る」を「避ける」に置換',
+  healBetweenBattles: '戦闘後HP回復',
+  effectBoost: '与える効果量を強化',
+  healTaken: '被回復量を増減',
+  noop: '何もしない',
+}
+
 /** カテゴリ別の、新規作成時の最小スケルトン（required を満たすだけの空de値） */
 export function blankEntrySkeleton(category: string, id: string, opts?: { kind?: 'active' | 'passive' }): Record<string, unknown> {
   switch (category) {

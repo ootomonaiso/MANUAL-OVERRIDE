@@ -31,7 +31,7 @@ import { CATEGORY_LABEL, ELEMENT_LABEL, STAT_LABEL, MODIFIER_SCOPE_LABEL } from 
 import { CATEGORY_IDS, STAT_KEYS, type CategoryId, type Element, type StatKey } from '../domain/battle/types'
 import {
   type JsonSchema, resolveRef, widgetKindOf, getAtPath, setAtPath, deleteAtPath,
-  EFFECT_OP_SKELETONS, EFFECT_OP_FIELDS, ALLOWED_EFFECT_OPS, blankEntrySkeleton, isValidIdShape,
+  EFFECT_OP_SKELETONS, EFFECT_OP_FIELDS, EFFECT_OP_LABEL, ALLOWED_EFFECT_OPS, blankEntrySkeleton, isValidIdShape,
   buildSpriteRuns, resolvePreviewColor, type EffectFieldSpec,
 } from './contentEditorForm'
 
@@ -951,7 +951,7 @@ function renderEffectNodeList(rootValue: Record<string, unknown>, path: string, 
       for (const op of ALLOWED_EFFECT_OPS) {
         const optEl = document.createElement('option')
         optEl.value = op
-        optEl.textContent = op
+        optEl.textContent = optionLabel(op, EFFECT_OP_LABEL)
         opSelect.appendChild(optEl)
       }
       opSelect.value = typeof node.op === 'string' ? node.op : ALLOWED_EFFECT_OPS[0]

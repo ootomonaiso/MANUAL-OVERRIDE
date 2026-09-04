@@ -68,7 +68,7 @@ dev サーバーが起動し、ブラウザで `tools/content-editor.html` が�
 
 ### 日本語ラベル
 
-`mainCategory`・`subCategories`・`element`・stat（`str`/`hitRate`等）は、ゲーム本体と同じ日本語ラベル（`src/domain/battle/skillText.ts` の `CATEGORY_LABEL`/`ELEMENT_LABEL`/`STAT_LABEL`/`MODIFIER_SCOPE_LABEL`）を「英語キー（日本語ラベル）」の形で添えて表示する。**保存されるデータの値は常に英語キーのまま**で、表示だけの上乗せ。
+`mainCategory`・`subCategories`・`element`・stat（`str`/`hitRate`等）は、ゲーム本体と同じ日本語ラベル（`src/domain/battle/skillText.ts` の `CATEGORY_LABEL`/`ELEMENT_LABEL`/`STAT_LABEL`/`MODIFIER_SCOPE_LABEL`）を「英語キー（日本語ラベル）」の形で添えて表示する。`effect[]` の `op`（`damage`/`modifier`等）も同様に、`contentEditorForm.ts` の `EFFECT_OP_LABEL` を使って添える。**保存されるデータの値は常に英語キーのまま**で、表示だけの上乗せ。
 
 ### 3. 「JSONとして直接編集」
 

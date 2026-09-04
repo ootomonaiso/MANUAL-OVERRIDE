@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   resolveRef, widgetKindOf, getAtPath, setAtPath, deleteAtPath,
-  EFFECT_OP_SKELETONS, EFFECT_OP_FIELDS, ALLOWED_EFFECT_OPS, blankEntrySkeleton, isValidIdShape,
+  EFFECT_OP_SKELETONS, EFFECT_OP_FIELDS, EFFECT_OP_LABEL, ALLOWED_EFFECT_OPS, blankEntrySkeleton, isValidIdShape,
   resolvePreviewColor,
   type JsonSchema,
 } from '../../../src/tools/contentEditorForm'
@@ -110,6 +110,11 @@ describe('contentEditorForm: effectノードのひな形', () => {
   it('noop / replaceGuard のひな形は空オブジェクト', () => {
     expect(EFFECT_OP_SKELETONS.noop).toEqual({})
     expect(EFFECT_OP_SKELETONS.replaceGuard).toEqual({})
+  })
+  it('ALLOWED_EFFECT_OPS の全opに日本語ラベルがある', () => {
+    for (const op of ALLOWED_EFFECT_OPS) {
+      expect(EFFECT_OP_LABEL[op], op).toBeTruthy()
+    }
   })
 })
 
