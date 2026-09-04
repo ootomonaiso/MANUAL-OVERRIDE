@@ -269,9 +269,12 @@ src/
 
 `src/data/rpg/{skills,traits,enemies,battle-effects,battle-backgrounds}/*.json` をGUIで編集する開発専用ツール。`npm run content-editor` で起動する。
 
-- アクティブ/パッシブスキル・特性・敵（ステータス・所持スキル・行動パターン）・戦闘エフェクト・戦闘背景を、`schemas/battle-*.schema.json` から自動生成したフォームで編集する
+- アクティブ・パッシブ（別タブ）・特性・敵（ステータス・所持スキル・行動パターン）・戦闘エフェクト・戦闘背景を、`schemas/battle-*.schema.json` から自動生成したフォームで編集する
+- `effect[]`（スキル・特性の効果ロジック）は op ごとの型付きフォーム（`EFFECT_OP_FIELDS`）で編集する。「ダメージを、何に基づいて、何%与えるか」を直接触れる。`repeat` の中の効果も再帰的に編集できる
+- 一覧はタブごとに「属性で分ける」「カテゴリで分ける」等のセクション分けを選べる（選択は保持される）。`mainCategory`/`element`/stat 等は日本語ラベルを添えて表示する（値は英語キーのまま）
+- 敵のドット絵・エフェクトの色/種別は一覧・編集画面にその場で表示する（見た目の編集はしない）
 - 保存は dev サーバー側の Vite plugin（[scripts/contentEditorPlugin.mjs](scripts/contentEditorPlugin.mjs)、`apply: 'serve'` で本番ビルドには含まれない）が ajv でスキーマ検証してから `src/data/rpg/` へ書き込む。検証に失敗すると書き込まれず、エラー内容がGUIに出る
-- フォームが扱いにくい箇所（`effect[]` のop固有フィールド等）は「JSONとして直接編集」で生JSONに切り替えられる
+- フォームが扱いにくい箇所は「JSONとして直接編集」で生JSONに切り替えられる
 - 保存は1ファイル単位のスキーマ検証のみ行う。他ファイルからのID参照整合性までは見ないため、**保存後は `npm run validate` も実行すること**
 
 詳細: [docs/content-editor.md](docs/content-editor.md)

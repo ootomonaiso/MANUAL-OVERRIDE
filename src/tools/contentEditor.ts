@@ -10,9 +10,15 @@
  * アクティブ/パッシブスキル・特性・敵・戦闘エフェクト・戦闘背景の src/data/rpg/*.json を
  * スキーマ駆動のフォームで編集し、保存時はサーバー側（同プラグイン）で
  * schemas/battle-*.schema.json による検証を経てからファイルへ書き込む。
- * effect[] のようにスキーマ上 op 以外が自由形式の部分は、op 選択 + JSON欄で扱う。
+ * effect[] は「何に、どの属性で、何%のダメージを与えるか」のようなop固有ロジックを
+ * 型付きフォームで直接編集できるようにしている（EFFECT_OP_FIELDS 参照）。
  * どのフィールドも「JSONとして直接編集」に切り替えれば生JSONで上書きできる
  * （フォームが苦手な形にも必ず対応できる逃げ道として用意している）。
+ *
+ * JP表示: mainCategory/element/statなどの列挙値は、実データの値（英語キー）を
+ * 変えずに、ゲーム本体と同じ日本語ラベル（src/domain/battle/skillText.ts）を
+ * 添えて表示する。表示用ラベルとデータの値を混同しないよう、保存する値は
+ * 常に元の英語キーのまま扱う。
  */
 
 import schemaSkill from '../../schemas/battle-skill.schema.json'
@@ -20,22 +26,40 @@ import schemaTrait from '../../schemas/battle-trait.schema.json'
 import schemaEnemy from '../../schemas/battle-enemy.schema.json'
 import schemaEffect from '../../schemas/battle-effect.schema.json'
 import schemaBackground from '../../schemas/battle-background.schema.json'
+import { SPRITES } from '../data/sprites'
+import { CATEGORY_LABEL, ELEMENT_LABEL, STAT_LABEL, MODIFIER_SCOPE_LABEL } from '../domain/battle/skillText'
+import { CATEGORY_IDS, STAT_KEYS, type CategoryId, type Element, type StatKey } from '../domain/battle/types'
 import {
   type JsonSchema, resolveRef, widgetKindOf, getAtPath, setAtPath, deleteAtPath,
-  EFFECT_OP_SKELETONS, ALLOWED_EFFECT_OPS, blankEntrySkeleton, isValidIdShape,
+  EFFECT_OP_SKELETONS, EFFECT_OP_FIELDS, ALLOWED_EFFECT_OPS, blankEntrySkeleton, isValidIdShape,
+  buildSpriteRuns, resolvePreviewColor, type EffectFieldSpec,
 } from './contentEditorForm'
 
 const API = '/__content-editor/api'
 
 type CategoryKey = 'skills' | 'traits' | 'enemies' | 'battleEffects' | 'battleBackgrounds'
 
-const CATEGORY_LABEL: Record<CategoryKey, string> = {
-  skills: 'アクティブ / パッシブ',
-  traits: '特性',
-  enemies: '敵',
-  battleEffects: 'エフェクト',
-  battleBackgrounds: '背景',
+interface TabDef {
+  key: string
+  apiCategory: CategoryKey
+  label: string
+  kindFilter?: 'active' | 'passive'
 }
+
+/**
+ * 「アクティブ/パッシブ」は同じ src/data/rpg/skills/ ディレクトリ（1スキーマ）だが、
+ * 「分けれるといい」という要望を受けてタブだけをUI側で分割する。
+ * apiCategory は常に 'skills' のまま（サーバー側のカテゴリ設定は増やさない）。
+ */
+const TABS: TabDef[] = [
+  { key: 'skills-active', apiCategory: 'skills', label: 'アクティブ', kindFilter: 'active' },
+  { key: 'skills-passive', apiCategory: 'skills', label: 'パッシブ', kindFilter: 'passive' },
+  { key: 'traits', apiCategory: 'traits', label: '特性' },
+  { key: 'enemies', apiCategory: 'enemies', label: '敵' },
+  { key: 'battleEffects', apiCategory: 'battleEffects', label: 'エフェクト' },
+  { key: 'battleBackgrounds', apiCategory: 'battleBackgrounds', label: '背景' },
+]
+
 const CATEGORY_ID_HINT: Record<CategoryKey, string> = {
   skills: 'skill_xxx（アクティブ）または passive_xxx（パッシブ）',
   traits: 'trait_xxx',
@@ -50,9 +74,12 @@ const CATEGORY_SCHEMA: Record<CategoryKey, JsonSchema> = {
   battleEffects: schemaEffect as JsonSchema,
   battleBackgrounds: schemaBackground as JsonSchema,
 }
-const CATEGORY_KEYS: CategoryKey[] = ['skills', 'traits', 'enemies', 'battleEffects', 'battleBackgrounds']
 
-interface EntrySummary { id: string; label: string; kind?: string; isBoss?: boolean; bossOnly?: boolean; broken?: boolean }
+interface EntrySummary {
+  id: string; label: string; kind?: string; isBoss?: boolean; bossOnly?: boolean; broken?: boolean
+  mainCategory?: string; element?: string; timing?: string; draftable?: boolean
+  sprite?: string; visual?: { kind?: string; color?: string }
+}
 interface RefOption { id: string; label: string }
 interface RefsResponse {
   activeSkillIds: RefOption[]
@@ -72,7 +99,96 @@ const REF_DATALIST_FIELDS: Record<string, keyof RefsResponse> = {
   'skills.sfx.cast': 'sfxIds',
   'skills.sfx.impact': 'sfxIds',
   'battleEffects.sfx': 'sfxIds',
-  'enemies.sprite': 'spriteIds',
+}
+
+// ── 列挙値の日本語ラベル（値そのものは変えない。表示だけ添える） ──
+const ENUM_LABEL_FIELDS: Record<string, Record<string, string>> = {
+  'skills.mainCategory': CATEGORY_LABEL,
+  'skills.subCategories': CATEGORY_LABEL,
+  'skills.element': ELEMENT_LABEL,
+  'skills.unlockCondition.category': CATEGORY_LABEL,
+  'traits.unlockCondition.category': CATEGORY_LABEL,
+}
+const APPLY_TO_LABEL: Record<string, string> = { self: '自分', target: '対象' }
+const AFFINITY_LABEL: Record<string, string> = { weak: '弱点', resist: '耐性' }
+const TIMING_LABEL: Record<string, string> = {
+  onCast: '発動時', onHit: '命中時', onMiss: 'ミス時', onHeal: '回復時', onShield: 'シールド時',
+  onStatus: '状態異常時', onDefeat: '撃破時', onSystem: 'システム',
+}
+const EFFECT_SELECT_LABELS: Record<string, Record<string, string>> = {
+  scope: MODIFIER_SCOPE_LABEL, applyTo: APPLY_TO_LABEL, affinity: AFFINITY_LABEL,
+}
+
+// ── グループ化（セクション分け）の設定 ────────────────────────────
+interface GroupOption { value: string; label: string }
+const GROUP_OPTIONS: Record<string, GroupOption[]> = {
+  'skills-active': [
+    { value: 'none', label: 'グループなし' },
+    { value: 'element', label: '属性で分ける（物理・魔法・特殊）' },
+    { value: 'mainCategory', label: 'カテゴリで分ける' },
+  ],
+  'skills-passive': [
+    { value: 'none', label: 'グループなし' },
+    { value: 'mainCategory', label: 'カテゴリで分ける' },
+  ],
+  traits: [
+    { value: 'none', label: 'グループなし' },
+    { value: 'draftable', label: 'ドラフト区分で分ける' },
+  ],
+  enemies: [
+    { value: 'none', label: 'グループなし' },
+    { value: 'isBoss', label: 'ボス区分で分ける' },
+  ],
+  battleEffects: [
+    { value: 'none', label: 'グループなし' },
+    { value: 'timing', label: 'タイミングで分ける' },
+  ],
+  battleBackgrounds: [
+    { value: 'none', label: 'グループなし' },
+    { value: 'bossOnly', label: 'ボス専用区分で分ける' },
+  ],
+}
+const GROUP_ORDER: Record<string, string[]> = {
+  element: ['physical', 'magical', 'special'],
+  mainCategory: [...CATEGORY_IDS],
+  isBoss: ['normal', 'boss'],
+  bossOnly: ['normal', 'bossOnly'],
+  timing: ['onCast', 'onHit', 'onMiss', 'onHeal', 'onShield', 'onStatus', 'onDefeat', 'onSystem'],
+  draftable: ['draftable', 'fixed'],
+}
+const GROUP_BY_STORAGE_KEY = 'contentEditor.groupBy'
+
+function loadGroupByPrefs(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(GROUP_BY_STORAGE_KEY)
+    return raw ? (JSON.parse(raw) as Record<string, string>) : {}
+  } catch { return {} }
+}
+function saveGroupByPrefs(): void {
+  try { localStorage.setItem(GROUP_BY_STORAGE_KEY, JSON.stringify(groupBySel)) } catch { /* localStorage不可でも動作は継続する */ }
+}
+
+function groupKeyOf(entry: EntrySummary, groupField: string): string {
+  switch (groupField) {
+    case 'element': return entry.element ?? '(未設定)'
+    case 'mainCategory': return entry.mainCategory ?? '(未設定)'
+    case 'isBoss': return entry.isBoss ? 'boss' : 'normal'
+    case 'bossOnly': return entry.bossOnly ? 'bossOnly' : 'normal'
+    case 'timing': return entry.timing ?? '(未設定)'
+    case 'draftable': return entry.draftable === false ? 'fixed' : 'draftable'
+    default: return ''
+  }
+}
+function groupLabelOf(groupField: string, key: string): string {
+  switch (groupField) {
+    case 'element': return ELEMENT_LABEL[key as Element] ?? key
+    case 'mainCategory': return CATEGORY_LABEL[key as CategoryId] ?? key
+    case 'isBoss': return key === 'boss' ? 'ボス' : '通常'
+    case 'bossOnly': return key === 'bossOnly' ? 'ボス専用' : '通常戦闘'
+    case 'timing': return TIMING_LABEL[key] ?? key
+    case 'draftable': return key === 'fixed' ? '常設（ドラフト対象外）' : 'ドラフト対象'
+    default: return key
+  }
 }
 
 // ── DOM ヘルパー（sfxTest.ts / genreLab.ts と同じ方針） ─────────────
@@ -87,15 +203,25 @@ function h(tag: string, className?: string, text?: string): HTMLElement {
   if (text !== undefined) node.textContent = text
   return node
 }
+function optionLabel(value: string, labelMap?: Record<string, string>): string {
+  const label = labelMap?.[value]
+  return label ? `${value}（${label}）` : value
+}
 
 // ── 状態 ──────────────────────────────────────────────────────
 let refs: RefsResponse = { activeSkillIds: [], passiveSkillIds: [], traitIds: [], effectIds: [], sfxIds: [], spriteIds: [] }
 let lists: Record<CategoryKey, EntrySummary[]> = { skills: [], traits: [], enemies: [], battleEffects: [], battleBackgrounds: [] }
-let currentCategory: CategoryKey = 'skills'
+let currentTabKey = TABS[0].key
+let currentCategory: CategoryKey = TABS[0].apiCategory
 let currentId: string | null = null
 let currentValue: Record<string, unknown> | null = null
 let isNewEntry = false
 let rawMode = false
+const groupBySel: Record<string, string> = loadGroupByPrefs()
+
+function currentTab(): TabDef {
+  return TABS.find(t => t.key === currentTabKey) ?? TABS[0]
+}
 
 // ── API 呼び出し ────────────────────────────────────────────────
 async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -114,30 +240,137 @@ async function loadAll(): Promise<void> {
   refs = refsRes
 }
 
-// ── サイドバー ────────────────────────────────────────────────
+// ── サイドバー: タブ ──────────────────────────────────────────
 function renderTabs(): void {
   const tabsEl = el<HTMLDivElement>('tabs')
   tabsEl.innerHTML = ''
-  for (const key of CATEGORY_KEYS) {
-    const btn = h('button', `tab-btn${key === currentCategory ? ' active' : ''}`, `${CATEGORY_LABEL[key]} (${lists[key].length})`)
-    btn.addEventListener('click', () => { currentCategory = key; renderTabs(); renderList() })
+  for (const tab of TABS) {
+    let entries = lists[tab.apiCategory]
+    if (tab.kindFilter) entries = entries.filter(e => e.kind === tab.kindFilter)
+    const btn = h('button', `tab-btn${tab.key === currentTabKey ? ' active' : ''}`, `${tab.label} (${entries.length})`)
+    btn.addEventListener('click', () => {
+      currentTabKey = tab.key
+      currentCategory = tab.apiCategory
+      renderTabs()
+      renderGroupBySelect()
+      renderList()
+    })
     tabsEl.appendChild(btn)
   }
 }
 
+// ── サイドバー: グループ化設定 ────────────────────────────────
+function renderGroupBySelect(): void {
+  const host = el<HTMLDivElement>('group-by-host')
+  host.innerHTML = ''
+  const options = GROUP_OPTIONS[currentTabKey]
+  if (!options || options.length <= 1) return
+  const label = h('label', 'group-by-label', 'セクション分け: ')
+  const select = document.createElement('select')
+  select.className = 'group-by-select'
+  for (const opt of options) {
+    const optEl = document.createElement('option')
+    optEl.value = opt.value
+    optEl.textContent = opt.label
+    select.appendChild(optEl)
+  }
+  select.value = groupBySel[currentTabKey] ?? 'none'
+  select.addEventListener('change', () => {
+    groupBySel[currentTabKey] = select.value
+    saveGroupByPrefs()
+    renderList()
+  })
+  label.appendChild(select)
+  host.appendChild(label)
+}
+
+// ── サイドバー: 一覧 ──────────────────────────────────────────
 function renderList(): void {
   const listEl = el<HTMLDivElement>('entry-list')
   listEl.innerHTML = ''
-  for (const entry of lists[currentCategory]) {
-    const btn = h('button', `entry-btn${entry.id === currentId ? ' active' : ''}${entry.broken ? ' broken' : ''}`)
-    const idSpan = h('span', 'entry-id', entry.id)
-    const labelSpan = h('span', 'entry-name', entry.label)
-    btn.append(idSpan, labelSpan)
-    if (entry.isBoss) btn.appendChild(h('span', 'badge boss', 'BOSS'))
-    if (entry.bossOnly) btn.appendChild(h('span', 'badge boss', 'ボス専用'))
-    btn.addEventListener('click', () => void selectEntry(currentCategory, entry.id))
-    listEl.appendChild(btn)
+  const tab = currentTab()
+  let entries = lists[tab.apiCategory]
+  if (tab.kindFilter) entries = entries.filter(e => e.kind === tab.kindFilter)
+
+  const groupField = groupBySel[tab.key] ?? 'none'
+  if (groupField === 'none') {
+    for (const entry of entries) listEl.appendChild(renderEntryButton(entry, tab.apiCategory))
+    return
   }
+  const buckets = new Map<string, EntrySummary[]>()
+  for (const entry of entries) {
+    const k = groupKeyOf(entry, groupField)
+    if (!buckets.has(k)) buckets.set(k, [])
+    buckets.get(k)?.push(entry)
+  }
+  const order = GROUP_ORDER[groupField] ?? []
+  const orderedKeys = [...order.filter(k => buckets.has(k)), ...[...buckets.keys()].filter(k => !order.includes(k)).sort()]
+  for (const k of orderedKeys) {
+    const bucket = buckets.get(k)
+    if (!bucket || bucket.length === 0) continue
+    listEl.appendChild(h('div', 'group-header', `${groupLabelOf(groupField, k)}（${bucket.length}）`))
+    for (const entry of bucket) listEl.appendChild(renderEntryButton(entry, tab.apiCategory))
+  }
+}
+
+function renderEntryButton(entry: EntrySummary, apiCategory: CategoryKey): HTMLElement {
+  const btn = h('button', `entry-btn${entry.id === currentId ? ' active' : ''}${entry.broken ? ' broken' : ''}`)
+  if (apiCategory === 'enemies' && !entry.broken) {
+    const thumb = h('span', 'entry-thumb')
+    renderSpritePreview(entry.sprite, thumb, 28)
+    btn.appendChild(thumb)
+  }
+  if (apiCategory === 'battleEffects' && !entry.broken) {
+    const swatch = h('span', 'entry-swatch')
+    renderEffectSwatch(entry.visual, swatch)
+    btn.appendChild(swatch)
+  }
+  const idSpan = h('span', 'entry-id', entry.id)
+  const labelSpan = h('span', 'entry-name', entry.label)
+  btn.append(idSpan, labelSpan)
+  if (entry.isBoss) btn.appendChild(h('span', 'badge boss', 'BOSS'))
+  if (entry.bossOnly) btn.appendChild(h('span', 'badge boss', 'ボス専用'))
+  btn.addEventListener('click', () => void selectEntry(apiCategory, entry.id))
+  return btn
+}
+
+// ── 見た目のプレビュー（絵そのものは編集しない。表示のみ） ─────────
+
+/** 敵のドット絵。PixelSprite.vue と同じ考え方で、横に連続する同色セルを矩形へまとめて描く */
+function renderSpritePreview(spriteId: string | undefined, container: HTMLElement, targetHeight: number): void {
+  container.innerHTML = ''
+  const def = spriteId ? SPRITES[spriteId] : undefined
+  if (!def) {
+    container.appendChild(h('span', 'sprite-missing', spriteId ? `(スプライト "${spriteId}" が見つかりません)` : '(未設定)'))
+    return
+  }
+  const runs = buildSpriteRuns(def, 'idle')
+  const scale = Math.max(1, Math.round(targetHeight / def.h))
+  const svgNS = 'http://www.w3.org/2000/svg'
+  const svg = document.createElementNS(svgNS, 'svg')
+  svg.setAttribute('viewBox', `0 0 ${def.w} ${def.h}`)
+  svg.setAttribute('width', String(def.w * scale))
+  svg.setAttribute('height', String(def.h * scale))
+  svg.setAttribute('shape-rendering', 'crispEdges')
+  for (const r of runs) {
+    const rect = document.createElementNS(svgNS, 'rect')
+    rect.setAttribute('x', String(r.x))
+    rect.setAttribute('y', String(r.y))
+    rect.setAttribute('width', String(r.w))
+    rect.setAttribute('height', '1')
+    rect.setAttribute('fill', r.color)
+    svg.appendChild(rect)
+  }
+  container.appendChild(svg)
+}
+
+/** エフェクトには絵（スプライト）が無いため、visual.color を地色にした kind バッジで代用する */
+function renderEffectSwatch(visual: { kind?: string; color?: string } | undefined, container: HTMLElement): void {
+  container.innerHTML = ''
+  const swatch = h('div', 'effect-swatch-badge')
+  swatch.style.background = resolvePreviewColor(visual?.color) ?? '#555a68'
+  swatch.textContent = visual?.kind ?? '?'
+  container.appendChild(swatch)
 }
 
 // ── エントリの読み込み・新規作成 ───────────────────────────────
@@ -151,19 +384,20 @@ async function selectEntry(category: CategoryKey, id: string): Promise<void> {
   currentValue = res.data
   isNewEntry = false
   rawMode = false
-  renderTabs()
   renderList()
   renderEditor()
 }
 
 function createNew(): void {
-  const raw = window.prompt(`新規IDを入力してください（${CATEGORY_ID_HINT[currentCategory]}）`)
+  const tab = currentTab()
+  const raw = window.prompt(`新規IDを入力してください（${CATEGORY_ID_HINT[tab.apiCategory]}）`)
   if (!raw) return
   const id = raw.trim()
   if (!isValidIdShape(id)) { showStatus('idは英小文字で始まり、英小文字・数字・_のみ使えます', true); return }
-  if (lists[currentCategory].some(e => e.id === id)) { showStatus(`"${id}" は既に存在します`, true); return }
+  if (lists[tab.apiCategory].some(e => e.id === id)) { showStatus(`"${id}" は既に存在します`, true); return }
+  currentCategory = tab.apiCategory
   currentId = id
-  currentValue = blankEntrySkeleton(currentCategory, id)
+  currentValue = blankEntrySkeleton(tab.apiCategory, id, tab.kindFilter ? { kind: tab.kindFilter } : undefined)
   isNewEntry = true
   rawMode = false
   renderList()
@@ -254,7 +488,7 @@ function renderEditor(): void {
 
   const schema = CATEGORY_SCHEMA[currentCategory]
   const form = h('div', 'form-root')
-  renderObjectFields(schema, schema, currentValue, '', form, [currentCategory])
+  renderObjectFields(schema, schema, currentValue, '', form)
   host.appendChild(form)
 }
 
@@ -276,7 +510,7 @@ function renderRawJsonEditor(host: HTMLElement): void {
 /** オブジェクトschemaのpropertiesを辿ってフィールドを並べる */
 function renderObjectFields(
   schema: JsonSchema, root: JsonSchema, value: Record<string, unknown>,
-  pathPrefix: string, container: HTMLElement, skipTopKeys: string[] = [],
+  pathPrefix: string, container: HTMLElement,
 ): void {
   const props = schema.properties ?? {}
   const required = new Set(schema.required ?? [])
@@ -288,19 +522,27 @@ function renderObjectFields(
     const isRequired = required.has(key)
     const resolvedSub = resolveRef(subSchemaRaw, root)
     const fieldWrap = h('div', 'field')
-    fieldWrap.appendChild(h('label', 'field-label', key + (isRequired ? ' *' : '')))
+    fieldWrap.appendChild(h('label', 'field-label', fieldLabelFor(path, key) + (isRequired ? ' *' : '')))
 
     // 任意項目のオブジェクト（unlockCondition, sfx, glow等）は、開いただけで
     // 中の必須フィールドにデフォルト値が書き込まれ、触っていないのに保存すると
     // 項目が追加されてしまう。トグルで明示的にON/OFFできるようにする。
-    if (!isRequired && resolvedSub.type === 'object' && resolvedSub.properties) {
+    if (!isRequired && resolvedSub.type === 'object' && resolvedSub.properties && !(currentCategory === 'battleEffects' && path === 'visual')) {
       renderOptionalObjectField(resolvedSub, root, value, path, fieldWrap)
     } else {
       renderField(subSchemaRaw, root, value, path, key, fieldWrap)
     }
     container.appendChild(fieldWrap)
   }
-  void skipTopKeys
+}
+
+/** enemies.stats.* は STAT_LABEL（HP/STR/命中率...）を添えて表示する */
+function fieldLabelFor(path: string, key: string): string {
+  if (currentCategory === 'enemies' && path.startsWith('stats.')) {
+    const label = STAT_LABEL[key as StatKey]
+    if (label) return `${key}（${label}）`
+  }
+  return key
 }
 
 function renderOptionalObjectField(
@@ -342,17 +584,19 @@ function renderField(
   path: string, fieldKey: string, container: HTMLElement,
 ): void {
   // 特別対応が必要なフィールドを先に判定する
+  if (currentCategory === 'enemies' && path === 'sprite') { renderSpriteField(rootValue, path, container); return }
   if (currentCategory === 'enemies' && path === 'activeSkills') { renderSkillRefList(rootValue, path, container, refs.activeSkillIds, true); return }
   if (currentCategory === 'enemies' && path === 'passiveSkills') { renderSkillRefList(rootValue, path, container, refs.passiveSkillIds, true); return }
   if (currentCategory === 'enemies' && path === 'actionPattern') { renderActionPattern(rootValue, path, container); return }
-  if (currentCategory === 'skills' && path === 'effect') { renderEffectList(rootValue, path, container); return }
-  if (currentCategory === 'traits' && path === 'effect') { renderEffectList(rootValue, path, container); return }
+  if ((currentCategory === 'skills' || currentCategory === 'traits') && path === 'effect') { renderEffectNodeList(rootValue, path, container); return }
+  if (currentCategory === 'battleEffects' && path === 'visual') { renderVisualField(schemaRaw, root, rootValue, path, container); return }
 
   const schema = resolveRef(schemaRaw, root)
   const kind = widgetKindOf(schemaRaw, root)
   const current = getAtPath(rootValue, path)
   const refCheckboxSource = REF_CHECKBOX_FIELDS[refFieldKey(path)]
   const refDatalistSource = REF_DATALIST_FIELDS[refFieldKey(path)]
+  const enumLabels = ENUM_LABEL_FIELDS[refFieldKey(path)]
 
   if (refCheckboxSource) { renderCheckboxGroup(rootValue, path, container, refs[refCheckboxSource] as RefOption[]); return }
 
@@ -387,7 +631,7 @@ function renderField(
       for (const opt of schema.enum ?? []) {
         const optEl = document.createElement('option')
         optEl.value = String(opt)
-        optEl.textContent = String(opt)
+        optEl.textContent = optionLabel(String(opt), enumLabels)
         select.appendChild(optEl)
       }
       // 表示上は先頭の選択肢を仮に見せるが、実際に触るまでは rootValue に書き込まない
@@ -448,7 +692,7 @@ function renderField(
     }
     case 'array-checkbox': {
       const items = resolveRef(schema.items ?? {}, root)
-      const options = (items.enum ?? []).map(v => ({ id: String(v), label: String(v) }))
+      const options = (items.enum ?? []).map(v => ({ id: String(v), label: enumLabels?.[String(v)] ?? String(v) }))
       renderCheckboxGroup(rootValue, path, container, options)
       return
     }
@@ -465,6 +709,48 @@ function renderField(
       return
     }
   }
+}
+
+/** enemies.sprite: 通常のテキスト入力＋候補一覧に加え、実際のドット絵をその場に表示する */
+function renderSpriteField(rootValue: Record<string, unknown>, path: string, container: HTMLElement): void {
+  const current = getAtPath(rootValue, path)
+  const input = document.createElement('input')
+  input.type = 'text'
+  input.value = typeof current === 'string' ? current : ''
+  const listId = `dl-${path.replace(/\./g, '-')}`
+  const dl = document.createElement('datalist')
+  dl.id = listId
+  for (const spriteId of refs.spriteIds) {
+    const opt = document.createElement('option')
+    opt.value = spriteId
+    dl.appendChild(opt)
+  }
+  input.setAttribute('list', listId)
+  container.append(input, dl)
+
+  const previewBox = h('div', 'sprite-preview')
+  container.appendChild(previewBox)
+  const refresh = () => renderSpritePreview(input.value || undefined, previewBox, 96)
+  input.addEventListener('change', () => { setAtPath(rootValue, path, input.value); refresh() })
+  refresh()
+}
+
+/** battleEffects.visual: 通常のフィールド群に加え、色とkindを反映したプレビューを添える */
+function renderVisualField(schemaRaw: JsonSchema, root: JsonSchema, rootValue: Record<string, unknown>, path: string, container: HTMLElement): void {
+  const schema = resolveRef(schemaRaw, root)
+  const box = h('div', 'nested-object')
+  renderObjectFields(schema, root, rootValue, path, box)
+  container.appendChild(box)
+
+  const previewWrap = h('div', 'field')
+  previewWrap.appendChild(h('label', 'field-label', 'プレビュー（絵は無いため色とkindのみ）'))
+  const previewBox = h('div')
+  previewWrap.appendChild(previewBox)
+  container.appendChild(previewWrap)
+
+  const refresh = () => renderEffectSwatch(getAtPath(rootValue, path) as { kind?: string; color?: string } | undefined, previewBox)
+  box.addEventListener('change', refresh)
+  refresh()
 }
 
 function renderCheckboxGroup(rootValue: Record<string, unknown>, path: string, container: HTMLElement, options: RefOption[]): void {
@@ -644,18 +930,21 @@ function renderActionPattern(rootValue: Record<string, unknown>, path: string, c
   container.appendChild(box)
 }
 
-/**
- * effect[]: op を選ぶと EFFECT_OP_SKELETONS のひな形を差し込み、それ以外の
- * op固有フィールドはJSON欄で直接編集する（schema側がopしか強制していないため）。
- */
-function renderEffectList(rootValue: Record<string, unknown>, path: string, container: HTMLElement): void {
+// ── effect[]: op固有ロジックの型付きフォーム ────────────────────
+//
+// 「ダメージを、何に基づいて、何%与えるか」を直接編集したいという要望を受け、
+// op選択＋JSON欄だった旧実装を、EFFECT_OP_FIELDS駆動の型付きフィールドへ置き換えた。
+// repeat の body/onFirstIteration/onLastIteration は EffectNode[] を再帰的に持つため、
+// この関数自身を再帰呼び出しする。
+
+function renderEffectNodeList(rootValue: Record<string, unknown>, path: string, container: HTMLElement): void {
   const list = [...((getAtPath(rootValue, path) as Record<string, unknown>[] | undefined) ?? [])]
   const box = h('div', 'object-array')
   const commit = () => setAtPath(rootValue, path, list)
   function redraw(): void {
     box.innerHTML = ''
     list.forEach((node, i) => {
-      const card = h('div', 'object-array-card')
+      const card = h('div', 'object-array-card effect-node-card')
       const head = h('div', 'object-array-head')
       head.appendChild(h('span', undefined, `#${i + 1}`))
       const opSelect = document.createElement('select')
@@ -666,35 +955,33 @@ function renderEffectList(rootValue: Record<string, unknown>, path: string, cont
         opSelect.appendChild(optEl)
       }
       opSelect.value = typeof node.op === 'string' ? node.op : ALLOWED_EFFECT_OPS[0]
-      const resetBtn = h('button', 'small', 'ひな形を挿入')
-      resetBtn.title = 'op固有フィールドを、このopの標準的な形で置き換えます'
+      // op を切り替えると、そのopのひな形で中身を総入れ替えする（型の合わない
+      // 古いフィールドが残らないようにするため。値を活かしたい場合はリセット前に控える）
+      opSelect.addEventListener('change', () => {
+        list[i] = { op: opSelect.value, ...(EFFECT_OP_SKELETONS[opSelect.value] ?? {}) }
+        commit(); redraw()
+      })
+      const resetBtn = h('button', 'small', 'リセット')
+      resetBtn.title = 'このopの標準的な値に戻します'
       resetBtn.addEventListener('click', () => {
-        const skeleton = EFFECT_OP_SKELETONS[opSelect.value] ?? {}
-        list[i] = { op: opSelect.value, ...skeleton }
+        list[i] = { op: node.op, ...(EFFECT_OP_SKELETONS[String(node.op)] ?? {}) }
         commit(); redraw()
       })
       const removeBtn = h('button', 'small', '× 削除')
       removeBtn.addEventListener('click', () => { list.splice(i, 1); commit(); redraw() })
-      opSelect.addEventListener('change', () => { node.op = opSelect.value; commit() })
       head.append(opSelect, resetBtn, removeBtn)
       card.appendChild(head)
 
-      const rest = h('div', 'field')
-      rest.appendChild(h('label', 'field-label', 'op以外のフィールド（JSON）'))
-      const textarea = h('textarea', 'json-sub') as HTMLTextAreaElement
-      const { op: _op, ...restValue } = node
-      void _op
-      textarea.value = JSON.stringify(restValue, null, 2)
-      textarea.rows = 4
-      textarea.addEventListener('change', () => {
-        try {
-          const parsed = JSON.parse(textarea.value) as Record<string, unknown>
-          list[i] = { op: node.op, ...parsed }
-          commit()
-        } catch { /* 構文エラー中は反映しない */ }
-      })
-      rest.appendChild(textarea)
-      card.appendChild(rest)
+      const fields = EFFECT_OP_FIELDS[String(node.op)] ?? []
+      if (fields.length === 0) {
+        card.appendChild(h('p', 'note', 'このopに追加フィールドはありません。'))
+      }
+      for (const spec of fields) {
+        const fieldWrap = h('div', 'field')
+        fieldWrap.appendChild(h('label', 'field-label', spec.label + (spec.optional ? '' : ' *')))
+        renderEffectField(node, spec, fieldWrap, () => commit())
+        card.appendChild(fieldWrap)
+      }
       box.appendChild(card)
     })
     const addBtn = h('button', 'small', '＋ ノード追加')
@@ -709,10 +996,153 @@ function renderEffectList(rootValue: Record<string, unknown>, path: string, cont
   container.appendChild(box)
 }
 
+function statSelect(value: unknown, onChange: (v: string) => void): HTMLSelectElement {
+  const select = document.createElement('select')
+  for (const stat of STAT_KEYS) {
+    const optEl = document.createElement('option')
+    optEl.value = stat
+    optEl.textContent = `${stat}（${STAT_LABEL[stat]}）`
+    select.appendChild(optEl)
+  }
+  select.value = typeof value === 'string' ? value : STAT_KEYS[0]
+  select.addEventListener('change', () => onChange(select.value))
+  return select
+}
+function elementSelect(value: unknown, onChange: (v: string) => void, includeAny: boolean): HTMLSelectElement {
+  const select = document.createElement('select')
+  const values: string[] = includeAny ? ['physical', 'magical', 'special', 'any'] : ['physical', 'magical', 'special']
+  for (const el2 of values) {
+    const optEl = document.createElement('option')
+    optEl.value = el2
+    optEl.textContent = el2 === 'any' ? 'any（全属性）' : `${el2}（${ELEMENT_LABEL[el2 as Element]}）`
+    select.appendChild(optEl)
+  }
+  select.value = typeof value === 'string' ? value : values[0]
+  select.addEventListener('change', () => onChange(select.value))
+  return select
+}
+
+/** effectノード1個ぶんの、1フィールドを描く。node を直接書き換え、都度 onCommit() を呼ぶ */
+function renderEffectField(node: Record<string, unknown>, spec: EffectFieldSpec, container: HTMLElement, onCommit: () => void): void {
+  const current = node[spec.key]
+  switch (spec.kind) {
+    case 'stat': {
+      container.appendChild(statSelect(current, v => { node[spec.key] = v; onCommit() }))
+      if (current === undefined) node[spec.key] = STAT_KEYS[0]
+      return
+    }
+    case 'element': {
+      container.appendChild(elementSelect(current, v => { node[spec.key] = v; onCommit() }, false))
+      if (current === undefined) node[spec.key] = 'physical'
+      return
+    }
+    case 'element-or-any': {
+      container.appendChild(elementSelect(current, v => { node[spec.key] = v; onCommit() }, true))
+      if (current === undefined) node[spec.key] = 'physical'
+      return
+    }
+    case 'number': {
+      const input = document.createElement('input')
+      input.type = 'number'
+      if (spec.step !== undefined) input.step = String(spec.step); else input.step = 'any'
+      if (spec.min !== undefined) input.min = String(spec.min)
+      input.value = typeof current === 'number' ? String(current) : ''
+      input.placeholder = spec.optional ? '（未設定）' : ''
+      input.addEventListener('change', () => {
+        if (input.value === '') {
+          if (spec.optional) delete node[spec.key]
+        } else {
+          node[spec.key] = Number(input.value)
+        }
+        onCommit()
+      })
+      container.appendChild(input)
+      return
+    }
+    case 'select': {
+      const labelMap = EFFECT_SELECT_LABELS[spec.key]
+      const select = document.createElement('select')
+      if (spec.optional) {
+        const blankOpt = document.createElement('option')
+        blankOpt.value = ''
+        blankOpt.textContent = '（未設定）'
+        select.appendChild(blankOpt)
+      }
+      for (const opt of spec.options) {
+        const optEl = document.createElement('option')
+        optEl.value = opt
+        optEl.textContent = optionLabel(opt, labelMap)
+        select.appendChild(optEl)
+      }
+      select.value = typeof current === 'string' ? current : ''
+      select.addEventListener('change', () => {
+        if (select.value === '' && spec.optional) delete node[spec.key]
+        else node[spec.key] = select.value
+        onCommit()
+      })
+      if (current === undefined && !spec.optional) node[spec.key] = spec.options[0]
+      container.appendChild(select)
+      return
+    }
+    case 'scale': {
+      const scaleObj = (typeof current === 'object' && current !== null ? current : { stat: STAT_KEYS[0], rate: 1 }) as { stat?: string; rate?: number }
+      node[spec.key] = scaleObj
+      const wrap = h('div', 'scale-field')
+      wrap.appendChild(statSelect(scaleObj.stat, v => { scaleObj.stat = v; onCommit() }))
+      const rateInput = document.createElement('input')
+      rateInput.type = 'number'
+      rateInput.step = '0.01'
+      rateInput.value = typeof scaleObj.rate === 'number' ? String(scaleObj.rate) : '1'
+      rateInput.title = '倍率（rate）。1 = 参照ステータスの100%分'
+      rateInput.addEventListener('change', () => { scaleObj.rate = Number(rateInput.value); onCommit() })
+      wrap.appendChild(rateInput)
+      if (scaleObj.stat === undefined) scaleObj.stat = STAT_KEYS[0]
+      if (scaleObj.rate === undefined) scaleObj.rate = 1
+      container.appendChild(wrap)
+      return
+    }
+    case 'nodes': {
+      if (spec.optional) {
+        const existing = Array.isArray(current)
+        const label = h('label', 'checkbox-item')
+        const toggle = document.createElement('input')
+        toggle.type = 'checkbox'
+        toggle.checked = existing
+        label.append(toggle, document.createTextNode(' この項目を設定する'))
+        container.appendChild(label)
+        const box = h('div', 'nested-object')
+        box.style.display = existing ? '' : 'none'
+        if (existing) renderEffectNodeList(node, spec.key, box)
+        container.appendChild(box)
+        toggle.addEventListener('change', () => {
+          if (toggle.checked) {
+            if (!Array.isArray(node[spec.key])) node[spec.key] = []
+            box.style.display = ''
+            box.innerHTML = ''
+            renderEffectNodeList(node, spec.key, box)
+          } else {
+            delete node[spec.key]
+            box.style.display = 'none'
+            box.innerHTML = ''
+          }
+          onCommit()
+        })
+        return
+      }
+      if (!Array.isArray(node[spec.key])) node[spec.key] = []
+      renderEffectNodeList(node, spec.key, container)
+      return
+    }
+    default:
+      return
+  }
+}
+
 // ── 起動 ──────────────────────────────────────────────────────
 async function main(): Promise<void> {
   await loadAll()
   renderTabs()
+  renderGroupBySelect()
   renderList()
   renderEditor()
   el<HTMLButtonElement>('new-btn').addEventListener('click', createNew)

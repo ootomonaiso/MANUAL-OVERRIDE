@@ -168,7 +168,7 @@ function endsWithPeriod(tokens: readonly SkillTextToken[]): boolean {
 // バフ・デバフ表示（一時効果を「今かかっているもの」として見せる）
 // ─────────────────────────────────────────────────────────────
 
-const MODIFIER_SCOPE_LABEL: Record<ModifierScope, string> = {
+export const MODIFIER_SCOPE_LABEL: Record<ModifierScope, string> = {
   thisHit: 'この一撃のみ', thisTurn: 'このターンのみ', thisBattle: 'この戦闘中', permanent: '永続',
 }
 

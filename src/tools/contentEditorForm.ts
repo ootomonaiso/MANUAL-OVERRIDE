@@ -123,15 +123,25 @@ export const EFFECT_OP_SKELETONS: Readonly<Record<string, Record<string, unknown
 export const ALLOWED_EFFECT_OPS = Object.keys(EFFECT_OP_SKELETONS)
 
 /** カテゴリ別の、新規作成時の最小スケルトン（required を満たすだけの空de値） */
-export function blankEntrySkeleton(category: string, id: string): Record<string, unknown> {
+export function blankEntrySkeleton(category: string, id: string, opts?: { kind?: 'active' | 'passive' }): Record<string, unknown> {
   switch (category) {
-    case 'skills':
-      return {
-        id, label: '', flavorText: '', kind: 'active',
+    case 'skills': {
+      const kind = opts?.kind ?? 'active'
+      const base: Record<string, unknown> = {
+        id, label: '', flavorText: '', kind,
         mainCategory: 'vitality', subCategories: [],
-        element: 'physical', cooldown: 3, defaultFocus: 'enemy', focusRange: 'single',
-        effect: [{ op: 'damage', element: 'physical', scale: { stat: 'str', rate: 1 } }],
+        effect: kind === 'active'
+          ? [{ op: 'damage', element: 'physical', scale: { stat: 'str', rate: 1 } }]
+          : [{ op: 'statBoost', stat: 'def', amount: 100 }],
       }
+      if (kind === 'active') {
+        base.element = 'physical'
+        base.cooldown = 3
+        base.defaultFocus = 'enemy'
+        base.focusRange = 'single'
+      }
+      return base
+    }
     case 'traits':
       return { id, label: '', flavorText: '', kind: 'trait', effect: [{ op: 'noop' }] }
     case 'enemies':
@@ -158,4 +168,145 @@ export function blankEntrySkeleton(category: string, id: string): Record<string,
 /** id: 英小文字始まり、英小文字・数字・_のみ。カテゴリごとの接頭辞パターンは呼び出し側の cfg 側で持つ */
 export function isValidIdShape(id: string): boolean {
   return /^[a-z][a-z0-9_]*$/.test(id)
+}
+
+// ── effect[] ノードのフィールド定義 ─────────────────────────────
+//
+// 「ダメージを、何に基づいて、何%与えるか」のようなop固有ロジックを、
+// JSON欄ではなく型付きフォームで直接編集できるようにするための記述。
+// schemas/battle-skill.schema.json の effectNode は op（enum）しか強制して
+// いないため（op固有フィールドは scripts/validate-json.mjs の walkEffectNodes が
+// 実行時に検証する）、ここでの定義が「フォーム上での唯一の正」になる。
+// src/domain/battle/skillText.ts の buildSkillText の switch(op) と対応関係にある。
+
+export type EffectFieldSpec =
+  | { key: string; kind: 'stat'; label: string; optional?: boolean }
+  | { key: string; kind: 'element'; label: string; optional?: boolean }
+  | { key: string; kind: 'element-or-any'; label: string; optional?: boolean }
+  | { key: string; kind: 'number'; label: string; optional?: boolean; step?: number; min?: number }
+  | { key: string; kind: 'select'; label: string; options: readonly string[]; optional?: boolean }
+  | { key: string; kind: 'scale'; label: string; optional?: boolean }
+  | { key: string; kind: 'nodes'; label: string; optional?: boolean }
+
+export const EFFECT_OP_FIELDS: Readonly<Record<string, readonly EffectFieldSpec[]>> = {
+  damage: [
+    { key: 'element', kind: 'element', label: '属性' },
+    { key: 'scale', kind: 'scale', label: '参照ステータス・倍率' },
+  ],
+  heal: [
+    { key: 'element', kind: 'element', label: '属性' },
+    { key: 'scale', kind: 'scale', label: '参照ステータス・倍率' },
+  ],
+  shield: [
+    { key: 'element', kind: 'element', label: '属性' },
+    { key: 'scale', kind: 'scale', label: '参照ステータス・倍率' },
+  ],
+  repeat: [
+    { key: 'times', kind: 'number', label: '繰り返し回数', min: 1, step: 1 },
+    { key: 'body', kind: 'nodes', label: '本体（繰り返す効果）' },
+    { key: 'onFirstIteration', kind: 'nodes', label: '最初の1回だけ追加で発動', optional: true },
+    { key: 'onLastIteration', kind: 'nodes', label: '最後の1回だけ追加で発動', optional: true },
+  ],
+  modifier: [
+    { key: 'stat', kind: 'stat', label: '対象ステータス' },
+    { key: 'amount', kind: 'number', label: '実数加算（amount）', optional: true },
+    { key: 'rate', kind: 'number', label: '割合加算（rate）', optional: true, step: 0.01 },
+    { key: 'scope', kind: 'select', label: '持続範囲', options: ['thisHit', 'thisTurn', 'thisBattle', 'permanent'] },
+    { key: 'applyTo', kind: 'select', label: '対象（省略時は自分）', options: ['self', 'target'], optional: true },
+  ],
+  statBoost: [
+    { key: 'stat', kind: 'stat', label: '対象ステータス' },
+    { key: 'amount', kind: 'number', label: '実数加算（amount）', optional: true },
+    { key: 'rate', kind: 'number', label: '割合加算（rate）', optional: true, step: 0.01 },
+  ],
+  elementAffinity: [
+    { key: 'element', kind: 'element', label: '属性' },
+    { key: 'affinity', kind: 'select', label: '種別', options: ['weak', 'resist'] },
+  ],
+  cutRate: [
+    { key: 'amount', kind: 'number', label: '軽減割合（amount）', step: 0.01 },
+  ],
+  replaceGuard: [],
+  healBetweenBattles: [
+    { key: 'amount', kind: 'number', label: '固定回復量（amount）', optional: true },
+    { key: 'rate', kind: 'number', label: '割合回復（rate）', optional: true, step: 0.01 },
+  ],
+  effectBoost: [
+    { key: 'element', kind: 'element-or-any', label: '属性' },
+    { key: 'rate', kind: 'number', label: '倍率（rate）', step: 0.01 },
+  ],
+  healTaken: [
+    { key: 'rate', kind: 'number', label: '倍率（rate）', step: 0.01 },
+  ],
+  noop: [],
+}
+
+// ── スプライトのドット絵プレビュー ─────────────────────────────
+//
+// PixelSprite.vue の buildRuns と同じアルゴリズムを、Vueに依存しない形で
+// 切り出したもの（横に連続する同色セルを1つの矩形へまとめ、SVGの<rect>数を減らす）。
+// content-editor は敵の見た目を「見えれば十分」（編集はしない）ため、
+// 被弾フラッシュ等の tint 機能は移植していない。
+
+export interface SpriteDefLike {
+  w: number
+  h: number
+  palette: Record<string, string>
+  frames: Record<string, readonly string[]>
+}
+export interface SpriteRun { x: number; y: number; w: number; color: string }
+
+/**
+ * battle-effects/*.json の visual.color は、固定の #rrggbb だけでなく
+ * `var(--battle-diff-plus)` のようなCSSカスタムプロパティ参照も使う
+ * （実際の色は BattleScreen.vue 側で戦闘テーマごとに変わりうる）。
+ * content-editor は単体のページで戦闘UIのCSSを読み込んでいないため、
+ * このページ内でプレビューするための「代表値」としてここに固定値を持つ
+ * （BattleScreen.vue の :root 相当ブロックの初期値と同じ。実際の見た目の
+ * 正としては扱わない。あくまでプレビューの近似）。
+ */
+export const BATTLE_CSS_VAR_FALLBACK: Readonly<Record<string, string>> = {
+  '--battle-element-physical': '#ff7a5c',
+  '--battle-element-magical': '#6fb4ff',
+  '--battle-element-special': '#c88bff',
+  '--battle-stat': '#e0c46a',
+  '--battle-number': '#ffe9a8',
+  '--battle-diff-plus': '#7ee08a',
+  '--battle-diff-minus': '#ff6a6a',
+  '--battle-diff-muted': '#a6a2b0',
+  '--battle-category-heal': '#7ee08a',
+  '--battle-category-aegis': '#63b8ff',
+  '--battle-category-guard': '#e0c46a',
+  '--battle-category-curse': '#b98bff',
+  '--battle-accent': '#e0c46a',
+}
+
+/** "#rrggbb" はそのまま、"var(--xxx)" は上のフォールバック表から解決する。どちらでもなければ null */
+export function resolvePreviewColor(color: string | undefined): string | null {
+  if (!color) return null
+  if (/^#[0-9a-fA-F]{6}$/.test(color)) return color
+  const m = /^var\((--[a-z0-9-]+)\)$/.exec(color.trim())
+  if (m) return BATTLE_CSS_VAR_FALLBACK[m[1]] ?? null
+  return null
+}
+
+export function buildSpriteRuns(def: SpriteDefLike, frame: string): SpriteRun[] {
+  const rows = def.frames[frame] ?? def.frames.idle
+  if (!rows) return []
+  const runs: SpriteRun[] = []
+  for (let y = 0; y < rows.length; y++) {
+    const row = rows[y]
+    let x = 0
+    while (x < row.length) {
+      const ch = row[x]
+      const raw = ch === '.' ? undefined : def.palette[ch]
+      // 動的色スロット(@)は戦闘スプライトでは使わない。未解決は透明として飛ばす
+      if (!raw || raw.startsWith('@')) { x++; continue }
+      let end = x + 1
+      while (end < row.length && row[end] === ch) end++
+      runs.push({ x, y, w: end - x, color: raw })
+      x = end
+    }
+  }
+  return runs
 }

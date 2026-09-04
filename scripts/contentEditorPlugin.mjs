@@ -72,7 +72,16 @@ function listEntries(key) {
       const id = f.replace(/\.json$/, '')
       try {
         const data = JSON.parse(readFileSync(join(dir, f), 'utf-8'))
-        return { id, label: data.label ?? id, kind: data.kind, isBoss: data.isBoss, bossOnly: data.bossOnly }
+        // mainCategory/element/timing/draftable はGUI側のセクション分け（グループ化）表示専用。
+        // sprite/visual は一覧・編集画面での見た目プレビュー専用。
+        // 該当しないカテゴリでは単に undefined になる
+        return {
+          id, label: data.label ?? id, kind: data.kind,
+          isBoss: data.isBoss, bossOnly: data.bossOnly,
+          mainCategory: data.mainCategory, element: data.element,
+          timing: data.timing, draftable: data.draftable,
+          sprite: data.sprite, visual: data.visual,
+        }
       } catch {
         return { id, label: `(壊れたJSON: ${f})`, broken: true }
       }

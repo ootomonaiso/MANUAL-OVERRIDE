@@ -43,6 +43,17 @@
     .badge { margin-left: auto; font-size: 9px; padding: 1px 5px; border-radius: 8px; }
     .badge.boss { background: #5c2c2c; color: #ff9a9a; }
 
+    .entry-thumb, .entry-swatch { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; }
+    .entry-thumb svg { max-width: 28px; max-height: 28px; }
+
+    #group-by-host { font-size: 11px; color: #8fa3c8; }
+    .group-by-select { width: auto; display: inline-block; margin-left: 4px; font-size: 11px; padding: 3px 6px; }
+    .group-header {
+      margin-top: 6px; padding: 3px 4px; font-size: 10px; letter-spacing: 0.5px;
+      color: #6b7280; border-bottom: 1px solid #262b38; text-transform: none;
+    }
+    .group-header:first-child { margin-top: 0; }
+
     button.small {
       background: #2c3349; color: #d8dce6; border: 1px solid #3a4258; border-radius: 4px;
       padding: 4px 10px; cursor: pointer; font: inherit; font-size: 12px;
@@ -99,6 +110,24 @@
 
     .json-raw { width: 100%; min-height: 60vh; }
     .json-sub { width: 100%; }
+
+    .sprite-preview { margin-top: 6px; padding: 8px; background: #0e0f14; border: 1px solid #2a2f3a; border-radius: 4px; display: flex; align-items: center; justify-content: center; min-height: 40px; }
+    .sprite-preview svg { image-rendering: pixelated; }
+    .sprite-missing { color: #6b7280; font-size: 11px; font-style: italic; }
+
+    .effect-swatch-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 100%; height: 100%; border-radius: 4px; font-size: 8px; font-weight: bold;
+      color: #14161c; text-shadow: 0 1px 1px rgba(255,255,255,0.3); overflow: hidden; padding: 1px;
+      text-align: center; line-height: 1.1;
+    }
+
+    .scale-field { display: flex; gap: 6px; align-items: center; }
+    .scale-field select { flex: 2; }
+    .scale-field input[type="number"] { flex: 1; }
+
+    .effect-node-card { border-color: #3a4258; }
+    .effect-node-card .nested-object { border-left-color: #3a4258; }
   </style>
 </head>
 <body>
@@ -112,6 +141,7 @@
     <div class="panel sidebar">
       <div id="tabs"></div>
       <button type="button" id="new-btn" class="small primary">＋ 新規作成</button>
+      <div id="group-by-host"></div>
       <div id="entry-list"></div>
     </div>
 
