@@ -200,7 +200,13 @@ export type EffectFieldSpec =
   | { key: string; kind: 'stat'; label: string; optional?: boolean }
   | { key: string; kind: 'element'; label: string; optional?: boolean }
   | { key: string; kind: 'element-or-any'; label: string; optional?: boolean }
-  | { key: string; kind: 'number'; label: string; optional?: boolean; step?: number; min?: number }
+  | {
+      key: string; kind: 'number'; label: string; optional?: boolean; step?: number; min?: number
+      /** 常に割合（%）として入力・表示する（保存値は 0.7 のような小数のまま、入力欄だけ ×100 して見せる） */
+      percent?: boolean
+      /** 兄弟フィールド `stat` の値が isPercentStat() の時だけ割合表示にする（modifier/statBoost の amount 用） */
+      percentByStat?: boolean
+    }
   | { key: string; kind: 'select'; label: string; options: readonly string[]; optional?: boolean }
   | { key: string; kind: 'scale'; label: string; optional?: boolean }
   | { key: string; kind: 'nodes'; label: string; optional?: boolean }
@@ -208,15 +214,15 @@ export type EffectFieldSpec =
 export const EFFECT_OP_FIELDS: Readonly<Record<string, readonly EffectFieldSpec[]>> = {
   damage: [
     { key: 'element', kind: 'element', label: '属性' },
-    { key: 'scale', kind: 'scale', label: '参照ステータス・倍率' },
+    { key: 'scale', kind: 'scale', label: '参照ステータス・倍率（%）' },
   ],
   heal: [
     { key: 'element', kind: 'element', label: '属性' },
-    { key: 'scale', kind: 'scale', label: '参照ステータス・倍率' },
+    { key: 'scale', kind: 'scale', label: '参照ステータス・倍率（%）' },
   ],
   shield: [
     { key: 'element', kind: 'element', label: '属性' },
-    { key: 'scale', kind: 'scale', label: '参照ステータス・倍率' },
+    { key: 'scale', kind: 'scale', label: '参照ステータス・倍率（%）' },
   ],
   repeat: [
     { key: 'times', kind: 'number', label: '繰り返し回数', min: 1, step: 1 },
@@ -226,36 +232,52 @@ export const EFFECT_OP_FIELDS: Readonly<Record<string, readonly EffectFieldSpec[
   ],
   modifier: [
     { key: 'stat', kind: 'stat', label: '対象ステータス' },
-    { key: 'amount', kind: 'number', label: '実数加算（amount）', optional: true },
-    { key: 'rate', kind: 'number', label: '割合加算（rate）', optional: true, step: 0.01 },
+    { key: 'amount', kind: 'number', label: '実数加算（amount）', optional: true, percentByStat: true },
+    { key: 'rate', kind: 'number', label: '割合加算（rate・%）', optional: true, step: 0.01, percent: true },
     { key: 'scope', kind: 'select', label: '持続範囲', options: ['thisHit', 'thisTurn', 'thisBattle', 'permanent'] },
     { key: 'applyTo', kind: 'select', label: '対象（省略時は自分）', options: ['self', 'target'], optional: true },
   ],
   statBoost: [
     { key: 'stat', kind: 'stat', label: '対象ステータス' },
-    { key: 'amount', kind: 'number', label: '実数加算（amount）', optional: true },
-    { key: 'rate', kind: 'number', label: '割合加算（rate）', optional: true, step: 0.01 },
+    { key: 'amount', kind: 'number', label: '実数加算（amount）', optional: true, percentByStat: true },
+    { key: 'rate', kind: 'number', label: '割合加算（rate・%）', optional: true, step: 0.01, percent: true },
   ],
   elementAffinity: [
     { key: 'element', kind: 'element', label: '属性' },
     { key: 'affinity', kind: 'select', label: '種別', options: ['weak', 'resist'] },
   ],
   cutRate: [
-    { key: 'amount', kind: 'number', label: '軽減割合（amount）', step: 0.01 },
+    { key: 'amount', kind: 'number', label: '軽減割合（amount・%）', step: 0.01, percent: true },
   ],
   replaceGuard: [],
   healBetweenBattles: [
     { key: 'amount', kind: 'number', label: '固定回復量（amount）', optional: true },
-    { key: 'rate', kind: 'number', label: '割合回復（rate）', optional: true, step: 0.01 },
+    { key: 'rate', kind: 'number', label: '割合回復（rate・%）', optional: true, step: 0.01, percent: true },
   ],
   effectBoost: [
     { key: 'element', kind: 'element-or-any', label: '属性' },
-    { key: 'rate', kind: 'number', label: '倍率（rate）', step: 0.01 },
+    { key: 'rate', kind: 'number', label: '倍率（rate・%）', step: 0.01, percent: true },
   ],
   healTaken: [
-    { key: 'rate', kind: 'number', label: '倍率（rate）', step: 0.01 },
+    { key: 'rate', kind: 'number', label: '倍率（rate・%）', step: 0.01, percent: true },
   ],
   noop: [],
+}
+
+/** n を指定桁数（10進）で丸める。浮動小数点誤差を避けるための共通ヘルパー */
+function roundTo(n: number, decimals: number): number {
+  const f = 10 ** decimals
+  return Math.round(n * f) / f
+}
+
+/** 保存値（例: 0.7）→ 入力欄に見せる%値（例: 70）。src/domain/battle/skillText.ts の pct() と対になる表示変換 */
+export function toPercentInputValue(rate: number): number {
+  return roundTo(rate * 100, 6)
+}
+
+/** 入力欄の%値（例: 80）→ 保存値（例: 0.8） */
+export function fromPercentInputValue(percent: number): number {
+  return roundTo(percent / 100, 8)
 }
 
 // ── スプライトのドット絵プレビュー ─────────────────────────────

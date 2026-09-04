@@ -105,6 +105,12 @@ dev サーバーが起動し、ブラウザで `tools/content-editor.html` が�
 
 `ModifierScope`（`modifier.scope`）は `thisHit`/`thisTurn`/`thisBattle`/`permanent` の4値（`src/domain/battle/types.ts`）。既存データに使われている値を選択肢から漏らすと、フォームが実際の値と異なる表示になる（値自体は壊れない）ため、フィールド定義を追加する際は型定義を必ず確認すること。
 
+### 割合フィールドの%表示
+
+`damage`/`heal`/`shield` の `scale.rate` や、`modifier`/`effectBoost` 等の `rate` は、保存値としては `0.7` のような小数だが、`src/domain/battle/skillText.ts` の `pct()`（ゲーム本体の効果文表示）と揃えて、入力欄には `70` のように **%へ変換した値** を表示する（隣に `%` バッジを添えて明示する）。保存時は `contentEditorForm.ts` の `fromPercentInputValue()` で ÷100 して元のスケールに戻す。「画面に%で出ているのだから%のまま入力すればよい」という直感と実際の保存形式を一致させ、小数のまま誤入力する事故（例: 70%のつもりで `0.7` の代わりに `70` を直接保存してしまい、意図せず70倍の効果になる）を防ぐのが目的。
+
+`modifier`/`statBoost` の `amount` は、対象ステータス（`stat`）が `critRate` 等の割合系ステータスの時だけ%表示に切り替わる（`isPercentStat()` 判定。`src/domain/battle/skillText.ts` の表示ロジックと同じ基準）。`stat` を切り替えるとこの表示も連動して変わる。
+
 ---
 
 ## ファイル構成

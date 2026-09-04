@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   resolveRef, widgetKindOf, getAtPath, setAtPath, deleteAtPath,
   EFFECT_OP_SKELETONS, EFFECT_OP_FIELDS, EFFECT_OP_LABEL, ALLOWED_EFFECT_OPS, blankEntrySkeleton, isValidIdShape,
-  resolvePreviewColor,
+  resolvePreviewColor, toPercentInputValue, fromPercentInputValue,
   type JsonSchema,
 } from '../../../src/tools/contentEditorForm'
 
@@ -156,6 +156,45 @@ describe('contentEditorForm: EFFECT_OP_FIELDS（効果ロジックの型付き�
   it('noop / replaceGuard はフィールドを持たない', () => {
     expect(EFFECT_OP_FIELDS.noop).toEqual([])
     expect(EFFECT_OP_FIELDS.replaceGuard).toEqual([])
+  })
+  it('割合として保存・表示されるフィールドには percent か percentByStat が付いている（skillText.ts の pct() 適用箇所と一致させる）', () => {
+    const byKey = (op: string) => Object.fromEntries(EFFECT_OP_FIELDS[op].map(f => [f.key, f]))
+    expect(byKey('modifier').rate).toMatchObject({ percent: true })
+    expect(byKey('modifier').amount).toMatchObject({ percentByStat: true })
+    expect(byKey('statBoost').rate).toMatchObject({ percent: true })
+    expect(byKey('statBoost').amount).toMatchObject({ percentByStat: true })
+    expect(byKey('cutRate').amount).toMatchObject({ percent: true })
+    expect(byKey('effectBoost').rate).toMatchObject({ percent: true })
+    expect(byKey('healTaken').rate).toMatchObject({ percent: true })
+    expect(byKey('healBetweenBattles').rate).toMatchObject({ percent: true })
+  })
+  it('固定量（実数）のフィールドは percent 系フラグを持たない', () => {
+    const byKey = (op: string) => Object.fromEntries(EFFECT_OP_FIELDS[op].map(f => [f.key, f]))
+    expect(byKey('repeat').times).not.toHaveProperty('percent')
+    expect(byKey('healBetweenBattles').amount).not.toHaveProperty('percent')
+    expect(byKey('healBetweenBattles').amount).not.toHaveProperty('percentByStat')
+  })
+})
+
+describe('contentEditorForm: 割合フィールドの%表示変換（toPercentInputValue / fromPercentInputValue）', () => {
+  it('保存値からの表示は ×100', () => {
+    expect(toPercentInputValue(0.7)).toBe(70)
+    expect(toPercentInputValue(1.2)).toBe(120)
+    expect(toPercentInputValue(0)).toBe(0)
+  })
+  it('入力欄からの保存は ÷100', () => {
+    expect(fromPercentInputValue(70)).toBe(0.7)
+    expect(fromPercentInputValue(80)).toBe(0.8)
+    expect(fromPercentInputValue(0)).toBe(0)
+  })
+  it('80%と入力ミスした場合、保存値は0.8になる（0.7→80を誤って直接保存していたバグの再発防止）', () => {
+    expect(fromPercentInputValue(80)).toBeCloseTo(0.8, 8)
+    expect(fromPercentInputValue(80)).not.toBe(80)
+  })
+  it('浮動小数点誤差を出さずに往復できる', () => {
+    for (const rate of [0.05, 0.1, 0.15, 0.25, 0.5, 0.6, 0.9, 1, 1.2]) {
+      expect(fromPercentInputValue(toPercentInputValue(rate))).toBeCloseTo(rate, 8)
+    }
   })
 })
 

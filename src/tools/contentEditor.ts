@@ -28,11 +28,11 @@ import schemaEffect from '../../schemas/battle-effect.schema.json'
 import schemaBackground from '../../schemas/battle-background.schema.json'
 import { SPRITES } from '../data/sprites'
 import { CATEGORY_LABEL, ELEMENT_LABEL, STAT_LABEL, MODIFIER_SCOPE_LABEL } from '../domain/battle/skillText'
-import { CATEGORY_IDS, STAT_KEYS, type CategoryId, type Element, type StatKey } from '../domain/battle/types'
+import { CATEGORY_IDS, STAT_KEYS, isPercentStat, type CategoryId, type Element, type StatKey } from '../domain/battle/types'
 import {
   type JsonSchema, resolveRef, widgetKindOf, getAtPath, setAtPath, deleteAtPath,
   EFFECT_OP_SKELETONS, EFFECT_OP_FIELDS, EFFECT_OP_LABEL, ALLOWED_EFFECT_OPS, blankEntrySkeleton, isValidIdShape,
-  buildSpriteRuns, resolvePreviewColor, type EffectFieldSpec,
+  buildSpriteRuns, resolvePreviewColor, toPercentInputValue, fromPercentInputValue, type EffectFieldSpec,
 } from './contentEditorForm'
 
 const API = '/__content-editor/api'
@@ -979,7 +979,9 @@ function renderEffectNodeList(rootValue: Record<string, unknown>, path: string, 
       for (const spec of fields) {
         const fieldWrap = h('div', 'field')
         fieldWrap.appendChild(h('label', 'field-label', spec.label + (spec.optional ? '' : ' *')))
-        renderEffectField(node, spec, fieldWrap, () => commit())
+        // 'stat' フィールド（modifier/statBoost）が変わると、amount の%/実数表示が変わりうるため
+        // カード全体を再描画する（他のop固有フィールドは 'stat' kind を使わないため副作用はない）
+        renderEffectField(node, spec, fieldWrap, () => commit(), redraw)
         card.appendChild(fieldWrap)
       }
       box.appendChild(card)
@@ -1022,12 +1024,18 @@ function elementSelect(value: unknown, onChange: (v: string) => void, includeAny
   return select
 }
 
-/** effectノード1個ぶんの、1フィールドを描く。node を直接書き換え、都度 onCommit() を呼ぶ */
-function renderEffectField(node: Record<string, unknown>, spec: EffectFieldSpec, container: HTMLElement, onCommit: () => void): void {
+/** 入力欄の隣に単位（%）を明示するバッジ */
+function unitSuffix(text: string): HTMLElement {
+  return h('span', 'unit-suffix', text)
+}
+
+/** effectノード1個ぶんの、1フィールドを描く。node を直接書き換え、都度 onCommit() を呼ぶ。
+ * onStatChange: 兄弟の 'stat' フィールドが変わった時に呼ぶ（amount の%/実数表示切り替えのためカード全体を再描画する） */
+function renderEffectField(node: Record<string, unknown>, spec: EffectFieldSpec, container: HTMLElement, onCommit: () => void, onStatChange?: () => void): void {
   const current = node[spec.key]
   switch (spec.kind) {
     case 'stat': {
-      container.appendChild(statSelect(current, v => { node[spec.key] = v; onCommit() }))
+      container.appendChild(statSelect(current, v => { node[spec.key] = v; onCommit(); onStatChange?.() }))
       if (current === undefined) node[spec.key] = STAT_KEYS[0]
       return
     }
@@ -1042,21 +1050,37 @@ function renderEffectField(node: Record<string, unknown>, spec: EffectFieldSpec,
       return
     }
     case 'number': {
+      // percentByStat（modifier/statBoost の amount）は、対象ステータスが割合系（critRate等）の時だけ
+      // %表示にする。src/domain/battle/skillText.ts の isPercentStat(stat) 判定と揃えてある。
+      const statSibling = node.stat as StatKey | 'cutRate' | undefined
+      const asPercent = spec.percent === true || (spec.percentByStat === true && statSibling !== undefined && isPercentStat(statSibling))
       const input = document.createElement('input')
       input.type = 'number'
-      if (spec.step !== undefined) input.step = String(spec.step); else input.step = 'any'
-      if (spec.min !== undefined) input.min = String(spec.min)
-      input.value = typeof current === 'number' ? String(current) : ''
+      if (asPercent) {
+        input.step = spec.step !== undefined ? String(spec.step * 100) : 'any'
+        input.value = typeof current === 'number' ? String(toPercentInputValue(current)) : ''
+      } else {
+        if (spec.step !== undefined) input.step = String(spec.step); else input.step = 'any'
+        if (spec.min !== undefined) input.min = String(spec.min)
+        input.value = typeof current === 'number' ? String(current) : ''
+      }
       input.placeholder = spec.optional ? '（未設定）' : ''
       input.addEventListener('change', () => {
         if (input.value === '') {
           if (spec.optional) delete node[spec.key]
         } else {
-          node[spec.key] = Number(input.value)
+          node[spec.key] = asPercent ? fromPercentInputValue(Number(input.value)) : Number(input.value)
         }
         onCommit()
       })
-      container.appendChild(input)
+      if (asPercent) {
+        const wrap = h('div', 'scale-field')
+        wrap.appendChild(input)
+        wrap.appendChild(unitSuffix('%'))
+        container.appendChild(wrap)
+      } else {
+        container.appendChild(input)
+      }
       return
     }
     case 'select': {
@@ -1091,11 +1115,12 @@ function renderEffectField(node: Record<string, unknown>, spec: EffectFieldSpec,
       wrap.appendChild(statSelect(scaleObj.stat, v => { scaleObj.stat = v; onCommit() }))
       const rateInput = document.createElement('input')
       rateInput.type = 'number'
-      rateInput.step = '0.01'
-      rateInput.value = typeof scaleObj.rate === 'number' ? String(scaleObj.rate) : '1'
-      rateInput.title = '倍率（rate）。1 = 参照ステータスの100%分'
-      rateInput.addEventListener('change', () => { scaleObj.rate = Number(rateInput.value); onCommit() })
+      rateInput.step = 'any'
+      rateInput.value = typeof scaleObj.rate === 'number' ? String(toPercentInputValue(scaleObj.rate)) : '100'
+      rateInput.title = '参照ステータスの何%を効果量にするか。100 = 等倍'
+      rateInput.addEventListener('change', () => { scaleObj.rate = fromPercentInputValue(Number(rateInput.value)); onCommit() })
       wrap.appendChild(rateInput)
+      wrap.appendChild(unitSuffix('%'))
       if (scaleObj.stat === undefined) scaleObj.stat = STAT_KEYS[0]
       if (scaleObj.rate === undefined) scaleObj.rate = 1
       container.appendChild(wrap)
