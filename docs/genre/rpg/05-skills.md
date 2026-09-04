@@ -160,14 +160,15 @@ export function levelMultiplier(level: number): number {
 
 ### 何に掛かるか
 
-**数値量を持つパラメータに掛かる。**
+**数値量を持つパラメータに掛かる。ただし割合ステータス（`PERCENT_STAT_KEYS`）は例外。**
 
 | 対象 | 掛かるか |
 |---|---|
 | `damage` / `heal` / `shield` の `scale.rate` | **掛かる** |
-| `statBoost` の `amount` / `rate` | **掛かる** |
-| `modifier` の `amount` | **掛かる** |
+| `statBoost` の `amount` / `rate`（対象が `hitRate`/`evadeRate`/`critRate`/`critDamageMultiplier` 以外） | **掛かる** |
+| `modifier` の `amount` / `rate`（同上） | **掛かる** |
 | `cutRate` の `amount` | **掛かる** |
+| `statBoost` / `modifier` の対象が `hitRate`/`evadeRate`/`critRate`/`critDamageMultiplier`（+ `modifier` の `cutRate` 指定） | **掛からない**（常に等倍） |
 | `repeat` の `times` | **掛からない**（回数は増えない） |
 | `elementAffinity` の `affinity` | **掛からない**（段階は増えない） |
 | クールタイム | **掛からない** |
@@ -177,6 +178,23 @@ export function levelMultiplier(level: number): number {
 **特性は常に Lv1 相当（×1）** である（重複取得できないため）。
 
 **カテゴリ特化で解放されたものも Lv1 固定**（重複取得の対象外）。
+
+> **改修（8回目のプレイフィードバック）**: 「割合ステータスにも掛かる」という当初の仕様のまま
+> `三連撃`（`onLastIteration` に `critRate` へのmodifier）や `見切り撃ち`・複数のパッシブ
+> （`passive_curse_mastery`/`passive_fatal_mastery`/`passive_keen_eye`）を実装していたため、
+> レベルアップのたびに「確率」や「クリティカルダメージ倍率」自体が指数的に膨張していた
+> （例: `critRate` に `amount:0.5` のmodifierはLv1で+50%のはずが、Lv2で+150%・Lv4で+750%に
+> なっていた）。特に `critDamageMultiplier` はスーパークリティカル（100%超過分がさらに
+> クリティカルを重ねる仕組み。[03-damage-calc.md](03-damage-calc.md)参照）と絡んで際限なく
+> 暴走する、実際に確認されたゲームバランス崩壊だった。
+>
+> 対策として、割合ステータス（`hitRate`/`evadeRate`/`critRate`/`critDamageMultiplier`。
+> `PERCENT_STAT_KEYS`、`src/domain/battle/types.ts`）を対象とする `modifier`/`statBoost` には
+> レベル倍率を掛けないよう変更した（`effectOps/modifier.ts` の `modifierOp` と `stats.ts` の
+> `accumulatePassiveStatBoosts`、表示側は `skillText.ts`）。ダメージ・回復のような
+> 「大きいほど強い」連続量とは性質が異なり、確率・倍率が指数的に伸びること自体が
+> 破綻の原因だったため。三連撃は合わせて `scale.rate` を `0.8`→`0.6` へ調整した
+> （合計威力 `80%×3=240%` は他スキルと比べ突出していたため）。
 
 ---
 

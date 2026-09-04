@@ -5,7 +5,10 @@
  */
 
 import type { SkillDef, EffectNode, StatKey, Element, CategoryId, ModifierScope, TemporaryModifier } from './types'
+import { PERCENT_STAT_KEYS, isPercentStat } from './types'
 import { levelMultiplier } from './stats'
+
+export { PERCENT_STAT_KEYS }
 
 export const CATEGORY_LABEL: Record<CategoryId, string> = {
   vitality: '頑強', guard: '守勢', might: '剛撃', wisdom: '明晰', swift: '疾風',
@@ -44,20 +47,8 @@ export const ELEMENT_LABEL: Record<Element, string> = {
   physical: '物理', magical: '魔法', special: '特殊',
 }
 
-/**
- * 割合として読むべきステータス（0.05 = 5% のように、値そのものが既に比率）。
- * modifier/statBoost の amount（flat 加算）でもこれらの stat には %表示を使う
- * （例: critRate に amount:0.5 を足すスキルが「+0.5」という生の小数で表示され
- * 分かりにくいという指摘があった。cutRate も同じ理由で対象に含める）。
- * BattleScreen.vue のステータス表示でも同じ判定に使うため、ここで一元管理する。
- */
-export const PERCENT_STAT_KEYS: ReadonlySet<StatKey> = new Set<StatKey>([
-  'hitRate', 'evadeRate', 'critRate', 'critDamageMultiplier',
-])
-
-function isPercentStat(stat: StatKey | 'cutRate'): boolean {
-  return stat === 'cutRate' || PERCENT_STAT_KEYS.has(stat as StatKey)
-}
+// PERCENT_STAT_KEYS / isPercentStat は types.ts へ移設した（execution側と表示側の
+// 両方で参照する必要があるため）。ここでは import した実体をそのまま使う。
 
 function pct(n: number): string {
   return `${Math.round(n * 1000) / 10}%`
@@ -112,18 +103,25 @@ function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
       const rate = node.rate as number | undefined
       const statLabel = stat === 'cutRate' ? plain('カット率') : statTok(stat)
       const applyTo = (node.applyTo as string | undefined) === 'target' ? '対象' : '自分'
+      // 割合ステータス（クリティカル率等）はレベル倍率を掛けない（PERCENT_STAT_KEYS参照）。
+      // 表示側だけ倍率をかけないと実行結果とズレるため、execution側（modifier.ts の
+      // modifierOp）と必ず同じ判定を使う。
+      const effMult = isPercentStat(stat) ? 1 : mult
       const valueTok = amount !== undefined
-        ? (isPercentStat(stat) ? numTok(pct(amount * mult)) : numTok(`+${amount * mult}`))
-        : numTok(pct((rate ?? 0) * mult))
+        ? (isPercentStat(stat) ? numTok(pct(amount * effMult)) : numTok(`+${amount * effMult}`))
+        : numTok(pct((rate ?? 0) * effMult))
       return [plain(`${applyTo}の`), statLabel, plain('を'), valueTok, plain('変化させる')]
     }
     case 'statBoost': {
       const stat = node.stat as StatKey
       const amount = node.amount as number | undefined
       const rate = node.rate as number | undefined
+      // modifier と同じ理由で、割合ステータスにはレベル倍率を掛けない
+      // （execution側は stats.ts の accumulatePassiveStatBoosts）。
+      const effMult = isPercentStat(stat) ? 1 : mult
       const valueTok = amount !== undefined
-        ? (isPercentStat(stat) ? numTok(pct(amount * mult)) : numTok(`+${amount * mult}`))
-        : numTok(pct((rate ?? 0) * mult))
+        ? (isPercentStat(stat) ? numTok(pct(amount * effMult)) : numTok(`+${amount * effMult}`))
+        : numTok(pct((rate ?? 0) * effMult))
       return [statTok(stat), plain('を'), valueTok, plain('上昇させる')]
     }
     case 'elementAffinity': {

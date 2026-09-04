@@ -6,6 +6,7 @@
  */
 
 import type { EffectNode, EffectOp, StatKey, ModifierScope } from '../types'
+import { isPercentStat } from '../types'
 import { levelMultiplier } from '../stats'
 
 interface ModifierParams {
@@ -30,7 +31,11 @@ export const modifierOp: EffectOp = {
   id: 'modifier',
   execute(node, ctx) {
     const { stat, amount, rate, scope, applyTo } = readParams(node)
-    const mult = ctx.skill.kind === 'active' ? levelMultiplier(ctx.level) : 1
+    // 割合ステータス（クリティカル率等）はレベル倍率を掛けない。掛けると
+    // レベルアップのたびに「確率」や「倍率」自体が指数的に膨張し、特に
+    // critRate/critDamageMultiplier はスーパークリティカルと絡んで際限なく
+    // 暴走する（PERCENT_STAT_KEYS のコメント参照）。
+    const mult = isPercentStat(stat) ? 1 : (ctx.skill.kind === 'active' ? levelMultiplier(ctx.level) : 1)
     const recipients = applyTo === 'target' ? ctx.targets : [ctx.source]
     for (const recipient of recipients) {
       if (!recipient.alive) continue

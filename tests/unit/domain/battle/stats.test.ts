@@ -146,6 +146,23 @@ describe('stats: accumulatePassiveStatBoosts', () => {
     accumulatePassiveStatBoosts([{ level: 1, def }], acc)
     expect(toModifiers(acc)).toEqual({})
   })
+
+  it('割合ステータス（critRate等）へのパッシブstatBoostはレベル倍率を掛けない（常に等倍）', () => {
+    // レベル倍率を掛けると、レベルアップのたびに確率自体が指数的に膨張し、
+    // 特にcritDamageMultiplierはスーパークリティカルと絡んで際限なく暴走する
+    // （PERCENT_STAT_KEYS参照。三連撃/見切り撃ちで実際に確認されたバランス崩壊）。
+    const def = makePassive({ id: 'p', effect: [{ op: 'statBoost', stat: 'critRate', rate: 0.05 }] })
+    const acc = newAccumulator()
+    accumulatePassiveStatBoosts([{ level: 4, def }], acc)
+    expect(toModifiers(acc).critRate?.mult).toBeCloseTo(1.05, 6) // (2^4-1)=15 が掛かっていれば 1.75 になってしまう
+  })
+
+  it('critDamageMultiplierへのパッシブstatBoostもレベル倍率を掛けない', () => {
+    const def = makePassive({ id: 'p', effect: [{ op: 'statBoost', stat: 'critDamageMultiplier', rate: 0.1 }] })
+    const acc = newAccumulator()
+    accumulatePassiveStatBoosts([{ level: 3, def }], acc)
+    expect(toModifiers(acc).critDamageMultiplier?.mult).toBeCloseTo(1.1, 6) // (2^3-1)=7 が掛かっていれば 1.7 になってしまう
+  })
 })
 
 describe('stats: collectEffectMultiplier（効果倍率）', () => {

@@ -169,6 +169,13 @@ describe('skillText: 補正・宣言的opの表記', () => {
     expect(text(buildSkillText(skill, 1))).toBe('自分のクリティカル率を50%変化させる。')
   })
 
+  it('割合ステータスの modifier はスキルレベルが上がっても表示が変わらない（execution側と一致させる）', () => {
+    // レベル倍率を掛けて表示すると「Lv2で+150%」のように実際の値と食い違って見える
+    // （PERCENT_STAT_KEYS参照。三連撃/見切り撃ちで確認された不具合）。
+    const skill = makeActive({ id: 's', effect: [node('modifier', { stat: 'critRate', amount: 0.5, scope: 'thisHit' })] })
+    expect(text(buildSkillText(skill, 4))).toBe('自分のクリティカル率を50%変化させる。')
+  })
+
   it('statBoost は上昇として書かれる。割合ステータスは amount 指定でも%表示になる', () => {
     const flat = makePassive({ id: 'p1', effect: [node('statBoost', { stat: 'def', amount: 800 })] })
     const rate = makePassive({ id: 'p2', effect: [node('statBoost', { stat: 'agi', rate: 0.15 })] })
@@ -176,6 +183,9 @@ describe('skillText: 補正・宣言的opの表記', () => {
     expect(text(buildSkillText(flat, 1))).toBe('DEFを+800上昇させる。')
     expect(text(buildSkillText(rate, 1))).toBe('AGIを15%上昇させる。')
     expect(text(buildSkillText(critFlat, 1))).toBe('クリティカル率を5%上昇させる。')
+    // statBoostはパッシブでレベル概念が無いが、念のため execution側（accumulatePassiveStatBoosts）
+    // と同じ割合ステータス除外ロジックが表示側にも入っていることを確認する
+    expect(text(buildSkillText(critFlat, 4))).toBe('クリティカル率を5%上昇させる。')
   })
 
   it('弱点・耐性の特性が読める文になる', () => {

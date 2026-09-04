@@ -2,7 +2,7 @@
   "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_triple_strike",
   "label": "三連撃",
-  "flavorText": "三度目に賭ける。それが作法だと教わった。",
+  "flavorText": "3撃目にすべてを賭けろ。",
   "kind": "active",
   "element": "physical",
   "mainCategory": "combo",
@@ -25,7 +25,7 @@
           "element": "physical",
           "scale": {
             "stat": "str",
-            "rate": 0.8
+            "rate": 0.6
           }
         }
       ],

@@ -449,6 +449,19 @@ describe('effectOps: modifier', () => {
     expect(r.source.temporary[0].flat).toBe(700)   // 100 × (2^3-1)
   })
 
+  it('割合ステータス（critRate等）にはレベル倍率を掛けない（常に等倍）', () => {
+    // レベル倍率を掛けると、レベルアップのたびに確率自体が指数的に膨張し、
+    // スーパークリティカルと絡んで際限なく暴走する不具合が実際にあった
+    // （三連撃/見切り撃ちで確認。PERCENT_STAT_KEYS参照）。
+    const r = run({ stat: 'critRate', amount: 0.5, scope: 'thisHit' }, 4)
+    expect(r.source.temporary[0].flat).toBe(0.5)   // (2^4-1)=15 が掛かっていれば 7.5 になってしまう
+  })
+
+  it('cutRateも割合ステータス扱いでレベル倍率を掛けない', () => {
+    const r = run({ stat: 'cutRate', amount: 0.5, scope: 'thisTurn' }, 4)
+    expect(r.source.temporary[0].flat).toBe(0.5)
+  })
+
   it('付与元スキルIDが記録される', () => {
     const r = run({ stat: 'str', amount: 1, scope: 'thisTurn' })
     expect(r.source.temporary[0].sourceId).toBe('buffer')

@@ -27,6 +27,27 @@ export const STAT_KEYS: readonly StatKey[] = [
   'hitRate', 'evadeRate', 'critRate', 'critDamageMultiplier',
 ]
 
+/**
+ * 割合として読むべきステータス（0.05 = 5% のように、値そのものが既に比率）。
+ * modifier/statBoost の amount/rate にスキルレベル倍率（levelMultiplier）を
+ * 掛けると、レベルアップのたびに「確率」や「倍率」そのものが指数的に膨張し、
+ * 特にクリティカル率・クリティカルダメージ倍率はスーパークリティカル
+ * （100%超過分がさらにクリティカルを重ねる仕組み）と絡んで際限なく暴走する
+ * （例: critRateへ amount:0.5 のmodifierはLv2で+150%、Lv4で+750%になっていた。
+ * 三連撃/見切り撃ちで実際に確認されたゲームバランス崩壊）。
+ * ダメージ・回復量のような「大きいほど強い」量とは性質が違うため、この集合に
+ * 含まれる（+cutRate）stat は execution 側（effectOps/modifier.ts,
+ * stats.ts の accumulatePassiveStatBoosts）・表示側（skillText.ts）の
+ * どちらでも levelMultiplier を掛けない（常に等倍で扱う）。
+ */
+export const PERCENT_STAT_KEYS: ReadonlySet<StatKey> = new Set<StatKey>([
+  'hitRate', 'evadeRate', 'critRate', 'critDamageMultiplier',
+])
+
+export function isPercentStat(stat: StatKey | 'cutRate'): boolean {
+  return stat === 'cutRate' || PERCENT_STAT_KEYS.has(stat as StatKey)
+}
+
 /** 実効値の算出に使う補正（加算スタック済み） */
 export interface StatModifier {
   flat: number

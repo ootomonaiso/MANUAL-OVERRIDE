@@ -8,6 +8,7 @@ import type {
   BattleStats, EffectiveStats, StatKey, StatModifier,
   Combatant, TemporaryModifier, SkillDef, EffectNode, Element, BattleContent,
 } from './types'
+import { isPercentStat } from './types'
 
 export function clamp(v: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, v))
@@ -123,10 +124,13 @@ export function accumulatePassiveStatBoosts(
   acc: FlatRateAccumulator,
 ): void {
   for (const { level, def } of owned) {
-    const mult = def.kind === 'trait' ? 1 : levelMultiplier(level)
+    const baseMult = def.kind === 'trait' ? 1 : levelMultiplier(level)
     for (const node of def.effect) {
       if (node.op !== 'statBoost') continue
       const stat = node.stat as StatKey
+      // 割合ステータス（クリティカル率等）はレベル倍率を掛けない
+      // （effectOps/modifier.ts の modifierOp と同じ理由。PERCENT_STAT_KEYS参照）。
+      const mult = isPercentStat(stat) ? 1 : baseMult
       if (typeof node.amount === 'number') addFlat(acc, stat, node.amount * mult)
       if (typeof node.rate === 'number') addRate(acc, stat, node.rate * mult)
     }
