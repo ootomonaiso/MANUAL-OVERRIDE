@@ -177,17 +177,16 @@ function onCardClick(id: string): void { pinnedId.value = id }
   align-items: center;
   justify-content: space-between;
 }
-.panel-title, .detail-label, .active-category, .active-card-label {
-  font-weight: 700;
-}
 .panel-title {
   font-size: 15px;
+  font-weight: 700;
 }
 .panel-points {
   display: flex;
   gap: 8px;
 }
 .points-badge {
+  font-size: 11px;
   padding: 3px 10px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--battle-accent) 20%, transparent);
@@ -221,11 +220,9 @@ function onCardClick(id: string): void { pinnedId.value = id }
 .section-title, .section-title-row {
   margin-bottom: 6px;
 }
-.section-title, .stat-base, .active-card-sub {
-  opacity: 0.75;
-}
-.section-title, .points-badge, .detail-level, .active-points, .stored-chip {
+.section-title {
   font-size: 11px;
+  opacity: 0.75;
 }
 .stored-title {
   margin-top: 8px;
@@ -237,19 +234,18 @@ function onCardClick(id: string): void { pinnedId.value = id }
   flex: 1;
   justify-content: center;
 }
-.stat-row, .detail-effect, .empty-hint, .active-card-label, .panel-close {
-  font-size: 12px;
-}
 .stat-row {
   display: flex;
   align-items: center;
   gap: 6px;
+  font-size: 12px;
 }
 .stat-label, .stat-base {
   width: 34px;
 }
 .stat-base {
   text-align: right;
+  opacity: 0.75;
 }
 .stat-allocated {
   width: 32px;
@@ -262,13 +258,11 @@ function onCardClick(id: string): void { pinnedId.value = id }
   color: var(--battle-text);
   cursor: pointer;
 }
-.stepper, .panel-btn {
-  font-size: 11px;
-}
 .stepper {
   width: 20px;
   height: 20px;
   border-radius: 50%;
+  font-size: 11px;
   line-height: 1;
   flex-shrink: 0;
 }
@@ -282,10 +276,9 @@ function onCardClick(id: string): void { pinnedId.value = id }
   gap: 6px;
   flex-wrap: wrap;
 }
-.active-category, .panel-btn.small, .active-card-sub {
-  font-size: 10px;
-}
 .active-category {
+  font-size: 10px;
+  font-weight: 700;
   padding: 1px 6px;
   border-radius: 999px;
   color: var(--category-color);
@@ -293,17 +286,22 @@ function onCardClick(id: string): void { pinnedId.value = id }
 }
 .detail-label {
   font-size: 14px;
+  font-weight: 700;
 }
 .detail-level {
+  font-size: 11px;
   opacity: 0.8;
 }
 .active-points {
+  font-size: 11px;
   color: var(--battle-diff-plus);
 }
 .detail-effect {
+  font-size: 12px;
   margin-top: 6px;
 }
 .empty-hint {
+  font-size: 12px;
   opacity: 0.6;
 }
 .active-grid {
@@ -321,9 +319,15 @@ function onCardClick(id: string): void { pinnedId.value = id }
   border-color: var(--battle-accent);
   background: color-mix(in srgb, var(--battle-accent) 12%, transparent);
 }
+.active-card-label {
+  font-size: 12px;
+  font-weight: 700;
+}
 .active-card-sub {
   display: flex;
   gap: 6px;
+  font-size: 10px;
+  opacity: 0.75;
   margin: 2px 0 4px;
 }
 .active-card-actions {
@@ -335,6 +339,7 @@ function onCardClick(id: string): void { pinnedId.value = id }
 }
 .panel-btn {
   padding: 4px 10px;
+  font-size: 11px;
 }
 .panel-btn.ghost {
   background: transparent;
@@ -342,6 +347,7 @@ function onCardClick(id: string): void { pinnedId.value = id }
 }
 .panel-btn.small {
   padding: 3px 8px;
+  font-size: 10px;
 }
 .stored-row {
   display: flex;
@@ -355,8 +361,10 @@ function onCardClick(id: string): void { pinnedId.value = id }
   padding: 3px 8px;
   border: 1px solid var(--battle-frame-border);
   border-radius: 999px;
+  font-size: 11px;
 }
 .panel-close {
   padding: 9px;
+  font-size: 12px;
 }
 </style>
