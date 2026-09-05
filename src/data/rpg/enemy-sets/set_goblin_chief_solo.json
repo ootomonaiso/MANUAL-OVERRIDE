@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_goblin_chief_solo",
+  "label": "束ねる者",
+  "members": [{ "enemyId": "enemy_goblin_chief" }]
+}

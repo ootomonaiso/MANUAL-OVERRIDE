@@ -72,20 +72,68 @@
 
 | キー | 必須 | 型 | 適用 | 内容 |
 |---|---|---|---|---|
-| `id` | ✅ | string | 全 | 一意識別子。`skill_` プレフィックス |
+| `id` | ✅ | string | 全 | 一意識別子。`skill_` プレフィックス（passive は `passive_`） |
 | `label` | ✅ | string | 全 | 表示名 |
 | `flavorText` | ✅ | string | 全 | フレーバー。**ゲームプレイに影響しない** |
 | `kind` | ✅ | `'active'｜'passive'` | 全 | 種別 |
 | `mainCategory` | ✅ | `CategoryId` | 全 | メインカテゴリ |
-| `subCategories` | ✅ | `CategoryId[]` | 全 | サブ。空配列可 |
+| `subCategories` | ✅ | `CategoryId[]` | 全 | サブ。空配列可。最大3件（`maxItems`） |
 | `effect` | ✅ | `EffectNode[]` | 全 | 効果オペレーション |
-| `element` | ✅ | `Element` | active | 属性。**サポート系も必須** |
-| `cooldown` | ✅ | number ≥ 0 | active | クールタイム |
+| `element` | ✅ | `Element` = `'physical'｜'magical'｜'special'｜'none'` | active | 属性。**サポート系も必須**。`'none'`（無属性）は第4フェーズで追加（後述「属性・対象範囲・スコープの拡張」） |
+| `cooldown` | ✅ | number ≥ 0（整数） | active | クールタイム |
 | `defaultFocus` | ✅ | `'enemy'｜'self'｜'ally'` | active | 既定の対象side |
-| `focusRange` | ✅ | `'single'｜'all'｜'adjacent3'` | active | 対象範囲 |
+| `focusRange` | ✅ | `FocusRange` = `'single'｜'all'｜'adjacent3'｜'random'` | active | 対象範囲。`'random'`（生存者からランダム単体）は第4フェーズで追加 |
 | `effects` | — | string[] | active | 発動時に再生するエフェクトID。**`timing: "onCast"` のもののみ**（着弾側は効果オペレーションが自動で出す） |
-| `sfx` | — | `{cast?, impact?}` | active | このスキル専用の効果音。`src/data/sfx/*.json` の id。未指定ならエフェクト定義の `sfx` を使う |
+| `sfx` | — | `{cast?, impact?}` | active | このスキル専用の効果音。`src/data/sfx/*.json` の id。未指定ならエフェクト定義の `sfx` を使う。**`kind: "active"` にのみ指定可**（validate-json.mjs が検証） |
 | `unlockCondition` | — | `{category, points}` | 全 | カテゴリ特化で解放される場合のみ |
+| `draftable` | — | boolean | active | `false` なら通常ドラフトに出さない（「守る」「様子を見る」等、常設の行動用スキル。自摸のように `transformsInto` の変化先としてのみ得るスキルにも使う） |
+| `minRound` | — | integer ≥ 0 | active | 第4フェーズで追加。`state.roundCount` がこの値未満の間は使用不可（プレイヤー選択・敵パターン選択の両方）。`minRound: 2` なら3ターン目（`roundCount: 2`）から使用可 |
+| `transformsInto` | — | string（`skill_` プレフィックス） | active | 第4フェーズで追加。使用後にこのスキルIDへ変化する（立直⇔自摸のように相互参照させる想定）。所持スロット・レベル・ポイントは維持し `OwnedActive.id` だけ差し替わる。**既知の制約**: 敵の `actionPattern`（固定ID列）には向かない。変化後は元のIDでマッチしなくなり選ばれなくなるため、プレイヤー所持スキル専用として設計されている |
+| `grantsBonusOnTransformUse` | — | `{stat: StatKey, amount: number}` | active | 第4フェーズで追加。`transformsInto` と併用必須（validate-json.mjs が検証）。変化先スキルが**次に使われた時だけ**指定ステータスへ一時ボーナスを与える（一発ツモ想定） |
+
+### 属性・対象範囲・スコープの拡張（第4フェーズ）
+
+構造変更前は `Element` 3種・`FocusRange` 3種・`ModifierScope` 4種のみだった。無属性スキル（龍鱗・立直・自摸等）とランダム対象スキル（魔導式多連装戦略爆撃装備）の実装のために以下を追加した（`src/domain/battle/types.ts`）。
+
+| 型 | 追加された値 | 意味 |
+|---|---|---|
+| `Element` | `'none'` | 無属性。カット率計算は `defenseValueFor('none', stats)` が **`Math.max(stats.def, stats.ref)`**（実効DEF/REFの高い方）を参照する。弱点/耐性の対象外（`computeAffinityStage` が `'special'` と同様に0を返す）、有利/不利ヒントも出さない（`effectivenessHint`） |
+| `FocusRange` | `'random'` | 生存している敵からランダムに1体を選ぶ（プレイヤー視点のみ。敵視点の対象は常にプレイヤー1体のため無関係） |
+| `ModifierScope` | `'nextRound'` | 「付与されたラウンドの残り＋次のラウンド丸ごと」で失効する2ラウンド分の寿命。`endOfRound()` が `thisTurn` を失効させた**直後**に `nextRound` を `thisTurn` へ格下げする（`domain/battle/effectOps/registry.ts::downgradeNextRoundModifiers`） |
+
+> **注意**: `scope`・`stat`・`scale` 等、op ごとの中身のフィールドは JSON Schema では検証されない（`effectNode` の `required` は `op` のみ）。値の妥当性は実行時の TypeScript 型と `scripts/validate-json.mjs` の `walkEffectNodes`（damage/heal/shield の `scale` のみ）で担保している。
+
+### スキル変化の例（立直⇔自摸）
+
+```jsonc
+// skill_riichi.json（立直）— 使用後に自摸へ変化する
+{
+  "id": "skill_riichi",
+  "kind": "active",
+  "element": "none",
+  "transformsInto": "skill_tsumo",
+  "grantsBonusOnTransformUse": { "stat": "critRate", "amount": 1 },
+  "effect": [
+    { "op": "modifier", "stat": "cutRate", "amount": 0.1, "scope": "thisTurn" }
+  ]
+}
+```
+
+```jsonc
+// skill_tsumo.json（自摸）— draftable: false（立直の変化先としてのみ得る）
+{
+  "id": "skill_tsumo",
+  "kind": "active",
+  "element": "none",
+  "draftable": false,
+  "transformsInto": "skill_riichi",
+  "effect": [
+    { "op": "damage", "element": "none", "scale": { "statOptions": ["str", "int"], "rate": 2 } }
+  ]
+}
+```
+
+`skill_tsumo` は `grantsBonusOnTransformUse` を持たない（片方向でよい）。`damage` の `scale.statOptions`（複数のうち実効値最大を参照）については後述「効果オペレーション一覧」を参照。
 
 ---
 
@@ -359,7 +407,7 @@ export function normalizeSkillRef(ref: EnemySkillRef): { id: string; level: numb
 }
 ```
 
-レベルの効果は**プレイヤーと同一**（`2 ^ レベル - 1` の倍率が連続量に掛かる）。
+レベルの効果は**プレイヤーと同一**（`levelMultiplier(level)` の倍率が連続量に掛かる。式は第8フェーズで指数カーブから線形カーブへ変更されている。詳細は[02-stats.md](02-stats.md)/[05-skills.md](05-skills.md)参照）。
 
 ボスに高レベルスキルを持たせることで、`stats` だけに頼らない強さの表現ができる。
 
@@ -395,10 +443,10 @@ export function normalizeSkillRef(ref: EnemySkillRef): { id: string; level: numb
 | 4 | 特性の禁止フィールド | 特性に `mainCategory` / `element` / `cooldown` 等がある |
 | 5 | `mainCategory` / `subCategories` | 11種の `CategoryId` 以外 |
 | 6 | `subCategories` の重複 | 同じIDが複数、または `mainCategory` と同一 |
-| 7 | `element` | `physical` / `magical` / `special` 以外 |
+| 7 | `element` | `physical` / `magical` / `special` / `none` 以外（`none` は第4フェーズで追加） |
 | 8 | `cooldown` | 負の値・非整数 |
 | 9 | **`op` の実在** | `effectOps` レジストリに存在しない `op` |
-| 10 | `scale.stat` | `StatKey` 以外 |
+| 10 | `scale.stat` / `scale.statOptions` | `StatKey` 以外。`damage` は `stat` または `statOptions`（複数、実効値最大を参照）のどちらか必須（第4フェーズで拡張）。`heal` は `scale` の代わりに `flat` も許容 |
 | 11 | `repeat.times` | 1未満・非整数 |
 | 12 | **参照整合（敵）** | `traits` / `activeSkills` / `passiveSkills` / `actionPattern` が実在しないIDを指す |
 | 13 | `actionPattern` ⊂ `activeSkills` | `activeSkills` に無いIDが `actionPattern` にある |
@@ -416,10 +464,11 @@ export function normalizeSkillRef(ref: EnemySkillRef): { id: string; level: numb
 **検証スクリプトは Node で動き、`effectOps` レジストリは TypeScript 側にある。** 直接 import できないため、**許可された `op` の一覧を JSON Schema 側の `enum` として持つ**。
 
 ```jsonc
-// schemas/battle-skill.schema.json（抜粋）
+// schemas/battle-skill.schema.json（抜粋。実装後に effectBoost/healTaken/noop/counterStance/periodicSelfDamage の5opが追加された）
 { "allowedOps": ["damage", "heal", "shield", "repeat", "modifier",
                  "statBoost", "elementAffinity", "cutRate",
-                 "replaceGuard", "healBetweenBattles"] }
+                 "replaceGuard", "healBetweenBattles",
+                 "effectBoost", "healTaken", "noop", "counterStance", "periodicSelfDamage"] }
 ```
 
 **新しいオペレーションを追加したら、スキーマの `allowedOps` にも追記する必要がある。** この二重管理を避けるため、TS 側にも同じ配列を置き、ユニットテストで**スキーマとレジストリの一致を検証する**。
@@ -434,7 +483,7 @@ expect(new Set(registryIds)).toEqual(new Set(schema.allowedOps))
 ## ローダ
 
 ```ts
-// src/data/battleContent.ts
+// src/data/rpg/battleContent.ts
 const skillModules = import.meta.glob<SkillDef>('./skills/*.json', { eager: true, import: 'default' })
 export const SKILLS: ReadonlyMap<string, SkillDef> = ...
 export const TRAITS: ReadonlyMap<string, TraitDef> = ...
@@ -489,7 +538,7 @@ export const ENEMY_SETS: ReadonlyMap<string, EnemySet> = ...   // 第6フェー�
 | `schemas/battle-skill.schema.json` 他2件 | 新規 |
 | `schemas/battle-enemy-set.schema.json` | 新規（第6フェーズ） |
 | `scripts/validate-json.mjs` | 検証関数を3つ追加。第6フェーズで敵セット/出現グループの検証を追加 |
-| `src/data/battleContent.ts` | 新規（ローダ）。第6フェーズで `ENEMY_SETS` を追加 |
+| `src/data/rpg/battleContent.ts` | 新規（ローダ）。第6フェーズで `ENEMY_SETS` を追加 |
 | `src/data/genres/rpg.json` | `enableFeatures` / `scoreFormula` |
 | `src/framework/ConfigValidator.ts` | `battle` を必須セクションへ |
 
@@ -497,4 +546,13 @@ export const ENEMY_SETS: ReadonlyMap<string, EnemySet> = ...   // 第6フェー�
 
 ## 実装後の記録
 
-（実装完了後に追記）
+本文中に各節ごとの変更点を注記してあるので詳細はそちらを参照し、ここでは変更の全体像だけまとめる。
+
+- **敵セット・出現グループの2つのデータ種別を新設**（第6フェーズ）。`schemas/battle-enemy-set.schema.json` と `src/data/config/encounter_groups.json`（configファイルのため専用スキーマは持たず、`validate-json.mjs` が手書きの整合性チェックを行う）。詳細は上記「敵セット・出現グループ定義」参照
+- **`ActiveSkillDef` に `draftable`/`minRound`/`transformsInto`/`grantsBonusOnTransformUse` を追加**（第4フェーズ）。`Element`/`FocusRange`/`ModifierScope` も同時に拡張された（上記「属性・対象範囲・スコープの拡張」参照）
+- **`effectOps` レジストリが初期10opから15opへ増加**（`noop`/`counterStance`/`periodicSelfDamage`/`effectBoost`/`healTaken` を追加）。スキーマの `allowedOps` enum とレジストリの一致をユニットテストで検証する方針（上記「`op` の実在検証について」）は当初案どおり実装された
+- **`op` ごとの中身のフィールド（`scale`/`scope`/`stat` 等）は JSON Schema の `required` では検証されない**点に注意。`effectNode` の必須は `op` のみで、値の妥当性は実行時のTypeScript型と `scripts/validate-json.mjs::walkEffectNodes`（`damage`/`heal`/`shield` の `scale` 系のみ）が別途担保している。新しいopの中身フィールドを追加する際は、この関数への追随が必要になる場合がある
+- **スキルポイント制度（`src/data/config/skill_points.json`・`SkillPointsConfig`）を新設**（第7フェーズ）。`OwnedActive.points`（投資済みポイント）・`levelForPoints()` によるレベル導出等、`BattleState`/`Combatant` 側の型変更は本ドキュメントの対象外（[10-state.md](10-state.md)の管轄）だが、スキル・敵定義側のJSON形式そのものへの影響はない
+- **ローダのファイルパスが設計時の想定（`src/data/skills` 等のフラット配置）から実際には `src/data/rpg/skills` 等（rpg専用サブディレクトリ）に変更されている**（[01-architecture.md](01-architecture.md)にも同様の記録あり）。本ドキュメント内のパス表記は実際の配置に合わせて修正済み
+
+数値・グループ構成（`encounter_groups.json` の中身等）はすべて調整前提の仮値であり、本ドキュメント作成時点でもバランス再調整・コンテンツ拡充が続いている（第8フェーズ）。

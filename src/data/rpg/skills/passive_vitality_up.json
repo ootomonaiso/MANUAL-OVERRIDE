@@ -10,7 +10,7 @@
     {
       "op": "statBoost",
       "stat": "hp",
-      "amount": 1500
+      "amount": 2200
     }
   ]
 }

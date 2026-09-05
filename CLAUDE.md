@@ -123,13 +123,13 @@ src/
 ├── components/      # Vue UI コンポーネント（battle/ に rpg 戦闘UI）
 ├── tutorial/        # チュートリアル画面
 └── data/
-    ├── config/      # 設定JSON（27ファイル: score.json, genres.json, physics.json 等。全ジャンル共通）
+    ├── config/      # 設定JSON（30ファイル: score.json, genres.json, physics.json 等。大半は全ジャンル共通だが battle.json / encounter_groups.json / skill_points.json は rpg 専用）
     ├── genres/      # ジャンル定義JSON（23ファイル: 22ジャンル + glitch。全ジャンル共通）
     ├── cards/       # カードデッキJSON（starter-cards.json 等。全ジャンル共通）
     ├── sprites/     # ドット絵JSON（横スクロール用 + 戦闘用 battle_*.json。全ジャンル共通）
     ├── sfx/         # 効果音JSON（76件。全ジャンル共通）
     └── rpg/         # rpg ジャンルの戦闘専用データ（他ジャンルからは参照しない）
-        ├── skills/ traits/ enemies/ battle-effects/   # 戦闘コンテンツ（1ファイル1件、import.meta.glob で自動収集）
+        ├── skills/ traits/ enemies/ enemy-sets/ battle-effects/   # 戦闘コンテンツ（1ファイル1件、import.meta.glob で自動収集）
         ├── battle-backgrounds/  # 戦闘背景JSON（草原・砂漠・遺跡・荒れ地・ボス専用）
         ├── battle-guide.json    # 遊び方ガイド・用語集（HelpGuide.vue / GlossaryTerm.vue が参照）
         └── battleContent.ts battleBackgrounds.ts battleGuide.ts   # 上記の読み込みローダ（TS）
@@ -215,6 +215,9 @@ src/
 | `near_miss.json` | near-miss combo パラメータ |
 | `palette_defaults.json` | JSONGenrePlugin のパレットフォールバック |
 | `survival.json` | survival ジャンル固有パラメータ |
+| `battle.json` | rpg専用。初期ステータス範囲・カット率/回避率の係数・ガード/シールド値・敵体数によるスプライト縮小率 等 |
+| `encounter_groups.json` | rpg専用。敵グループA〜E・出現重みの段階・ボス周回間隔・真クリアまでの周回数 |
+| `skill_points.json` | rpg専用。スキルレベルに必要な累計ポイント・レベル倍率の増分・スキル/ステータスパネルの配分数 |
 
 ### ジャンル定義 (`src/data/genres/stg.json` 等)
 
@@ -314,7 +317,7 @@ src/
 - [x] InputManager 分離（キー入力ロジックを SideScroller から独立）
 - [x] ParticleSystem 分離（パーティクル処理を SideScroller から独立）
 - [x] FeatureSystem インターフェース（Feature 追加が1ファイル+1行で完結）
-- [x] JSON駆動設計（config/ 27ファイル、genres/ 23ファイル）
+- [x] JSON駆動設計（config/ 30ファイル、genres/ 23ファイル）
 - [x] テーマカラーの完全JSON駆動化（CSS ハードコードなし）
 - [x] オフライン完全動作
 - [x] CI/CDパイプライン整備

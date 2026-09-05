@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_cultist_zealot",
+  "label": "熱狂の改訂者",
+  "flavorText": "書き換えることそのものが、目的になっている。",
+  "sprite": "battle_cultist_zealot",
+  "stats": {
+    "hp": 5000, "str": 450, "def": 600, "int": 850, "ref": 650, "agi": 500,
+    "hitRate": 0.93, "evadeRate": 0, "critRate": 0.06, "critDamageMultiplier": 1.6
+  },
+  "traits": ["trait_weak_physical"],
+  "activeSkills": [{ "id": "skill_curse_bolt", "level": 2 }, "skill_flame_ring"],
+  "passiveSkills": [],
+  "actionPattern": ["skill_curse_bolt", "skill_flame_ring", "skill_curse_bolt"],
+  "isBoss": false
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_aegis_zenith",
+  "label": "加護の真髄",
+  "flavorText": "壁を作るだけでなく、壁そのものになった。",
+  "kind": "trait",
+  "unlockCondition": { "category": "aegis", "points": 20 },
+  "effect": [
+    { "op": "statBoost", "stat": "def", "rate": 0.15 },
+    { "op": "statBoost", "stat": "ref", "rate": 0.15 }
+  ]
+}

@@ -23,20 +23,20 @@ export type Phase = 'title' | 'tutorialIntro' | 'tutorial' | 'updating'
 
 | 行 | 内容 |
 |---|---|
-| 419 | `<canvas ref="canvasRef" class="game-canvas" />` — **phase に関係なく常に描画され、常に背面にある** |
-| 299-302 | `showGameUI` = phase が `title` / `ending` / `tutorialIntro` **以外** |
-| 482 | `<template v-if="showGameUI">` 配下に HUD・説明書・ギブアップ等 |
-| 500, 558 | 個別UIは `['playing','tutorial','genreLocked'].includes(phase)` で制御 |
+| 472 | `<canvas ref="canvasRef" class="game-canvas" v-show="!isBattleMode" />` — 要素自体は phase に関係なく常にDOMに残り、`isBattleMode` 中だけ `v-show` で非表示になる（後述の「決定」どおり実装済み） |
+| 340-343 | `showGameUI` = phase が `title` / `ending` / `tutorialIntro` **以外** |
+| 538 | `<template v-if="showGameUI">` 配下に HUD・説明書・ギブアップ等 |
+| 557 | `ControlHintBadge` は `!isBattleMode && ['playing','tutorial','genreLocked'].includes(phase)` で制御（個別UIの表示条件はここ1箇所。ギブアップボタンは別条件 `['playing','genreLocked']` で `tutorial` を含まない） |
 
 ### `SideScroller` のライフサイクル
 
 | 箇所 | 内容 |
 |---|---|
-| `App.vue:112` | `onMounted` で1度だけ `new SideScroller(canvas, cloneRules())` |
-| `App.vue:41` | `isActivePlayPhase()` = `playing` / `tutorial` / `genreLocked` |
-| `App.vue:222` | カード選択のたび `scroller.updateRules(...)` |
-| `App.vue:229` | `giveUp()` → `scroller.recalcPlayScore()` → `setPaused(true)` → `startThrowing()` |
-| `App.vue:253-259` | `onThrown()` → `scroller.getStats()` → `finalizeThrowing(result, snapshot.playScore, gameStats)` |
+| `App.vue:126`（`startGame()` 内） | `scroller = new SideScroller(canvas, cloneRules())`。タイトル画面の「はじめる」ボタン、またはデバッグパネルの `forceGenre` 適用（`onDebugApply()` → `startGame()`）から呼ばれる。**`onMounted` からではない**（`onMounted` は `resize` / `keydown` のイベント登録のみを行う） |
+| `App.vue:53-56` | `isActivePlayPhase()` は `isBattleMode` 中は `false` を返し、それ以外は `playing` / `tutorial` / `genreLocked` を判定する（後述の「決定」で挙げる分岐がすでに実装済み） |
+| `App.vue:239` | カード選択のたび `scroller.updateRules(...)` |
+| `App.vue:245-257` | `giveUp()` → 戦闘モードなら `battle.giveUp()` へ分岐、それ以外は `scroller.recalcPlayScore()` → `setPaused(true)` → `startThrowing()`（後述の「決定」どおり実装済み） |
+| `App.vue:284-300` | `onThrown()` → 戦闘モードなら `battle.playScore.value` を、それ以外は `scroller.getStats()` / `snapshot.value.playScore` を `finalizeThrowing()` へ渡す（後述の「決定」どおり実装済み） |
 
 ### 既存の統合点（`rpg` が満たす必要のある契約）
 
@@ -129,15 +129,24 @@ function isActivePlayPhase() {
 
 `useBattleState` が **`playScore` を算出して公開**し、`App.vue` は戦闘モードのときそちらを使う。
 
+実装は、共有の `computed`（`finalPlayScore` 等）を介する形ではなく、`onThrown()` 内で `isBattleMode` により直接分岐している（`App.vue:284-300`）。
+
 ```ts
-const finalPlayScore = computed(() =>
-  isBattleMode.value ? battleState.playScore.value : snapshot.value.playScore
-)
+function onThrown(result: ThrowResult) {
+  if (isBattleMode.value) {
+    scroller?.stop()
+    gameState.finalizeThrowing(result, battle.playScore.value)
+    return
+  }
+  const gameStats = scroller?.getStats()
+  scroller?.stop()
+  gameState.finalizeThrowing(result, snapshot.value.playScore, gameStats)
+}
 ```
 
-`onThrown()` はこの値を `finalizeThrowing` へ渡す。
+`battle.playScore` は `useBattleState.ts` 内で `state.playScore`（`evalScoreFormula()` の戻り値）を `computed` で公開したもの。
 
-スコア式そのものは**「実装後に持ち越し」**のため、暫定式を `src/data/genres/rpg.json` の `scoreFormula` に置き、`ScoreVars` に不足する変数を追加する（詳細は [04-battle-flow.md](04-battle-flow.md)）。
+スコア式は `src/data/genres/rpg.json` の `scoreFormula` に実装済み: `battlesWon * 300 + bossDefeated * 3000 + maxSkillLevel * 200 + traitsAcquired * 150`。**値は調整前提の仮値**（詳細は [04-battle-flow.md](04-battle-flow.md)）。
 
 ### `ActionStats` の供給
 
@@ -169,7 +178,7 @@ const finalPlayScore = computed(() =>
 
 ## ファイル構成
 
-### 新規
+### 新規（設計時点の案。実際の構成は後の「実装後の記録」および [08-ui.md](08-ui.md) を参照）
 
 ```
 src/
@@ -203,6 +212,8 @@ src/
 └── composables/
     └── useBattleState.ts
 ```
+
+> **実際との差分（要点のみ。詳細は「実装後の記録」）**: `data/skills` `data/traits` `data/enemies` はフラット配置ではなく `src/data/rpg/skills` `src/data/rpg/traits` `src/data/rpg/enemies`（rpg専用サブディレクトリ）に置かれている。`ActiveSkillBar.vue` `FocusSelector.vue` `TurnQueueBar.vue` `CharacterDetail.vue` `BattleEffectLayer.vue` は改修過程で削除され、`components/battle/` は最終的に19ファイル構成になった。コンポーネントの現在の役割一覧は [08-ui.md](08-ui.md) の「コンポーネント構成」表が正。
 
 ### 変更
 
@@ -254,4 +265,36 @@ src/
 
 ## 実装後の記録
 
-（実装完了後に追記）
+本ドキュメントで「決定」として挙げた方式（方式A: 既存 phase を維持し `isBattleMode` で表示を差し替える）は、
+`isBattleMode` の判定・`v-show` による canvas 非表示・`isActivePlayPhase()` / `giveUp()` / `onThrown()` の
+戦闘モード分岐・`lockedGenre` の watch での `battle.initRun()` / `battle.reset()` 呼び出しを含め、
+設計どおりに実装されている（各表の行に実際の行番号を付記済み）。
+
+設計時点の記述との差分は次のとおり:
+
+- **`SideScroller` の生成タイミング**: 「`onMounted` で1度だけ生成」という設計時点の前提記述は誤りだった
+  （rpg対応に起因する変更ではなく、記述時点から実態と食い違っていた）。実際は `startGame()`
+  （タイトル画面の「はじめる」、またはデバッグパネルの `forceGenre` 適用）から生成される。
+  `isBattleMode` を経由するのはジャンルが `rpg` に確定した**後**であり、生成タイミング自体は
+  rpg 対応の影響を受けていない。
+- **`finalPlayScore` の共有 computed は導入されていない**: 設計では `App.vue` 側に
+  `isBattleMode` で分岐する共有 `computed` を置く案を示していたが、実装は `onThrown()` 内で
+  直接 `if (isBattleMode.value)` 分岐する形になっている。結果（渡される値）は設計どおり。
+- **`scoreFormula` は仮値ながら実装済み**: 「実装後に持ち越し」としていたスコア式は
+  `battlesWon * 300 + bossDefeated * 3000 + maxSkillLevel * 200 + traitsAcquired * 150`
+  として `src/data/genres/rpg.json` に定義されている。バランス調整前提の仮値であり、
+  最終値ではない（詳細は [04-battle-flow.md](04-battle-flow.md)）。
+- **データ配置がジャンル専用サブディレクトリへ変更**: 「ファイル構成」で示した
+  `src/data/skills` `src/data/traits` `src/data/enemies` はフラット配置の案だったが、
+  実際は `src/data/rpg/skills` `src/data/rpg/traits` `src/data/rpg/enemies`
+  （他ジャンルが参照しない rpg 専用データとして `src/data/rpg/` 配下にまとめる方針。
+  CLAUDE.md 参照）に置かれている。加えて `src/data/rpg/enemy-sets/*.json`（敵グループ編成）・
+  `src/data/rpg/battle-effects/*.json`・`src/data/rpg/battle-backgrounds/*.json` など、
+  設計時点では想定していなかったデータ種別も後続フェーズ（敵グループ/難易度スケーリング等）で追加された。
+- **コンポーネント構成は大きく再編された**: `ActiveSkillBar.vue` `FocusSelector.vue`
+  `TurnQueueBar.vue` `CharacterDetail.vue` `BattleEffectLayer.vue` はいずれも改修の過程で
+  削除され、代わりに `TurnBadge.vue` `CommandMenu.vue` `SkillCommandPanel.vue`
+  `CharacterFrame.vue`（予告チップ・相性プレビュー含む）`InfoPanel.vue` /
+  `InfoPanelShell.vue`（詳細表示の統合パネル）`CategoryListPanel.vue`（カテゴリポイント一覧）
+  `SkillPanel.vue`（5戦ごとのスキル/ステータス配分パネル）`HelpGuide.vue` / `GlossaryTerm.vue`
+  （用語ヘルプ）等が追加された。現在のコンポーネント一覧・役割は [08-ui.md](08-ui.md) を参照。

@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_slime_frost",
+  "label": "凍結インクのスライム",
+  "flavorText": "表紙ごと固く凍りつき、めくれなくなっている。",
+  "sprite": "battle_slime_frost",
+  "stats": {
+    "hp": 4000, "str": 350, "def": 900, "int": 400, "ref": 700, "agi": 250,
+    "hitRate": 0.92, "evadeRate": 0, "critRate": 0.04, "critDamageMultiplier": 1.5
+  },
+  "traits": ["trait_resist_physical"],
+  "activeSkills": ["skill_strike", "skill_guard_shield"],
+  "passiveSkills": [],
+  "actionPattern": ["skill_strike", "skill_guard_shield", "skill_strike"],
+  "isBoss": false
+}

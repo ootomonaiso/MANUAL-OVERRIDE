@@ -421,6 +421,8 @@ export interface EncounterGroupsConfig {
 export interface SkillPointsConfig {
   /** index=レベル-1、値=そのレベルに達するまでの累計投資ポイント（Lv1は常に0） */
   pointsForLevel: number[]
+  /** レベルごとの効果倍率の増分（levelMultiplier = 1 + (level-1) × この値）。第8フェーズでスキル側の伸びを緩やかにした */
+  levelMultiplierStep: number
   /** 何戦ごとにスキル/ステータスポイント配分パネルを挟むか */
   panelIntervalBattles: number
   panelSkillPoints: number

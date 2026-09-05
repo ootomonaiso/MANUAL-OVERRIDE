@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_goblin_chief",
+  "label": "束ねる者",
+  "flavorText": "はぐれ者たちを、一冊の乱丁へまとめ上げた。",
+  "sprite": "battle_goblin_chief",
+  "stats": {
+    "hp": 7500, "str": 950, "def": 1200, "int": 350, "ref": 600, "agi": 550,
+    "hitRate": 0.94, "evadeRate": 0, "critRate": 0.08, "critDamageMultiplier": 1.6
+  },
+  "traits": ["trait_savage_blow"],
+  "activeSkills": [{ "id": "skill_triple_strike", "level": 2 }, "skill_wild_swing"],
+  "passiveSkills": [],
+  "actionPattern": ["skill_triple_strike", "skill_wild_swing", "skill_triple_strike"],
+  "isBoss": false
+}

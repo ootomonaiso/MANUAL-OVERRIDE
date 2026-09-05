@@ -8,6 +8,6 @@
   "subCategories": [],
   "unlockCondition": { "category": "guard", "points": 10 },
   "effect": [
-    { "op": "statBoost", "stat": "def", "rate": 0.1 }
+    { "op": "statBoost", "stat": "def", "rate": 0.15 }
   ]
 }

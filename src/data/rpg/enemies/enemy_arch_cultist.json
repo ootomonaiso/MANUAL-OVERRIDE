@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_arch_cultist",
+  "label": "大改訂者",
+  "flavorText": "世界そのものを、自分の解釈で書き換えようとしている。",
+  "sprite": "battle_arch_cultist",
+  "stats": {
+    "hp": 19000, "str": 500, "def": 1400, "int": 1400, "ref": 1200, "agi": 600,
+    "hitRate": 0.95, "evadeRate": 0, "critRate": 0.1, "critDamageMultiplier": 1.8
+  },
+  "traits": ["trait_weak_physical"],
+  "activeSkills": [
+    { "id": "skill_curse_bolt", "level": 3 },
+    { "id": "skill_flame_ring", "level": 2 },
+    "skill_weird_wave",
+    { "id": "skill_arcane_bombardment", "level": 2 }
+  ],
+  "passiveSkills": [],
+  "actionPattern": ["skill_weird_wave", "skill_curse_bolt", "skill_flame_ring", "skill_arcane_bombardment", "skill_curse_bolt"],
+  "isBoss": true
+}

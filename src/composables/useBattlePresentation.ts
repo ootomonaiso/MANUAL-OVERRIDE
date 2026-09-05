@@ -240,9 +240,25 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
   // スキル名の提示に合わせて詠唱音を鳴らす。seq を見るのは同じスキルの連続使用でも鳴らすため。
   // flush:'sync' なのは、提示から解決までを待たずに進める場面（テスト等）でも
   // 「提示された瞬間のスキル」を取り逃さないようにするため。
+  //
+  // 【表示用HP/生死のベースライン確保】ここは announce() 直後＝ダメージ解決の**前**に
+  // 同期で必ず通る唯一の地点。ロジック（runEffects）は同期で即座に完了するため、
+  // drain() が effectQueue の変化を検知して呼ばれる頃には対象の hp/alive は
+  // 既に解決後の値になっている。drain() 内で displayedHp が未設定の対象を
+  // trueHpOf()（＝解決後の値）にフォールバックしていたため、多段ヒットで
+  // 演出が始まる前から「もう倒れている」状態が一瞬にせよ真の値のまま見えてしまう
+  // 不具合があった（弾幕で実際には数発で倒したのに即死判定に見える、として報告された）。
+  // ここで解決前の hp/alive を displayedHp/displayedAlive へ確保しておくことで、
+  // drain() 側は必ず「このバッチが始まる前の値」を起点に段階的な演出を組み立てられる。
   watch(() => battle.presentation.seq, () => {
     const p = battle.presentation
     if (p.phase !== 'announce') return
+    displayedHp.set(battle.state.player.id, trueHpOf(battle.state.player.id))
+    displayedAlive.set(battle.state.player.id, trueAliveOf(battle.state.player.id))
+    for (const e of battle.state.enemies) {
+      displayedHp.set(e.id, trueHpOf(e.id))
+      displayedAlive.set(e.id, trueAliveOf(e.id))
+    }
     const skill = p.skillId ? BATTLE_CONTENT.skills.get(p.skillId) : undefined
     if (skill && skill.kind === 'active' && skill.sfx?.cast) soundManager.playSfx(skill.sfx.cast)
     else soundManager.playSfx('battle_turn_start')

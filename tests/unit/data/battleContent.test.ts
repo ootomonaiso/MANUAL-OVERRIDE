@@ -232,16 +232,16 @@ describe('battleContent: 敵定義', () => {
     }
   })
 
-  it('ボスがちょうど1体、通常敵も1体以上いる', () => {
+  it('ボスが1体以上、通常敵も1体以上いる', () => {
     const bosses = ALL_ENEMIES.filter(e => e.isBoss)
-    expect(bosses).toHaveLength(1)
+    expect(bosses.length).toBeGreaterThan(0)
     expect(ALL_ENEMIES.filter(e => !e.isBoss).length).toBeGreaterThan(0)
   })
 
-  it('ボスはどの通常敵よりHPが高い', () => {
-    const boss = ALL_ENEMIES.find(e => e.isBoss)
+  it('どのボスも、どの通常敵よりHPが高い', () => {
+    const bosses = ALL_ENEMIES.filter(e => e.isBoss)
     const maxMobHp = Math.max(...ALL_ENEMIES.filter(e => !e.isBoss).map(e => e.stats.hp))
-    expect(boss?.stats.hp).toBeGreaterThan(maxMobHp)
+    for (const boss of bosses) expect(boss.stats.hp, boss.id).toBeGreaterThan(maxMobHp)
   })
 
   it('ボス戦の番号までに出せる通常敵が用意されている', () => {

@@ -7,7 +7,7 @@
   "mainCategory": "combo",
   "subCategories": [],
   "effect": [
-    { "op": "statBoost", "stat": "str", "amount": 180 },
-    { "op": "statBoost", "stat": "int", "amount": 180 }
+    { "op": "statBoost", "stat": "str", "amount": 270 },
+    { "op": "statBoost", "stat": "int", "amount": 270 }
   ]
 }

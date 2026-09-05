@@ -54,8 +54,8 @@ describe('skillText: 効果文の生成', () => {
     const skill = makeActive({
       id: 's', effect: [node('damage', { element: 'physical', scale: { stat: 'str', rate: 0.8 } })],
     })
-    expect(text(buildSkillText(skill, 2))).toContain('240%')   // 0.8 × (2^2-1)
-    expect(text(buildSkillText(skill, 4))).toContain('1200%')  // 0.8 × 15
+    expect(text(buildSkillText(skill, 2))).toContain('100%')   // 0.8 × 1.25（Lv2）
+    expect(text(buildSkillText(skill, 4))).toContain('140%')   // 0.8 × 1.75（Lv4）
   })
 
   it('特性はレベル倍率を掛けない', () => {

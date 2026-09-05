@@ -75,6 +75,8 @@
 
 ## 初期セット（21種）
 
+> 実装後に3種（`fx_super_critical` / `fx_hit_none` / `fx_cast_none`）が追加され、現在は計24種。追加の経緯は「実装後の記録」を参照。
+
 | エフェクトID | timing | 内容 |
 |---|---|---|
 | `fx_cast` | onCast | 汎用の発動演出 |
@@ -121,7 +123,8 @@
 |---|---|
 | 命中判定に失敗 | `fx_miss` |
 | 回避が成立 | `fx_evade` |
-| クリティカル発生 | `fx_critical` |
+| クリティカル発生（1重） | `fx_critical` |
+| クリティカル発生（2重以上 = スーパークリティカル） | `fx_super_critical`（`payload.critStacks` に重なった回数を持つ） |
 | 相性段階 > 0 | `fx_weakness` |
 | 相性段階 < 0 | `fx_resisted` |
 | シールドが割れた | `fx_shield_break` |
@@ -147,6 +150,7 @@ export interface EffectRequest {
     color?: string
     absorbedByShield?: boolean    // 赤（被弾）と青（シールドで受けた）を分ける
     skillId?: string              // 効果音のスキル別差し替えに使う
+    critStacks?: number           // fx_super_critical 用。クリティカルが重なった回数（2以上）
   }
 }
 ```
@@ -257,10 +261,10 @@ export interface EffectRequest {
 
 | ファイル | 変更 |
 |---|---|
-| `src/data/rpg/battle-effects/*.json` | 新規（21件）。すべて `sfx` を持つ |
+| `src/data/rpg/battle-effects/*.json` | 新規（21件、現在24件）。すべて `sfx` を持つ |
 | `schemas/battle-effect.schema.json` | 新規 |
 | `src/composables/useBattlePresentation.ts` | 新規（当初案の `BattleEffectLayer.vue` を置き換え） |
-| `src/data/sfx/battle_*.json` | 新規（24件。戦闘用の効果音） |
+| `src/data/sfx/battle_*.json` | 新規（24件、現在27件。戦闘用の効果音） |
 | `scripts/validate-json.mjs` | エフェクト検証を追加 |
 | `src/data/config/battle.json` | `multiHitIntervalMs` 等 |
 
@@ -285,3 +289,17 @@ export interface EffectRequest {
 フックを増やす方式（`onFireball()` のようなメソッドを `SoundHooks` に足す）は、
 スキルが増えるたびにTypeScriptの変更が必要になり「JSONだけで足せる」方針と噛み合わない。
 `SoundManager.playSfx(id)` を1つ足し、**どの音を鳴らすかはJSONが決める**形にした。
+
+### エフェクトの追加（無属性・スーパークリティカル）
+
+初期セット21種のあと、以下3種が追加された（`src/data/rpg/battle-effects/` で現物を確認済み）。
+
+| エフェクトID | timing | 追加の経緯 |
+|---|---|---|
+| `fx_hit_none` | onHit | 無属性スキル（`Element` に `'none'` が追加）のヒット演出。`damage` op（`effectOps/damage.ts`）が `fx_hit_${element}` という組み立てでIDを発行するため、既存の物理/魔法/特殊と同じ仕組みにJSONを1つ足すだけで対応できた。コード変更は不要だった |
+| `fx_cast_none` | onCast | 無属性スキルの発動演出。`onCast` 側は自動組み立てではなく各スキルの `effects` 配列に明示する方式のため、`skill_tsumo` / `skill_riichi` / `skill_dragon_scale` / `skill_small_herb` / `skill_large_herb` の各JSONで個別に指定している |
+| `fx_super_critical` | onHit | クリティカルが2重以上重なった場合（`critRate` が100%を超えた分がさらにクリティカルを重ねる「スーパークリティカル」。[02-stats.md](02-stats.md) 参照）の強調演出。`effectOps/criticalFx.ts::emitCriticalEffect()` が `critStacks` の値で `fx_critical`（1重）と `fx_super_critical`（2重以上）を鳴らし分ける。`payload.critStacks` に重なった回数を積んで渡す |
+
+対応する効果音として `src/data/sfx/battle_hit_none.json` / `battle_cast_none.json` も新設された（`fx_super_critical` は既存の `battle_critical` を流用しており、専用SFXは追加されていない）。
+
+`useBattlePresentation.ts` 側では `fx_super_critical` を `fx_critical` と同じ扱い（画面フラッシュ・キャラフラッシュ）に加え、`SUPER CRITICAL ×N` のポップアップ（`critStacks` を表示）を追加で出す。

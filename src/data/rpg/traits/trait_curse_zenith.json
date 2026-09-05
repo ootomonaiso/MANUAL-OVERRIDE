@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_curse_zenith",
+  "label": "呪詛の真髄",
+  "flavorText": "毒を吐くだけでなく、毒そのものに詳しくなった。",
+  "kind": "trait",
+  "unlockCondition": { "category": "curse", "points": 20 },
+  "effect": [
+    { "op": "statBoost", "stat": "hitRate", "rate": 0.15 },
+    { "op": "statBoost", "stat": "critRate", "amount": 0.05 }
+  ]
+}

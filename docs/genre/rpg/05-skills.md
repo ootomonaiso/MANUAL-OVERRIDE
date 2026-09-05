@@ -10,7 +10,7 @@
 |---|---|---|---|
 | ターン消費 | する | しない | しない |
 | 枠 | **4枠**を消費 | 消費しない | 消費しない |
-| 重複取得 | 可（レベル上昇） | 可（レベル上昇） | **不可** |
+| 重複取得 | 可（ドラフトで重複を選ぶとポイント+1、累計ポイントからレベルを導出） | **不可**（実装後に変更。下記参照） | **不可** |
 | カテゴリ | メイン1 + サブ0以上 | 同左 | **持たない** |
 | 主な役割 | 能動的な効果 | ステータス上昇 | 例外的な処理 |
 | クールタイム | 持つ | ― | ― |
@@ -20,6 +20,10 @@
 ```ts
 export type SkillKind = 'active' | 'passive' | 'trait'
 ```
+
+> **実装後の変更（スキルポイント制度、`CLAUDE_TASKS.md` 第7フェーズ）**: パッシブのレベル/スタック概念は廃止された。プレイヤーが取得したパッシブは常に Lv1 相当（＝`levelMultiplier` が等倍）で固定され、一度所持すると `skillDraft.ts::buildCandidatePool()` が以後永久にドラフト候補から除外する（重複取得自体が発生しない）。`OwnedPassive.level` フィールド自体は残っているが、これは敵の所持パッシブ（`EnemyDef.passiveSkills`）の強さ調整用。
+>
+> アクティブは重複取得の仕組み自体は残っているが、内部実装がレベル直接指定から「投資ポイント（`OwnedActive.points`）→ `levelForPoints()` で都度レベル導出」に変わっている。配分の詳細（ドラフトでの重複ポイント付与・スキルパネルでのポイント割り振り）は06-draft.mdの管轄。本節ではレベルが決まった後の「効果量への反映（`levelMultiplier`）」のみを扱う。
 
 ---
 
@@ -36,8 +40,10 @@ export interface EffectContext {
   skill: SkillDef              // 発動したスキル
   level: number                // スキルレベル（効果量に影響）
   state: BattleState
-  emit: (effectId: string, target?: Combatant) => void   // エフェクト再生
+  emit: (req: EffectRequest) => void   // エフェクト再生
   rng: () => number            // 乱数（テスト時に差し替え可能）
+  getEffective: (c: Combatant) => EffectiveStats   // 対象の実効ステータスを都度算出（補正の変化を反映するため毎回計算）
+  content: BattleContent       // スキル・特性定義の参照に使う
 }
 
 export interface EffectOp {
@@ -53,6 +59,19 @@ export interface EffectNode {
   [key: string]: unknown
 }
 ```
+
+> **実装時の変更**: `emit` は当初案の `(effectId, target?) => void` ではなく、`EffectRequest` を1引数で受け取る形になっている。
+>
+> ```ts
+> export interface EffectRequest {
+>   effectId: string
+>   targetRef: 'source' | 'target' | 'screen'
+>   combatantId?: string
+>   payload?: EffectPayload   // text（表示テキスト）/ color / absorbedByShield / skillId / critStacks 等
+> }
+> ```
+>
+> また `EffectContext` には設計時点になかった `getEffective`（実効ステータスの都度算出）と `content`（スキル・特性定義の参照）が追加されている。特性由来のカット率合計・弱点耐性・効果倍率などは `ctx.content.traits` / `ctx.content.skills` を直接読んで集計する「宣言的op」（後述）が担うため、この2つが必要になった。
 
 `effectOps/index.ts` がレジストリを持つ。
 
@@ -71,11 +90,11 @@ export function runEffects(nodes: readonly EffectNode[], ctx: EffectContext): vo
 
 | `op` | 内容 | 主なパラメータ |
 |---|---|---|
-| `damage` | ダメージを与える | `element` / `scale: { stat, rate }` |
-| `heal` | 回復する | `element` / `scale: { stat, rate }` |
+| `damage` | ダメージを与える | `element` / `scale: { stat, rate }` または `scale: { statOptions, rate }` |
+| `heal` | 回復する | `element` / `scale: { stat, rate }` または `flat`（`scale`と排他） |
 | `shield` | シールドを付与する | `element` / `scale: { stat, rate }` |
 | `repeat` | 内側を N 回繰り返す | `times` / `body` / `onLastIteration` |
-| `modifier` | 一時的な補正を付与する | `stat` / `amount` / `scope` |
+| `modifier` | 一時的な補正を付与する | `stat` / `amount` / `rate` / `scale: { stat, rate }`（`amount`と併用可・加算） / `scope` |
 | `statBoost` | ステータスを恒常的に上昇（パッシブ用） | `stat` / `amount` または `rate` |
 | `elementAffinity` | 弱点・耐性を付与（特性用） | `element` / `affinity` |
 | `cutRate` | カット率を追加（特性用） | `amount` |
@@ -83,10 +102,19 @@ export function runEffects(nodes: readonly EffectNode[], ctx: EffectContext): vo
 | `healBetweenBattles` | 戦闘終了時に回復（特性用） | `amount` または `rate` |
 | `effectBoost` | 自身が出す効果の効果倍率を上昇（特性/パッシブ用） | `element`（`"any"` で全属性）/ `rate` |
 | `healTaken` | 対象側の被回復倍率を上昇（特性/パッシブ用） | `rate` |
+| `noop` | 何もしない（「様子を見る」用） | ― |
+| `counterStance` | 反撃態勢に入る（次の被弾ぶんをまとめて反撃） | `scaleStat: 'def'\|'ref'` / `rate` / `element` |
+| `periodicSelfDamage` | 継続ダメージ（DOT）を自身に登録する | `ratio`（実効最大HPに対する割合） |
 
 この一覧は初期セットであり、**後から増やせることが要件**である。
 
 > **実装時に判明した追加**: 当初の一覧には「送出ダメージ = ... × 効果倍率」（ダメージ計算の流れ）が参照する**効果倍率そのものを付与する手段**が含まれていなかった（`damage`/`heal`/`shield` のいずれの倍率も1固定になってしまう欠落だった）。`effectBoost`（例:「物理攻撃+50%」）と、回復側の対称にあたる `healTaken`（「被回復量+30%」）を追加した。
+>
+> **さらに実装後に追加された3op**（詳細は末尾「実装後の記録」参照）: `noop`（意図的な無効果。「様子を見る」の実体）、`counterStance`（カウンター/反射板 用の反撃態勢）、`periodicSelfDamage`（龍鱗 用の継続ダメージ）。
+
+### 宣言的op（`runEffects` から実行されない op）
+
+`statBoost` / `elementAffinity` / `cutRate` / `replaceGuard` / `healBetweenBattles` / `effectBoost` / `healTaken` の7opは、`effect[]` を直接読む集計側（`stats.ts::accumulatePassiveStatBoosts`、`damageCalc.ts::computeAffinityStage`、`damage.ts::collectTraitCutRates`、`battleEngine.ts::hasReplaceGuard`、戦闘終了処理、`stats.ts::collectEffectMultiplier`、`heal.ts::healTakenMultiplier`）が個別に読む**宣言的op**であり、`runEffects()`（＝スキル使用時の逐次実行）からは実行されない。レジストリには「未登録の op」検証のためだけに登録されており、`execute()` は呼ばれた場合に警告を出すのみの空実装になっている。対して `damage` / `heal` / `shield` / `repeat` / `modifier` / `noop` / `counterStance` / `periodicSelfDamage` は `runEffects()` で実際に実行される**手続き的op**。
 
 ### `scale` の構造
 
@@ -96,6 +124,12 @@ export function runEffects(nodes: readonly EffectNode[], ctx: EffectContext): vo
 { "op": "damage", "element": "magical", "scale": { "stat": "str", "rate": 0.8 } }
 // 魔法属性だが STR を参照する（設計文書が明示的に許容）
 ```
+
+`damage` の `scale` は `stat`（単一）の代わりに `statOptions: StatKey[]`（複数候補のうち実効値が最も高いものを参照）も指定できる。自摸（`skill_tsumo`）が `statOptions: ["str", "int"]` でSTR/INTの高い方を参照する。`stat` と `statOptions` は排他。
+
+`heal` は `scale` の代わりに `flat: number`（固定値・ステータス参照なし）を指定できる。`scale` と `flat` は排他。`flat` でもスキルレベル倍率は乗る（ステータス参照を経由しないだけで、レベルによる伸びはある）。
+
+`modifier` は `amount`/`rate` に加えて `scale: { stat, rate }` を指定でき、**発動元(source)の実効ステータス**を参照して補正量を決められる（例:「自分のSTRの50%分、DEFを上げる」＝棘を纏う 想定）。`scale` は `amount` と併用可能で、その場合は加算される（`combinedAmount = amount + (発動元ステータス × scale.rate)`）。`scale` は常に発動元（`ctx.source`）を参照する点に注意（`applyTo: "target"` のデバフでも、量を決めるのは「かける側の力量」）。
 
 ### `repeat` と反復中のタイミング指定
 
@@ -127,6 +161,11 @@ export function runEffects(nodes: readonly EffectNode[], ctx: EffectContext): vo
 | `thisTurn` | そのラウンドの終わりまで（ラウンド終了処理で一括除去） |
 | `thisBattle` | 戦闘終了まで |
 | `permanent` | ラン終了まで |
+| `nextRound` | 付与されたラウンドの残り + 次のラウンド丸ごと（実装後に追加。下記参照） |
+
+> **実装後に追加**: `nextRound` は「他者の行動をまたいで、自分の次の行動でも生きている」補正のために追加された。`thisTurn` は `endOfRound()` で毎ラウンド即座に失効するため「相手の行動までしか保たない」（守る/避ける向け）。それでは足りないケース——大振りの自己デバフ（次の自分の行動開始まで DEF-50%）や、立直が仕込む「自摸使用時のみ」クリティカル率バフ——のために `nextRound` を用意した。
+>
+> 実装（`effectOps/registry.ts`）: `endOfRound()` が毎ラウンド `clearThisTurnModifiers()` で `thisTurn` を失効させた**直後**に `downgradeNextRoundModifiers()` を呼び、`nextRound` を `thisTurn` へ格下げする。この順序を逆にすると、格下げした直後に同じ呼び出しで消えてしまう。付与 → 格下げ → 失効で「2ラウンド分」保つ計算になる。
 
 `applyTo` は補正を誰に与えるかを指定する（省略時 `"source"`）。
 
@@ -141,22 +180,31 @@ export function runEffects(nodes: readonly EffectNode[], ctx: EffectContext): vo
 
 効果量はレベルに応じて増加する。
 
+> **実装後の見直し（第8フェーズ、`CLAUDE_TASKS.md` Z-9）**: 当初の指数カーブ（`2^Lv-1`）はスキルレベルだけで戦力が急激に跳ね上がりすぎたため、線形カーブへ変更された。**この節の内容は現在は歴史的資料であり、以下が実装の実値**。
+
 ```
-倍率 = 2 ^ レベル - 1
+倍率 = 1 + (レベル - 1) × levelMultiplierStep
 ```
 
-| レベル | 倍率 |
+`levelMultiplierStep` は `src/data/config/skill_points.json` で定義（2026-09-06 時点で `0.25`。**調整前提の仮値**、`skill_points.json` 自身が「数値は仮値」と明記している）。
+
+| レベル | 倍率（`levelMultiplierStep = 0.25` の場合） |
 |---|---|
-| Lv1 | ×1 |
-| Lv2 | ×3 |
-| Lv3 | ×7 |
-| Lv4 | ×15 |
+| Lv1 | ×1.0 |
+| Lv2 | ×1.25 |
+| Lv3 | ×1.5 |
+| Lv4 | ×1.75 |
 
 ```ts
+// src/domain/battle/stats.ts
 export function levelMultiplier(level: number): number {
-  return Math.pow(2, level) - 1
+  return 1 + (level - 1) * SKILL_POINTS.levelMultiplierStep
 }
 ```
+
+旧仕様との対比（参考）: 旧カーブは Lv1〜4 で ×1/×3/×7/×15。新カーブは ×1/×1.25/×1.5/×1.75。伸びを緩めた分、代わりにステータス側（スキルパネルの `statPoints`・フォールバック選択肢の `fallbackStatBoost`）の1ポイントあたりの上昇量を引き上げる方針転換とセットで行われた（`battle.json` の `fallbackStatBoost` コメント参照。この配分の詳細は06-draft.mdの管轄）。
+
+**スキルレベル自体の出どころ**: プレイヤーのアクティブスキルはレベルを直接持たず、投資済みポイント（`OwnedActive.points`）から `skillDraft.ts::levelForPoints()` が都度導出する（`pointsForLevel: [0, 1, 3, 7]` で Lv1〜4、`MAX_ACTIVE_LEVEL = 4`）。敵はEnemyDefで指定されたレベルに固定。ポイントの獲得方法（ドラフト重複取得・スキルパネル配分）は06-draft.mdの管轄であり、本節では `levelMultiplier()` という「レベル→効果量倍率」の関数のみを扱う。
 
 ### 何に掛かるか
 
@@ -164,13 +212,17 @@ export function levelMultiplier(level: number): number {
 
 | 対象 | 掛かるか |
 |---|---|
-| `damage` / `heal` / `shield` の `scale.rate` | **掛かる** |
+| `damage` の `scale.rate`（`stat` / `statOptions` いずれも） | **掛かる** |
+| `heal` の `scale.rate` または `flat` | **掛かる** |
+| `shield` の `scale.rate` | **掛かる** |
 | `statBoost` の `amount` / `rate`（対象が `hitRate`/`evadeRate`/`critRate`/`critDamageMultiplier` 以外） | **掛かる** |
-| `modifier` の `amount` / `rate`（同上） | **掛かる** |
+| `modifier` の `amount` / `rate` / `scale.rate`（同上） | **掛かる** |
 | `cutRate` の `amount` | **掛かる** |
 | `statBoost` / `modifier` の対象が `hitRate`/`evadeRate`/`critRate`/`critDamageMultiplier`（+ `modifier` の `cutRate` 指定） | **掛からない**（常に等倍） |
 | `repeat` の `times` | **掛からない**（回数は増えない） |
 | `elementAffinity` の `affinity` | **掛からない**（段階は増えない） |
+| `periodicSelfDamage` の `ratio`（実装後に追加） | **掛からない**（「毎ターン最大HPの一定割合を失う」固定コストのため） |
+| `counterStance` の `rate`（実装後に追加） | 態勢に入る時点では**掛からない**。反撃発動時にあらためて `damage` opを経由するため、そこで反撃側のレベル倍率が乗る（＝結果的には反映されるが、`counterStance` 自身のパラメータには乗らない） |
 | クールタイム | **掛からない** |
 
 > **決定（Q5）**: 回数や段階まで増やすと `repeat` 3回が Lv4 で45回になるなど破綻するため、**連続量のみ**とする。
@@ -195,6 +247,21 @@ export function levelMultiplier(level: number): number {
 > 「大きいほど強い」連続量とは性質が異なり、確率・倍率が指数的に伸びること自体が
 > 破綻の原因だったため。三連撃は合わせて `scale.rate` を `0.8`→`0.6` へ調整した
 > （合計威力 `80%×3=240%` は他スキルと比べ突出していたため）。
+
+---
+
+## 使用条件・スキル変化（実装後に追加）
+
+第4フェーズ（構造変更9件）で、`ActiveSkillDef` に以下のフィールドが追加された。3種の区別・効果オペレーションとは独立した「そもそも使えるか／使うと何が起きるか」を制御する仕組みで、フィールド一覧・JSON例は [07-data-schema.md](07-data-schema.md#属性対象範囲スコープの拡張第4フェーズ) にまとめてある（本節は概要のみ）。
+
+| フィールド | 概要 |
+|---|---|
+| `draftable: boolean` | `false` ならドラフト候補から除外する。「守る」等の常設行動、または `transformsInto` の変化先としてのみ得るスキル（自摸）に使う |
+| `minRound: number` | このターン数に達するまで使用不可（プレイヤー・敵の双方）。効果文には自動で「Xターン目から使用可能。」が追記される |
+| `transformsInto: string` | 使用後に別スキルIDへ変化する（立直⇔自摸）。所持スロット・レベル・ポイントは維持したまま `id` だけ差し替わる。敵の固定行動パターンには向かない制約がある |
+| `grantsBonusOnTransformUse` | `transformsInto` と併用し、変化先スキルが**次に使われた時だけ**一時ボーナスを与える（一発ツモ） |
+
+これらは `Element`（`'none'` 追加）・`FocusRange`（`'random'` 追加。対象選択そのものの仕組みは [04-battle-flow.md](04-battle-flow.md) の管轄）・`ModifierScope`（`'nextRound'` 追加。上記「`modifier` の `scope` と `applyTo`」参照）と同じ第4フェーズの構造変更で、無属性スキル（龍鱗・立直・自摸等）を成立させるために一括で導入された。
 
 ---
 
@@ -409,8 +476,11 @@ export function buildSkillText(skill: SkillDef, level: number): SkillTextToken[]
 
 | ファイル | 変更 |
 |---|---|
-| `src/domain/battle/effectOps/*` | 新規 |
-| `src/domain/battle/types.ts` | 新規 |
+| `src/domain/battle/effectOps/*` | 新規（初期10op + 実装後追加の `noop`/`counterStance`/`periodicSelfDamage`/`effectBoost`/`healTaken`） |
+| `src/domain/battle/types.ts` | 新規。第4フェーズで `Element`/`FocusRange`/`ModifierScope` を拡張、`ActiveSkillDef` に `minRound`/`transformsInto`/`grantsBonusOnTransformUse`/`draftable` を追加 |
+| `src/domain/battle/damageCalc.ts` | 第4フェーズでスーパークリティカル（`rollCriticalStacks`/`criticalMultiplierForStacks`）を追加 |
+| `src/domain/battle/skillText.ts` | 割合ステータスの`%`表示・レベル倍率の非適用・新opの効果文・`minRound`の自動追記等 |
+| `src/data/config/skill_points.json` | 第7〜8フェーズ。`levelMultiplierStep` 等（[06-draft.md](06-draft.md)参照） |
 | `src/data/rpg/skills/*.json` | 新規 |
 | `src/data/rpg/traits/*.json` | 新規 |
 
@@ -418,4 +488,15 @@ export function buildSkillText(skill: SkillDef, level: number): SkillTextToken[]
 
 ## 実装後の記録
 
-（実装完了後に追記）
+本文中に「実装後の変更」「実装後に追加」の注記を随所に入れてあるので詳細はそちらを参照し、ここでは変更の全体像だけまとめる。
+
+- **パッシブのレベル/スタック概念を廃止**（第7フェーズ、スキルポイント制度）。プレイヤー取得分は常にLv1相当で固定、一度所持すると二度とドラフトに出ない。配分の仕組み自体は[06-draft.md](06-draft.md)の管轄
+- **効果オペレーションを3op追加**: `noop`（「様子を見る」の実体）・`counterStance`（カウンター/反射板の反撃態勢）・`periodicSelfDamage`（龍鱗の継続ダメージ）。加えて `damage`/`modifier`/`heal` の`scale`をそれぞれ`statOptions`・`scale`併用・`flat`へ拡張した（第4フェーズ、構造変更9件）
+- **`ModifierScope`に`nextRound`を追加**（「付与ラウンドの残り＋次のラウンド丸ごと」で失効する2ラウンド寿命）。大振り・立直⇔自摸の会心シナジーを成立させるために新設
+- **`ActiveSkillDef`に`minRound`/`transformsInto`/`grantsBonusOnTransformUse`/`draftable`を追加**（上記「使用条件・スキル変化」参照）。フィールド定義・JSON例は[07-data-schema.md](07-data-schema.md)にまとめた
+- **レベルによる効果量倍率を指数カーブ（`2^Lv-1`）から線形カーブ（`1+(Lv-1)×levelMultiplierStep`）へ変更**（第8フェーズ）。スキルレベルだけで戦力が跳ね上がりすぎたための緩和で、詳細は上記「スキルレベルの効果量」節・[02-stats.md](02-stats.md)を参照。**現在値（`levelMultiplierStep:0.25`）は調整前提の仮値**
+- **割合ステータス（`hitRate`/`evadeRate`/`critRate`/`critDamageMultiplier`）にはレベル倍率を掛けない例外を追加**（8回目のプレイフィードバック）。確率・倍率が指数的に膨張してバランスが崩壊した実例を受けた対応
+- **クリティカル率100%超過分を扱う「スーパークリティカル」を追加**（上記「スーパークリティカル」節）
+- **常設行動（守る/避ける/様子を見る）をハードコードからJSON定義（`skill_stance_*.json`）へ移行**し、ラベルは複数回のフィードバックを経て最終的に「守る」「避ける」「様子を見る」に確定した（上記「常時選択できる行動の定義」参照）
+
+数値（`levelMultiplierStep`・各スキルの`scale.rate`等）はすべて調整前提の仮値であり、本ドキュメント作成時点でもバランス再調整が続いている（第8フェーズ）。

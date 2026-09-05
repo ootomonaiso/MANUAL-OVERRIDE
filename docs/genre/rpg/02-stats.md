@@ -78,9 +78,11 @@ export interface StatModifier {
 }
 
 export function computeEffective(base: number, mod: StatModifier): number {
-  return (base + mod.flat) * mod.mult
+  return (base + mod.flat) * Math.max(0, mod.mult)
 }
 ```
+
+`mult` が0未満になった場合の防御的クランプ（下記「エッジケース」参照）を、実装はこの関数の内側で行っている。
 
 ### 倍率バフは加算スタック
 
@@ -161,31 +163,64 @@ export function clamp(v: number, min: number, max: number): number {
 
 実効値の算出には、その時点で有効なすべての補正を集める必要がある。
 
+実際の実装（`battleEngine.ts`）は、統計キー単位で個別に問い合わせる形ではなく、**可変のアキュムレータへ積んでから一括変換する**形をとる。
+
 ```ts
-/** あるステータスに対する補正を、所持物すべてから収集する */
-export function collectModifier(
-  statKey: StatKey,
-  passives: readonly OwnedPassive[],
-  traits: readonly OwnedTrait[],
-  temporary: readonly TemporaryModifier[],
-): StatModifier
+/** ステータスごとの実数バフ・倍率バフを集計する器 */
+export interface FlatRateAccumulator {
+  flat: Partial<Record<StatKey, number[]>>
+  rate: Partial<Record<StatKey, number[]>>
+}
+
+/** パッシブ・特性の statBoost 効果をアキュムレータへ積む（レベル倍率を適用済み） */
+export function accumulatePassiveStatBoosts(
+  owned: ReadonlyArray<{ level: number; def: SkillDef }>,
+  acc: FlatRateAccumulator,
+): void
+
+/** アキュムレータを computeEffectiveStats に渡せる形へ変換する（倍率は加算スタック） */
+export function toModifiers(acc: FlatRateAccumulator): Partial<Record<StatKey, StatModifier>>
 ```
 
 収集元:
 
-| 源 | 例 |
-|---|---|
-| パッシブスキル | `{ op: "statBoost", stat: "def", amount: 800 }` |
-| 特性 | 「STRが20%上昇する代わりに〜」 |
-| 一時効果 | 「守る」「避ける」、スキルによるバフ・デバフ |
+| 源 | 例 | 集約経路 |
+|---|---|---|
+| パッシブスキル | `{ op: "statBoost", stat: "def", amount: 800 }` | `accumulatePassiveStatBoosts()` でアキュムレータへ |
+| 特性 | 「STRが20%上昇する代わりに〜」 | 同上（パッシブと同じ関数に `{ level: 1, def }` として渡す） |
+| 一時効果 | 「守る」「避ける」、スキルによるバフ・デバフ | `addFlat()` / `addRate()` で直接アキュムレータへ |
+
+呼び出し側は `newAccumulator()` で空のアキュムレータを作り、対象の全パッシブ・特性を `accumulatePassiveStatBoosts()` に通し、続けて `temporary` の各エントリを `addFlat()` / `addRate()` で積んでから、最後に `toModifiers(acc)` を `computeEffectiveStats(base, modifiers)` へ渡す。
+
+> **`collectModifier()` について**: `statKey` を1つ指定し、`temporary` と（レベル倍率適用済みの）`passiveFlats` / `passiveRates` から単一ステータスの `StatModifier` を組み立てる純粋関数として `stats.ts` に存在するが、現在の実装（上記のアキュムレータ経路）では呼び出されていない（ユニットテストでのみ検証されている）。
+>
+> ```ts
+> export function collectModifier(
+>   statKey: StatKey,
+>   temporary: readonly TemporaryModifier[],
+>   passiveFlats: readonly number[],
+>   passiveRates: readonly number[],
+> ): StatModifier
+> ```
 
 パッシブ・特性の効果量には**スキルレベルの倍率**が乗る（[06-draft.md](06-draft.md)）。
 
 ```
-補正値 = 定義された基礎量 × (2 ^ レベル - 1)
+補正値 = 定義された基礎量 × levelMultiplier(レベル)
+levelMultiplier(レベル) = 1 + (レベル - 1) × levelMultiplierStep
 ```
 
-> Lv1 なら `×1`、Lv2 で `×3`、Lv3 で `×7`、Lv4 で `×15`。特性は常に Lv1 相当（`×1`）。
+```ts
+export function levelMultiplier(level: number): number {
+  return 1 + (level - 1) * SKILL_POINTS.levelMultiplierStep
+}
+```
+
+`levelMultiplierStep` は `src/data/config/skill_points.json`（現在値 `0.25`。バランス調整中の仮値）。現在値では Lv1 で `×1`、Lv2 で `×1.25`、Lv3 で `×1.5`、Lv4 で `×1.75`。特性は常に Lv1 相当（`×1`）。
+
+> **第8フェーズでの変更**: 当初は `(2 ^ レベル - 1)`（Lv1:×1／Lv2:×3／Lv3:×7／Lv4:×15）だったが、スキルレベルだけで戦力が跳ね上がりすぎたため、上記の一次式へ緩和した。詳細・経緯は本ファイル末尾「実装後の記録」を参照。
+
+> **割合ステータスへの例外**: `hitRate`／`evadeRate`／`critRate`／`critDamageMultiplier`（`PERCENT_STAT_KEYS`、`src/domain/battle/types.ts`）を対象とする `modifier`／`statBoost` には、上記のレベル倍率を一切掛けない（常に等倍）。「確率」や「倍率」自体が指数的に膨張してバランスが崩壊した実例を受けた対応（[05-skills.md](05-skills.md)参照）。
 
 ---
 
@@ -202,7 +237,7 @@ export function collectModifier(
 | 参照値 | `referenceValue` | スキルが参照するステータスの実効値 |
 | スキル係数 | `scaleRate` | スキルの参照割合 |
 | 基本ダメージ | `baseDamage` | `参照値 × スキル係数` |
-| クリティカル倍率 | `critMultiplier` | 発生時のみ `critDamageMultiplier`、非発生時 `1` |
+| クリティカル倍率 | `critMultiplier` | 非発生時 `1`、通常クリティカル発生時 `critDamageMultiplier`。クリティカル率100%超過分の「スーパークリティカル」では、重なった回数ぶん `critDamageMultiplier` を累乗する（[05-skills.md](05-skills.md)参照） |
 | 効果倍率 | `effectMultiplier` | 攻撃側の特性・パッシブ倍率（加算スタック） |
 | 送出ダメージ | `outgoingDamage` | 攻撃側で確定する値 |
 | 最終カット率 | `finalCutRate` | 対象側カット率の合計（上限80%） |
@@ -242,4 +277,8 @@ export function collectModifier(
 
 ## 実装後の記録
 
-（実装完了後に追記）
+- **レベル倍率の式を変更**（第8フェーズ）。当初の `levelMultiplier(level) = 2^level - 1`（Lv1:×1／Lv2:×3／Lv3:×7／Lv4:×15）は、スキルレベルだけで戦力が跳ね上がりすぎたため、`levelMultiplier(level) = 1 + (level - 1) × levelMultiplierStep`（`src/data/config/skill_points.json` の `levelMultiplierStep`、現在値 `0.25`）へ緩和した。代わりに、5戦ごとのスキルパネルで得る `statPoints` や打ち止め時のフォールバック `fallbackStatBoost`（`{hp:400,other:40}` → `{hp:900,other:90}`）側の増加量を引き上げ、成長の重心をステータス投資側へ寄せる方針にした（[06-draft.md](06-draft.md)）。**このバランス調整は継続中で、上記の数値はいずれも仮値（調整前提）。**
+- 割合ステータス（`hitRate`／`evadeRate`／`critRate`／`critDamageMultiplier`）に対する `modifier`／`statBoost` には、上記のレベル倍率を一切掛けない例外を追加した（`PERCENT_STAT_KEYS`、`src/domain/battle/types.ts`）。確率・倍率がレベルごとに指数的に膨張してバランスが崩壊した実例を受けた対応（[05-skills.md](05-skills.md)参照）。
+- 属性 (`Element`) に `'none'`（無属性）を追加した。10ステータス・実効値の計算方式そのものへの影響はないが、`defenseValueFor` の参照先や相性段階の扱いが変わる（[03-damage-calc.md](03-damage-calc.md)参照）。
+- クリティカル率が100%を超えた場合の「スーパークリティカル」（クリティカル倍率が重なった回数ぶん累乗される仕組み）を追加した。上表「クリティカル倍率」の実際の値域はこれに伴い変わっている（[05-skills.md](05-skills.md)参照）。
+- 補正の収集は、設計時に想定していた「ステータスごとに `collectModifier()` を呼ぶ」形ではなく、`FlatRateAccumulator`（`newAccumulator()`/`addFlat()`/`addRate()`）に全補正を積んでから `toModifiers()` で一括変換する形で実装された（上記「補正の収集」参照）。`collectModifier()` 自体は関数として残っているが、現在の実行経路では未使用。

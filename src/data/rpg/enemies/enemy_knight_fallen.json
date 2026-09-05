@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_knight_fallen",
+  "label": "堕ちた誤植の騎士",
+  "flavorText": "訂正されることを、もう諦めてしまった。",
+  "sprite": "battle_knight_fallen",
+  "stats": {
+    "hp": 7000, "str": 800, "def": 1700, "int": 350, "ref": 800, "agi": 450,
+    "hitRate": 0.93, "evadeRate": 0, "critRate": 0.06, "critDamageMultiplier": 1.5
+  },
+  "traits": ["trait_resist_physical"],
+  "activeSkills": [{ "id": "skill_triple_strike", "level": 2 }, "skill_guard_shield"],
+  "passiveSkills": [],
+  "actionPattern": ["skill_triple_strike", "skill_guard_shield", "skill_triple_strike"],
+  "isBoss": false
+}

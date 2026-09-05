@@ -7,7 +7,7 @@
   "mainCategory": "vitality",
   "subCategories": [],
   "effect": [
-    { "op": "statBoost", "stat": "hp", "amount": 500 },
-    { "op": "statBoost", "stat": "agi", "amount": 60 }
+    { "op": "statBoost", "stat": "hp", "amount": 750 },
+    { "op": "statBoost", "stat": "agi", "amount": 90 }
   ]
 }

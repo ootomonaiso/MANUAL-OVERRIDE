@@ -8,6 +8,6 @@
   "subCategories": [],
   "unlockCondition": { "category": "pierce", "points": 10 },
   "effect": [
-    { "op": "statBoost", "stat": "str", "rate": 0.1 }
+    { "op": "statBoost", "stat": "str", "rate": 0.15 }
   ]
 }

@@ -10,6 +10,7 @@
   "cooldown": 0,
   "defaultFocus": "enemy",
   "focusRange": "single",
+  "draftable": false,
   "transformsInto": "skill_riichi",
   "effects": ["fx_cast_none"],
   "effect": [

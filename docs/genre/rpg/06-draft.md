@@ -43,12 +43,16 @@ export function rollDraft(player: Combatant, content: BattleContent, rng: () => 
 | 特性 | **未取得のもののみ**（重複しない） |
 | カテゴリ特化枠 | 該当カテゴリのポイントがしきい値に達している |
 
+`draftable: false` を持つスキル・特性は候補プール構築の最初の段階で除外される
+（`buildCandidatePool` 冒頭）。通常はドラフトに出ないだけで入手経路自体が無いとは限らない
+（例: 自摸。詳細は末尾「実装後の記録（第8フェーズ）」）。
+
 ### 打ち止め時のフォールバック
 
 獲得できるものが尽きた場合、**基本6ステータスのいずれかをランダムに微増させる**選択肢で3枠を埋める。
 
 ```jsonc
-{ "fallbackStatBoost": { "hp": 400, "other": 40 } }   // battle.json。暫定値
+{ "fallbackStatBoost": { "hp": 900, "other": 90 } }   // battle.json。暫定値（第8フェーズで400/40から引き上げ）
 ```
 
 `hp` だけスケールが1桁大きいため、増加量も分ける。
@@ -94,7 +98,7 @@ export interface OwnedActive {
 ### レベルは累計投資ポイントから決まる
 
 ```ts
-// src/domain/config/skill_points.json（pointsForLevel。index=レベル-1、値=そのレベルへの必要累計値）
+// src/data/config/skill_points.json（pointsForLevel。index=レベル-1、値=そのレベルへの必要累計値）
 { "pointsForLevel": [0, 1, 3, 7] }
 
 export function levelForPoints(points: number): number   // 1〜4
@@ -107,10 +111,21 @@ export function levelForPoints(points: number): number   // 1〜4
 | Lv3 | 3 |
 | Lv4（MAX） | 7 |
 
-`2^(L-1)-1` の形（既存の効果倍率 `2^L-1` と同じ数列）。**効果倍率自体は変更しない。**
+> **第8フェーズで変更（旧記述を訂正）**: 当初は「`pointsForLevel` は `2^(L-1)-1` の形で、既存の効果倍率
+> `2^L-1` と同じ数列だから効果倍率自体は変更しない」としていたが、**この前提は覆った。**
+> `pointsForLevel`（必要ポイントのテーブル）は変わっていないが、**効果倍率（`levelMultiplier`）は
+> 別の緩やかな式に置き換えられた。** 両者は第8フェーズで完全に分離された。詳細・理由は末尾
+> 「実装後の記録（第8フェーズ）」を参照。
+
+```ts
+// src/domain/battle/stats.ts（現行）
+export function levelMultiplier(level: number): number {
+  return 1 + (level - 1) * SKILL_POINTS.levelMultiplierStep   // levelMultiplierStep 既定0.25
+}
+```
 
 ```
-倍率 = 2 ^ レベル - 1     → Lv1: ×1 / Lv2: ×3 / Lv3: ×7 / Lv4: ×15
+倍率 = 1 + (レベル - 1) × levelMultiplierStep     → Lv1: ×1 / Lv2: ×1.25 / Lv3: ×1.5 / Lv4: ×1.75（既定値の場合）
 ```
 
 ### ポイントの入手経路
@@ -140,7 +155,7 @@ export interface OwnedPassive {
 （既定5）戦ごとに追加でパネル画面が挟まる（`status: 'skillPanel'`）。ドラフトの代替ではない。
 
 パネルで得られるもの: **スキルポイント`panelSkillPoints`（既定3）・ステータスポイント
-`panelStatPoints`（既定3）**。
+`panelStatPoints`（既定5。第8フェーズで3から引き上げ）**。
 
 パネルでできること:
 
@@ -272,11 +287,21 @@ export function accumulateCategoryPoints(owned: OwnedSkill[]): Record<CategoryId
 }
 ```
 
-**しきい値は未定（実装後に持ち越し）。** 暫定値を `battle.json` に置く。
-
 ```jsonc
-{ "categoryUnlockThresholds": [10, 20, 35] }   // 暫定値。要調整
+{ "categoryUnlockThresholds": [10, 20, 35] }   // battle.json。暫定値。要調整
 ```
+
+**第8フェーズで1段目・2段目の中身が確定した**（暫定値・要調整なのは数値のみで、構造は確定）。
+
+| 段 | しきい値 | 実体 | 現状 |
+|---|---|---|---|
+| 1段目 | `points:10` | `passive_<category>_mastery.json`（11カテゴリ全種、第7フェーズ時点で既存） | 実装済み |
+| 2段目 | `points:20` | `trait_<category>_zenith.json`（11カテゴリ全種、第8フェーズで新規追加） | 実装済み |
+| 3段目 | `points:35` | ― | **未使用**（`categoryUnlockThresholds` に値はあるが、参照するスキル・特性が無い） |
+
+2段目の効果は概ね1段目パッシブ（`rate:0.1〜0.15`）より一段強い`statBoost`（`rate:0.15〜0.25`程度）。
+**「治癒」カテゴリのみ例外**で、`statBoost` ではなく `healTaken` op（被回復量+30%、
+`{ "op": "healTaken", "rate": 0.3 }`）を使う。他カテゴリの2段目はこのopを使わない。
 
 ### 解放されたものの提示方法
 
@@ -317,6 +342,7 @@ seenIds: Set<string>
 | Lv4（MAX_ACTIVE_POINTS）のアクティブが重複候補に出る | 出さない（候補生成時に除外） |
 | 倉庫保管中のアクティブが候補に出る | 出さない（重複が二度と発生しない） |
 | 一度所持したパッシブが候補に出る | 出さない（重複が二度と発生しない） |
+| `draftable:false` のスキル・特性が候補に出る（例: 自摸） | 出さない（候補生成の最初の段階で除外）。ただし入手経路自体が無いとは限らない（自摸は立直の`transformsInto`で入手可能。末尾参照） |
 | 全カテゴリのしきい値に到達済み | 解放済みのものは通常候補として扱う |
 | 特性を全て取得済み | 特性は候補に出ない |
 | 全て取得済み＋全カテゴリ解放済み | フォールバック（ステータス微増）で3枠を埋める |
@@ -331,7 +357,9 @@ seenIds: Set<string>
 | `src/domain/battle/skillPanel.ts` | 新規（第7フェーズ）。パネルでの入れ替え・ポイント配分 |
 | `src/data/config/skill_points.json` | 新規（第7フェーズ）。`pointsForLevel`・パネル周期・付与量 |
 | `src/data/config/battle.json` | しきい値・フォールバック量（`fallbackStatBoost` はステータスパネルの1ポイント増加量も兼ねる） |
-| `src/components/battle/SkillPanel.vue` | 新規（第7フェーズ）。5戦ごとのパネルUI |
+| `src/components/battle/SkillPanel.vue` | 新規（第7フェーズ）。5戦ごとのパネルUI（第8フェーズでスクロール不要の3ゾーンレイアウトへ再設計） |
+| `src/data/rpg/traits/trait_<category>_zenith.json` | 新規（第8フェーズ）。カテゴリ特化2段目報酬（11件） |
+| `src/data/rpg/skills/skill_tsumo.json` | `draftable:false` 追加（第8フェーズ）。`transformsInto` で立直と相互変化 |
 
 抽選は `rng` を注入可能にし、テストで固定できるようにする。
 
@@ -345,3 +373,80 @@ seenIds: Set<string>
   （`effectOps`/`skillText.ts` 等の既存の `levelMultiplier(level)` 参照を一切変えずに済ませるため）
 - ステータスポイントの配分は新しい集計経路を作らず、既存の `player.temporary`（`permanent`スコープ）
   をソースID（`statPanel:<stat>`）で管理して再利用した
+
+---
+
+## 実装後の記録（第8フェーズ）
+
+> 2026-09-06、`feature/skill-point-system` ブランチを本ブランチ（`feature/rpg-roguelike-battle`）へ
+> 統合する形で実施（CLAUDE_TASKS.md 第8フェーズ Z-1・Z-7・Z-9）。**このドキュメントの数値は
+> すべて「調整前提の仮値」であり、断定ではない。** 執筆時点でCLAUDE_TASKS.md上は該当項目は
+> 完了扱いだが、ユーザー本人からは「まだ実装途中の可能性がある、テスト中で今後修正が入る
+> かもしれない」との言及があった。以下は2026-09-06時点の作業ツリー（未コミット分含む）の
+> 実態であり、今後変わりうる。
+
+### 効果倍率カーブの変更（levelMultiplier） — 旧記述の訂正
+
+第7フェーズ時点の本文では「効果倍率自体は変更しない（`2^L-1`、Lv1〜4: ×1/×3/×7/×15）」と
+していたが、**この前提は第8フェーズで覆った。** スキルレベルの上昇だけで戦力が跳ね上がり
+すぎるという問題意識から、`levelMultiplier`（`src/domain/battle/stats.ts`）は下記の緩やかな
+線形カーブへ置き換えられた（新設: `skill_points.json` の `levelMultiplierStep`、既定値0.25）。
+
+| レベル | 旧倍率（`2^L-1`） | 新倍率（`levelMultiplierStep=0.25`の場合） |
+|---|---|---|
+| Lv1 | ×1 | ×1 |
+| Lv2 | ×3 | ×1.25 |
+| Lv3 | ×7 | ×1.5 |
+| Lv4 | ×15 | ×1.75 |
+
+`pointsForLevel`（`[0,1,3,7]`）自体は変わっていない。レベルアップに必要な累計ポイントの
+テーブルと、1レベルあたりの効果倍率の式は、第8フェーズで完全に分離された
+（前者は「レベルの上がりやすさ」、後者は「上がった時の伸び幅」を独立に調整できる）。
+
+その代替として、ステータス側の強化幅が引き上げられた:
+
+- `fallbackStatBoost`（`src/data/config/battle.json`）: `{hp:400, other:40}` → `{hp:900, other:90}`
+- `panelStatPoints`（`src/data/config/skill_points.json`）: 3 → 5（5戦ごとに配分できるステータスポイント）
+- 11カテゴリすべての `passive_<category>_mastery.json` の `rate` を 0.1 → 0.15 に引き上げ、
+  個別パッシブ（`passive_brawn`/`passive_iron_will`/`passive_keen_eye`/`passive_swift_step` 等）の
+  ベース効果量も全体的に引き上げ
+
+`levelMultiplierStep`・`fallbackStatBoost`・各パッシブの引き上げ幅は、いずれも実プレイでの
+周回テストによる再調整を前提とした仮値。
+
+### カテゴリ特化2段目（trait）の実装
+
+「しきい値は未定」としていた部分のうち、**2段目（`points:20`）の報酬内容が確定した。**
+詳細は本文「カテゴリ特化による解放」節に統合済み。要点のみ再掲すると、11カテゴリすべてに
+`trait_<category>_zenith.json` が追加され（1段目 `passive_*_mastery.json` の `points:10` は
+第7フェーズ時点で既存）、「治癒」カテゴリだけが例外的に `healTaken` op を使う。3段目
+（`points:35`）は現状どのデータからも参照されておらず未使用のまま。
+
+### draftable と transformsInto（自摸／立直）
+
+自摸（`skill_tsumo.json`）に `"draftable": false` が追加され、通常のドラフト候補プールから
+除外された（`buildCandidatePool` が先頭で弾く）。ただし**永久に入手不可という意味ではない**。
+
+自摸は、立直（`skill_riichi.json`）を使用した際の `transformsInto` によってのみ入手できる。
+`transformsInto` 自体は第8フェーズの新機能ではなく既存の仕組み（`git status` 上
+`skill_riichi.json`・`types.ts`・`battleEngine.ts` に差分なし＝コミット済み）で、
+`ActiveSkillDef` に持たせられる汎用フィールドとして「使用後に別スキルIDへ変化する」
+（所持スロット・投資ポイント・レベルはそのまま、`OwnedActive.id` だけ差し替わる）動作を持つ。
+立直・自摸は互いの `transformsInto` に相手を指定しており、使用のたびに入れ替わる。
+`grantsBonusOnTransformUse` と組み合わせることで、立直発動から1ターンだけ次の自摸の
+クリティカル率が上がる（「一発ツモ」相当）効果も実装されている。**第8フェーズで変わったのは
+`skill_tsumo` 側に `draftable:false` を追加した点のみ**（この仕組み自体の変更ではない）。
+
+このメカニクス自体（変化処理の実装箇所・スコープの扱い等）は本ドキュメント（ドラフト・
+スキルポイント・カテゴリ）の対象範囲外のため詳細は割愛する。実体は
+`src/domain/battle/types.ts`（`ActiveSkillDef.transformsInto`/`grantsBonusOnTransformUse`）と
+`src/domain/battle/battleEngine.ts` を参照。
+
+### 未確認・要検証
+
+- 上記バランス数値（`levelMultiplierStep`・`fallbackStatBoost`・各パッシブの引き上げ幅）は
+  ユーザー本人が「調整前提の仮値」と明言しており、今後変わる可能性が高い
+- 3段目のカテゴリしきい値（`points:35`）の報酬内容は未定・未着手
+- `draftable` フィールドは自摸以前から一部の特性・スタンス系アクティブ（`skill_stance_*`）
+  でも使われていたが、本ドキュメントはこれまで明示的に触れていなかった。上記は自摸に関する
+  今回の変更点のみを記録したもので、`draftable` 全般の網羅的な整理ではない

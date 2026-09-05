@@ -157,12 +157,12 @@ describe('battleEngine: 実効ステータスの解決', () => {
   it('パッシブ・特性・一時効果がすべて合算される', () => {
     const c = makeCombatant({
       baseStats: makeStats({ str: 1000, def: 1000 }),
-      passives: [{ id: 'brawn', level: 2, stacks: 0 }],   // 100 × 3
+      passives: [{ id: 'brawn', level: 2, stacks: 0 }],   // 100 × 1.25
       traits: [{ id: 'stone' }],
       temporary: [{ stat: 'str', rate: 0.1, scope: 'thisTurn', sourceId: 'x' }],
     })
     const eff = resolveEffectiveStats(c, content)
-    expect(eff.str).toBeCloseTo((1000 + 300) * 1.1, 6)
+    expect(eff.str).toBeCloseTo((1000 + 125) * 1.1, 6)
     expect(eff.def).toBeCloseTo(1500, 6)
   })
 

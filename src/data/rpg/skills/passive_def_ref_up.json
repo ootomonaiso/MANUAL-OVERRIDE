@@ -7,7 +7,7 @@
   "mainCategory": "aegis",
   "subCategories": [],
   "effect": [
-    { "op": "statBoost", "stat": "def", "amount": 200 },
-    { "op": "statBoost", "stat": "ref", "amount": 200 }
+    { "op": "statBoost", "stat": "def", "amount": 300 },
+    { "op": "statBoost", "stat": "ref", "amount": 300 }
   ]
 }

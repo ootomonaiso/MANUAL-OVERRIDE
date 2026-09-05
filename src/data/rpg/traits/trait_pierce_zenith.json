@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_pierce_zenith",
+  "label": "貫通の真髄",
+  "flavorText": "どんなに硬い装丁も、もはや障害ではない。",
+  "kind": "trait",
+  "unlockCondition": { "category": "pierce", "points": 20 },
+  "effect": [
+    { "op": "effectBoost", "element": "special", "rate": 0.3 }
+  ]
+}

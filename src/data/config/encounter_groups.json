@@ -1,5 +1,5 @@
 {
-  "$comment": "敵グループ/難易度スケーリング。CLAUDE_TASKS.md 第6フェーズ参照。数値・グループ構成は仮値（調整前提）",
+  "$comment": "敵グループ/難易度スケーリング。CLAUDE_TASKS.md 第6・8フェーズ参照。数値・グループ構成は仮値（調整前提）",
   "section": "encounterGroups",
   "groupOrder": ["A", "B", "C", "D", "E"],
   "lapsForTrueClear": 5,
@@ -7,14 +7,17 @@
   "bossDraftRounds": 3,
   "groups": {
     "A": ["set_slime_solo", "set_bat_solo", "set_goblin_bat_duo", "set_boss_manual_keeper"],
-    "B": ["set_goblin_solo", "set_orc_solo"],
-    "C": ["set_knight_solo", "set_cultist_solo", "set_wraith_solo"],
-    "D": [],
-    "E": []
+    "B": ["set_goblin_solo", "set_orc_solo", "set_goblin_raider_solo", "set_bat_elder_solo", "set_raider_bat_duo", "set_boss_iron_sentinel"],
+    "C": ["set_knight_solo", "set_cultist_solo", "set_wraith_solo", "set_orc_shaman_solo", "set_slime_acid_solo", "set_slime_frost_solo", "set_slime_lab_duo", "set_boss_arch_cultist"],
+    "D": ["set_knight_fallen_solo", "set_cultist_zealot_solo", "set_wraith_lost_solo", "set_fallen_order_duo", "set_boss_swamp_horror"],
+    "E": ["set_goblin_chief_solo", "set_orc_warlord_solo", "set_boss_night_wraith"]
   },
   "spawnWeightTiers": [
     { "minBattleIndex": 0, "weights": { "A": 0.8, "B": 0.2 } },
     { "minBattleIndex": 5, "weights": { "A": 0.5, "B": 0.3, "C": 0.2 } },
-    { "minBattleIndex": 15, "weights": { "B": 0.5, "C": 0.5 } }
+    { "minBattleIndex": 15, "weights": { "B": 0.5, "C": 0.5 } },
+    { "minBattleIndex": 25, "weights": { "B": 0.2, "C": 0.5, "D": 0.3 } },
+    { "minBattleIndex": 40, "weights": { "C": 0.3, "D": 0.5, "E": 0.2 } },
+    { "minBattleIndex": 60, "weights": { "D": 0.4, "E": 0.6 } }
   ]
 }

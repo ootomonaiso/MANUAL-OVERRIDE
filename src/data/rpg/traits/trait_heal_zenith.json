@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_heal_zenith",
+  "label": "治癒の真髄",
+  "flavorText": "「ポチ、あなたは名スイッチだった」",
+  "kind": "trait",
+  "unlockCondition": { "category": "heal", "points": 20 },
+  "effect": [
+    { "op": "healTaken", "rate": 0.3 }
+  ]
+}

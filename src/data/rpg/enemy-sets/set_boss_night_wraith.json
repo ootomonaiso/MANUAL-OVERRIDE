@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_boss_night_wraith",
+  "label": "夜綴じの影",
+  "members": [{ "enemyId": "enemy_night_wraith" }]
+}

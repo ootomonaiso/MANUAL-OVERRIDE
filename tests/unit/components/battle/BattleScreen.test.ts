@@ -520,7 +520,7 @@ describe('BattleScreen: スキルパネル（5戦ごとのポイント配分、�
     const h = mount()
     await advanceToSkillPanel(h)
     const before = h.battle.state.skillPoints
-    ;($(h.host, '.active-row .panel-btn:not(.ghost)') as HTMLButtonElement).click()
+    ;($(h.host, '.active-card .panel-btn:not(.ghost)') as HTMLButtonElement).click()
     await nextTick()
     expect(h.battle.state.skillPoints).toBe(before - 1)
   })

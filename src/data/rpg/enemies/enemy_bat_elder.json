@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_bat_elder",
+  "label": "古びた説明書コウモリ",
+  "flavorText": "何度も読み返された跡が、羽に刻まれている。",
+  "sprite": "battle_bat_elder",
+  "stats": {
+    "hp": 2400, "str": 380, "def": 400, "int": 620, "ref": 480, "agi": 700,
+    "hitRate": 0.93, "evadeRate": 0, "critRate": 0.07, "critDamageMultiplier": 1.5
+  },
+  "traits": ["trait_weak_magical"],
+  "activeSkills": ["skill_fireball", "skill_double_bolt"],
+  "passiveSkills": [],
+  "actionPattern": ["skill_fireball", "skill_double_bolt"],
+  "isBoss": false
+}

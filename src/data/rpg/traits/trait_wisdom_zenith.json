@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_wisdom_zenith",
+  "label": "明晰の真髄",
+  "flavorText": "この世の理を、ほとんど見通してしまった。",
+  "kind": "trait",
+  "unlockCondition": { "category": "wisdom", "points": 20 },
+  "effect": [
+    { "op": "statBoost", "stat": "int", "rate": 0.25 }
+  ]
+}

@@ -3,7 +3,7 @@
  * 実効値の算出（docs/genre/rpg/02-stats.md）。
  */
 
-import { BATTLE } from '../../data/tunables'
+import { BATTLE, SKILL_POINTS } from '../../data/tunables'
 import type {
   BattleStats, EffectiveStats, StatKey, StatModifier,
   Combatant, TemporaryModifier, SkillDef, EffectNode, Element, BattleContent,
@@ -44,9 +44,15 @@ export function collectModifier(
   return { flat, mult: stackMultipliers(rates) }
 }
 
-/** レベルによる効果量倍率: 2^Lv - 1（Lv1〜4: ×1,×3,×7,×15）。特性は常に Lv1 相当 */
+/**
+ * レベルによる効果量倍率: 1 + (Lv-1) × levelMultiplierStep（既定0.25なら Lv1〜4: ×1,×1.25,×1.5,×1.75）。
+ * 特性は常に Lv1 相当。第8フェーズで見直し: 当初 2^Lv-1（×1/×3/×7/×15）は
+ * スキルレベルだけで戦力が跳ね上がりすぎたため大幅に緩め、代わりにステータス側
+ * （5戦ごとのスキルパネルの statPoints・fallbackStatBoost の係数）を強化する方針にした
+ * （CLAUDE_TASKS.md 第8フェーズ Z-9参照）。
+ */
 export function levelMultiplier(level: number): number {
-  return Math.pow(2, level) - 1
+  return 1 + (level - 1) * SKILL_POINTS.levelMultiplierStep
 }
 
 /**

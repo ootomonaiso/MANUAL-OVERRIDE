@@ -68,6 +68,42 @@ function categoryDir(key) {
   return join(ROOT, CATEGORIES[key].dir)
 }
 
+const ENCOUNTER_GROUPS_PATH = join(ROOT, 'src/data/config/encounter_groups.json')
+
+/**
+ * encounter_groups.json 用の簡易検証。ajv スキーマは持たず（validate-json.mjs と同じ方針で
+ * 単一の設定ファイルのため）、GUIからの保存で壊れた参照を作らないための最低限のチェックのみ行う。
+ * 実際の敵セットIDの存在確認まで行うため、参照整合性の観点では validate-json.mjs より狭いが、
+ * 「グループ/セットの組み替え」という主目的には十分。詳細な整合性確認は npm run validate に委ねる。
+ */
+function validateEncounterGroups(data) {
+  const errors = []
+  const setIds = new Set(listEntries('enemySets').map(s => s.id))
+  if (!Array.isArray(data.groupOrder) || data.groupOrder.length === 0) {
+    errors.push('groupOrder は1件以上の配列が必要です')
+  }
+  if (typeof data.groups !== 'object' || data.groups === null) {
+    errors.push('groups がオブジェクトではありません')
+  } else {
+    for (const g of data.groupOrder ?? []) {
+      if (!(g in data.groups)) errors.push(`groups に groupOrder のグループ "${g}" が定義されていません`)
+    }
+    for (const [group, ids] of Object.entries(data.groups)) {
+      if (!Array.isArray(ids)) { errors.push(`groups.${group} は配列である必要があります`); continue }
+      for (const id of ids) {
+        if (!setIds.has(id)) errors.push(`groups.${group} が存在しない敵セット "${id}" を参照しています`)
+      }
+    }
+  }
+  for (const key of ['bossIntervalBattles', 'lapsForTrueClear', 'bossDraftRounds']) {
+    if (typeof data[key] !== 'number' || data[key] < 1) errors.push(`${key} は1以上の数値が必要です`)
+  }
+  if (!Array.isArray(data.spawnWeightTiers)) {
+    errors.push('spawnWeightTiers は配列である必要があります')
+  }
+  return { valid: errors.length === 0, errors }
+}
+
 function listEntries(key) {
   const dir = categoryDir(key)
   if (!existsSync(dir)) return []
@@ -192,6 +228,7 @@ export function contentEditorPlugin() {
               traitIds: listEntries('traits').map(t => ({ id: t.id, label: t.label })),
               effectIds: listEntries('battleEffects').map(e => ({ id: e.id, label: e.label })),
               enemyIds: listEntries('enemies').map(e => ({ id: e.id, label: e.label })),
+              enemySetIds: listEntries('enemySets').map(s => ({ id: s.id, label: s.label })),
               sfxIds: existsSync(join(ROOT, 'src/data/sfx'))
                 ? readdirSync(join(ROOT, 'src/data/sfx')).filter(f => f.endsWith('.json')).map(f => f.replace(/\.json$/, ''))
                 : [],
@@ -199,6 +236,25 @@ export function contentEditorPlugin() {
                 ? readdirSync(join(ROOT, 'src/data/sprites')).filter(f => f.endsWith('.json')).map(f => f.replace(/\.json$/, ''))
                 : [],
             })
+            return
+          }
+
+          // encounter_groups.json は「id で分かれた複数ファイル」という CATEGORIES の前提に
+          // 合わない単一の設定ファイルのため、専用の1本エンドポイントで読み書きする
+          if (path === '/encounter-groups' && req.method === 'GET') {
+            if (!existsSync(ENCOUNTER_GROUPS_PATH)) { sendJson(res, 404, { error: 'ファイルが見つかりません' }); return }
+            sendJson(res, 200, { data: JSON.parse(readFileSync(ENCOUNTER_GROUPS_PATH, 'utf-8')) })
+            return
+          }
+
+          if (path === '/encounter-groups' && req.method === 'POST') {
+            const body = await readBody(req)
+            const data = body?.data
+            if (!data || typeof data !== 'object') { sendJson(res, 400, { ok: false, errors: ['data が必要です'] }); return }
+            const { valid, errors } = validateEncounterGroups(data)
+            if (!valid) { sendJson(res, 422, { ok: false, errors }); return }
+            writeFileSync(ENCOUNTER_GROUPS_PATH, `${JSON.stringify(data, null, 2)}\n`, 'utf-8')
+            sendJson(res, 200, { ok: true })
             return
           }
 

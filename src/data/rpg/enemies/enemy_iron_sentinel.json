@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_iron_sentinel",
+  "label": "鋼綴じの番人",
+  "flavorText": "何度斬りつけても、綴じ目が開かない。",
+  "sprite": "battle_iron_sentinel",
+  "stats": {
+    "hp": 22000, "str": 750, "def": 2400, "int": 500, "ref": 2200, "agi": 400,
+    "hitRate": 0.95, "evadeRate": 0, "critRate": 0.08, "critDamageMultiplier": 1.8
+  },
+  "traits": ["trait_resist_physical"],
+  "activeSkills": [
+    { "id": "skill_triple_strike", "level": 3 },
+    "skill_guard_shield",
+    { "id": "skill_thorn_armor", "level": 2 },
+    { "id": "skill_wild_swing", "level": 2 }
+  ],
+  "passiveSkills": [],
+  "actionPattern": ["skill_thorn_armor", "skill_triple_strike", "skill_guard_shield", "skill_wild_swing", "skill_triple_strike"],
+  "isBoss": true
+}

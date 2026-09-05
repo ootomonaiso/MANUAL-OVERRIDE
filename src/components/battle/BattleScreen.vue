@@ -239,6 +239,9 @@ function onUnitSelect(c: CombatantView, enemyIndex: number | null): void {
     menu.value = 'root'
     return
   }
+  // 攻撃演出中（announce/impact）はクリックしても詳細を開かない。演出を止めずに
+  // 見た目だけ確認したい操作は許容するが、攻撃の最中に割り込んで開くのは煩わしいため
+  if (battle.isPresenting.value) return
   openDetail(c)
 }
 

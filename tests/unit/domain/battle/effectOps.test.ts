@@ -173,7 +173,7 @@ describe('effectOps: damage', () => {
   it('スキルレベルの倍率が参照割合に掛かる', () => {
     const lv1 = run({ level: 1 })
     const lv2 = run({ level: 2 })
-    expect(100000 - lv2.target.hp).toBe((100000 - lv1.target.hp) * 3)
+    expect(100000 - lv2.target.hp).toBe((100000 - lv1.target.hp) * 1.25)
   })
 
   it('対象の特性カット率が軽減として効く', () => {
@@ -376,7 +376,7 @@ describe('effectOps: heal', () => {
     const fx = captureEffects()
     const ctx = makeCtx({ source, targets: [target], skill: flatSkill, content, level: 2, rng: constRng(0.5), emit: fx.emit })
     getOp('heal')?.execute(flatSkill.effect[0], ctx)
-    expect(target.hp).toBe(450)   // 150 × (2^2-1)
+    expect(target.hp).toBe(187)   // floor(150 × 1.25)
   })
 
   it('対象の被回復倍率（healTaken）が乗る', () => {
@@ -540,7 +540,7 @@ describe('effectOps: modifier', () => {
 
   it('効果量にスキルレベルの倍率が掛かる', () => {
     const r = run({ stat: 'str', amount: 100, scope: 'thisTurn' }, 3)
-    expect(r.source.temporary[0].flat).toBe(700)   // 100 × (2^3-1)
+    expect(r.source.temporary[0].flat).toBe(150)   // 100 × 1.5（Lv3）
   })
 
   it('割合ステータス（critRate等）にはレベル倍率を掛けない（常に等倍）', () => {
@@ -578,7 +578,7 @@ describe('effectOps: modifier', () => {
 
   it('scaleにもスキルレベルの倍率が掛かる', () => {
     const r = run({ stat: 'def', scale: { stat: 'str', rate: 0.3 }, scope: 'thisBattle' }, 3)
-    expect(r.source.temporary[0].flat).toBe(2100)   // (1000 × 0.3) × (2^3-1)
+    expect(r.source.temporary[0].flat).toBe(450)   // (1000 × 0.3) × 1.5（Lv3）
   })
 
   it('付与元スキルIDが記録される', () => {

@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_knight_fallen_solo",
+  "label": "堕ちた誤植の騎士",
+  "members": [{ "enemyId": "enemy_knight_fallen" }]
+}

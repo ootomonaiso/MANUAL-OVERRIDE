@@ -10,7 +10,7 @@
     {
       "op": "statBoost",
       "stat": "int",
-      "amount": 600
+      "amount": 900
     }
   ]
 }

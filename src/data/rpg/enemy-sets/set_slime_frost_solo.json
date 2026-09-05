@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_slime_frost_solo",
+  "label": "凍結インクのスライム",
+  "members": [{ "enemyId": "enemy_slime_frost" }]
+}

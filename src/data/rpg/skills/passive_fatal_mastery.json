@@ -14,7 +14,7 @@
     {
       "op": "statBoost",
       "stat": "critDamageMultiplier",
-      "rate": 0.1
+      "rate": 0.15
     }
   ]
 }

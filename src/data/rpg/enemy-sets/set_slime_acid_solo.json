@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_slime_acid_solo",
+  "label": "腐食インクのスライム",
+  "members": [{ "enemyId": "enemy_slime_acid" }]
+}

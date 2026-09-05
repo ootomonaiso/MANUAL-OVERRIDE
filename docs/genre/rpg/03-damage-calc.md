@@ -8,7 +8,7 @@
 ## 属性
 
 ```ts
-export type Element = 'physical' | 'magical' | 'special'
+export type Element = 'physical' | 'magical' | 'special' | 'none'
 ```
 
 | 属性 | 弱点・耐性 | カット率の参照元 |
@@ -16,6 +16,9 @@ export type Element = 'physical' | 'magical' | 'special'
 | `physical` | あり | `def` の実効値 |
 | `magical` | あり | `ref` の実効値 |
 | `special` | **なし（常に等倍）** | `(def + ref) / 4` |
+| `none`（無属性） | **なし（常に等倍）** | `def`／`ref` の実効値の**高い方** |
+
+`none` は弱点を突けない代わりに、相手が `def`／`ref` のどちらへ寄せていても常に高い方の防御が参照される（弱点を狙われないぶん、狙う側にとっても常に相手の最も硬い部分を殴る形になる）。龍鱗など一部スキルで使用。
 
 **サポート系スキルも属性を持つ**（回復・シールド・バフを含む）。「魔法属性の効果を上昇させる」特性をサポート系にも適用できるようにするため。
 
@@ -27,6 +30,7 @@ export function defenseValueFor(element: Element, stats: EffectiveStats): number
     case 'physical': return stats.def
     case 'magical':  return stats.ref
     case 'special':  return (stats.def + stats.ref) / 4
+    case 'none':     return Math.max(stats.def, stats.ref)
   }
 }
 ```
@@ -71,18 +75,18 @@ export function cutRateFromDefense(defenseValue: number): number {
 ステータス由来・特性由来・シールド由来のカット率を**すべて加算**し、最後に 80% でクランプする。
 
 ```ts
-export function computeFinalCutRate(
-  element: Element,
-  target: EffectiveStats,
-  traitCutRates: readonly number[],
-  shieldCutRate: number,
-  guardCutRate: number,
-): number {
-  const statCut = cutRateFromDefense(defenseValueFor(element, target))
+export function computeFinalCutRate(params: {
+  element: Element
+  target: EffectiveStats
+  traitCutRates: readonly number[]
+  shieldCutRate: number
+  guardCutRate: number
+}): number {
+  const statCut = cutRateFromDefense(defenseValueFor(params.element, params.target))
   const sum = statCut
-    + traitCutRates.reduce((a, b) => a + b, 0)
-    + shieldCutRate
-    + guardCutRate
+    + params.traitCutRates.reduce((a, b) => a + b, 0)
+    + params.shieldCutRate
+    + params.guardCutRate
   return clamp(sum, 0, BATTLE.cut.max)
 }
 ```
@@ -117,14 +121,16 @@ export function computeFinalCutRate(
 export function computeAffinityStage(
   element: Element,
   targetTraits: readonly OwnedTrait[],
+  traitDefs: ReadonlyMap<string, TraitDef>,
 ): number {
-  if (element === 'special') return 0   // 特殊は弱点・耐性が存在しない
+  if (element === 'special' || element === 'none') return 0
   let stage = 0
   for (const t of targetTraits) {
-    for (const eff of t.effects) {
+    const def = traitDefs.get(t.id)
+    if (!def) continue
+    for (const eff of def.effect) {
       if (eff.op !== 'elementAffinity' || eff.element !== element) continue
-      stage += eff.affinity === 'weak' ? BATTLE.affinity.weakStage
-                                       : BATTLE.affinity.resistStage
+      stage += eff.affinity === 'weak' ? BATTLE.affinity.weakStage : BATTLE.affinity.resistStage
     }
   }
   return stage
@@ -137,7 +143,13 @@ export function affinityMultiplier(stage: number): number {
 
 **現状、相性段階に上限・下限のクランプは設けない**（設計文書「調整の余地」参照）。将来必要になれば `battle.json` に `stageMin` / `stageMax` を追加する。
 
-> **特殊属性は段階を常に 0 とする。** 弱点・耐性の特性が対象に付いていても、`special` に対しては無効。
+> **特殊属性・無属性は段階を常に 0 とする。** 弱点・耐性の特性が対象に付いていても、`special`／`none` に対しては無効。
+
+`OwnedTrait` は `id` のみを持ち、特性の効果本体（`effect[]`）は持たない。実装では `targetTraits` とは別に `traitDefs`（特性IDから `TraitDef` を引く `ReadonlyMap`）を受け取り、`traitDefs.get(t.id)` で定義を解決してから `effect[]` を走査する。
+
+### 相性プレビュー（実装後に追加）
+
+`computeAffinityStage`（特性由来の弱点・耐性）とは別に、相手の `def`／`ref` の**バランスだけ**を見た構造的な相性ヒント `effectivenessHint()` を追加した。物理は DEF 偏重の相手に「微妙」・REF 偏重の相手に「抜群」、魔法はその逆。`special`／`none` は対象外（`null`）。コマンド一覧で技をホバーした際のプレビュー用で、ダメージ計算そのものには影響しない。詳細・UI表示は [08-ui.md](08-ui.md) を参照。
 
 ---
 
@@ -180,7 +192,7 @@ export function computeOutgoingDamage(params: {
   critMultiplier: number
   effectMultiplier: number
 }): number {
-  return params.referenceValue * params.scaleRate
+  return Math.max(0, params.referenceValue) * params.scaleRate
        * params.critMultiplier * params.effectMultiplier
 }
 
@@ -190,13 +202,19 @@ export function computeFinalDamage(params: {
   finalCutRate: number
   affinityStage: number
 }): number {
-  return params.outgoingDamage
+  return Math.max(0, params.outgoingDamage)
        * (1 - params.finalCutRate)
        * affinityMultiplier(params.affinityStage)
 }
 ```
 
+`Math.max(0, ...)` は防御的なクランプで、通常の値域では素通りする（下記「エッジケース」参照）。
+
 **弱点・耐性はカット率を適用した後、最後に乗算する。** これにより、防御を固めていても弱点を突かれれば軽減効果が実質半減する。
+
+### クリティカル倍率の由来
+
+`critMultiplier` は非発生時 `1`、通常クリティカル発生時 `critDamageMultiplier`。クリティカル率が100%を超えた分はさらに重ねて抽選される「スーパークリティカル」（`rollCriticalStacks()` / `criticalMultiplierForStacks()`、`src/domain/battle/damageCalc.ts`）になり、重なった回数ぶん `critDamageMultiplier` を累乗する。詳細は [05-skills.md](05-skills.md#スーパークリティカル実装後に追加) を参照。
 
 ### 計算例（検算済み）
 
@@ -246,7 +264,7 @@ export function computeFinalHeal(params: {
   outgoingHeal: number
   healTakenMultiplier: number   // 1 + Σ(被回復補正)
 }): number {
-  return params.outgoingHeal * params.healTakenMultiplier
+  return Math.max(0, params.outgoingHeal) * Math.max(0, params.healTakenMultiplier)
 }
 ```
 
@@ -355,4 +373,9 @@ export function applyDamage(target: Combatant, rawDamage: number): number {
 
 ## 実装後の記録
 
-（実装完了後に追記）
+- **属性 (`Element`) に `'none'`（無属性）を追加した。** `defenseValueFor('none', ...)` は `def`／`ref` の実効値の高い方を返し、`computeAffinityStage` は `special` と同じく常に段階 `0`（弱点・耐性の対象外）として扱う。龍鱗（`skill_dragon_scale`）など一部スキルで使用する。
+- `computeAffinityStage` は設計時の想定（`OwnedTrait` が効果本体を直接持つ）から変わり、`traitDefs: ReadonlyMap<string, TraitDef>` を別引数で受け取って特性IDから `TraitDef` を引く形で実装された（上記コード参照）。
+- クリティカル率が100%を超えた分を扱う「スーパークリティカル」（`rollCriticalStacks()` / `criticalMultiplierForStacks()`）を追加した。倍率は `critDamageMultiplier ^ 重なった回数`。詳細・演出は [05-skills.md](05-skills.md#スーパークリティカル実装後に追加) を参照。
+- 相手の `def`／`ref` の偏りだけを見た構造的な相性ヒント `effectivenessHint()` を追加した（特性由来の弱点・耐性 `computeAffinityStage` とは別軸。ダメージ計算そのものには影響しない、コマンド一覧のホバー表示用）。詳細は [08-ui.md](08-ui.md) を参照。
+- `computeOutgoingDamage`／`computeFinalDamage`／`computeFinalHeal` は実装上、各入力値に `Math.max(0, ...)` の防御的クランプを通している（負のダメージ・負の回復を防ぐため。上記コード参照）。
+- パッシブ・特性の効果量に乗るレベル倍率の式そのものの変更（第8フェーズ、`levelMultiplier`）は本ドキュメントの計算式には影響しないが、経緯は [02-stats.md](02-stats.md) の「実装後の記録」を参照。

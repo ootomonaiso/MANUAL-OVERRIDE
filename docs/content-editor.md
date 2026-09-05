@@ -1,6 +1,6 @@
 # content-editor — RPGコンテンツGUIエディタ
 
-`src/data/rpg/{skills,traits,enemies,battle-effects,battle-backgrounds}/*.json` を、`schemas/battle-*.schema.json` から自動生成したフォームで編集する開発者専用ツール。
+`src/data/rpg/{skills,traits,enemies,battle-effects,battle-backgrounds,enemy-sets}/*.json` を `schemas/battle-*.schema.json` から自動生成したフォームで編集し、加えて敵の出現グループ設定 `src/data/config/encounter_groups.json` を専用の階層編集UIで編集する、開発者専用ツール。
 
 - 実装: `tools/content-editor.html`（エントリ）/ `src/tools/contentEditor.ts`（UI・DOM）/ `src/tools/contentEditorForm.ts`（スキーマ解決・パス操作などの純粋関数）/ `scripts/contentEditorPlugin.mjs`（保存APIを提供する Vite dev サーバー middleware）
 - 開発専用。`scripts/contentEditorPlugin.mjs` は `apply: 'serve'` のため `npm run build` には一切含まれない
@@ -24,7 +24,9 @@ dev サーバーが起動し、ブラウザで `tools/content-editor.html` が�
 
 ### 1. カテゴリタブ・一覧
 
-左サイドバーの6タブ（**アクティブ**・**パッシブ**・特性・敵・エフェクト・背景）のうち、アクティブ/パッシブは同じ `src/data/rpg/skills/` ディレクトリ（1スキーマ）を `kind` で絞り込んだ2つのUI上のタブに分けたもの。それ以外のタブは `src/data/rpg/` の対応ディレクトリを直接スキャンして生成される。ファイルを追加すれば次回リロードで自動的に一覧へ現れる。JSONが壊れている（パース不能な）ファイルは赤字で一覧に出るが、開くことはできない。
+左サイドバーの8タブ（**アクティブ**・**パッシブ**・特性・敵・**敵セット**・**出現グループ**・エフェクト・背景）のうち、アクティブ/パッシブは同じ `src/data/rpg/skills/` ディレクトリ（1スキーマ）を `kind` で絞り込んだ2つのUI上のタブに分けたもの。「出現グループ」を除く各タブは `src/data/rpg/` の対応ディレクトリ（敵セットは `enemy-sets/`）を直接スキャンして生成される。ファイルを追加すれば次回リロードで自動的に一覧へ現れる。JSONが壊れている（パース不能な）ファイルは赤字で一覧に出るが、開くことはできない。
+
+「出現グループ」だけは他と構造が異なる特殊タブ（`TabDef.special === 'encounterGroups'`）で、`src/data/rpg/` 配下のID別ファイル一覧ではなく、単一の設定ファイル `src/data/config/encounter_groups.json` を専用エディタで直接編集する（[後述](#5-出現グループ専用エディタencounter_groupsjson)）。一覧・＋新規作成ボタン・グループ化選択は表示されない。
 
 タブごとに一覧の**セクション分け**（グループ化）を選べる。例えばアクティブスキルなら「属性で分ける（物理・魔法・特殊）」「カテゴリで分ける」。選択は `localStorage` に保存され、次回起動時も引き継がれる。
 
@@ -34,6 +36,7 @@ dev サーバーが起動し、ブラウザで `tools/content-editor.html` が�
 | パッシブ | なし / カテゴリ（`mainCategory`） |
 | 特性 | なし / ドラフト区分（`draftable`） |
 | 敵 | なし / ボス区分（`isBoss`） |
+| 敵セット | （セクション分けの選択肢なし） |
 | エフェクト | なし / タイミング（`timing`） |
 | 背景 | なし / ボス専用区分（`bossOnly`） |
 
@@ -56,10 +59,15 @@ dev サーバーが起動し、ブラウザで `tools/content-editor.html` が�
 | `enemies.activeSkills` / `passiveSkills` | スキルIDのセレクト + レベル数値の行を追加/削除。保存時は常に `{id, level}` 形式 |
 | `enemies.actionPattern` | スキルIDのセレクト行。↑↓ボタンで並べ替え可能（順序が意味を持つため） |
 | `battleEffects.visual` | 通常のフィールド群（kind/color/shake）に加え、色とkindを反映したプレビューを添える |
+| `enemySets.members`（敵セットのメンバー） | 特別対応は無く、配列-of-objectの汎用ウィジェットで描画される。各要素の `enemyId` は実在する敵IDの候補一覧つきテキスト入力（`/refs` の `enemyIds`）、`statsOverride` は任意オブジェクトのON/OFFトグルで指定した項目だけ敵定義のデフォルト値を上書きする |
 | `effect[]`（スキル・特性の効果ノード） | op セレクト + op固有の型付きフィールド（[下記](#effect-ノードの型付きフォーム)参照） |
 | 上記のどれにも当てはまらない形 | JSONテキストエリア（フォールバック） |
 
 各フィールドの上に付く `*` は、そのスキーマ上の必須項目であることを示す。
+
+### スキル定義の追加フィールド（アクティブ）
+
+`element` の選択肢に無属性 `none`、`focusRange` の選択肢にランダム単体 `random` が追加されている（他の enum 同様、通常のセレクトボックスで選べる）。加えて任意項目として、`draftable`（falseなら通常ドラフトに出現しない。守る/様子を見る等の常設行動用）・`minRound`（このラウンド数未満は使用不可）・`transformsInto`（使用後に変化する別スキルID。立直⇔自摸 想定）・`grantsBonusOnTransformUse`（`transformsInto` と併用。変化先スキルの次回使用時だけ与える一時ボーナス。`stat`+`amount`）が `schemas/battle-skill.schema.json` に追加されている。これらはいずれも既存の汎用ウィジェット（テキスト・数値・チェックボックス・任意オブジェクトのON/OFFトグル）がそのまま拾って表示するため、`contentEditor.ts` 側の追加実装は不要だった。
 
 ### 見た目のプレビュー（編集はしない）
 
@@ -80,9 +88,22 @@ dev サーバーが起動し、ブラウザで `tools/content-editor.html` が�
 - **保存**: [scripts/contentEditorPlugin.mjs](../scripts/contentEditorPlugin.mjs) に POST し、ajv でスキーマ検証してから書き込む。失敗時は画面上部にエラー内容が出る（`(root)` はAJVの `instancePath` がルート直下を指す場合の表記で、複数エラーが同時に出ることがある）
 - **削除**: 確認ダイアログの後、ファイルを削除する。新規作成中（未保存）のエントリには表示されない
 
+### 5. 出現グループ専用エディタ（`encounter_groups.json`）
+
+`encounter_groups.json` は「グループA〜E → 各グループに属する敵セット」という単一の設定ファイルで、ID別ファイル一覧という他タブの前提に合わないため、`renderEncounterGroupsEditor()` という専用レンダラで表示する（`＋ 新規作成`・削除ボタンは出ない。常に唯一のファイルを読み書きするだけ）。
+
+- **基本設定**: `bossIntervalBattles`（何戦ごとにボス戦か）・`lapsForTrueClear`（真のクリアに必要な周回数）・`bossDraftRounds`（ボス撃破時の連続ドラフト回数）を数値入力で編集
+- **groupOrder**: ボスが巡回するグループ順序をカンマ区切りテキストで編集
+- **グループA〜Eの所属セット**: `groupOrder` の各グループごとにセクションを分け、「敵セット」タブに存在する全セットをチェックボックスで並べる。チェックしたセットのIDが `groups.<グループ>` 配列になる。セット自体の中身（メンバー敵・`statsOverride`）はここでは編集できず、「敵セット」タブで編集する
+- **spawnWeightTiers**（通常戦のグループ抽選重み。`minBattleIndex` ごとの重みテーブル）: 構造が複雑なため、他タブの「対応しきれない構造はJSONへフォールバック」という方針に倣い、常に生JSONのテキストエリアで編集する
+
+保存は他タブと違うエンドポイント（`POST /encounter-groups`）を使い、ajvスキーマではなく `scripts/contentEditorPlugin.mjs` の `validateEncounterGroups()`（手書きの簡易チェック）で検証する。検証内容は groupOrder/groups の形状・`groups` が参照する敵セットIDの実在・数値3項目が1以上・`spawnWeightTiers` が配列であること、に限られる（他タブの「保存時に検証される内容」表とは別物）。
+
 ---
 
 ## 保存時に検証される内容・されない内容
+
+この表は `POST /file`（ID別ファイルのタブ）の話。`encounter_groups.json`（出現グループタブ）は別エンドポイント・別の検証ロジックで、[前述](#5-出現グループ専用エディタencounter_groupsjson)の通り。
 
 | 検証する | 検証しない（`npm run validate` に任せる） |
 |---|---|
@@ -100,10 +121,13 @@ dev サーバーが起動し、ブラウザで `tools/content-editor.html` が�
 `schemas/battle-skill.schema.json` の `effectNode` 定義は `op`（enum）しか強制しておらず、`damage` なら `element`/`scale`、`modifier` なら `stat`/`amount`/`scope` のように、op ごとに必要なフィールドが異なる（実データの整合性は `scripts/validate-json.mjs` の `walkEffectNodes` が別途担っている）。この「op依存の自由形式」を、[contentEditorForm.ts](../src/tools/contentEditorForm.ts) の `EFFECT_OP_FIELDS`（op → フィールド定義の配列）に基づいて型付きフォームへ落とし込んでいる。「ダメージを、何に基づいて、何%与えるか」を直接編集できることを主眼に置いている。
 
 - op を切り替えると、そのopの典型的な値（`EFFECT_OP_SKELETONS`）で中身を総入れ替えする（型の合わない古いフィールドが残らないようにするため）。「リセット」ボタンで同じopのまま初期値へ戻すこともできる
-- フィールドの種類ごとにウィジェットが変わる: `stat`（ステータス選択、`STAT_LABEL`付き）・`element`/`element-or-any`（属性選択）・`number`（任意項目は空にすると保存時にキー自体を消す）・`select`（`scope`/`applyTo`/`affinity` は日本語ラベル付き）・`scale`（`damage`/`heal`/`shield` 用の「ステータス＋倍率」2点セット）・`nodes`（`repeat` の `body`/`onFirstIteration`/`onLastIteration`。**この関数自身を再帰呼び出し**しており、`repeat` の中にさらに `repeat` を入れることもできる）
+- フィールドの種類ごとにウィジェットが変わる: `stat`（ステータス選択、`STAT_LABEL`付き）・`element`/`element-or-any`（属性選択。`element` は `physical`/`magical`/`special`/`none`(無属性) の4値、`element-or-any` はそれに `any`(全属性) を加えた5値）・`number`（任意項目は空にすると保存時にキー自体を消す）・`select`（`scope`/`applyTo`/`affinity` は日本語ラベル付き）・`scale`（`damage`/`heal`/`shield` 用の「ステータス＋倍率」2点セット）・`nodes`（`repeat` の `body`/`onFirstIteration`/`onLastIteration`。**この関数自身を再帰呼び出し**しており、`repeat` の中にさらに `repeat` を入れることもできる）
+- `modifier` の `scale`（自分の参照ステータスによる加算。`amount`/`rate` と併用可）は他のopと違い任意項目のため、「この項目を設定する」チェックボックスでキー自体の有無を切り替えられる（`damage`/`heal`/`shield` の `scale` は必須のため常に表示される）
+- `heal` は `scale` の代わりに固定値回復 `flat`（無参照の数値、`scale` と排他）を指定できる。**`shield` に同様の固定値モードは無い**（`element`+`scale` の必須2フィールドのみ）
+- `counterStance`（反撃態勢: 次に被弾した分だけ反撃する。`scaleStat`(`def`/`ref`)・`rate`・`element`）と `periodicSelfDamage`（継続ダメージ: 毎ラウンド最大HPの割合を直接減算し防げない。`ratio` のみ）も同じ `EFFECT_OP_FIELDS` 駆動の型付きフォームで編集できる
 - `EFFECT_OP_FIELDS` に無いフィールドの組み合わせ（将来 op を追加した場合など）が必要になったら、エントリ全体を「JSONとして直接編集」に切り替えれば必ず対応できる
 
-`ModifierScope`（`modifier.scope`）は `thisHit`/`thisTurn`/`thisBattle`/`permanent` の4値（`src/domain/battle/types.ts`）。既存データに使われている値を選択肢から漏らすと、フォームが実際の値と異なる表示になる（値自体は壊れない）ため、フィールド定義を追加する際は型定義を必ず確認すること。
+`ModifierScope`（`modifier.scope`）は `thisHit`/`thisTurn`/`nextRound`/`thisBattle`/`permanent` の5値（`src/domain/battle/types.ts`）。既存データに使われている値を選択肢から漏らすと、フォームが実際の値と異なる表示になる（値自体は壊れない）ため、フィールド定義を追加する際は型定義を必ず確認すること。
 
 ### 割合フィールドの%表示
 
@@ -140,6 +164,8 @@ dev サーバーにのみ生える、`/__content-editor/api/` 配下のエンド
 | `POST /file`（body: `{category, id, data}`） | 検証して書き込み（新規/更新共通） |
 | `DELETE /file?category=&id=` | 削除 |
 | `POST /validate`（body: `{category, data}`） | 書き込まずに検証だけ行う |
+| `GET /encounter-groups` | `encounter_groups.json` の生JSON（[出現グループ専用エディタ](#5-出現グループ専用エディタencounter_groupsjson)用。ID別ファイル一覧の枠外にある単一設定ファイルのため専用エンドポイント） |
+| `POST /encounter-groups`（body: `{data}`） | `validateEncounterGroups()`（ajvではない手書きチェック）で検証して書き込み |
 
 ---
 

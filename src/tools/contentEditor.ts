@@ -45,6 +45,11 @@ interface TabDef {
   apiCategory: CategoryKey
   label: string
   kindFilter?: 'active' | 'passive'
+  /**
+   * 通常のid別ファイル一覧+フォームに乗らない特殊タブ（例: 出現グループ = 単一設定ファイル）。
+   * 'encounterGroups' の場合 apiCategory は型を満たすためのダミー（'enemySets'）で実際には使わない
+   */
+  special?: 'encounterGroups'
 }
 
 /**
@@ -58,6 +63,7 @@ const TABS: TabDef[] = [
   { key: 'traits', apiCategory: 'traits', label: '特性' },
   { key: 'enemies', apiCategory: 'enemies', label: '敵' },
   { key: 'enemySets', apiCategory: 'enemySets', label: '敵セット' },
+  { key: 'encounterGroups', apiCategory: 'enemySets', label: '出現グループ', special: 'encounterGroups' },
   { key: 'battleEffects', apiCategory: 'battleEffects', label: 'エフェクト' },
   { key: 'battleBackgrounds', apiCategory: 'battleBackgrounds', label: '背景' },
 ]
@@ -93,6 +99,7 @@ interface RefsResponse {
   sfxIds: string[]
   spriteIds: string[]
   enemyIds: RefOption[]
+  enemySetIds: RefOption[]
 }
 
 // ── どのフィールドを refs から補完するか（category.path -> refs のキー） ──
@@ -217,7 +224,7 @@ function optionLabel(value: string, labelMap?: Record<string, string>): string {
 }
 
 // ── 状態 ──────────────────────────────────────────────────────
-let refs: RefsResponse = { activeSkillIds: [], passiveSkillIds: [], traitIds: [], effectIds: [], sfxIds: [], spriteIds: [], enemyIds: [] }
+let refs: RefsResponse = { activeSkillIds: [], passiveSkillIds: [], traitIds: [], effectIds: [], sfxIds: [], spriteIds: [], enemyIds: [], enemySetIds: [] }
 let lists: Record<CategoryKey, EntrySummary[]> = { skills: [], traits: [], enemies: [], battleEffects: [], battleBackgrounds: [], enemySets: [] }
 let currentTabKey = TABS[0].key
 let currentCategory: CategoryKey = TABS[0].apiCategory
@@ -255,11 +262,20 @@ function renderTabs(): void {
   for (const tab of TABS) {
     let entries = lists[tab.apiCategory]
     if (tab.kindFilter) entries = entries.filter(e => e.kind === tab.kindFilter)
-    const btn = h('button', `tab-btn${tab.key === currentTabKey ? ' active' : ''}`, `${tab.label} (${entries.length})`)
+    const label = tab.special ? tab.label : `${tab.label} (${entries.length})`
+    const btn = h('button', `tab-btn${tab.key === currentTabKey ? ' active' : ''}`, label)
     btn.addEventListener('click', () => {
       currentTabKey = tab.key
       currentCategory = tab.apiCategory
       renderTabs()
+      if (tab.special === 'encounterGroups') {
+        el<HTMLButtonElement>('new-btn').style.display = 'none'
+        el<HTMLDivElement>('group-by-host').innerHTML = ''
+        el<HTMLDivElement>('entry-list').innerHTML = ''
+        void renderEncounterGroupsEditor()
+        return
+      }
+      el<HTMLButtonElement>('new-btn').style.display = ''
       renderGroupBySelect()
       renderList()
     })
@@ -1211,6 +1227,160 @@ function renderEffectField(node: Record<string, unknown>, spec: EffectFieldSpec,
     default:
       return
   }
+}
+
+// ── 出現グループ（encounter_groups.json、単一設定ファイル） ───────────
+interface EncounterGroupsData {
+  groupOrder: string[]
+  lapsForTrueClear: number
+  bossIntervalBattles: number
+  bossDraftRounds: number
+  groups: Record<string, string[]>
+  spawnWeightTiers: unknown[]
+  [key: string]: unknown
+}
+
+/**
+ * グループA〜Eのセクションを並べ、各グループの下に「そのグループに入っているセット」を
+ * チェックボックスで選ぶ（要望の「グループAのセクション→セット1〜3」の階層に対応）。
+ * 各セットの中身（メンバー敵・statsOverride）は既存の「敵セット」タブで編集する
+ * （ここではどのセットをどのグループに入れるか、という所属関係だけを扱う）。
+ */
+async function renderEncounterGroupsEditor(): Promise<void> {
+  const host = el<HTMLDivElement>('editor-host')
+  host.innerHTML = '読み込み中…'
+  let data: EncounterGroupsData
+  try {
+    const res = await apiJson<{ data: EncounterGroupsData }>('/encounter-groups')
+    data = res.data
+  } catch (e) {
+    host.innerHTML = ''
+    showStatus(`読み込みに失敗しました: ${(e as Error).message}`, true)
+    return
+  }
+  host.innerHTML = ''
+
+  const header = h('div', 'editor-header')
+  header.appendChild(h('h2', undefined, '出現グループ（encounter_groups.json）'))
+  const saveBtn = h('button', 'small primary', '保存') as HTMLButtonElement
+  saveBtn.type = 'button'
+  header.appendChild(saveBtn)
+  host.appendChild(header)
+  host.appendChild(h('p', 'note', 'どのセットがどのグループ（A〜E）から出現するかを設定する。セットの中身（メンバー敵・ステータス上書き）は「敵セット」タブで編集する。'))
+
+  const root = h('div', 'form-root')
+
+  // 基本設定（数値3項目）
+  const basicWrap = h('div', 'field')
+  basicWrap.appendChild(h('label', 'field-label', '基本設定'))
+  const basicRow = h('div', 'checkbox-group')
+  const numInputs: Record<string, HTMLInputElement> = {}
+  for (const [key, jpLabel] of [
+    ['bossIntervalBattles', '何戦ごとにボス戦か'],
+    ['lapsForTrueClear', '真のクリアに必要な周回数'],
+    ['bossDraftRounds', 'ボス撃破時の連続ドラフト回数'],
+  ] as const) {
+    const wrap = h('div', 'field')
+    wrap.appendChild(h('label', 'field-label', jpLabel))
+    const input = document.createElement('input')
+    input.type = 'number'
+    input.min = '1'
+    input.value = String(data[key])
+    numInputs[key] = input
+    wrap.appendChild(input)
+    basicRow.appendChild(wrap)
+  }
+  basicWrap.appendChild(basicRow)
+  root.appendChild(basicWrap)
+
+  // グループ順（groupOrder）: カンマ区切りのテキストで編集
+  const orderWrap = h('div', 'field')
+  orderWrap.appendChild(h('label', 'field-label', 'groupOrder（ボスが巡回する順序。カンマ区切り）'))
+  const orderInput = document.createElement('input')
+  orderInput.type = 'text'
+  orderInput.value = data.groupOrder.join(', ')
+  orderWrap.appendChild(orderInput)
+  root.appendChild(orderWrap)
+
+  // グループごとのセット所属チェックボックス
+  const groupCheckboxes: Record<string, Record<string, HTMLInputElement>> = {}
+  for (const group of data.groupOrder) {
+    const section = h('div', 'nested-object')
+    section.appendChild(h('label', 'field-label', `グループ ${group}`))
+    const list = h('div', 'checkbox-group')
+    const current = new Set(data.groups[group] ?? [])
+    groupCheckboxes[group] = {}
+    for (const set of refs.enemySetIds) {
+      const item = h('label', 'checkbox-item')
+      const cb = document.createElement('input')
+      cb.type = 'checkbox'
+      cb.checked = current.has(set.id)
+      groupCheckboxes[group][set.id] = cb
+      item.append(cb, document.createTextNode(` ${set.label}（${set.id}）`))
+      list.appendChild(item)
+    }
+    if (refs.enemySetIds.length === 0) list.appendChild(h('span', 'note', '敵セットがまだありません（「敵セット」タブで作成してください）'))
+    section.appendChild(list)
+    root.appendChild(section)
+  }
+
+  // spawnWeightTiers は構造が複雑なため、既存の「JSONとして直接編集」方針に倣い生JSONで扱う
+  const tiersWrap = h('div', 'field')
+  tiersWrap.appendChild(h('label', 'field-label', 'spawnWeightTiers（通常戦のグループ抽選重み。JSON直接編集）'))
+  const tiersArea = document.createElement('textarea') as HTMLTextAreaElement
+  tiersArea.className = 'json-sub'
+  tiersArea.rows = 6
+  tiersArea.value = JSON.stringify(data.spawnWeightTiers, null, 2)
+  tiersWrap.appendChild(tiersArea)
+  root.appendChild(tiersWrap)
+
+  host.appendChild(root)
+
+  saveBtn.addEventListener('click', () => {
+    void (async () => {
+      let spawnWeightTiers: unknown[]
+      try {
+        spawnWeightTiers = JSON.parse(tiersArea.value)
+      } catch (e) {
+        showStatus(`spawnWeightTiers のJSONが不正です: ${(e as Error).message}`, true)
+        return
+      }
+      // 出現するセットの並び順は候補選定の抽選（配列インデックスの重み付き抽選）に影響するため、
+      // 既存メンバーの並びを保ったまま新規チェック分だけ末尾に足す（毎回アルファベット順へ再整列させない）
+      const groups: Record<string, string[]> = {}
+      for (const group of data.groupOrder) {
+        const original = data.groups[group] ?? []
+        const checkedIds = new Set(
+          refs.enemySetIds.filter(set => groupCheckboxes[group][set.id].checked).map(set => set.id),
+        )
+        const preserved = original.filter(id => checkedIds.has(id))
+        const added = refs.enemySetIds.map(set => set.id).filter(id => checkedIds.has(id) && !original.includes(id))
+        groups[group] = [...preserved, ...added]
+      }
+      const updated: EncounterGroupsData = {
+        ...data,
+        groupOrder: orderInput.value.split(',').map(s => s.trim()).filter(Boolean),
+        bossIntervalBattles: Number(numInputs.bossIntervalBattles.value),
+        lapsForTrueClear: Number(numInputs.lapsForTrueClear.value),
+        bossDraftRounds: Number(numInputs.bossDraftRounds.value),
+        groups,
+        spawnWeightTiers,
+      }
+      try {
+        const result = await apiJson<{ ok: boolean; errors?: string[] }>('/encounter-groups', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: updated }),
+        })
+        if (result.ok) {
+          showStatus('出現グループを保存しました（参照整合性の確認には npm run validate も実行してください）', false)
+          await renderEncounterGroupsEditor()
+        } else {
+          showStatus(`保存に失敗しました:\n${(result.errors ?? []).join('\n')}`, true)
+        }
+      } catch (e) {
+        showStatus(`保存に失敗しました: ${(e as Error).message}`, true)
+      }
+    })()
+  })
 }
 
 // ── 起動 ──────────────────────────────────────────────────────
