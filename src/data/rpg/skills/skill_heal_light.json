@@ -1,8 +1,8 @@
 {
   "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_heal_light",
-  "label": "小治癒",
-  "flavorText": "説明書の余白に、傷を閉じる一文があった。",
+  "label": "小回復",
+  "flavorText": "小さな「ありがとう」の積み重ねが、人を豊かにする。",
   "kind": "active",
   "element": "magical",
   "mainCategory": "heal",

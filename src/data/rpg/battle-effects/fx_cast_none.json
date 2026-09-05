@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../../schemas/battle-effect.schema.json",
+  "id": "fx_cast_none",
+  "label": "無属性の発動",
+  "timing": "onCast",
+  "durationMs": 200,
+  "target": "source",
+  "visual": {
+    "kind": "flash",
+    "color": "var(--battle-element-none)"
+  },
+  "sfx": "battle_cast_none"
+}

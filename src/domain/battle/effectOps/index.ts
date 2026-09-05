@@ -8,7 +8,7 @@
  */
 
 export { registerOp, getOp, allOpIds, runEffects, KNOWN_OP_IDS,
-  clearThisHitModifiers, clearThisTurnModifiers, clearThisBattleModifiers } from './registry'
+  clearThisHitModifiers, clearThisTurnModifiers, clearThisBattleModifiers, downgradeNextRoundModifiers } from './registry'
 
 import { registerOp } from './registry'
 import { damageOp } from './damage'
@@ -24,6 +24,8 @@ import { healBetweenBattlesOp } from './healBetweenBattles'
 import { effectBoostOp } from './effectBoost'
 import { healTakenOp } from './healTaken'
 import { noopOp } from './noop'
+import { counterStanceOp } from './counterStance'
+import { periodicSelfDamageOp } from './periodicSelfDamage'
 
 registerOp(damageOp)
 registerOp(healOp)
@@ -38,3 +40,5 @@ registerOp(healBetweenBattlesOp)
 registerOp(effectBoostOp)
 registerOp(healTakenOp)
 registerOp(noopOp)
+registerOp(counterStanceOp)
+registerOp(periodicSelfDamageOp)

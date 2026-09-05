@@ -1,0 +1,46 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_weird_wave",
+  "label": "怪電波",
+  "flavorText": "無意味で大量の情報を浴びて脳を揺らそう。",
+  "kind": "active",
+  "element": "special",
+  "mainCategory": "curse",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 3,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_special"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "special",
+      "scale": {
+        "stat": "int",
+        "rate": 0.5
+      }
+    },
+    {
+      "op": "modifier",
+      "stat": "def",
+      "rate": -0.1,
+      "scope": "thisBattle",
+      "applyTo": "target"
+    },
+    {
+      "op": "modifier",
+      "stat": "ref",
+      "rate": -0.1,
+      "scope": "thisBattle",
+      "applyTo": "target"
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_special",
+    "impact": "battle_curse"
+  }
+}

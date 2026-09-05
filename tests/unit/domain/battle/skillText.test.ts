@@ -20,7 +20,7 @@ describe('skillText: ラベル表', () => {
   })
 
   it('全属性に表示名がある', () => {
-    expect(Object.keys(ELEMENT_LABEL).sort()).toEqual(['magical', 'physical', 'special'])
+    expect(Object.keys(ELEMENT_LABEL).sort()).toEqual(['magical', 'none', 'physical', 'special'])
   })
 })
 
@@ -219,6 +219,11 @@ describe('skillText: 補正・宣言的opの表記', () => {
     expect(text(buildSkillText(medic, 1))).toBe('受ける回復量を30%上昇させる。')
   })
 
+  it('counterStance は反応する属性と反撃属性の両方が文に出る（カウンター/反射板は物理・魔法限定のため）', () => {
+    const counter = makeActive({ id: 'c', effect: [node('counterStance', { scaleStat: 'def', rate: 1, element: 'physical' })] })
+    expect(text(buildSkillText(counter, 1))).toBe('反撃態勢に入る（次に物理属性で被弾した回数ぶん、自分のDEFの100%分の物理属性で反撃する）。')
+  })
+
   it('未知の op はop名を括弧で示すだけで壊れない', () => {
     const skill = makeActive({ id: 's', effect: [node('mystery')] })
     expect(text(buildSkillText(skill, 1))).toBe('(mystery)。')
@@ -226,5 +231,17 @@ describe('skillText: 補正・宣言的opの表記', () => {
 
   it('効果が空でも例外を投げない（実データではスキーマの minItems: 1 で封じている）', () => {
     expect(() => buildSkillText(makeActive({ id: 's', effect: [] }), 1)).not.toThrow()
+  })
+
+  it('minRound があるアクティブスキルは、使用可能ターンが効果テキストに明記される（flavorTextではなく）', () => {
+    const skill = makeActive({
+      id: 's', minRound: 2, effect: [node('damage', { element: 'magical', scale: { stat: 'int', rate: 0.5 } })],
+    })
+    expect(text(buildSkillText(skill, 1))).toBe('魔法属性ダメージ: INTの50%分。3ターン目から使用可能。')
+  })
+
+  it('minRound が無いアクティブスキルには使用可能ターンの文が付かない', () => {
+    const skill = makeActive({ id: 's', effect: [node('damage', { element: 'physical', scale: { stat: 'str', rate: 1 } })] })
+    expect(text(buildSkillText(skill, 1))).not.toContain('使用可能')
   })
 })

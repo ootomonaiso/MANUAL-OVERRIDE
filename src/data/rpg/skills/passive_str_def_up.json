@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "passive_str_def_up",
+  "label": "筋骨隆々",
+  "flavorText": "力と硬さは、案外近しい。",
+  "kind": "passive",
+  "mainCategory": "might",
+  "subCategories": [],
+  "effect": [
+    { "op": "statBoost", "stat": "str", "amount": 200 },
+    { "op": "statBoost", "stat": "def", "amount": 200 }
+  ]
+}

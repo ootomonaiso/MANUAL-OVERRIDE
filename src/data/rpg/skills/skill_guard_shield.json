@@ -2,7 +2,7 @@
   "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_guard_shield",
   "label": "護りの詞",
-  "flavorText": "読み上げると、言葉が薄い壁になった。",
+  "flavorText": "相手と距離を取るには、壁で隔てるのが一番だ。",
   "kind": "active",
   "element": "magical",
   "mainCategory": "aegis",

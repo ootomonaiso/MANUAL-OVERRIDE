@@ -31,6 +31,7 @@ import {
 import type { CategoryContribution } from '../domain/battle/skillDraft'
 import { pickBackgroundId } from '../domain/battle/backdrop'
 import { estimateSkillDamage } from '../domain/battle/damagePreview'
+import { estimateHitCount } from '../domain/battle/effectTiming'
 import { BATTLE_CONTENT } from '../data/rpg/battleContent'
 import { BATTLE_BACKGROUNDS } from '../data/rpg/battleBackgrounds'
 import { BATTLE } from '../data/tunables'
@@ -150,6 +151,16 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   }
 
   /**
+   * 次の手番へ進むまでの待ち時間。連続攻撃(repeat)は timing.impactMs という固定値だけを
+   * 待っていたため、多段ヒットの演出（multiHitIntervalMs間隔で後追い再生される）が終わる前に
+   * 次の手番が始まってしまっていた。ヒット数（対象数ぶんも含む）に応じて待ち時間を伸ばす
+   */
+  function impactWaitMs(def: ActiveSkillDef, targetCount: number): number {
+    const hitCount = estimateHitCount(def.effect) * Math.max(1, targetCount)
+    return timing.impactMs + Math.max(0, hitCount - 1) * BATTLE.multiHitIntervalMs
+  }
+
+  /**
    * 演出待ちを1つ積む。世代が変わっていたら実行しない。
    * 同期スケジューラでは set() の中でコールバックが走り切るため、
    * 取り消し用のIDを控える前に完了しうる（done で見分ける）。
@@ -243,7 +254,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   }
 
   function finishRound(): void {
-    endOfRound(raw())
+    endOfRound(raw(), content, emit)
     const outcome = checkBattleOutcome(raw())
     if (outcome !== 'ongoing') { handleOutcome(outcome); return }
     startNewRound()
@@ -267,12 +278,15 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   }
 
   function runEnemyTurn(enemy: Combatant): void {
-    const skillId = previewEnemyNextSkill(enemy)
+    const skillId = previewEnemyNextSkill(enemy, content, raw().roundCount)
     announce(enemy, skillId, '様子を見ている')
     after(timing.announceMs, () => {
       presentation.phase = 'impact'
       enemyTakeTurn({ state: raw(), content, enemy, player: raw().player, rng, emit })
-      after(timing.impactMs, () => { afterAction() })
+      // 敵から見た対象は常にプレイヤー1体（味方は存在しない）なので targetCount は常に1
+      const skillDef = skillId ? content.skills.get(skillId) : undefined
+      const waitMs = skillDef && skillDef.kind === 'active' ? impactWaitMs(skillDef, 1) : timing.impactMs
+      after(waitMs, () => { afterAction() })
     })
   }
 
@@ -361,16 +375,19 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     if (!owned || owned.cooldown > 0) return
     const def = content.skills.get(owned.id)
     if (!def || def.kind !== 'active') return
+    if (def.minRound !== undefined && r.roundCount < def.minRound) return
 
     announce(player, owned.id)
     after(timing.announceMs, () => {
       presentation.phase = 'impact'
       const targets = resolvePlayerFocus(
-        { side: def.defaultFocus, range: def.focusRange }, player, r.enemies, centerEnemyIndex,
+        { side: def.defaultFocus, range: def.focusRange }, player, r.enemies, centerEnemyIndex, rng,
       )
       useActiveSkill({ state: r, content, source: player, skillId: owned.id, level: owned.level, targets, rng, emit })
-      owned.cooldown = def.cooldown
-      after(timing.impactMs, () => { afterAction() })
+      // transformsInto で owned.id が変化している場合があるため、クールダウンは使用後の id で改めて引く
+      const usedDef = content.skills.get(owned.id)
+      owned.cooldown = usedDef && usedDef.kind === 'active' ? usedDef.cooldown : 0
+      after(impactWaitMs(def, targets.length), () => { afterAction() })
     })
   }
 
@@ -459,7 +476,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     return resolveEffectiveStats(c as unknown as Combatant, content)
   }
   function nextEnemySkillPreview(e: CombatantView): string | null {
-    return previewEnemyNextSkill(e as unknown as Combatant)
+    return previewEnemyNextSkill(e as unknown as Combatant, content, raw().roundCount)
   }
   /** 敵がそのスキルを使ったとき、プレイヤーがどれくらい削られるかの見積り */
   function estimateDamageToPlayer(e: CombatantView, skillId: string, level: number): number {

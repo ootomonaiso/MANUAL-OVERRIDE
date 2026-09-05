@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { computed } from 'vue'
+import { computed, toRaw } from 'vue'
 import { useBattleState, type BattleScheduler } from '../../../src/composables/useBattleState'
 import { BATTLE_CONTENT } from '../../../src/data/rpg/battleContent'
 import { BATTLE } from '../../../src/data/tunables'
@@ -24,11 +24,15 @@ function seededPrng(seed: number): () => number {
  * プレイヤーが必ず勝ち進む戦闘ハーネス。
  *
  * rng の返し方を3つの場面で切り替える:
- *  1. プレイヤーの行動直後の2回（命中判定・クリティカル判定）→ 0.94。
- *     プレイヤーの命中率 0.95 を下回るので必中、クリティカル率 0.05 は上回るので非クリティカル。
- *  2. 敵が生存している間のそれ以外の呼び出し（＝敵の命中判定）→ 0.99。
+ *  1. プレイヤーの行動直後の1回目（命中判定）→ 0.001。
+ *     命中率を下げる特性（例: 命中率-20%の特性）をドラフトで引いても必中になるよう、
+ *     現実的などんな命中率よりも十分低い値にしてある（0.94 だと命中率を下げる特性を
+ *     引いた瞬間に外れ続けて戦闘が進まなくなる不具合があった）。
+ *  2. プレイヤーの行動直後の2回目（クリティカル判定）→ 0.999。
+ *     クリティカル率を上げる特性を引いても非クリティカルのままになるよう高い値にしてある。
+ *  3. 敵が生存している間のそれ以外の呼び出し（＝敵の命中判定）→ 0.99。
  *     敵の命中率は最大でも 0.95 なので必ず外れる。
- *  3. 敵が全滅した後の呼び出し（＝ドラフト抽選・次の敵の選定）→ 一様乱数。
+ *  4. 敵が全滅した後の呼び出し（＝ドラフト抽選・次の敵の選定）→ 一様乱数。
  *     ここを固定値にすると shuffle が恒等変換になり、毎回同じ候補しか出なくなる。
  */
 function winningHarness(seed = 12345): { battle: Battle; act: () => void } {
@@ -36,13 +40,21 @@ function winningHarness(seed = 12345): { battle: Battle; act: () => void } {
   let sinceAction = Number.POSITIVE_INFINITY
   const battle = useBattleState()
   const rng = (): number => {
-    if (sinceAction < 2) { sinceAction++; return 0.94 }
+    if (sinceAction === 0) { sinceAction++; return 0.001 }
+    if (sinceAction === 1) { sinceAction++; return 0.999 }
     return battle.state.enemies.some(e => e.alive) ? 0.99 : prng()
   }
   battle.initRun(rng)
   const act = (): void => {
     sinceAction = 0
+    const wasPlayerTurn = battle.isPlayerTurn.value
     battle.selectAction({ kind: 'active', slotIndex: 0 }, null)
+    // スロット0がクールタイム中／minRound未達で不使用な場合、selectAction は何もせず即return する。
+    // CT・使用可能ターンはコンテンツによって様々なため（龍鱗の長いCT・魔導式のminRound等）、
+    // ドラフトで何が入っても行動が必ず進むよう「様子を見る」にフォールバックする
+    if (wasPlayerTurn && battle.isPlayerTurn.value) {
+      battle.selectAction({ kind: 'builtin', action: 'pass' })
+    }
   }
   return { battle, act }
 }
@@ -485,11 +497,14 @@ describe('useBattleState: 1手番の演出', () => {
     step: () => boolean
     runAll: () => void
     pending: () => number
+    /** set() に渡された ms の履歴（連続攻撃の演出待ち時間がヒット数に応じて伸びているか確認する用） */
+    msHistory: number[]
   } {
     const queue = new Map<number, () => void>()
+    const msHistory: number[] = []
     let nextId = 1
     const scheduler: BattleScheduler = {
-      set: (fn) => { const id = nextId++; queue.set(id, fn); return id },
+      set: (fn, ms) => { msHistory.push(ms); const id = nextId++; queue.set(id, fn); return id },
       clear: (id) => { queue.delete(id) },
     }
     const step = (): boolean => {
@@ -501,7 +516,7 @@ describe('useBattleState: 1手番の演出', () => {
       return true
     }
     const runAll = (): void => { for (let i = 0; i < 200 && step(); i++) { /* 溜まった演出を消化する */ } }
-    return { scheduler, step, runAll, pending: () => queue.size }
+    return { scheduler, step, runAll, pending: () => queue.size, msHistory }
   }
 
   function pacedHarness(): { battle: Battle; sched: ReturnType<typeof manualScheduler> } {
@@ -558,6 +573,27 @@ describe('useBattleState: 1手番の演出', () => {
     expect(battle.presentation.posingId).toBe(battle.state.player.id)
     sched.step()
     expect(battle.presentation.posingId).toBe(battle.state.player.id)
+  })
+
+  it('連続攻撃(repeat)を使うと、ヒット数に応じて次の手番までの待ち時間が伸びる（演出が終わる前に相手の手番が始まる不具合の対策）', () => {
+    const { battle, sched } = pacedHarness()
+    // battle.state は readonly() で公開されているため、内部の生オブジェクトを toRaw() で取り出して書き換える
+    toRaw(battle.state).player.actives = [{ id: 'skill_triple_strike', level: 1, stacks: 0, cooldown: 0, slotIndex: 0 }]
+    battle.selectAction({ kind: 'active', slotIndex: 0 }, null)
+    sched.step()   // 提示 → 解決（この中で次の手番までの待ちが積まれる）
+    const waitMs = sched.msHistory[sched.msHistory.length - 1]
+    // 三連撃は times:3 のため、固定の impactMs だけでは足りない分の追加待ちが乗るはず
+    expect(waitMs).toBeGreaterThan(BATTLE.presentation.impactMs)
+    expect(waitMs).toBe(BATTLE.presentation.impactMs + 2 * BATTLE.multiHitIntervalMs)   // (3ヒット-1)×間隔ぶん伸びる
+  })
+
+  it('単発攻撃では待ち時間が伸びない（従来どおり）', () => {
+    const { battle, sched } = pacedHarness()
+    toRaw(battle.state).player.actives = [{ id: 'skill_strike', level: 1, stacks: 0, cooldown: 0, slotIndex: 0 }]
+    battle.selectAction({ kind: 'active', slotIndex: 0 }, null)
+    sched.step()
+    const waitMs = sched.msHistory[sched.msHistory.length - 1]
+    expect(waitMs).toBe(BATTLE.presentation.impactMs)
   })
 
   it('ギブアップすると保留中の演出は流れず、結果を上書きしない', () => {

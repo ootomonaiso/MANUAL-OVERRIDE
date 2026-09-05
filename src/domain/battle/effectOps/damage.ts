@@ -3,7 +3,7 @@
  * ダメージ付与。命中判定はこの op のみが行う（回復・シールド・バフは行わない）。
  */
 
-import type { EffectContext, EffectNode, EffectOp, StatKey, Element } from '../types'
+import type { EffectContext, EffectNode, EffectOp, StatKey, Element, EffectiveStats } from '../types'
 import {
   computeHitChance, rollHit, rollCriticalStacks, criticalMultiplierForStacks,
   computeOutgoingDamage, computeFinalDamage,
@@ -16,12 +16,28 @@ import { emitCriticalEffect } from './criticalFx'
 
 interface DamageParams {
   element: Element
-  scale: { stat: StatKey; rate: number }
+  /** stat（単一ステータス参照）と statOptions（複数のうち実効値が最も高いものを参照。自摸＝STR/INTの高い方 想定）は排他 */
+  scale: { stat?: StatKey; statOptions?: StatKey[]; rate: number }
 }
 
 function readParams(node: EffectNode): DamageParams {
-  const scale = node.scale as { stat: string; rate: number }
-  return { element: node.element as Element, scale: { stat: scale.stat as StatKey, rate: scale.rate } }
+  const scale = node.scale as { stat?: string; statOptions?: string[]; rate: number }
+  return {
+    element: node.element as Element,
+    scale: {
+      stat: scale.stat as StatKey | undefined,
+      statOptions: scale.statOptions as StatKey[] | undefined,
+      rate: scale.rate,
+    },
+  }
+}
+
+/** scale.stat（単一） / scale.statOptions（複数のうち実効値が最も高いもの。自摸＝STR/INTの高い方 想定）のどちらでも参照値を取り出す */
+function resolveReferenceValue(sourceStats: EffectiveStats, scale: DamageParams['scale']): number {
+  if (scale.statOptions && scale.statOptions.length > 0) {
+    return Math.max(...scale.statOptions.map(s => sourceStats[s]))
+  }
+  return sourceStats[scale.stat as StatKey]
 }
 
 /** 対象が持つ特性由来のカット率合計を集計する（cutRate op） */
@@ -42,7 +58,7 @@ export const damageOp: EffectOp = {
   execute(node, ctx) {
     const { element, scale } = readParams(node)
     const sourceStats = ctx.getEffective(ctx.source)
-    const referenceValue = sourceStats[scale.stat]
+    const referenceValue = resolveReferenceValue(sourceStats, scale)
     const mult = ctx.skill.kind === 'active' ? levelMultiplier(ctx.level) : 1
     const scaleRate = scale.rate * mult
 
@@ -55,6 +71,12 @@ export const damageOp: EffectOp = {
         ctx.emit({ effectId: 'fx_miss', targetRef: 'target', combatantId: target.id, payload: { skillId: ctx.skill.id } })
         continue
       }
+      // カウンター/反射板: 反撃態勢中の対象への命中は、即時反撃せずキューに積むだけにする。
+      // 攻撃側の一連の行動（repeatを含む）が完全に終わってから battleEngine.ts::useActiveSkill が
+      // まとめて消費する（多段ヒットへの対応、ユーザー確定仕様）。
+      // pendingCounter.element は「反撃自体の属性」と「どの属性の被弾に反応するか」を兼ねる
+      // （反射＝受けた属性と同じ属性で返す、という前提。カウンター＝物理のみ、反射板＝魔法のみ反応）
+      if (target.pendingCounter && target.pendingCounter.element === element) target.queuedCounterHits++
 
       const critStacks = rollCriticalStacks(sourceStats.critRate, ctx.rng)
       const critMultiplier = criticalMultiplierForStacks(sourceStats.critDamageMultiplier, critStacks)

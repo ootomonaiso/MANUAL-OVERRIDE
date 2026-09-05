@@ -60,7 +60,7 @@ export type EffectiveStats = BattleStats
 // ─────────────────────────────────────────────────────────────
 // 属性
 // ─────────────────────────────────────────────────────────────
-export type Element = 'physical' | 'magical' | 'special'
+export type Element = 'physical' | 'magical' | 'special' | 'none'
 export type Affinity = 'weak' | 'resist'
 
 // ─────────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ export const CATEGORY_IDS: readonly CategoryId[] = [
 // フォーカス
 // ─────────────────────────────────────────────────────────────
 export type FocusSide = 'enemy' | 'self' | 'ally'
-export type FocusRange = 'single' | 'all' | 'adjacent3'
+export type FocusRange = 'single' | 'all' | 'adjacent3' | 'random'
 
 export interface FocusSpec {
   side: FocusSide
@@ -94,7 +94,15 @@ export interface EffectNode {
   [key: string]: unknown
 }
 
-export type ModifierScope = 'thisHit' | 'thisTurn' | 'thisBattle' | 'permanent'
+/**
+ * 'nextRound': 「付与されたラウンドの残り＋次のラウンド丸ごと」で失効する（＝自分の次の行動をまたいで保つ）。
+ * `thisTurn` は endOfRound で即失効するため「相手の行動までしか保たない」用途（守る/避ける）にしか使えない。
+ * 大振りの自己デバフ（次の自分の行動開始まで DEF-50%）・立直が仕込む自摸用クリ率バフのように、
+ * 「他者の行動をまたいで、自分の次の行動でも生きている」必要がある場合に使う。
+ * 実装: battleEngine.ts の endOfRound() が、毎ラウンド `thisTurn` を失効させた**直後**に
+ * `nextRound` を `thisTurn` へ格下げする（＝次の endOfRound で失効する）。付与→格下げ→失効で2ラウンド分保つ。
+ */
+export type ModifierScope = 'thisHit' | 'thisTurn' | 'thisBattle' | 'permanent' | 'nextRound'
 
 // ─────────────────────────────────────────────────────────────
 // スキル・特性定義（JSONロード後の正規化済み形）
@@ -128,6 +136,21 @@ export interface ActiveSkillDef extends SkillDefBase {
   effects?: string[]   // 再生するエフェクトID
   /** このスキル専用の効果音（src/data/sfx/*.json のID）。未指定なら属性ごとの既定音 */
   sfx?: SkillSfx
+  /** 指定した場合、state.roundCount がこの値未満の間は使用不可（プレイヤーの選択・敵のパターン選択の両方）。
+   * 例: minRound:2 なら state.roundCount が0/1の間(=1,2ターン目)は使えず、3ターン目(roundCount:2)から使える */
+  minRound?: number
+  /** 指定した場合、使用後にこのスキルIDへ「変化」する（立直⇔自摸 想定）。所持スロット・レベル・スタックは維持し、
+   * OwnedActive.id だけ差し替わる。相互変化させたい場合は双方が互いを指す */
+  transformsInto?: string
+  /**
+   * `transformsInto` と併用。変化先スキルが**次に使われた時だけ**、指定ステータスへ一時ボーナスを与える
+   * （一発ツモ 想定: 立直発動から1ターンの間だけ、自摸のクリティカル率が上がる。他のスキルには一切影響しない）。
+   * 汎用の `modifier`（`effect[]` 内、`nextRound` スコープ等）は次の行動が何であれ効いてしまうため使えない
+   * ——「変化先スキルの次の使用時のみ」という制約を表現するための専用フィールド。
+   * 実装: battleEngine.ts の useActiveSkill が Combatant.pendingTransformBonus を介して処理する
+   * （`thisHit` スコープの一時modifierとして直前に積み、当たり外れに関わらず消費する）
+   */
+  grantsBonusOnTransformUse?: { stat: StatKey; amount: number }
 }
 
 /** スキル単位で差し替える効果音。cast = 詠唱/振りかぶり、impact = 着弾 */
@@ -218,6 +241,46 @@ export interface TemporaryModifier {
   sourceId: string
 }
 
+/**
+ * 継続ダメージ（DOT）。戦闘中だけの一時的なデバフとして扱う（龍鱗 想定）。
+ * シールド・カット率を経由せず、endOfRound() で直接HPを減らす（防ぎようがない）。
+ * `thisBattle` スコープのバフ/デバフと同じタイミング（finishBattleOnVictory）で消す。
+ */
+export interface PeriodicSelfEffect {
+  kind: 'trueDamagePercentMaxHp'
+  /** 実効最大HPに対する割合（0.15 = 15%） */
+  ratio: number
+  sourceId: string
+}
+
+/**
+ * カウンター/反射板 用の反撃態勢。被弾しても即座には反撃しない ——
+ * 攻撃側の一連の行動（`repeat` を含む）が完全に終わってから、命中した回数ぶんまとめて
+ * 反撃する（ユーザー確定仕様）。ヒットのたびに queuedCounterHits を増やすだけにしておき、
+ * battleEngine.ts::useActiveSkill が攻撃側の行動終了後にまとめて消費する。
+ * `element` は「反撃自体の属性」と「どの属性の被弾に反応するか」を兼ねる（＝反射は受けた
+ * 属性と同じ属性でしか発動しない。カウンター＝physicalのみ反応、反射板＝magicalのみ反応）
+ */
+export interface PendingCounter {
+  scaleStat: 'def' | 'ref'
+  rate: number
+  element: Element
+  sourceId: string
+}
+
+/**
+ * `transformsInto` + `grantsBonusOnTransformUse` から発生する、変化先スキル専用の一時ボーナス
+ * （一発ツモ 想定）。`targetSkillId` と一致するスキルが次に使われた時だけ消費される。
+ * `roundsRemaining` は付与された瞬間に2（＝残りの現ラウンド＋次のラウンド丸ごと。nextRound
+ * スコープと同じ寿命）から始まり、endOfRound() のたびに1減り、0になったら（未消費でも）失効する
+ */
+export interface PendingTransformBonus {
+  targetSkillId: string
+  stat: StatKey
+  amount: number
+  roundsRemaining: number
+}
+
 export interface Combatant {
   id: string
   label: string
@@ -235,6 +298,10 @@ export interface Combatant {
   actives: OwnedActive[]
 
   temporary: TemporaryModifier[]
+  periodicSelfEffects: PeriodicSelfEffect[]
+  pendingCounter: PendingCounter | null
+  queuedCounterHits: number
+  pendingTransformBonus: PendingTransformBonus | null
 
   /** 「守る」「避ける」のクールタイム（両方には同時になれないが枠は共通で扱う） */
   builtinCooldowns: { guard: number; dodge: number }

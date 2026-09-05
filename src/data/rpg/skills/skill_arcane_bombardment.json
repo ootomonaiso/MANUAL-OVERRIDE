@@ -1,0 +1,53 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_arcane_bombardment",
+  "label": "魔導式多連装戦略爆撃装備",
+  "flavorText": "目標敵小隊補足、エンゲージ、高度確保完了、該当戦闘区域退避命令!",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "pierce",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 8,
+  "defaultFocus": "enemy",
+  "focusRange": "random",
+  "minRound": 2,
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "repeat",
+      "times": 10,
+      "body": [
+        {
+          "op": "damage",
+          "element": "magical",
+          "scale": {
+            "stat": "int",
+            "rate": 0.35
+          }
+        }
+      ],
+      "onLastIteration": [
+        {
+          "op": "modifier",
+          "stat": "int",
+          "rate": -0.75,
+          "scope": "thisBattle"
+        },
+        {
+          "op": "modifier",
+          "stat": "ref",
+          "rate": -0.75,
+          "scope": "thisBattle"
+        }
+      ]
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_hit_magical"
+  }
+}

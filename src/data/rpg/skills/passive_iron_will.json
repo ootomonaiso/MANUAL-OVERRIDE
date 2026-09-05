@@ -2,11 +2,15 @@
   "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "passive_iron_will",
   "label": "鉄の意志",
-  "flavorText": "折れないことだけが取り柄だった。",
+  "flavorText": "やるべきことを尽くした後に頼れるのは、気合と根性だ。",
   "kind": "passive",
   "mainCategory": "guard",
   "subCategories": [],
   "effect": [
-    { "op": "statBoost", "stat": "def", "amount": 800 }
+    {
+      "op": "statBoost",
+      "stat": "def",
+      "amount": 800
+    }
   ]
 }

@@ -3,7 +3,14 @@
  * 行動順キュー・フォーカス解決・敵の行動選択（docs/genre/rpg/04-battle-flow.md）。
  */
 
-import type { Combatant, TurnEntry, EnemyDef } from './types'
+import type { BattleContent, Combatant, TurnEntry, EnemyDef } from './types'
+
+/** minRound（使用可能になるまでのラウンド数）を満たしているか。未指定なら常に true */
+function meetsMinRound(skillId: string, content: BattleContent, roundCount: number): boolean {
+  const def = content.skills.get(skillId)
+  if (!def || def.kind !== 'active' || def.minRound === undefined) return true
+  return roundCount >= def.minRound
+}
 
 /**
  * 行動順キューを構築する。
@@ -64,7 +71,7 @@ export function buildEnemyActivesFromPattern(
  * 最初に使用可能な(CT中でない)スキルIDを返す。飛ばした位置は消費扱いにしない
  * （次に同じ位置へ来たときも同じ判定を行う）。全てCT中なら null（何もしない）。
  */
-export function pickEnemySkill(enemy: Combatant): string | null {
+export function pickEnemySkill(enemy: Combatant, content: BattleContent, roundCount: number): string | null {
   const pattern = enemy.actionPattern
   if (pattern.length === 0) return null
   const byId = new Map(enemy.actives.map(a => [a.id, a]))
@@ -73,7 +80,7 @@ export function pickEnemySkill(enemy: Combatant): string | null {
     const idx = (enemy.patternIndex + i) % pattern.length
     const skillId = pattern[idx]
     const owned = byId.get(skillId)
-    if (owned && owned.cooldown <= 0) {
+    if (owned && owned.cooldown <= 0 && meetsMinRound(skillId, content, roundCount)) {
       enemy.patternIndex = (idx + 1) % pattern.length
       return skillId
     }
@@ -82,14 +89,14 @@ export function pickEnemySkill(enemy: Combatant): string | null {
 }
 
 /** 敵の次に使うスキルを、実際に消費せずプレビューする */
-export function previewEnemyNextSkill(enemy: Combatant): string | null {
+export function previewEnemyNextSkill(enemy: Combatant, content: BattleContent, roundCount: number): string | null {
   const pattern = enemy.actionPattern
   if (pattern.length === 0) return null
   const byId = new Map(enemy.actives.map(a => [a.id, a]))
   for (let i = 0; i < pattern.length; i++) {
     const idx = (enemy.patternIndex + i) % pattern.length
     const owned = byId.get(pattern[idx])
-    if (owned && owned.cooldown <= 0) return pattern[idx]
+    if (owned && owned.cooldown <= 0 && meetsMinRound(pattern[idx], content, roundCount)) return pattern[idx]
   }
   return null
 }

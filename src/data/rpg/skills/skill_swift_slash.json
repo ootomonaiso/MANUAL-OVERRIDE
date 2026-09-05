@@ -2,7 +2,7 @@
   "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_swift_slash",
   "label": "疾風斬り",
-  "flavorText": "読み終える前に、もう斬っている。",
+  "flavorText": "最速=最強はこの世界の真理だ。",
   "kind": "active",
   "element": "physical",
   "mainCategory": "swift",
@@ -19,7 +19,7 @@
       "element": "physical",
       "scale": {
         "stat": "agi",
-        "rate": 0.9
+        "rate": 1.2
       }
     }
   ],

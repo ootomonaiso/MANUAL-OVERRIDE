@@ -74,6 +74,7 @@ const ELEMENT_COLOR: Record<Element, string> = {
   physical: 'var(--battle-element-physical)',
   magical: 'var(--battle-element-magical)',
   special: 'var(--battle-element-special)',
+  none: 'var(--battle-element-none)',
 }
 
 // ── 画面サイズに追従するドット絵の大きさ ─────────────────────
@@ -140,14 +141,16 @@ const skillEntries = computed<SkillCommandEntry[]>(() => {
     if (!owned) continue
     const def = content.skills.get(owned.id)
     if (!def || def.kind !== 'active') continue
+    const minRound = def.minRound
+    const minRoundNotMet = minRound !== undefined && battle.state.roundCount < minRound
     entries.push({
       id: `active:${slot}`,
       label: def.label,
       markColor: ELEMENT_COLOR[def.element],
       element: def.element,
       cooldown: owned.cooldown,
-      disabled: owned.cooldown > 0,
-      note: `Lv${owned.level}`,
+      disabled: owned.cooldown > 0 || minRoundNotMet,
+      note: minRoundNotMet && minRound !== undefined ? `Lv${owned.level}・${minRound + 1}ターン目から` : `Lv${owned.level}`,
       effectTokens: buildSkillText(def, owned.level),
     })
   }
@@ -686,6 +689,7 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   --battle-element-physical: #ff7a5c;
   --battle-element-magical: #6fb4ff;
   --battle-element-special: #c88bff;
+  --battle-element-none: #c9cdd6;
   --battle-stat: var(--battle-accent);
   --battle-number: #ffe9a8;
   --battle-diff-plus: #7ee08a;

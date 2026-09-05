@@ -2,12 +2,19 @@
   "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "passive_wisdom_mastery",
   "label": "明晰の極意",
-  "flavorText": "行間まで読めるようになってきた。",
+  "flavorText": "相手から厄介事に関わりたくないオーラを感じた。",
   "kind": "passive",
   "mainCategory": "wisdom",
   "subCategories": [],
-  "unlockCondition": { "category": "wisdom", "points": 10 },
+  "unlockCondition": {
+    "category": "wisdom",
+    "points": 10
+  },
   "effect": [
-    { "op": "statBoost", "stat": "int", "rate": 0.1 }
+    {
+      "op": "statBoost",
+      "stat": "int",
+      "rate": 0.1
+    }
   ]
 }

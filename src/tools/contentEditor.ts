@@ -149,7 +149,7 @@ const GROUP_OPTIONS: Record<string, GroupOption[]> = {
   ],
 }
 const GROUP_ORDER: Record<string, string[]> = {
-  element: ['physical', 'magical', 'special'],
+  element: ['physical', 'magical', 'special', 'none'],
   mainCategory: [...CATEGORY_IDS],
   isBoss: ['normal', 'boss'],
   bossOnly: ['normal', 'bossOnly'],
@@ -1012,7 +1012,7 @@ function statSelect(value: unknown, onChange: (v: string) => void): HTMLSelectEl
 }
 function elementSelect(value: unknown, onChange: (v: string) => void, includeAny: boolean): HTMLSelectElement {
   const select = document.createElement('select')
-  const values: string[] = includeAny ? ['physical', 'magical', 'special', 'any'] : ['physical', 'magical', 'special']
+  const values: string[] = includeAny ? ['physical', 'magical', 'special', 'none', 'any'] : ['physical', 'magical', 'special', 'none']
   for (const el2 of values) {
     const optEl = document.createElement('option')
     optEl.value = el2
@@ -1109,20 +1109,62 @@ function renderEffectField(node: Record<string, unknown>, spec: EffectFieldSpec,
       return
     }
     case 'scale': {
+      // scale.statOptions（複数のうち実効値最大を参照。自摸＝STR/INTの高い方 等）は、この型付き
+      // フォームでは編集できない（stat 単体選択のUIしか無く、statOptions を上書きしてしまう）。
+      // 触らずに退避し、「JSONとして直接編集」へ誘導する
+      if (typeof current === 'object' && current !== null && Array.isArray((current as { statOptions?: unknown }).statOptions)) {
+        container.appendChild(h('div', 'const-value',
+          `statOptions: [${((current as { statOptions: string[] }).statOptions).join(', ')}] （複数ステータス参照は「JSONとして直接編集」で編集してください）`))
+        return
+      }
+      const renderScaleFields = (scaleObj: { stat?: string; rate?: number }, box: HTMLElement): void => {
+        box.appendChild(statSelect(scaleObj.stat, v => { scaleObj.stat = v; onCommit() }))
+        const rateInput = document.createElement('input')
+        rateInput.type = 'number'
+        rateInput.step = 'any'
+        rateInput.value = typeof scaleObj.rate === 'number' ? String(toPercentInputValue(scaleObj.rate)) : '100'
+        rateInput.title = '参照ステータスの何%を効果量にするか。100 = 等倍'
+        rateInput.addEventListener('change', () => { scaleObj.rate = fromPercentInputValue(Number(rateInput.value)); onCommit() })
+        box.appendChild(rateInput)
+        box.appendChild(unitSuffix('%'))
+        if (scaleObj.stat === undefined) scaleObj.stat = STAT_KEYS[0]
+        if (scaleObj.rate === undefined) scaleObj.rate = 1
+      }
+      // modifier の scale（省略可: 参照ステータスによる加算量を、固定値 amount/rate とは別に足せる）は
+      // 「JSONに存在しない」状態を表現できる必要があるため、damage/heal/shield（常に必須）とは違い
+      // トグルで scale キー自体の有無を切り替えられるようにする
+      if (spec.optional) {
+        const existing = typeof current === 'object' && current !== null
+        const label = h('label', 'checkbox-item')
+        const toggle = document.createElement('input')
+        toggle.type = 'checkbox'
+        toggle.checked = existing
+        label.append(toggle, document.createTextNode(' この項目を設定する'))
+        container.appendChild(label)
+        const box = h('div', 'scale-field')
+        box.style.display = existing ? '' : 'none'
+        if (existing) renderScaleFields(current as { stat?: string; rate?: number }, box)
+        container.appendChild(box)
+        toggle.addEventListener('change', () => {
+          if (toggle.checked) {
+            const scaleObj: { stat?: string; rate?: number } = { stat: STAT_KEYS[0], rate: 1 }
+            node[spec.key] = scaleObj
+            box.style.display = ''
+            box.innerHTML = ''
+            renderScaleFields(scaleObj, box)
+          } else {
+            delete node[spec.key]
+            box.style.display = 'none'
+            box.innerHTML = ''
+          }
+          onCommit()
+        })
+        return
+      }
       const scaleObj = (typeof current === 'object' && current !== null ? current : { stat: STAT_KEYS[0], rate: 1 }) as { stat?: string; rate?: number }
       node[spec.key] = scaleObj
       const wrap = h('div', 'scale-field')
-      wrap.appendChild(statSelect(scaleObj.stat, v => { scaleObj.stat = v; onCommit() }))
-      const rateInput = document.createElement('input')
-      rateInput.type = 'number'
-      rateInput.step = 'any'
-      rateInput.value = typeof scaleObj.rate === 'number' ? String(toPercentInputValue(scaleObj.rate)) : '100'
-      rateInput.title = '参照ステータスの何%を効果量にするか。100 = 等倍'
-      rateInput.addEventListener('change', () => { scaleObj.rate = fromPercentInputValue(Number(rateInput.value)); onCommit() })
-      wrap.appendChild(rateInput)
-      wrap.appendChild(unitSuffix('%'))
-      if (scaleObj.stat === undefined) scaleObj.stat = STAT_KEYS[0]
-      if (scaleObj.rate === undefined) scaleObj.rate = 1
+      renderScaleFields(scaleObj, wrap)
       container.appendChild(wrap)
       return
     }

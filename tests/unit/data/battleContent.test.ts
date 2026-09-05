@@ -109,10 +109,10 @@ describe('battleContent: スキル定義', () => {
   it('アクティブスキルは属性・クールタイム・フォーカスが妥当', () => {
     for (const def of ALL_SKILLS) {
       if (def.kind !== 'active') continue
-      expect(['physical', 'magical', 'special'], def.id).toContain(def.element)
+      expect(['physical', 'magical', 'special', 'none'], def.id).toContain(def.element)
       expect(def.cooldown, def.id).toBeGreaterThanOrEqual(0)
       expect(['enemy', 'self', 'ally'], def.id).toContain(def.defaultFocus)
-      expect(['single', 'all', 'adjacent3'], def.id).toContain(def.focusRange)
+      expect(['single', 'all', 'adjacent3', 'random'], def.id).toContain(def.focusRange)
     }
   })
 
@@ -120,6 +120,14 @@ describe('battleContent: スキル定義', () => {
     for (const def of ALL_SKILLS) {
       if (def.kind !== 'active') continue
       for (const fx of def.effects ?? []) expect(BATTLE_EFFECTS.has(fx), `${def.id}: ${fx}`).toBe(true)
+    }
+  })
+
+  it('transformsInto（立直⇔自摸 等）は実在するアクティブスキルを指す', () => {
+    for (const def of ALL_SKILLS) {
+      if (def.kind !== 'active' || !def.transformsInto) continue
+      const target = SKILLS.get(def.transformsInto)
+      expect(target?.kind, `${def.id}.transformsInto -> ${def.transformsInto}`).toBe('active')
     }
   })
 

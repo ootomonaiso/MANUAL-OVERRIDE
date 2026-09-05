@@ -2,7 +2,7 @@
   "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_focus_strike",
   "label": "見切り撃ち",
-  "flavorText": "急所は、一行だけ読めば分かる。",
+  "flavorText": "「隙だらけだ!」",
   "kind": "active",
   "element": "physical",
   "mainCategory": "fatal",

@@ -1,8 +1,8 @@
 {
   "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_strike",
-  "label": "叩く",
-  "flavorText": "説明書を丸めて殴る。原始的だが、効く。",
+  "label": "殴る",
+  "flavorText": "古今東西において、最も原始的かつ、最も手っ取り早い解決法。",
   "kind": "active",
   "element": "physical",
   "mainCategory": "might",
@@ -19,7 +19,7 @@
       "element": "physical",
       "scale": {
         "stat": "str",
-        "rate": 1.0
+        "rate": 1
       }
     }
   ],

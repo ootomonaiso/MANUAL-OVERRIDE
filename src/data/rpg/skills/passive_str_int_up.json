@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "passive_str_int_up",
+  "label": "力知の狭間",
+  "flavorText": "腕力と知恵、両方を少しずつ。",
+  "kind": "passive",
+  "mainCategory": "combo",
+  "subCategories": [],
+  "effect": [
+    { "op": "statBoost", "stat": "str", "amount": 180 },
+    { "op": "statBoost", "stat": "int", "amount": 180 }
+  ]
+}

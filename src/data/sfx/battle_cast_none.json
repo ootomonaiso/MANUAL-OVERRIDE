@@ -1,0 +1,7 @@
+{
+  "id": "battle_cast_none",
+  "$comment": "無属性の発動 — 属性色を持たない、短く乾いた気配",
+  "tracks": [
+    { "kind": "osc", "wave": "triangle", "freq": 440, "durationSec": 0.12, "volume": 0.2 }
+  ]
+}

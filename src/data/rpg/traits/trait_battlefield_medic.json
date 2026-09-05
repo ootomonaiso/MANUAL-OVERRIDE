@@ -6,6 +6,9 @@
   "kind": "trait",
   "draftable": true,
   "effect": [
-    { "op": "healBetweenBattles", "amount": 500 }
+    {
+      "op": "healBetweenBattles",
+      "amount": 2000
+    }
   ]
 }

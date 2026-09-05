@@ -26,6 +26,11 @@ describe('damageCalc: 参照する防御ステータス', () => {
   it('特殊は (DEF + REF) / 4 を参照する（両方を固めても軽減しづらい）', () => {
     expect(defenseValueFor('special', stats)).toBe(650)
   })
+
+  it('無属性は DEF/REF の高い方を参照する', () => {
+    expect(defenseValueFor('none', stats)).toBe(2000)
+    expect(defenseValueFor('none', makeStats({ def: 100, ref: 900 }))).toBe(900)
+  })
 })
 
 describe('damageCalc: カット率', () => {
@@ -99,6 +104,10 @@ describe('damageCalc: 相性段階', () => {
 
   it('特殊属性には弱点・耐性が存在しない（常に段階 0）', () => {
     expect(computeAffinityStage('special', [{ id: 'weak_phys' }], defs)).toBe(0)
+  })
+
+  it('無属性には弱点・耐性が存在しない（常に段階 0）', () => {
+    expect(computeAffinityStage('none', [{ id: 'weak_phys' }], defs)).toBe(0)
   })
 
   it('未知の特性IDは無視される', () => {

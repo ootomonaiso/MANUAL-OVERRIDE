@@ -1,0 +1,51 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_dragon_scale",
+  "label": "龍鱗",
+  "flavorText": "大いなる力は身を滅ぼす。代償は常に自己から支払われるだろう。",
+  "kind": "active",
+  "element": "none",
+  "mainCategory": "guard",
+  "subCategories": [
+    "vitality"
+  ],
+  "cooldown": 100,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_none"
+  ],
+  "effect": [
+    {
+      "op": "modifier",
+      "stat": "def",
+      "amount": 6000,
+      "scope": "thisBattle"
+    },
+    {
+      "op": "modifier",
+      "stat": "ref",
+      "amount": 6000,
+      "scope": "thisBattle"
+    },
+    {
+      "op": "modifier",
+      "stat": "def",
+      "rate": 0.05,
+      "scope": "thisBattle"
+    },
+    {
+      "op": "modifier",
+      "stat": "ref",
+      "rate": 0.05,
+      "scope": "thisBattle"
+    },
+    {
+      "op": "periodicSelfDamage",
+      "ratio": 0.15
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_none"
+  }
+}

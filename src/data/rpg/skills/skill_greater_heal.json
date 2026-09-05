@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_greater_heal",
+  "label": "大回復",
+  "flavorText": "言えばいいってもんじゃないよ。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "heal",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 4,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "heal",
+      "element": "magical",
+      "scale": {
+        "stat": "int",
+        "rate": 1.2
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_heal"
+  }
+}

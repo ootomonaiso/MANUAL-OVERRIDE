@@ -10,12 +10,18 @@ import { emitCriticalEffect } from './criticalFx'
 
 interface HealParams {
   element: Element
-  scale: { stat: StatKey; rate: number }
+  /** scale と flat は排他。scale未指定時は flat（固定値、無参照）を使う */
+  scale?: { stat: StatKey; rate: number }
+  flat?: number
 }
 
 function readParams(node: EffectNode): HealParams {
-  const scale = node.scale as { stat: string; rate: number }
-  return { element: node.element as Element, scale: { stat: scale.stat as StatKey, rate: scale.rate } }
+  const scale = node.scale as { stat: string; rate: number } | undefined
+  return {
+    element: node.element as Element,
+    scale: scale ? { stat: scale.stat as StatKey, rate: scale.rate } : undefined,
+    flat: node.flat as number | undefined,
+  }
 }
 
 /** 対象側の被回復倍率（加算スタック）。特性・パッシブから収集する */
@@ -34,11 +40,13 @@ function healTakenMultiplier(target: EffectContext['targets'][number], ctx: Effe
 export const healOp: EffectOp = {
   id: 'heal',
   execute(node, ctx) {
-    const { element, scale } = readParams(node)
+    const { element, scale, flat } = readParams(node)
     const sourceStats = ctx.getEffective(ctx.source)
-    const referenceValue = sourceStats[scale.stat]
     const mult = ctx.skill.kind === 'active' ? levelMultiplier(ctx.level) : 1
-    const scaleRate = scale.rate * mult
+    // flat（固定値・無参照）は referenceValue をそのまま使い、scaleRate はレベル倍率のみにする
+    // （ステータス参照を経由しないが、スキルレベルでは伸びる）
+    const referenceValue = scale ? sourceStats[scale.stat] : (flat ?? 0)
+    const scaleRate = scale ? scale.rate * mult : mult
 
     for (const target of ctx.targets) {
       if (!target.alive) continue

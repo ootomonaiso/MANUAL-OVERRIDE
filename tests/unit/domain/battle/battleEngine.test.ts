@@ -165,38 +165,50 @@ describe('battleEngine: フォーカスの解決', () => {
   ]
 
   it('自分対象のスキルはプレイヤーを返す', () => {
-    expect(resolvePlayerFocus({ side: 'self', range: 'single' }, player, enemies, 1)).toEqual([player])
+    expect(resolvePlayerFocus({ side: 'self', range: 'single' }, player, enemies, 1, constRng(0))).toEqual([player])
   })
 
   it('味方対象は味方が存在しないためプレイヤーへフォールバックする', () => {
-    expect(resolvePlayerFocus({ side: 'ally', range: 'all' }, player, enemies, null)).toEqual([player])
+    expect(resolvePlayerFocus({ side: 'ally', range: 'all' }, player, enemies, null, constRng(0))).toEqual([player])
   })
 
   it('全体攻撃は生存している敵すべてを対象にする', () => {
     const withDead = [enemies[0], makeCombatant({ id: 'dead', alive: false }), enemies[2]]
-    const targets = resolvePlayerFocus({ side: 'enemy', range: 'all' }, player, withDead, null)
+    const targets = resolvePlayerFocus({ side: 'enemy', range: 'all' }, player, withDead, null, constRng(0))
     expect(targets.map(t => t.id)).toEqual(['e0', 'e2'])
   })
 
   it('隣接3体は中心の左右を含む', () => {
-    const targets = resolvePlayerFocus({ side: 'enemy', range: 'adjacent3' }, player, enemies, 1)
+    const targets = resolvePlayerFocus({ side: 'enemy', range: 'adjacent3' }, player, enemies, 1, constRng(0))
     expect(targets.map(t => t.id)).toEqual(['e0', 'e1', 'e2'])
   })
 
   it('単体攻撃は指定した敵1体だけを対象にする', () => {
-    const targets = resolvePlayerFocus({ side: 'enemy', range: 'single' }, player, enemies, 2)
+    const targets = resolvePlayerFocus({ side: 'enemy', range: 'single' }, player, enemies, 2, constRng(0))
     expect(targets.map(t => t.id)).toEqual(['e2'])
   })
 
   it('指定した敵が既に倒れていれば生存中の先頭へフォールバックする', () => {
     const withDead = [makeCombatant({ id: 'dead', alive: false }), enemies[1]]
-    const targets = resolvePlayerFocus({ side: 'enemy', range: 'single' }, player, withDead, 0)
+    const targets = resolvePlayerFocus({ side: 'enemy', range: 'single' }, player, withDead, 0, constRng(0))
     expect(targets.map(t => t.id)).toEqual(['e1'])
   })
 
   it('対象未指定なら生存中の先頭を狙う', () => {
-    const targets = resolvePlayerFocus({ side: 'enemy', range: 'single' }, player, enemies, null)
+    const targets = resolvePlayerFocus({ side: 'enemy', range: 'single' }, player, enemies, null, constRng(0))
     expect(targets.map(t => t.id)).toEqual(['e0'])
+  })
+
+  it('ランダム対象は rng の値に応じて生存中の敵から1体だけ選ぶ', () => {
+    expect(resolvePlayerFocus({ side: 'enemy', range: 'random' }, player, enemies, null, constRng(0)).map(t => t.id)).toEqual(['e0'])
+    expect(resolvePlayerFocus({ side: 'enemy', range: 'random' }, player, enemies, null, constRng(0.99)).map(t => t.id)).toEqual(['e2'])
+    const withDead = [makeCombatant({ id: 'dead', alive: false }), enemies[1]]
+    expect(resolvePlayerFocus({ side: 'enemy', range: 'random' }, player, withDead, null, constRng(0.4)).map(t => t.id)).toEqual(['e1'])
+  })
+
+  it('ランダム対象で生存中の敵が0体なら空配列を返す', () => {
+    const allDead = [makeCombatant({ id: 'dead0', alive: false }), makeCombatant({ id: 'dead1', alive: false })]
+    expect(resolvePlayerFocus({ side: 'enemy', range: 'random' }, player, allDead, null, constRng(0))).toEqual([])
   })
 
   it('敵から見た対象は常にプレイヤー、自分対象なら自分', () => {
@@ -249,6 +261,153 @@ describe('battleEngine: スキル使用', () => {
       level: 1, targets: [target], rng: constRng(0.5), emit: () => {},
     })
     expect(target.hp).toBe(5000)
+  })
+})
+
+describe('battleEngine: transformsInto によるスキルの自己変化（立直⇔自摸 想定）', () => {
+  const riichi = makeActive({
+    id: 'skill_riichi', cooldown: 0, transformsInto: 'skill_tsumo',
+    grantsBonusOnTransformUse: { stat: 'critRate', amount: 1 },
+    effect: [node('modifier', { stat: 'cutRate', amount: 0.1, scope: 'thisTurn' })],
+  })
+  const tsumo = makeActive({
+    id: 'skill_tsumo', cooldown: 0, transformsInto: 'skill_riichi',
+    effect: [node('damage', { element: 'none', scale: { stat: 'str', rate: 2 } })],
+  })
+  const content = makeContent({ skills: [riichi, tsumo] })
+
+  it('使用後、所持スキルの id が transformsInto の指す先へ変わる（レベル・スロットは維持）', () => {
+    const state = makeState()
+    const player = state.player
+    player.actives = [{ id: 'skill_riichi', level: 3, stacks: 2, cooldown: 0, slotIndex: 1 }]
+    const fx = captureEffects()
+    useActiveSkill({ state, content, source: player, skillId: 'skill_riichi', level: 3, targets: [player], rng: constRng(0), emit: fx.emit })
+    expect(player.actives).toEqual([{ id: 'skill_tsumo', level: 3, stacks: 2, cooldown: 0, slotIndex: 1 }])
+  })
+
+  it('相互に変化させれば、使うたびに元へ戻る（立直→自摸→立直）', () => {
+    const state = makeState()
+    const player = state.player
+    player.actives = [{ id: 'skill_riichi', level: 1, stacks: 0, cooldown: 0, slotIndex: 0 }]
+    const fx = captureEffects()
+    useActiveSkill({ state, content, source: player, skillId: 'skill_riichi', level: 1, targets: [player], rng: constRng(0), emit: fx.emit })
+    expect(player.actives[0].id).toBe('skill_tsumo')
+    useActiveSkill({ state, content, source: player, skillId: 'skill_tsumo', level: 1, targets: [player], rng: constRng(0), emit: fx.emit })
+    expect(player.actives[0].id).toBe('skill_riichi')
+  })
+
+  it('transformsInto が無いスキルは id が変わらない', () => {
+    const plain = makeActive({ id: 'skill_plain', effect: [node('noop', {})] })
+    const state = makeState()
+    const player = state.player
+    player.actives = [{ id: 'skill_plain', level: 1, stacks: 0, cooldown: 0, slotIndex: 0 }]
+    const fx = captureEffects()
+    useActiveSkill({
+      state, content: makeContent({ skills: [plain] }), source: player, skillId: 'skill_plain',
+      level: 1, targets: [player], rng: constRng(0), emit: fx.emit,
+    })
+    expect(player.actives[0].id).toBe('skill_plain')
+  })
+
+  describe('grantsBonusOnTransformUse（一発ツモ 想定）', () => {
+    function setup() {
+      const state = makeState()
+      const player = state.player
+      player.baseStats = makeStats({ str: 1000, critRate: 0, critDamageMultiplier: 2, hitRate: 1 })
+      player.actives = [{ id: 'skill_riichi', level: 1, stacks: 0, cooldown: 0, slotIndex: 0 }]
+      const target = makeCombatant({ id: 'foe', baseStats: makeStats({ hp: 100000 }), hp: 100000 })
+      return { state, player, target, fx: captureEffects() }
+    }
+
+    it('立直を使うと、変化先(自摸)専用の一時ボーナスが仕込まれる', () => {
+      const { state, player, fx } = setup()
+      useActiveSkill({ state, content, source: player, skillId: 'skill_riichi', level: 1, targets: [player], rng: constRng(0), emit: fx.emit })
+      expect(player.pendingTransformBonus).toEqual({ targetSkillId: 'skill_tsumo', stat: 'critRate', amount: 1, roundsRemaining: 2 })
+    })
+
+    it('直後に自摸を使うと会心が保証され、使用後にボーナスは消費される', () => {
+      const { state, player, target, fx } = setup()
+      useActiveSkill({ state, content, source: player, skillId: 'skill_riichi', level: 1, targets: [player], rng: constRng(0), emit: fx.emit })
+      // rng=0.99 は critRate=0 なら非クリティカルになる値だが、ボーナスで critRate が1(保証)になるため
+      // crit倍率(既定2倍)が乗ったダメージになる: str(1000) × rate(2) × critMult(2) = 4000
+      useActiveSkill({ state, content, source: player, skillId: 'skill_tsumo', level: 1, targets: [target], rng: constRng(0.99), emit: fx.emit })
+      expect(100000 - target.hp).toBe(4000)
+      expect(player.pendingTransformBonus).toBeNull()
+    })
+
+    it('自摸以外のスキルにはボーナスが効かず、消費もされない', () => {
+      const other = makeActive({ id: 'skill_other', cooldown: 0, effect: [node('damage', { element: 'physical', scale: { stat: 'str', rate: 2 } })] })
+      const localContent = makeContent({ skills: [riichi, tsumo, other] })
+      const { state, player, target, fx } = setup()
+      player.actives.push({ id: 'skill_other', level: 1, stacks: 0, cooldown: 0, slotIndex: 1 })
+
+      useActiveSkill({ state, content: localContent, source: player, skillId: 'skill_riichi', level: 1, targets: [player], rng: constRng(0), emit: fx.emit })
+      useActiveSkill({ state, content: localContent, source: player, skillId: 'skill_other', level: 1, targets: [target], rng: constRng(0.99), emit: fx.emit })
+
+      expect(100000 - target.hp).toBe(2000)   // str(1000) × rate(2)、非対象スキルなのでクリティカルは乗らない
+      expect(player.pendingTransformBonus).not.toBeNull()   // 消費されず、まだ自摸を待っている
+    })
+
+    it('未消費のまま2ラウンド経過すると失効する（nextRoundスコープと同じ寿命）', () => {
+      const { state, player, fx } = setup()
+      useActiveSkill({ state, content, source: player, skillId: 'skill_riichi', level: 1, targets: [player], rng: constRng(0), emit: fx.emit })
+      expect(player.pendingTransformBonus).not.toBeNull()
+      endOfRound(state, content, () => {})
+      expect(player.pendingTransformBonus).not.toBeNull()   // 付与ラウンドの残りではまだ失効しない
+      endOfRound(state, content, () => {})
+      expect(player.pendingTransformBonus).toBeNull()   // 次のラウンドの終わりで失効する
+    })
+
+    it('戦闘勝利時にリセットされる（戦闘間へ持ち越さない）', () => {
+      const { state, player, fx } = setup()
+      useActiveSkill({ state, content, source: player, skillId: 'skill_riichi', level: 1, targets: [player], rng: constRng(0), emit: fx.emit })
+      expect(player.pendingTransformBonus).not.toBeNull()
+      finishBattleOnVictory(state, content)
+      expect(player.pendingTransformBonus).toBeNull()
+    })
+  })
+})
+
+describe('battleEngine: カウンター/反射板の反撃（統合）', () => {
+  const attackerSkill = makeActive({
+    id: 'skill_attack', defaultFocus: 'enemy', focusRange: 'single',
+    effect: [node('repeat', {
+      times: 3,
+      body: [{ op: 'damage', element: 'physical', scale: { stat: 'str', rate: 0.5 } }],
+    })],
+  })
+  const counterSkill = makeActive({
+    id: 'skill_counter', defaultFocus: 'self', focusRange: 'single', cooldown: 5,
+    effect: [node('counterStance', { scaleStat: 'def', rate: 1, element: 'physical' })],
+  })
+  const content = makeContent({ skills: [attackerSkill, counterSkill] })
+
+  it('多段ヒットは全て終わってから、命中回数ぶんまとめて反撃する（1回の被カウンターで使い切り）', () => {
+    const state = makeState()
+    const attacker = state.player   // 既定: str/def=1000, hp=5000
+    const holder = makeCombatant({ id: 'holder' })   // 既定: def=1000, hp=5000
+    const fx = captureEffects()
+
+    useActiveSkill({ state, content, source: holder, skillId: 'skill_counter', level: 1, targets: [holder], rng: constRng(0), emit: fx.emit })
+    expect(holder.pendingCounter).not.toBeNull()
+
+    useActiveSkill({ state, content, source: attacker, skillId: 'skill_attack', level: 1, targets: [holder], rng: constRng(0), emit: fx.emit })
+
+    // holder: 攻撃側str1000×0.5 を3回被弾 = 1500ダメージ。attacker: holder def1000×1 を3回反撃 = 3000ダメージ
+    // （互いに def=1000＝カット率アンカーのためカット率0%で式そのものの値になる）
+    expect(holder.hp).toBe(5000 - 1500)
+    expect(attacker.hp).toBe(5000 - 3000)
+    expect(holder.pendingCounter).toBeNull()
+    expect(holder.queuedCounterHits).toBe(0)
+  })
+
+  it('反撃態勢に入っていなければ反撃は発生しない', () => {
+    const state = makeState()
+    const attacker = state.player
+    const holder = makeCombatant({ id: 'holder' })
+    const fx = captureEffects()
+    useActiveSkill({ state, content, source: attacker, skillId: 'skill_attack', level: 1, targets: [holder], rng: constRng(0), emit: fx.emit })
+    expect(attacker.hp).toBe(5000)
   })
 })
 
@@ -331,17 +490,20 @@ describe('battleEngine: 敵の行動', () => {
 })
 
 describe('battleEngine: ラウンド終了処理', () => {
+  const content = makeContent()
+  const noop = (): void => {}
+
   it('クールタイムが1ずつ減り、0未満にはならない', () => {
     const player = makePlayer({
       actives: [{ id: 'a', level: 1, stacks: 0, cooldown: 2, slotIndex: 0 }],
       builtinCooldowns: { guard: 1, dodge: 0 },
     })
     const state = makeState({ player })
-    endOfRound(state)
+    endOfRound(state, content, noop)
     expect(player.actives[0].cooldown).toBe(1)
     expect(player.builtinCooldowns).toEqual({ guard: 0, dodge: 0 })
-    endOfRound(state)
-    endOfRound(state)
+    endOfRound(state, content, noop)
+    endOfRound(state, content, noop)
     expect(player.actives[0].cooldown).toBe(0)
   })
 
@@ -352,20 +514,68 @@ describe('battleEngine: ラウンド終了処理', () => {
         { stat: 'str', flat: 100, scope: 'thisBattle', sourceId: 'x' },
       ],
     })
-    endOfRound(makeState({ player }))
+    endOfRound(makeState({ player }), content, noop)
     expect(player.temporary.map(m => m.scope)).toEqual(['thisBattle'])
+  })
+
+  it('nextRound は付与ラウンドの残り＋次のラウンド丸ごとで失効する（2ラウンド分保つ）', () => {
+    const player = makePlayer({
+      temporary: [
+        { stat: 'def', flat: -50, scope: 'nextRound', sourceId: 'skill_wild_swing' },
+        { stat: 'str', flat: 100, scope: 'thisBattle', sourceId: 'x' },
+      ],
+    })
+    const state = makeState({ player })
+    // 付与されたラウンドの endOfRound: nextRound はまだ失効しない(thisTurnへ格下げされるだけ)
+    endOfRound(state, content, noop)
+    expect(player.temporary.map(m => ({ stat: m.stat, scope: m.scope }))).toEqual([
+      { stat: 'def', scope: 'thisTurn' },
+      { stat: 'str', scope: 'thisBattle' },
+    ])
+    // 次のラウンドの endOfRound で、格下げされた thisTurn として失効する
+    endOfRound(state, content, noop)
+    expect(player.temporary.map(m => m.stat)).toEqual(['str'])
+  })
+
+  it('継続ダメージ（periodicSelfEffects）は実効最大HPの割合ぶん、シールドを無視して直接減る（龍鱗 想定）', () => {
+    const player = makePlayer({
+      hp: 5000, shield: 9999,
+      baseStats: makeStats({ hp: 5000 }),
+      periodicSelfEffects: [{ kind: 'trueDamagePercentMaxHp', ratio: 0.15, sourceId: 'skill_dragon_scale' }],
+    })
+    const fx = captureEffects()
+    endOfRound(makeState({ player }), content, fx.emit)
+    expect(player.hp).toBe(4250)   // 5000 - (5000 × 0.15) = 4250、シールドは無関係
+    expect(player.shield).toBe(9999)   // シールドは一切消費されない
+    expect(fx.ids()).toContain('fx_debuff')
+  })
+
+  it('継続ダメージは自滅（戦闘不能）を許容する', () => {
+    const player = makePlayer({
+      hp: 100,
+      baseStats: makeStats({ hp: 100 }),
+      periodicSelfEffects: [{ kind: 'trueDamagePercentMaxHp', ratio: 0.99, sourceId: 'skill_dragon_scale' }],
+    })
+    const fx = captureEffects()
+    endOfRound(makeState({ player }), content, fx.emit)
+    expect(player.hp).toBe(1)
+    expect(player.alive).toBe(true)
+    endOfRound(makeState({ player }), content, fx.emit)
+    expect(player.hp).toBe(0)
+    expect(player.alive).toBe(false)
+    expect(fx.ids()).toContain('fx_defeat')
   })
 
   it('ラウンド数が加算される', () => {
     const state = makeState()
-    endOfRound(state)
-    endOfRound(state)
+    endOfRound(state, content, noop)
+    endOfRound(state, content, noop)
     expect(state.roundCount).toBe(2)
   })
 
   it('戦闘不能の参加者は処理対象外', () => {
     const dead = makeCombatant({ id: 'e0', alive: false, builtinCooldowns: { guard: 3, dodge: 0 } })
-    endOfRound(makeState({ enemies: [dead] }))
+    endOfRound(makeState({ enemies: [dead] }), content, noop)
     expect(dead.builtinCooldowns.guard).toBe(3)
   })
 })

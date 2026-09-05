@@ -118,6 +118,8 @@ export const EFFECT_OP_SKELETONS: Readonly<Record<string, Record<string, unknown
   effectBoost: { element: 'physical', rate: 0.2 },
   healTaken: { rate: 0.2 },
   noop: {},
+  counterStance: { scaleStat: 'def', rate: 1, element: 'physical' },
+  periodicSelfDamage: { ratio: 0.15 },
 }
 
 export const ALLOWED_EFFECT_OPS = Object.keys(EFFECT_OP_SKELETONS)
@@ -137,6 +139,8 @@ export const EFFECT_OP_LABEL: Readonly<Record<string, string>> = {
   effectBoost: '与える効果量を強化',
   healTaken: '被回復量を増減',
   noop: '何もしない',
+  counterStance: '反撃態勢（次に被弾した分だけ反撃）',
+  periodicSelfDamage: '継続ダメージ（毎ラウンド最大HPの割合を直接減算、防げない）',
 }
 
 /** カテゴリ別の、新規作成時の最小スケルトン（required を満たすだけの空de値） */
@@ -218,7 +222,8 @@ export const EFFECT_OP_FIELDS: Readonly<Record<string, readonly EffectFieldSpec[
   ],
   heal: [
     { key: 'element', kind: 'element', label: '属性' },
-    { key: 'scale', kind: 'scale', label: '参照ステータス・倍率（%）' },
+    { key: 'scale', kind: 'scale', label: '参照ステータス・倍率（%）', optional: true },
+    { key: 'flat', kind: 'number', label: '固定値回復（flat・無参照。scaleと排他）', optional: true },
   ],
   shield: [
     { key: 'element', kind: 'element', label: '属性' },
@@ -234,7 +239,8 @@ export const EFFECT_OP_FIELDS: Readonly<Record<string, readonly EffectFieldSpec[
     { key: 'stat', kind: 'stat', label: '対象ステータス' },
     { key: 'amount', kind: 'number', label: '実数加算（amount）', optional: true, percentByStat: true },
     { key: 'rate', kind: 'number', label: '割合加算（rate・%）', optional: true, step: 0.01, percent: true },
-    { key: 'scope', kind: 'select', label: '持続範囲', options: ['thisHit', 'thisTurn', 'thisBattle', 'permanent'] },
+    { key: 'scale', kind: 'scale', label: '自分の参照ステータスによる加算（scale・任意、amountと併用可）', optional: true },
+    { key: 'scope', kind: 'select', label: '持続範囲', options: ['thisHit', 'thisTurn', 'nextRound', 'thisBattle', 'permanent'] },
     { key: 'applyTo', kind: 'select', label: '対象（省略時は自分）', options: ['self', 'target'], optional: true },
   ],
   statBoost: [
@@ -262,6 +268,14 @@ export const EFFECT_OP_FIELDS: Readonly<Record<string, readonly EffectFieldSpec[
     { key: 'rate', kind: 'number', label: '倍率（rate・%）', step: 0.01, percent: true },
   ],
   noop: [],
+  counterStance: [
+    { key: 'scaleStat', kind: 'select', label: '反撃量の参照ステータス', options: ['def', 'ref'] },
+    { key: 'rate', kind: 'number', label: '反撃倍率（rate・%）', step: 0.01, percent: true },
+    { key: 'element', kind: 'element', label: '反撃属性' },
+  ],
+  periodicSelfDamage: [
+    { key: 'ratio', kind: 'number', label: '毎ラウンドの最大HP減少割合（ratio・%。レベル倍率は掛からない）', step: 0.01, percent: true },
+  ],
 }
 
 /** n を指定桁数（10進）で丸める。浮動小数点誤差を避けるための共通ヘルパー */

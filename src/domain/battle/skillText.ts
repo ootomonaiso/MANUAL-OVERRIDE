@@ -44,7 +44,7 @@ export const STAT_LABEL: Record<StatKey, string> = {
 }
 
 export const ELEMENT_LABEL: Record<Element, string> = {
-  physical: '物理', magical: '魔法', special: '特殊',
+  physical: '物理', magical: '魔法', special: '特殊', none: '無',
 }
 
 // PERCENT_STAT_KEYS / isPercentStat は types.ts へ移設した（execution側と表示側の
@@ -70,14 +70,19 @@ function plain(text: string): SkillTextToken {
 function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
   switch (node.op) {
     case 'damage': {
-      const scale = node.scale as { stat: StatKey; rate: number }
+      const scale = node.scale as { stat?: StatKey; statOptions?: StatKey[]; rate: number }
+      const refTok: SkillTextToken[] = scale.statOptions && scale.statOptions.length > 0
+        ? [plain(scale.statOptions.map(s => STAT_LABEL[s]).join('/')), plain('の高い方')]
+        : [statTok(scale.stat as StatKey)]
       return [
         elemTok(node.element as Element), plain('属性ダメージ: '),
-        statTok(scale.stat), plain('の'), numTok(pct(scale.rate * mult)), plain('分'),
+        ...refTok, plain('の'), numTok(pct(scale.rate * mult)), plain('分'),
       ]
     }
     case 'heal': {
-      const scale = node.scale as { stat: StatKey; rate: number }
+      const scale = node.scale as { stat: StatKey; rate: number } | undefined
+      const flat = node.flat as number | undefined
+      if (!scale) return [plain('回復: 固定値'), numTok(`${Math.round((flat ?? 0) * mult)}`)]
       return [plain('回復: '), statTok(scale.stat), plain('の'), numTok(pct(scale.rate * mult)), plain('分')]
     }
     case 'shield': {
@@ -101,12 +106,23 @@ function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
       const stat = node.stat as StatKey | 'cutRate'
       const amount = node.amount as number | undefined
       const rate = node.rate as number | undefined
+      const scale = node.scale as { stat: StatKey; rate: number } | undefined
       const statLabel = stat === 'cutRate' ? plain('カット率') : statTok(stat)
       const applyTo = (node.applyTo as string | undefined) === 'target' ? '対象' : '自分'
       // 割合ステータス（クリティカル率等）はレベル倍率を掛けない（PERCENT_STAT_KEYS参照）。
       // 表示側だけ倍率をかけないと実行結果とズレるため、execution側（modifier.ts の
       // modifierOp）と必ず同じ判定を使う。
       const effMult = isPercentStat(stat) ? 1 : mult
+      if (scale) {
+        // scale は発動時点の自分のステータスを参照するため、静的な効果文では具体的な数値を出せない
+        // （棘を纏う 等）。「自分のSTRの50%分」のような計算式のまま示す
+        return [
+          plain(`${applyTo}の`), statLabel, plain('を、自分の'), statTok(scale.stat), plain('の'),
+          numTok(pct(scale.rate * effMult)), plain('分'),
+          ...(amount !== undefined ? [plain('と'), numTok(`+${amount * effMult}`)] : []),
+          plain('変化させる'),
+        ]
+      }
       const valueTok = amount !== undefined
         ? (isPercentStat(stat) ? numTok(pct(amount * effMult)) : numTok(`+${amount * effMult}`))
         : numTok(pct((rate ?? 0) * effMult))
@@ -152,6 +168,19 @@ function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
       const valueTok = amount !== undefined ? numTok(`${amount}`) : numTok(pct(rate ?? 0))
       return [plain('戦闘終了時にHPを'), valueTok, plain('回復する')]
     }
+    case 'counterStance': {
+      const scaleStat = node.scaleStat as StatKey
+      const rate = node.rate as number
+      const element = node.element as Element
+      return [
+        plain('反撃態勢に入る（次に'), elemTok(element), plain('属性で被弾した回数ぶん、自分の'), statTok(scaleStat), plain('の'),
+        numTok(pct(rate * mult)), plain('分の'), elemTok(element), plain('属性で反撃する）'),
+      ]
+    }
+    case 'periodicSelfDamage': {
+      const ratio = node.ratio as number
+      return [plain('毎ラウンド、自分の最大HPの'), numTok(pct(ratio)), plain('を防げずに失う')]
+    }
     default:
       return [plain(`(${node.op})`)]
   }
@@ -168,6 +197,7 @@ function endsWithPeriod(tokens: readonly SkillTextToken[]): boolean {
 
 export const MODIFIER_SCOPE_LABEL: Record<ModifierScope, string> = {
   thisHit: 'この一撃のみ', thisTurn: 'このターンのみ', thisBattle: 'この戦闘中', permanent: '永続',
+  nextRound: '次の自分の行動まで',
 }
 
 export interface TemporaryModifierView {
@@ -196,5 +226,10 @@ export function buildSkillText(def: SkillDef, level: number): SkillTextToken[] {
     out.push(...nodeToTokens(node, mult))
   })
   if (!endsWithPeriod(out)) out.push(plain('。'))
+  // minRound はゲーム上の制約（いつから使えるか）なので、演出用の flavorText ではなく
+  // 効果テキストの側に明記する（flavorText に役割を持たせ始めると際限がなくなるため）
+  if (def.kind === 'active' && def.minRound !== undefined) {
+    out.push(numTok(`${def.minRound + 1}ターン目`), plain('から使用可能。'))
+  }
   return out
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   getOp, allOpIds, runEffects, KNOWN_OP_IDS,
-  clearThisHitModifiers, clearThisTurnModifiers, clearThisBattleModifiers,
+  clearThisHitModifiers, clearThisTurnModifiers, clearThisBattleModifiers, downgradeNextRoundModifiers,
 } from '../../../../src/domain/battle/effectOps'
 import { shieldCutRateFor } from '../../../../src/domain/battle/effectOps/damage'
 import { BATTLE } from '../../../../src/data/tunables'
@@ -67,6 +67,7 @@ describe('effectOps: 補正スコープの失効', () => {
     const temporary: TemporaryModifier[] = [
       { stat: 'str', flat: 1, scope: 'thisHit', sourceId: 'x' },
       { stat: 'str', flat: 2, scope: 'thisTurn', sourceId: 'x' },
+      { stat: 'str', flat: 5, scope: 'nextRound', sourceId: 'x' },
       { stat: 'str', flat: 3, scope: 'thisBattle', sourceId: 'x' },
       { stat: 'str', flat: 4, scope: 'permanent', sourceId: 'x' },
     ]
@@ -76,16 +77,22 @@ describe('effectOps: 補正スコープの失効', () => {
   it('thisHit の失効では thisHit だけが消える', () => {
     const c = combatantWithAllScopes()
     clearThisHitModifiers(c)
-    expect(c.temporary.map(m => m.scope)).toEqual(['thisTurn', 'thisBattle', 'permanent'])
+    expect(c.temporary.map(m => m.scope)).toEqual(['thisTurn', 'nextRound', 'thisBattle', 'permanent'])
   })
 
-  it('thisTurn の失効では thisTurn だけが消える', () => {
+  it('thisTurn の失効では thisTurn だけが消え、nextRound は残る', () => {
     const c = combatantWithAllScopes()
     clearThisTurnModifiers(c)
-    expect(c.temporary.map(m => m.scope)).toEqual(['thisHit', 'thisBattle', 'permanent'])
+    expect(c.temporary.map(m => m.scope)).toEqual(['thisHit', 'nextRound', 'thisBattle', 'permanent'])
   })
 
-  it('戦闘終了時は thisBattle と thisTurn の両方が消え、permanent は残る', () => {
+  it('nextRound の格下げでは nextRound だけが thisTurn に変わり、他は影響しない', () => {
+    const c = combatantWithAllScopes()
+    downgradeNextRoundModifiers(c)
+    expect(c.temporary.map(m => m.scope)).toEqual(['thisHit', 'thisTurn', 'thisTurn', 'thisBattle', 'permanent'])
+  })
+
+  it('戦闘終了時は thisBattle・thisTurn・nextRound が消え、permanent は残る', () => {
     const c = combatantWithAllScopes()
     clearThisBattleModifiers(c)
     expect(c.temporary.map(m => m.scope)).toEqual(['thisHit', 'permanent'])
@@ -239,6 +246,64 @@ describe('effectOps: damage', () => {
     const r = run({ target: dead })
     expect(r.fx.list).toEqual([])
   })
+
+  it('scale.statOptions は指定したステータスのうち実効値が最も高いものを参照する（自摸 想定）', () => {
+    const tsumo = makeActive({
+      id: 'tsumo', element: 'none',
+      effect: [node('damage', { element: 'none', scale: { statOptions: ['str', 'int'], rate: 2 } })],
+    })
+    const content = makeContent({ skills: [tsumo] })
+    const target = makeCombatant({ id: 'foe', baseStats: makeStats({ hp: 100000, ...NEVER_EVADES }), hp: 100000 })
+
+    // int(1000) > str(500) のケース: int基準で計算される
+    const intHigher = makePlayer({ baseStats: makeStats({ str: 500, int: 1000, hitRate: 1, critRate: 0 }) })
+    const ctxA = makeCtx({ source: intHigher, targets: [target], skill: tsumo, content, rng: constRng(0.5), emit: () => {} })
+    getOp('damage')?.execute(tsumo.effect[0], ctxA)
+    expect(100000 - target.hp).toBe(2000)   // int(1000) × rate(2)
+
+    // str(1500) > int(1000) のケース: str基準に切り替わる
+    const target2 = makeCombatant({ id: 'foe2', baseStats: makeStats({ hp: 100000, ...NEVER_EVADES }), hp: 100000 })
+    const strHigher = makePlayer({ baseStats: makeStats({ str: 1500, int: 1000, hitRate: 1, critRate: 0 }) })
+    const ctxB = makeCtx({ source: strHigher, targets: [target2], skill: tsumo, content, rng: constRng(0.5), emit: () => {} })
+    getOp('damage')?.execute(tsumo.effect[0], ctxB)
+    expect(100000 - target2.hp).toBe(3000)   // str(1500) × rate(2)
+  })
+
+  it('反撃態勢中の対象への命中は queuedCounterHits を積むだけで、即時反撃はしない（カウンター想定）', () => {
+    const target = makeCombatant({
+      id: 'foe', baseStats: makeStats({ hp: 100000, ...NEVER_EVADES }), hp: 100000,
+      pendingCounter: { scaleStat: 'def', rate: 1, element: 'physical', sourceId: 'skill_counter' },
+    })
+    const r = run({ target })
+    expect(r.target.queuedCounterHits).toBe(1)
+    expect(r.source.hp).toBe(r.source.baseStats.hp)   // damage.ts 単体では反撃は実行されない（battleEngine側でまとめて処理）
+  })
+
+  it('反撃態勢の属性と一致しない攻撃（例: 反射板=magicalのところへphysicalが着弾）では発動しない', () => {
+    const target = makeCombatant({
+      id: 'foe', baseStats: makeStats({ hp: 100000, ...NEVER_EVADES }), hp: 100000,
+      pendingCounter: { scaleStat: 'ref', rate: 1, element: 'magical', sourceId: 'skill_reflect_plate' },
+    })
+    const r = run({ target })   // run() の strike は element: 'physical'
+    expect(r.target.queuedCounterHits).toBe(0)
+  })
+
+  it('反撃態勢を持たない対象への命中では queuedCounterHits は増えない', () => {
+    const r = run()
+    expect(r.target.queuedCounterHits).toBe(0)
+  })
+
+  it('外れた攻撃は反撃態勢のキューを増やさない', () => {
+    // evadeRate は導出値のため baseStats に直接書いても効かない（types.ts参照）。
+    // 発動元の hitRate を0にして必ず外れるようにする
+    const source = makePlayer({ baseStats: makeStats({ hitRate: 0 }) })
+    const target = makeCombatant({
+      id: 'foe', baseStats: makeStats({ hp: 100000, ...NEVER_EVADES }), hp: 100000,
+      pendingCounter: { scaleStat: 'def', rate: 1, element: 'physical', sourceId: 'skill_counter' },
+    })
+    const r = run({ source, target, rng: constRng(0) })
+    expect(r.target.queuedCounterHits).toBe(0)
+  })
 })
 
 describe('effectOps: heal', () => {
@@ -283,6 +348,35 @@ describe('effectOps: heal', () => {
     const r = run({ target, source })
     expect(target.hp).toBe(1600)
     expect(r.fx.ids()).toContain('fx_critical')
+  })
+
+  it('flat 指定（無参照の固定値回復）ではステータスを参照せず、固定値をそのまま回復する（小さな薬草 想定）', () => {
+    const flatSkill = makeActive({
+      id: 'small_herb', element: 'none',
+      effect: [node('heal', { element: 'none', flat: 150 })],
+    })
+    const content = makeContent({ skills: [flatSkill] })
+    const target = makeCombatant({ hp: 0, alive: true, baseStats: makeStats({ hp: 100000 }) })
+    // int を極端に振っても flat 回復量は変わらないことを確認する
+    const source = makePlayer({ baseStats: makeStats({ int: 999999, critRate: 0 }) })
+    const fx = captureEffects()
+    const ctx = makeCtx({ source, targets: [target], skill: flatSkill, content, rng: constRng(0.5), emit: fx.emit })
+    getOp('heal')?.execute(flatSkill.effect[0], ctx)
+    expect(target.hp).toBe(150)
+  })
+
+  it('flat 指定でもスキルレベルの倍率は掛かる', () => {
+    const flatSkill = makeActive({
+      id: 'large_herb', element: 'none',
+      effect: [node('heal', { element: 'none', flat: 150 })],
+    })
+    const content = makeContent({ skills: [flatSkill] })
+    const target = makeCombatant({ hp: 0, alive: true, baseStats: makeStats({ hp: 100000 }) })
+    const source = makePlayer({ baseStats: makeStats({ critRate: 0 }) })
+    const fx = captureEffects()
+    const ctx = makeCtx({ source, targets: [target], skill: flatSkill, content, level: 2, rng: constRng(0.5), emit: fx.emit })
+    getOp('heal')?.execute(flatSkill.effect[0], ctx)
+    expect(target.hp).toBe(450)   // 150 × (2^2-1)
   })
 
   it('対象の被回復倍率（healTaken）が乗る', () => {
@@ -462,6 +556,31 @@ describe('effectOps: modifier', () => {
     expect(r.source.temporary[0].flat).toBe(0.5)
   })
 
+  it('scale は発動元の実効ステータス×rateをamountとして加算する（棘を纏う想定）', () => {
+    // makePlayer() の既定 str は 1000（_helpers.ts）
+    const r = run({ stat: 'def', scale: { stat: 'str', rate: 0.3 }, scope: 'thisBattle' })
+    expect(r.source.temporary[0].flat).toBe(300)   // 1000 × 0.3
+  })
+
+  it('scale は固定値の amount と併用でき、加算される', () => {
+    const r = run({ stat: 'def', amount: 50, scale: { stat: 'str', rate: 0.3 }, scope: 'thisBattle' })
+    expect(r.source.temporary[0].flat).toBe(350)   // 50 + (1000 × 0.3)
+  })
+
+  it('scale は applyTo:"target" でも発動元(source)自身のステータスを参照する', () => {
+    const source = makePlayer({ baseStats: { ...makePlayer().baseStats, str: 2000 } })
+    const target = makeCombatant({ id: 'foe', baseStats: { ...makeCombatant().baseStats, str: 1 } })
+    const fx = captureEffects()
+    getOp('modifier')?.execute(node('modifier', { stat: 'def', scale: { stat: 'str', rate: 0.1 }, scope: 'thisBattle', applyTo: 'target' }),
+      makeCtx({ source, targets: [target], skill, content, emit: fx.emit }))
+    expect(target.temporary[0].flat).toBe(200)   // 発動元の str=2000 × 0.1（対象のstr=1は無関係）
+  })
+
+  it('scaleにもスキルレベルの倍率が掛かる', () => {
+    const r = run({ stat: 'def', scale: { stat: 'str', rate: 0.3 }, scope: 'thisBattle' }, 3)
+    expect(r.source.temporary[0].flat).toBe(2100)   // (1000 × 0.3) × (2^3-1)
+  })
+
   it('付与元スキルIDが記録される', () => {
     const r = run({ stat: 'str', amount: 1, scope: 'thisTurn' })
     expect(r.source.temporary[0].sourceId).toBe('buffer')
@@ -478,5 +597,34 @@ describe('effectOps: modifier', () => {
     getOp('modifier')?.execute(node('modifier', { stat: 'def', rate: -0.2, scope: 'thisBattle', applyTo: 'target' }),
       makeCtx({ source, targets: [dead], skill, content }))
     expect(dead.temporary).toHaveLength(0)
+  })
+})
+
+describe('effectOps: periodicSelfDamage', () => {
+  it('継続ダメージを自身の periodicSelfEffects へ登録する（龍鱗 想定）', () => {
+    const skill = makeActive({ id: 'skill_dragon_scale' })
+    const content = makeContent({ skills: [skill] })
+    const source = makePlayer()
+    getOp('periodicSelfDamage')?.execute(
+      node('periodicSelfDamage', { ratio: 0.15 }),
+      makeCtx({ source, targets: [source], skill, content }),
+    )
+    expect(source.periodicSelfEffects).toEqual([
+      { kind: 'trueDamagePercentMaxHp', ratio: 0.15, sourceId: 'skill_dragon_scale' },
+    ])
+  })
+})
+
+describe('effectOps: counterStance', () => {
+  it('反撃態勢を設定し、キューをリセットする(カウンター/反射板 想定)', () => {
+    const skill = makeActive({ id: 'skill_counter' })
+    const content = makeContent({ skills: [skill] })
+    const source = makePlayer({ queuedCounterHits: 3 })
+    getOp('counterStance')?.execute(
+      node('counterStance', { scaleStat: 'def', rate: 1, element: 'physical' }),
+      makeCtx({ source, targets: [source], skill, content }),
+    )
+    expect(source.pendingCounter).toEqual({ scaleStat: 'def', rate: 1, element: 'physical', sourceId: 'skill_counter' })
+    expect(source.queuedCounterHits).toBe(0)
   })
 })

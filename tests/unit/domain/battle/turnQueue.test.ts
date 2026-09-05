@@ -4,7 +4,7 @@ import {
   pickEnemySkill, previewEnemyNextSkill,
 } from '../../../../src/domain/battle/turnQueue'
 import type { Combatant } from '../../../../src/domain/battle/types'
-import { makeCombatant, makePlayer, makeStats, makeEnemyDef } from './_helpers'
+import { makeCombatant, makePlayer, makeStats, makeEnemyDef, makeContent, makeActive } from './_helpers'
 
 const agiOf = (c: Combatant): number => c.baseStats.agi
 
@@ -102,6 +102,8 @@ describe('turnQueue: 敵のアクティブ構築と行動パターン', () => {
 })
 
 describe('turnQueue: 敵のスキル選択', () => {
+  const content = makeContent()
+
   function patternEnemy(pattern: string[]): Combatant {
     const built = buildEnemyActivesFromPattern(makeEnemyDef({
       id: 'e',
@@ -113,49 +115,78 @@ describe('turnQueue: 敵のスキル選択', () => {
 
   it('パターン中の連続した同一スキルがそのまま連続で選ばれる', () => {
     const e = patternEnemy(['bite', 'bite', 'roar'])
-    expect([pickEnemySkill(e), pickEnemySkill(e), pickEnemySkill(e)]).toEqual(['bite', 'bite', 'roar'])
+    expect([pickEnemySkill(e, content, 0), pickEnemySkill(e, content, 0), pickEnemySkill(e, content, 0)]).toEqual(['bite', 'bite', 'roar'])
   })
 
   it('パターンは末尾まで進んだら先頭へ戻る', () => {
     const e = patternEnemy(['a', 'b'])
-    expect([pickEnemySkill(e), pickEnemySkill(e), pickEnemySkill(e)]).toEqual(['a', 'b', 'a'])
+    expect([pickEnemySkill(e, content, 0), pickEnemySkill(e, content, 0), pickEnemySkill(e, content, 0)]).toEqual(['a', 'b', 'a'])
   })
 
   it('クールタイム中のスキルは飛ばして次の使用可能なものを選ぶ', () => {
     const e = patternEnemy(['a', 'b'])
     const a = e.actives.find(x => x.id === 'a')
     if (a) a.cooldown = 2
-    expect(pickEnemySkill(e)).toBe('b')
+    expect(pickEnemySkill(e, content, 0)).toBe('b')
   })
 
   it('全スキルがクールタイム中なら null（何もしない）', () => {
     const e = patternEnemy(['a', 'b'])
     for (const act of e.actives) act.cooldown = 1
-    expect(pickEnemySkill(e)).toBeNull()
+    expect(pickEnemySkill(e, content, 0)).toBeNull()
   })
 
   it('行動パターンが空なら null', () => {
-    expect(pickEnemySkill(makeCombatant())).toBeNull()
+    expect(pickEnemySkill(makeCombatant(), content, 0)).toBeNull()
   })
 
   it('プレビューはパターン位置を消費しない', () => {
     const e = patternEnemy(['a', 'b'])
-    expect(previewEnemyNextSkill(e)).toBe('a')
-    expect(previewEnemyNextSkill(e)).toBe('a')
+    expect(previewEnemyNextSkill(e, content, 0)).toBe('a')
+    expect(previewEnemyNextSkill(e, content, 0)).toBe('a')
     expect(e.patternIndex).toBe(0)
   })
 
   it('プレビューは実際に選ばれるスキルと一致する', () => {
     const e = patternEnemy(['a', 'a', 'b'])
     for (let i = 0; i < 5; i++) {
-      const preview = previewEnemyNextSkill(e)
-      expect(pickEnemySkill(e)).toBe(preview)
+      const preview = previewEnemyNextSkill(e, content, 0)
+      expect(pickEnemySkill(e, content, 0)).toBe(preview)
     }
   })
 
   it('全スキルCT中のときはプレビューも null', () => {
     const e = patternEnemy(['a'])
     e.actives[0].cooldown = 3
-    expect(previewEnemyNextSkill(e)).toBeNull()
+    expect(previewEnemyNextSkill(e, content, 0)).toBeNull()
+  })
+
+  it('minRound未満のラウンドでは、そのスキルを飛ばして次の使用可能なものを選ぶ（魔導式 想定）', () => {
+    const gated = makeActive({ id: 'gated', minRound: 2 })
+    const gatedContent = makeContent({ skills: [gated] })
+    const e = patternEnemy(['gated', 'b'])
+    expect(pickEnemySkill(e, gatedContent, 0)).toBe('b')
+    expect(pickEnemySkill(e, gatedContent, 1)).toBe('b')
+  })
+
+  it('minRoundを満たしたラウンドからは選ばれるようになる', () => {
+    const gated = makeActive({ id: 'gated', minRound: 2 })
+    const gatedContent = makeContent({ skills: [gated] })
+    const e = patternEnemy(['gated', 'b'])
+    expect(pickEnemySkill(e, gatedContent, 2)).toBe('gated')
+  })
+
+  it('全スキルがminRound未満なら null', () => {
+    const gated = makeActive({ id: 'gated', minRound: 5 })
+    const gatedContent = makeContent({ skills: [gated] })
+    const e = patternEnemy(['gated'])
+    expect(pickEnemySkill(e, gatedContent, 0)).toBeNull()
+  })
+
+  it('プレビューもminRoundを考慮する', () => {
+    const gated = makeActive({ id: 'gated', minRound: 2 })
+    const gatedContent = makeContent({ skills: [gated] })
+    const e = patternEnemy(['gated', 'b'])
+    expect(previewEnemyNextSkill(e, gatedContent, 0)).toBe('b')
   })
 })

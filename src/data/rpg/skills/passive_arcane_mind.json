@@ -2,11 +2,15 @@
   "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "passive_arcane_mind",
   "label": "深読みの癖",
-  "flavorText": "行間まで読むようになった。",
+  "flavorText": "行間が読めるようになった。",
   "kind": "passive",
   "mainCategory": "wisdom",
   "subCategories": [],
   "effect": [
-    { "op": "statBoost", "stat": "int", "amount": 600 }
+    {
+      "op": "statBoost",
+      "stat": "int",
+      "amount": 600
+    }
   ]
 }

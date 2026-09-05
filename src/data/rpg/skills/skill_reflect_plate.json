@@ -1,0 +1,29 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_reflect_plate",
+  "label": "反射板",
+  "flavorText": "「その言葉、そっくりそのまま返してあげる！」",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "aegis",
+  "subCategories": [
+    "guard"
+  ],
+  "cooldown": 4,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "counterStance",
+      "scaleStat": "ref",
+      "rate": 1,
+      "element": "magical"
+    }
+  ],
+  "sfx": {
+    "cast": "battle_guard"
+  }
+}

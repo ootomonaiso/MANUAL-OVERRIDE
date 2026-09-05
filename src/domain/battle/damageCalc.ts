@@ -12,6 +12,8 @@ export function defenseValueFor(element: Element, stats: EffectiveStats): number
     case 'physical': return stats.def
     case 'magical':  return stats.ref
     case 'special':  return (stats.def + stats.ref) / 4
+    // 無属性: DEF/REFの実効値が高い方が常に参照される（弱点を突けない代わりに常に高い方の防御が乗る）
+    case 'none':     return Math.max(stats.def, stats.ref)
   }
 }
 
@@ -50,7 +52,7 @@ export function computeAffinityStage(
   targetTraits: readonly OwnedTrait[],
   traitDefs: ReadonlyMap<string, TraitDef>,
 ): number {
-  if (element === 'special') return 0
+  if (element === 'special' || element === 'none') return 0
   let stage = 0
   for (const t of targetTraits) {
     const def = traitDefs.get(t.id)
@@ -83,7 +85,7 @@ const EFFECTIVENESS_SKEW_THRESHOLD = 0.1
  * 一方的に偏らないため対象外。コマンド一覧で技をホバーした時のプレビュー用。
  */
 export function effectivenessHint(element: Element, targetStats: EffectiveStats): EffectivenessHint {
-  if (element === 'special') return null
+  if (element === 'special' || element === 'none') return null
   const total = targetStats.def + targetStats.ref
   if (total <= 0) return null
   const skew = (targetStats.def - targetStats.ref) / total

@@ -124,11 +124,18 @@ describe('contentEditorForm: EFFECT_OP_FIELDS（効果ロジックの型付き�
       expect(EFFECT_OP_FIELDS[op], op).toBeDefined()
     }
   })
-  it('damage/heal/shield は element と scale の2フィールド', () => {
-    for (const op of ['damage', 'heal', 'shield']) {
+  it('damage/shield は element と scale の2フィールド', () => {
+    for (const op of ['damage', 'shield']) {
       const keys = EFFECT_OP_FIELDS[op].map(f => f.key)
       expect(keys, op).toEqual(['element', 'scale'])
     }
+  })
+  it('heal は element・scale（任意）・flat（任意、無参照の固定値回復）の3フィールド', () => {
+    const keys = EFFECT_OP_FIELDS.heal.map(f => f.key)
+    expect(keys).toEqual(['element', 'scale', 'flat'])
+    const byKey = Object.fromEntries(EFFECT_OP_FIELDS.heal.map(f => [f.key, f]))
+    expect(byKey.scale.optional).toBe(true)
+    expect(byKey.flat.optional).toBe(true)
   })
   it('damage のひな形が EFFECT_OP_FIELDS の必須フィールドをすべて満たす', () => {
     const skeleton = EFFECT_OP_SKELETONS.damage as Record<string, unknown>
@@ -136,10 +143,12 @@ describe('contentEditorForm: EFFECT_OP_FIELDS（効果ロジックの型付き�
       if (!spec.optional) expect(skeleton[spec.key], spec.key).not.toBeUndefined()
     }
   })
-  it('modifier の amount/rate/applyTo は任意項目としてマークされている', () => {
+  it('modifier の amount/rate/scale/applyTo は任意項目としてマークされている', () => {
     const byKey = Object.fromEntries(EFFECT_OP_FIELDS.modifier.map(f => [f.key, f]))
     expect(byKey.amount.optional).toBe(true)
     expect(byKey.rate.optional).toBe(true)
+    expect(byKey.scale.optional).toBe(true)
+    expect(byKey.scale.kind).toBe('scale')
     expect(byKey.applyTo.optional).toBe(true)
     expect(byKey.stat.optional).toBeFalsy()
     expect(byKey.scope.optional).toBeFalsy()

@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_reckless_striker",
+  "label": "捨て身の一撃",
+  "flavorText": "当てることは、二の次だ。",
+  "kind": "trait",
+  "effect": [
+    { "op": "statBoost", "stat": "hitRate", "amount": -0.2 },
+    { "op": "effectBoost", "element": "physical", "rate": 0.4 },
+    { "op": "effectBoost", "element": "magical", "rate": 0.4 }
+  ]
+}

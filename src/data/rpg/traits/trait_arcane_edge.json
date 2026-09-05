@@ -1,0 +1,10 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_arcane_edge",
+  "label": "魔導の刃",
+  "flavorText": "言葉に、刃を宿す。",
+  "kind": "trait",
+  "effect": [
+    { "op": "effectBoost", "element": "magical", "rate": 0.5 }
+  ]
+}

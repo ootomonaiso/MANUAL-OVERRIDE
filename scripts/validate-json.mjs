@@ -487,8 +487,14 @@ function walkEffectNodes(nodes, problems, path = 'effect') {
       if (node.onLastIteration) walkEffectNodes(node.onLastIteration, problems, `${p}.onLastIteration`)
     }
     if (['damage', 'heal', 'shield'].includes(node.op)) {
-      if (!node.scale || typeof node.scale.stat !== 'string' || typeof node.scale.rate !== 'number') {
-        problems.push(`${p}: scale.stat / scale.rate が必要です`)
+      // heal は flat（固定値・無参照）が scale の代わりに使える（小さな薬草 等）。
+      // scale は stat（単一）か statOptions（複数のうち実効値最大を参照。自摸＝STR/INTの高い方 等）のどちらか
+      const hasFlatHeal = node.op === 'heal' && typeof node.flat === 'number'
+      const scale = node.scale
+      const hasValidScale = !!scale && typeof scale.rate === 'number'
+        && (typeof scale.stat === 'string' || (Array.isArray(scale.statOptions) && scale.statOptions.every(s => typeof s === 'string')))
+      if (!hasFlatHeal && !hasValidScale) {
+        problems.push(`${p}: scale.stat（またはscale.statOptions） / scale.rate、または heal の flat が必要です`)
       }
     }
   })
@@ -500,6 +506,7 @@ function validateBattleSkills() {
   const passiveIds = new Set()
   const referencedEffectIds = new Set()
   const referencedSfxIds = new Set()
+  const transformsIntoRefs = []
   const seen = new Set()
 
   for (const file of walkJson('src/data/rpg/skills')) {
@@ -532,12 +539,19 @@ function validateBattleSkills() {
       if (data.kind !== 'active') problems.push('sfx は kind="active" のスキルにのみ指定できます')
       for (const id of [data.sfx.cast, data.sfx.impact]) if (id) referencedSfxIds.add(id)
     }
+    if (data.grantsBonusOnTransformUse && !data.transformsInto) {
+      problems.push('grantsBonusOnTransformUse は transformsInto と併用してください（変化先が無いと誰にも効きません）')
+    }
+    if (data.transformsInto) {
+      if (data.kind !== 'active') problems.push('transformsInto は kind="active" のスキルにのみ指定できます')
+      transformsIntoRefs.push({ from: data.id, to: data.transformsInto })
+    }
     if (Array.isArray(data.effect)) walkEffectNodes(data.effect, problems)
 
     if (problems.length > 0) fail(rel, problems.join('\n       '))
     else ok(rel)
   }
-  return { activeIds, passiveIds, referencedEffectIds, referencedSfxIds }
+  return { activeIds, passiveIds, referencedEffectIds, referencedSfxIds, transformsIntoRefs }
 }
 
 /** src/data/rpg/traits/*.json を検証する。戻り値: 特性IDの集合 */
@@ -671,6 +685,16 @@ function validateBattleEffectReferences(referencedEffectIds, effectIds, effectTi
   else ok(rel)
 }
 
+/** transformsInto（立直⇔自摸 等）が実在するアクティブスキルを指しているか */
+function validateBattleTransformsIntoReferences(transformsIntoRefs, activeIds) {
+  const rel = 'src/data/rpg/skills/*.json (transformsInto 参照整合性)'
+  const problems = transformsIntoRefs
+    .filter(({ to }) => !activeIds.has(to))
+    .map(({ from, to }) => `${from}.transformsInto が存在しないアクティブスキル "${to}" を参照しています`)
+  if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
+  else ok(rel)
+}
+
 /** src/data/rpg/battle-backgrounds/*.json を検証する。戻り値: ボス専用でない背景の数 */
 function validateBattleBackgrounds() {
   const seen = new Set()
@@ -742,7 +766,9 @@ const {
   passiveIds: battlePassiveIds,
   referencedEffectIds: battleReferencedEffectIds,
   referencedSfxIds: skillReferencedSfxIds,
+  transformsIntoRefs: battleTransformsIntoRefs,
 } = validateBattleSkills()
+validateBattleTransformsIntoReferences(battleTransformsIntoRefs, battleActiveIds)
 const battleTraitIds = validateBattleTraits()
 validateBattleEnemies(battleActiveIds, battlePassiveIds, battleTraitIds, spriteFrames)
 const {

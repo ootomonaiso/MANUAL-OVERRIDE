@@ -20,6 +20,7 @@ const ELEMENT_COLOR: Record<Element, string> = {
   physical: 'var(--battle-element-physical)',
   magical: 'var(--battle-element-magical)',
   special: 'var(--battle-element-special)',
+  none: 'var(--battle-element-none)',
 }
 
 const accent = computed(() => props.element ? ELEMENT_COLOR[props.element] : 'var(--battle-accent)')

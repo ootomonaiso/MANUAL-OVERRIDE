@@ -16,7 +16,7 @@ import {
   computeEffectiveStats, clampHpToMax,
 } from './stats'
 import { resolveAdjacent3, buildEnemyActivesFromPattern, previewEnemyNextSkill, pickEnemySkill } from './turnQueue'
-import { runEffects, clearThisTurnModifiers, clearThisBattleModifiers } from './effectOps'
+import { runEffects, clearThisTurnModifiers, clearThisBattleModifiers, downgradeNextRoundModifiers } from './effectOps'
 import { CATEGORY_IDS } from './types'
 
 type Emit = (req: EffectRequest) => void
@@ -47,6 +47,10 @@ function freshCombatant(id: string, label: string, isPlayer: boolean, formationI
     hp: 0, shield: 0, alive: true,
     traits: [], passives: [], actives: [],
     temporary: [],
+    periodicSelfEffects: [],
+    pendingCounter: null,
+    queuedCounterHits: 0,
+    pendingTransformBonus: null,
     builtinCooldowns: { guard: 0, dodge: 0 },
     actionPattern: [], patternIndex: 0, formationIndex, isBoss: false,
   }
@@ -140,14 +144,17 @@ export function resolveEffectiveStats(c: Combatant, content: BattleContent): imp
 // フォーカス解決
 // ─────────────────────────────────────────────────────────────
 
-/** プレイヤー操作用: 指定した敵を中心に focusRange に応じた対象配列を返す */
+/** プレイヤー操作用: 指定した敵を中心に focusRange に応じた対象配列を返す。
+ * rng は focusRange:'random' でのみ使う（生存している敵からランダムに1体選ぶ） */
 export function resolvePlayerFocus(
   spec: FocusSpec, player: Combatant, enemies: readonly Combatant[], centerEnemyIndex: number | null,
+  rng: () => number,
 ): Combatant[] {
   if (spec.side === 'self') return [player]
   const alive = enemies.filter(e => e.alive)
   if (spec.side === 'ally') return [player]   // 味方は存在しない。安全側フォールバック
   if (spec.range === 'all') return alive
+  if (spec.range === 'random') return alive.length > 0 ? [alive[Math.floor(rng() * alive.length)]] : []
   if (spec.range === 'adjacent3' && centerEnemyIndex !== null) return resolveAdjacent3(enemies, centerEnemyIndex)
   if (centerEnemyIndex !== null) {
     const e = enemies[centerEnemyIndex]
@@ -179,6 +186,15 @@ export function useActiveSkill(params: {
   const def = content.skills.get(skillId)
   if (!def || def.kind !== 'active') return
 
+  // 一発ツモ 想定: 直前に立直等が仕込んだ「変化先スキル専用の一時ボーナス」を、対象がこの
+  // スキルと一致する時だけ消費する。thisHit スコープで積むので、この後の runEffects 内の
+  // ダメージ計算にだけ乗り、命中・外れに関わらず runEffects の末尾で自動的に失効する
+  if (source.pendingTransformBonus && source.pendingTransformBonus.targetSkillId === skillId) {
+    const bonus = source.pendingTransformBonus
+    source.temporary.push({ stat: bonus.stat, flat: bonus.amount, scope: 'thisHit', sourceId: `${skillId}:transformBonus` })
+    source.pendingTransformBonus = null
+  }
+
   // onCast タイミングのエフェクトのみここで発火する。onHit 側は damage op が対象ごとに出す
   //（対象が複数・多段のとき、着弾演出は当たった回数だけ必要になるため）
   for (const fx of def.effects ?? []) {
@@ -190,6 +206,71 @@ export function useActiveSkill(params: {
     getEffective: c => resolveEffectiveStats(c, content),
     content,
   })
+
+  flushCounterRetaliations({ attacker: source, hitTargets: targets, state, content, rng, emit })
+
+  // 立直⇔自摸 のように、使用後に別スキルへ変化する。OwnedActive の id だけ差し替え、
+  // レベル・スタック・スロット位置は維持する。呼び出し元（selectAction/enemyTakeTurn）は
+  // この直後に owned.id を見てクールダウンを設定するため、順序として先にここで差し替える
+  if (def.transformsInto) {
+    const owned = source.actives.find(a => a.id === skillId)
+    if (owned) owned.id = def.transformsInto
+    if (def.grantsBonusOnTransformUse) {
+      source.pendingTransformBonus = {
+        targetSkillId: def.transformsInto,
+        stat: def.grantsBonusOnTransformUse.stat,
+        amount: def.grantsBonusOnTransformUse.amount,
+        roundsRemaining: 2,   // nextRoundスコープと同じ寿命（残りの現ラウンド＋次のラウンド丸ごと）
+      }
+    }
+  }
+}
+
+/**
+ * カウンター/反射板: 攻撃側の一連の行動（repeatを含む）が完全に終わってから、
+ * 被弾側で反撃態勢中だった対象ぶんをまとめて反撃させる（ユーザー確定仕様）。
+ * 反撃も通常の damage op（命中判定・カット率・属性相性込み）を経由するため、
+ * 相手のステータス次第で通りにくくなる
+ */
+function flushCounterRetaliations(params: {
+  attacker: Combatant
+  hitTargets: readonly Combatant[]
+  state: BattleState
+  content: BattleContent
+  rng: () => number
+  emit: Emit
+}): void {
+  const { attacker, hitTargets, state, content, rng, emit } = params
+  for (const holder of hitTargets) {
+    // hitTargets は「このスキルの対象だった者」であって「実際に被弾した者」ではない
+    // （例: counterStance 自体は自己対象の宣言的opで、誰もダメージを受けていない）。
+    // queuedCounterHits が0のままなら何も消費しない — pendingCounter に触れてもいけない
+    // （そうしないと、反撃態勢に入った直後の自己対象アクションでその場で消えてしまう）
+    const hits = holder.queuedCounterHits
+    if (hits <= 0) continue
+    const pending = holder.pendingCounter
+    holder.pendingCounter = null
+    holder.queuedCounterHits = 0
+    if (!pending || !holder.alive) continue
+
+    const counterDef = content.skills.get(pending.sourceId)
+    const level = holder.actives.find(a => a.id === pending.sourceId)?.level ?? 1
+    const skillForRetaliation: ActiveSkillDef = counterDef && counterDef.kind === 'active' ? counterDef : {
+      kind: 'active', id: pending.sourceId, label: pending.sourceId, flavorText: '',
+      mainCategory: 'guard', subCategories: [], effect: [],
+      element: pending.element, cooldown: 0, defaultFocus: 'enemy', focusRange: 'single',
+    }
+    const retaliationNode = { op: 'damage', element: pending.element, scale: { stat: pending.scaleStat, rate: pending.rate } }
+
+    for (let i = 0; i < hits; i++) {
+      if (!attacker.alive) break
+      runEffects([retaliationNode], {
+        source: holder, targets: [attacker], skill: skillForRetaliation, level, state, emit, rng,
+        getEffective: c => resolveEffectiveStats(c, content),
+        content,
+      })
+    }
+  }
 }
 
 export function useBuiltinAction(source: Combatant, action: 'guard' | 'pass' | 'dodge'): void {
@@ -224,7 +305,7 @@ export function enemyTakeTurn(params: {
   emit: Emit
 }): void {
   const { state, content, enemy, player, rng, emit } = params
-  const skillId = pickEnemySkill(enemy)
+  const skillId = pickEnemySkill(enemy, content, state.roundCount)
   if (!skillId) return   // 全スキルCT中 = 何もしない
   const owned = enemy.actives.find(a => a.id === skillId)
   if (!owned) return
@@ -233,7 +314,11 @@ export function enemyTakeTurn(params: {
 
   const targets = resolveEnemyFocus({ side: def.defaultFocus, range: def.focusRange }, enemy, player)
   useActiveSkill({ state, content, source: enemy, skillId, level: owned.level, targets, rng, emit })
-  owned.cooldown = def.cooldown
+  // transformsInto で owned.id が変化している場合があるため、クールダウンは使用後の id で改めて引く
+  // （注意: transformsInto を持つスキルは actionPattern の同じ位置に再度現れると id が一致せず
+  // 選ばれなくなるため、敵の actionPattern には向かない。プレイヤーの所持スキル専用として設計している）
+  const usedDef = content.skills.get(owned.id)
+  owned.cooldown = usedDef && usedDef.kind === 'active' ? usedDef.cooldown : 0
 }
 
 export { previewEnemyNextSkill }
@@ -242,15 +327,42 @@ export { previewEnemyNextSkill }
 // ラウンド終了処理
 // ─────────────────────────────────────────────────────────────
 
-export function endOfRound(state: BattleState): void {
+export function endOfRound(state: BattleState, content: BattleContent, emit: Emit): void {
   const all = [state.player, ...state.enemies].filter(c => c.alive)
   for (const c of all) {
     for (const a of c.actives) a.cooldown = Math.max(0, a.cooldown - 1)
     c.builtinCooldowns.guard = Math.max(0, c.builtinCooldowns.guard - 1)
     c.builtinCooldowns.dodge = Math.max(0, c.builtinCooldowns.dodge - 1)
+    // 先に thisTurn を失効させてから nextRound を thisTurn へ格下げする（順序が逆だと同じ呼び出しで消えてしまう）。
+    // これにより nextRound は「付与されたラウンドの残り＋次のラウンド丸ごと」＝2ラウンド分保つ
     clearThisTurnModifiers(c)
+    downgradeNextRoundModifiers(c)
+    applyPeriodicSelfEffects(c, content, emit)
+    // 一発ツモ 想定: 変化先スキル専用ボーナスは nextRound と同じ2ラウンド寿命（未消費なら失効させる）
+    if (c.pendingTransformBonus) {
+      c.pendingTransformBonus.roundsRemaining--
+      if (c.pendingTransformBonus.roundsRemaining <= 0) c.pendingTransformBonus = null
+    }
   }
   state.roundCount++
+}
+
+/**
+ * 継続ダメージ（龍鱗 想定）。シールド・カット率を経由せず直接HPを減らす（防ぎようがない）。
+ * 自滅（戦闘不能）は許容する
+ */
+function applyPeriodicSelfEffects(c: Combatant, content: BattleContent, emit: Emit): void {
+  for (const pe of c.periodicSelfEffects) {
+    if (!c.alive) break
+    const maxHp = resolveEffectiveStats(c, content).hp
+    const dmg = Math.floor(pe.ratio * maxHp)
+    c.hp = Math.max(0, c.hp - dmg)
+    emit({ effectId: 'fx_debuff', targetRef: 'source', combatantId: c.id, payload: { text: `-${dmg}`, skillId: pe.sourceId } })
+    if (c.hp <= 0) {
+      c.alive = false
+      emit({ effectId: 'fx_defeat', targetRef: 'source', combatantId: c.id })
+    }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -273,7 +385,11 @@ export function finishBattleOnVictory(state: BattleState, content: BattleContent
   const player = state.player
   const wonBoss = state.enemies.some(e => e.isBoss)
 
-  clearThisBattleModifiers(player)   // thisTurn/thisBattle をまとめて除去。permanent は残す
+  clearThisBattleModifiers(player)   // thisTurn/thisBattle/nextRound をまとめて除去。permanent は残す
+  player.periodicSelfEffects = []    // 継続ダメージ（龍鱗等）も戦闘限りでリセットする
+  player.pendingCounter = null       // カウンター/反射板の反撃態勢も戦闘限りでリセットする
+  player.queuedCounterHits = 0
+  player.pendingTransformBonus = null   // 一発ツモ等の変化先スキル専用ボーナスも戦闘限りでリセットする
   for (const a of player.actives) a.cooldown = 0
   player.builtinCooldowns = { guard: 0, dodge: 0 }
 

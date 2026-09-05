@@ -43,11 +43,22 @@ export function clearThisTurnModifiers(c: { temporary: TemporaryModifier[] }): v
 }
 
 export function clearThisBattleModifiers(c: { temporary: TemporaryModifier[] }): void {
-  c.temporary = c.temporary.filter(m => m.scope !== 'thisBattle' && m.scope !== 'thisTurn')
+  c.temporary = c.temporary.filter(m => m.scope !== 'thisBattle' && m.scope !== 'thisTurn' && m.scope !== 'nextRound')
+}
+
+/**
+ * `nextRound` スコープを `thisTurn` へ格下げする。endOfRound() で clearThisTurnModifiers() の**直後**に
+ * 呼ぶこと（先にthisTurnを消してから格下げしないと、格下げした直後に同じ呼び出しで消えてしまう）。
+ * これにより「付与されたラウンドの残り＋次のラウンド丸ごと」で失効する2ラウンド分の寿命になる。
+ */
+export function downgradeNextRoundModifiers(c: { temporary: TemporaryModifier[] }): void {
+  for (const m of c.temporary) {
+    if (m.scope === 'nextRound') m.scope = 'thisTurn'
+  }
 }
 
 export const KNOWN_OP_IDS = [
   'damage', 'heal', 'shield', 'repeat', 'modifier',
   'statBoost', 'elementAffinity', 'cutRate', 'replaceGuard', 'healBetweenBattles',
-  'effectBoost', 'healTaken', 'noop',
+  'effectBoost', 'healTaken', 'noop', 'counterStance', 'periodicSelfDamage',
 ] as const
