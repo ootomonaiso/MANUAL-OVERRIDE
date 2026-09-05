@@ -158,8 +158,10 @@ export class SideScroller {
   private _timescaleScale = 1.0
   private _timescaleRemaining = -1
 
-  // フレーム内で一度だけ _buildWorld() するためのキャッシュ
   private _frameWorld: MutableWorld | null = null
+
+  // power_up フィーチャー用のブーストタイマー（ShootFeature が参照）
+  private _powerBoostTimer = 0
 
   // ─── 統計 ────────────────────────────────────────────────────────
   private stats: ActionStats = { jumps: 0, moveRight: 0, moveLeft: 0, shots: 0, ticks: 0, collisions: 0, itemsCollected: 0, dashes: 0 }
@@ -464,7 +466,10 @@ export class SideScroller {
 
     // ─── 距離ベースの自動加速 ─────────────────────────────────────────
     const distanceAccelFactor = 1 + Math.min(this.distance / DISTANCE_ACCEL.fullDist, DISTANCE_ACCEL.maxBonus)
-    const effectiveScrollSpeed = r.scrollSpeed * distanceAccelFactor
+    // ジャンル固有の scrollSpeedBonus を適用（STG 等で -80 等）
+    const genrePlugin = getGenre(r.genre)
+    const scrollBonus = genrePlugin.scrollSpeedBonus ?? 0
+    const effectiveScrollSpeed = (r.scrollSpeed + scrollBonus) * distanceAccelFactor
 
     // ─── Pre-physics: 移動 Feature が vx をセット ────────────────────
     const inputSnap = this.input.snapshot()
@@ -1340,6 +1345,21 @@ export class SideScroller {
       ctx.fillStyle = '#886633'
       ctx.fillRect(sx + 9, y + 19, 4, 5)
       ctx.fillRect(sx + 6, y + 17, 10, 3)
+    } else if (item.type === 'power') {
+      // 射撃強化: 青い発光四角形（雷マーク風）
+      ctx.shadowColor = '#00ccff'
+      ctx.shadowBlur = 14
+      ctx.fillStyle = '#00ccff'
+      ctx.beginPath()
+      ctx.moveTo(sx + 11, y + 2)
+      ctx.lineTo(sx + 6, y + 11)
+      ctx.lineTo(sx + 10, y + 11)
+      ctx.lineTo(sx + 8, y + 20)
+      ctx.lineTo(sx + 16, y + 9)
+      ctx.lineTo(sx + 12, y + 9)
+      ctx.lineTo(sx + 16, y + 2)
+      ctx.closePath()
+      ctx.fill()
     }
     ctx.restore()
   }
@@ -1398,8 +1418,15 @@ export class SideScroller {
       }
       if (r.features.has('item_pickup') && Math.random() < SPAWN.itemDropChance) {
         const itemType = Math.random() < SPAWN.itemExpChance ? 'exp' : 'hp'
-        const itemX = bandMinX + Math.random() * Math.max(0, bandMaxX - 32 - bandMinX)
-        this.items.push(new Item(itemX, spawnY, itemType))
+        // power_up 有効時は powerDropChance で power アイテムを混入
+        const POWER_DROP_CHANCE = (SPAWN as { powerDropChance?: number }).powerDropChance ?? 0.15
+        if (r.features.has('power_up') && Math.random() < POWER_DROP_CHANCE) {
+          const powerItemX = bandMinX + Math.random() * Math.max(0, bandMaxX - 32 - bandMinX)
+          this.items.push(new Item(powerItemX, spawnY, 'power'))
+        } else {
+          const itemX2 = bandMinX + Math.random() * Math.max(0, bandMaxX - 32 - bandMinX)
+          this.items.push(new Item(itemX2, spawnY, itemType))
+        }
       }
     } else {
       // ─── 横スクロール: 画面右端からワールド座標で出現 ────────────
@@ -1448,7 +1475,13 @@ export class SideScroller {
       if (r.features.has('item_pickup') && Math.random() < SPAWN.itemDropChance) {
         const type = Math.random() < SPAWN.itemExpChance ? 'exp' : 'hp'
         const itemY = Math.min(gY - SPAWN.itemGroundOffsetY, H - sz.bottom - SPAWN.itemGroundOffsetY)
-        this.items.push(new Item(worldX + SPAWN.itemOffsetX, itemY, type))
+        // power_up 有効時は powerDropChance で power アイテムを混入
+        const POWER_DROP_CHANCE = (SPAWN as { powerDropChance?: number }).powerDropChance ?? 0.15
+        if (r.features.has('power_up') && Math.random() < POWER_DROP_CHANCE) {
+          this.items.push(new Item(worldX + SPAWN.itemOffsetX, itemY, 'power'))
+        } else {
+          this.items.push(new Item(worldX + SPAWN.itemOffsetX, itemY, type))
+        }
       }
     }
   }
@@ -1601,6 +1634,10 @@ export class SideScroller {
       addScoreVarsBossKill()   { self.scoreVarsBossKills++ },
       addScoreVarsStealthBonus(amount: number) { self.scoreVarsStealthBonus += amount },
       addScoreVarsColorTouch() { self.scoreVarsColorTouches++ },
+
+      // power_up フィーチャー用: ShootFeature が powerBoostTimer を参照
+      get powerBoostTimer(): number { return self._powerBoostTimer },
+      set powerBoostTimer(v: number) { self._powerBoostTimer = v },
     }
   }
 

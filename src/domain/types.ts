@@ -73,7 +73,7 @@ export type EnvironmentId   =
 // 既存: shoot / three_way / charge_shot / spread_shot / bomb / enemy_hp / boss
 //       movement / auto_run / slow_precise / double_jump / long_air / dash /
 //       wall_jump / slide / gravity_flip / vertical_scroll
-//       hp / exp / item_pickup / shield
+//       hp / exp / item_pickup / shield / power_up
 //       survival_hunger / survival_melee / survival_level
 //       grid_stop / puzzle_solve
 //       beat_hazard / just_input / beat_dash

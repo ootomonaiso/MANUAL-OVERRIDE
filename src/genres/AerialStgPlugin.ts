@@ -107,11 +107,15 @@ export class AerialStgPlugin extends GenrePluginBase {
   }
 
   // 縦モード: 全ハザードが画面上端からスポーン。placement は無視される。
+  // hpOverride: enemy_hp 有効時の敵HPを2に固定。safeChance: 安全敵を完全排除。
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'diamond', placement: 'air', weightStart: 2, weightEnd: 6, wRange: [24, 34], hRange: [26, 38], safeChance: 0 },
-    { shape: 'rect',    placement: 'air', weightStart: 1, weightEnd: 4, wRange: [40, 60], hRange: [24, 36], safeChance: 0 },
-    { shape: 'pillar',  placement: 'air', weightStart: 1, weightEnd: 5, wRange: [12, 18], hRange: [40, 64], safeChance: 0 },
+    { shape: 'diamond', placement: 'air', weightStart: 2, weightEnd: 6, wRange: [24, 34], hRange: [26, 38], safeChance: 0, hpOverride: 2 },
+    { shape: 'rect',    placement: 'air', weightStart: 1, weightEnd: 4, wRange: [40, 60], hRange: [24, 36], safeChance: 0, hpOverride: 2 },
+    { shape: 'pillar',  placement: 'air', weightStart: 1, weightEnd: 5, wRange: [12, 18], hRange: [40, 64], safeChance: 0, hpOverride: 2 },
   ]
+
+  // scrollSpeedBonus: STG は敵を撃てる時間を稼ぐため、スクロールを軽く減速する。
+  readonly scrollSpeedBonus = -80
 
   // ════════════════════════════════════════════════════════════════
   // 背景（高高度の空・雲海）
@@ -284,7 +288,7 @@ export class AerialStgPlugin extends GenrePluginBase {
     ctx.moveTo(cx, 0); ctx.lineTo(w * 0.60, h * 0.45)
     ctx.stroke()
 
-    // キャノピー
+    // キャノピー（機首方向を明確化するため発光を強化）
     ctx.fillStyle = jc.canopy
     ctx.beginPath()
     ctx.ellipse(cx, h * 0.30, w * 0.10, h * 0.13, 0, 0, Math.PI * 2)
@@ -294,6 +298,15 @@ export class AerialStgPlugin extends GenrePluginBase {
     ctx.beginPath()
     ctx.ellipse(cx, h * 0.27, w * 0.05, h * 0.07, 0, 0, Math.PI * 2)
     ctx.fill()
+    // 機首方向を示す発光（上方向へのグラデーション）
+    ctx.shadowColor = '#88ccff'
+    ctx.shadowBlur = 6
+    ctx.globalAlpha = 0.35
+    ctx.fillStyle = '#aaddff'
+    ctx.beginPath()
+    ctx.ellipse(cx, h * 0.15, w * 0.04, h * 0.06, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.shadowBlur = 0
     ctx.globalAlpha = 1
   }
 
@@ -326,9 +339,14 @@ export class AerialStgPlugin extends GenrePluginBase {
   }
 
   // diamond → 敵戦闘機（機首が下・赤みがかったシルエット）
+  // 発光コア（脈動）+ 翼のフラッターアニメ + 色相シフト（赤系）
   private _drawEnemyFighter(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string): void {
     const cx   = x + w / 2
     const ec   = this.enemyColors
+    const t    = performance.now() / 1000
+    const pulse = (Math.sin(t * 4) + 1) * 0.5  // 0〜1
+    // 色相シフト: 赤系（color 自体が既に赤みがかった値を持つ）
+
     const grad = ctx.createLinearGradient(x, y, x + w, y)
     grad.addColorStop(0, ec.fill)
     grad.addColorStop(0.5, color)
@@ -352,16 +370,46 @@ export class AerialStgPlugin extends GenrePluginBase {
     ctx.lineTo(x + w * 0.60, y + h * 0.55)
     ctx.closePath(); ctx.fill()
 
+    // 翼のフラッターアニメ（上下に揺れる）
+    const flutter = Math.sin(t * 12) * 0.06
+    ctx.fillStyle = ec.fill
+    ctx.beginPath()
+    ctx.moveTo(cx, y + h * 0.45)
+    ctx.lineTo(x + w * 0.05 + flutter * w, y + h * 0.55)
+    ctx.lineTo(x + w * 0.15 + flutter * w, y + h * 0.50)
+    ctx.lineTo(cx, y + h * 0.42)
+    ctx.closePath(); ctx.fill()
+    ctx.beginPath()
+    ctx.moveTo(cx, y + h * 0.45)
+    ctx.lineTo(x + w * 0.95 - flutter * w, y + h * 0.55)
+    ctx.lineTo(x + w * 0.85 - flutter * w, y + h * 0.50)
+    ctx.lineTo(cx, y + h * 0.42)
+    ctx.closePath(); ctx.fill()
+
+    // キャノピー
     ctx.fillStyle = ec.canopy
     ctx.beginPath()
     ctx.ellipse(cx, y + h * 0.62, w * 0.09, h * 0.11, 0, 0, Math.PI * 2)
     ctx.fill()
+
+    // 機首の発光コア（脈動する赤い点）
+    const coreR = h * (0.08 + pulse * 0.04)
+    ctx.shadowColor = '#ff4444'
+    ctx.shadowBlur = 8 + pulse * 6
+    ctx.fillStyle = '#ffffff'
+    ctx.beginPath()
+    ctx.arc(cx, y + h * 0.72, coreR, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.shadowBlur = 0
   }
 
   // rect → 爆撃機（横長・重装甲・複数エンジン）
-  private _drawBomber(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string): void {
+  // 主砲の発光 + 色相シフト（紫系）+ エンジン炎アニメ
+  private _drawBomber(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, _color: string): void {
     const bc = this.bomberColors
     const cx = x + w / 2
+    const t  = performance.now() / 1000
+    const pulse = (Math.sin(t * 3) + 1) * 0.5
 
     ctx.fillStyle = bc.body
     this._roundRect(ctx, x, y + h * 0.40, w, h * 0.22, 3)
@@ -374,33 +422,68 @@ export class AerialStgPlugin extends GenrePluginBase {
     this._roundRect(ctx, x + w * 0.06, y + h * 0.30, w * 0.88, h * 0.45, Math.min(6, h * 0.2))
     ctx.fill()
 
-    ctx.fillStyle = color
+    // 主砲（前方下部）の発光
+    const gunGlow = 0.4 + pulse * 0.6
+    ctx.shadowColor = '#ff66ff'
+    ctx.shadowBlur = 6 + pulse * 4
+    ctx.fillStyle = `rgba(255,100,255,${gunGlow})`
     ctx.beginPath()
     ctx.moveTo(cx, y + h)
     ctx.lineTo(cx - w * 0.10, y + h * 0.72)
     ctx.lineTo(cx + w * 0.10, y + h * 0.72)
     ctx.closePath(); ctx.fill()
+    ctx.shadowBlur = 0
 
-    ctx.fillStyle = bc.engine
-    for (const fx of [0.22, 0.40, 0.60, 0.78]) {
+    // エンジン炎アニメ（4基が個別に点滅）
+    const engineColors = ['#ff7a3c', '#ffaa3c', '#ff5a2c', '#ff8a4c']
+    for (let i = 0; i < 4; i++) {
+      const fx = [0.22, 0.40, 0.60, 0.78][i]
+      const flicker = Math.sin(t * 8 + i * 1.5) * 0.3 + 0.7
+      const er = Math.max(2, w * 0.03) * flicker
+      ctx.shadowColor = engineColors[i]
+      ctx.shadowBlur = 4
+      ctx.fillStyle = engineColors[i]
       ctx.beginPath()
-      ctx.arc(x + w * fx, y + h * 0.62, Math.max(2, w * 0.03), 0, Math.PI * 2)
+      ctx.arc(x + w * fx, y + h * 0.62, er, 0, Math.PI * 2)
       ctx.fill()
     }
+    ctx.shadowBlur = 0
   }
 
   // pillar → ミサイル（細長い円筒・後方に炎）
+  // 尾炎の揺らぎ + 機体の回転アニメ + 色相シフト（橙系）
   private _drawMissile(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string): void {
     const mc = this.missileColors
     const cx = x + w / 2
+    const t  = performance.now() / 1000
 
-    const jitter = Math.random() * 5
+    // 尾炎の揺らぎ（幅と長さが時間とともに変動）
+    const flameJitter = Math.sin(t * 20) * 3
+    const flameLen    = 10 + Math.sin(t * 15) * 5
     ctx.fillStyle = mc.flame
-    ctx.globalAlpha = 0.8
+    ctx.globalAlpha = 0.7 + Math.sin(t * 18) * 0.2
     ctx.beginPath()
-    ctx.moveTo(x + w * 0.30, y); ctx.lineTo(cx, y - 12 - jitter); ctx.lineTo(x + w * 0.70, y)
+    ctx.moveTo(x + w * 0.25, y)
+    ctx.lineTo(cx + flameJitter, y - flameLen)
+    ctx.lineTo(x + w * 0.75, y)
+    ctx.closePath(); ctx.fill()
+    // 炎の内部（白熱コア）
+    ctx.fillStyle = '#ffffff'
+    ctx.globalAlpha = 0.5
+    ctx.beginPath()
+    ctx.moveTo(x + w * 0.35, y)
+    ctx.lineTo(cx + flameJitter * 0.5, y - flameLen * 0.5)
+    ctx.lineTo(x + w * 0.65, y)
     ctx.closePath(); ctx.fill()
     ctx.globalAlpha = 1
+
+    // 機体の回転アニメ（微妙に左右に振れる）
+    const bodySway = Math.sin(t * 3.5) * 0.02
+
+    ctx.save()
+    ctx.translate(cx, y + h * 0.5)
+    ctx.rotate(bodySway)
+    ctx.translate(-cx, -(y + h * 0.5))
 
     const grad = ctx.createLinearGradient(x, y, x + w, y)
     grad.addColorStop(0, color)
@@ -419,6 +502,8 @@ export class AerialStgPlugin extends GenrePluginBase {
     ctx.beginPath()
     ctx.moveTo(cx, y + h); ctx.lineTo(x + w * 0.20, y + h * 0.84); ctx.lineTo(x + w * 0.80, y + h * 0.84)
     ctx.closePath(); ctx.fill()
+
+    ctx.restore()
   }
 
   // enemy_hp 用セグメント式 HP バー

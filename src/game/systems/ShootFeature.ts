@@ -63,6 +63,12 @@ export class ShootFeature implements FeatureSystem {
     ctx.restore()
   }
 
+  // ─── 内部: power_up ブースト率取得 ─────────────────────────────────
+  private _getPowerBoostFactor(world: MutableWorld): number {
+    if (!world.rules.features.has('power_up')) return 0
+    return world.powerBoostTimer > 0 ? 0.5 : 0
+  }
+
   // ─── 内部: タイマー管理 ──────────────────────────────────────────
   private _tickTimers(dt: number): void {
     this.state.shotCooldown -= dt
@@ -84,6 +90,12 @@ export class ShootFeature implements FeatureSystem {
     this.state.shotCooldown = SHOOT.shotCooldown
     world.addShot()
     soundManager.onShoot()
+
+    // power_up Feature 有効時はクールダウンを 50% 短縮（5 秒間）
+    const powerBoost = this._getPowerBoostFactor(world)
+    if (powerBoost > 0) {
+      this.state.shotCooldown *= (1 - powerBoost)
+    }
 
     if (rules.scrollAxis === 'y') {
       this._spawnVerticalBullets(world)
