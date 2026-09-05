@@ -16,10 +16,10 @@ JSON 設定ファイルのインポートと GameConfigMap の構築。
 
 ### 内部インポート
 
-`src/data/config/*.json`（23ファイル）を `import.meta.glob` で自動収集して構築する:
-- `background`, `bayes`, `boss`, `camera`, `difficulty`, `extra_movement`, `game_balance`, `genre_params`, `genres`, `hazard_vfx`, `hud_safezone`, `physics`, `puzzle`, `rhythm_tuning`, `score`, `shoot`, `spawn`, `special`, `stealth`, `survival`, `throw`, `ui`, `vfx`
+`src/data/config/*.json`（26ファイル）を `import.meta.glob` で自動収集して構築する:
+- `background`, `bayes`, `boss`, `camera`, `difficulty`, `extra_movement`, `game_balance`, `genre_defaults`, `genre_params`, `genres`, `hazard_vfx`, `hud_safezone`, `near_miss`, `palette_defaults`, `physics`, `puzzle`, `rhythm_tuning`, `score`, `shoot`, `spawn`, `special`, `stealth`, `survival`, `throw`, `ui`, `vfx`
 
-加えて、ジャンル定義は `src/data/genres/*.json`（22ファイル）を別途 glob で収集し、`genres` セクションへ合成して注入する。新しい config / ジャンル JSON を追加するだけで自動認識され、`config.ts` の編集は不要。
+加えて、ジャンル定義は `src/data/genres/*.json`（23ファイル）を別途 glob で収集し、`genres` セクションへ合成して注入する。新しい config / ジャンル JSON を追加するだけで自動認識され、`config.ts` の編集は不要。
 
 ---
 

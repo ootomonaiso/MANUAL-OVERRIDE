@@ -113,8 +113,8 @@ requestAnimationFrame
   │    ┌─ 横スクロール (scrollAxis='x') ───────────────────── ┐
   │    │  ジャンプ: coyote + jumpBuffer + double_jump        │
   │    │  重力: vy += gravity * fallMult * dt                │
-  │    │    (fallMult = player.onGround ? 1.0 : PHYSICS.airMultiplier)
-  │    │    airMultiplier により空中落下速度を調整可能       │
+   │    │    (fallMult = player.onGround ? 1.0 : PHYSICS.fallGravityMult)
+   │    │    fallGravityMult により空中落下速度を調整可能（デフォルト 1.65）  │
   │    │  着地: landSquash アニメ                             │
   │    │  X移動: auto_run でなければ player.x += vx * dt     │
   │    │  スクロール: distance += speed * dt                 │
@@ -377,8 +377,11 @@ debugPrint(): void
 | MovementFeature | auto_run / slow_precise / double_jump / long_air / dash / wall_jump / vertical_scroll | ✅ | ✅ | ✅ | onInit | ✅（slide / gravity_flip のみ未実装・warn） |
 | RpgFeature | hp / exp / item_pickup / shield | ─ | ✅ | ─ | onPlayerHit | ✅（shield のみスタブ） |
 | SpecialFeature | stealth_mode / time_bonus / tower / color_touch / boss | ─ | ✅ | ─ | onSafeHazardTouch | ✅ |
-| PuzzleFeature | grid_stop / puzzle_solve | ─ | ✅ | ─ | ─ | ✅ |
+| PuzzleFeature | lights_out | ─ | ✅ | ─ | ─ | ✅ |
 | TetrisFeature | tetris_mode | ✅ | ✅ | ✅ | onInit | ✅ |
+| SurvivalFeature | survival_hunger / survival_melee / survival_level | ─ | ✅ | ─ | ─ | ✅ |
+| MeleeKillFeature | melee_kill | ✅ | ✅ | ─ | ─ | ✅ |
+| NearMissComboFeature | near_miss_combo | ─ | ✅ | ─ | ─ | ✅ |
 
 > 旧 `ExtraMovementFeature`（dash / wall_jump / vertical_scroll）は `MovementFeature` に統合された。
 
@@ -401,7 +404,7 @@ debugPrint(): void
 | DungeonPlugin | dungeon | ✅ | ✅ | ─ | ✅ |
 | HackSlashPlugin | hack_slash | ✅ | ✅ | ─ | ✅ |
 | TetrisPlugin | tetris | ✅ | ✅ | ✅(TetrisFeature) | ✅ |
-| JSONフォールバック | bullet_hell / stealth_action / tower_def / sports / idle / horror | ✅ | ✅ | ─ | ✅（JSONGenrePlugin で描画） |
+| JSONフォールバック | bullet_hell / stealth_action / tower_def / sports / idle / horror / glitch | ✅ | ✅ | ─ | ✅（JSONGenrePlugin で描画） |
 
 ### ドメイン・ユーティリティ
 
@@ -622,12 +625,12 @@ abstract class GenrePluginBase implements GenrePlugin {
 115 行目に記載の `fallMult` は以下の仕様：
 
 ```typescript
-const fallMult = world.player.onGround ? 1.0 : PHYSICS.airMultiplier
+const fallMult = world.player.onGround ? 1.0 : PHYSICS.fallGravityMult
 const vy = player.vy + gravity * fallMult * dt
 ```
 
 - **onGround=true（着地状態）**: fallMult=1.0 → 重力加速度そのまま（実質的に重力は動作しない）
-- **onGround=false（空中）**: fallMult=PHYSICS.airMultiplier（デフォルト 1.2）→ 空中落下時は重力加速度 1.2 倍
+- **onGround=false（空中）**: fallMult=PHYSICS.fallGravityMult（デフォルト 1.65、落下時の重力倍率）
 
 これにより「着地判定から失われるまでの間、重力を段階的に制御」できる。
 

@@ -9,6 +9,11 @@
 import { GenrePluginBase } from '../engine/GenrePluginBase'
 import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
+import { PixelCanvas } from '../game/render'
+import { PIXELART } from '../data/tunables'
+
+// プレイヤーの走りアニメーションのフレーム数（run_a / run_b の2枚）
+const RUNNER_RUN_FRAME_COUNT = 2
 
 export class BulletRunnerPlugin extends GenrePluginBase {
   readonly id: GenreId = 'bullet_runner'
@@ -60,121 +65,70 @@ export class BulletRunnerPlugin extends GenrePluginBase {
   ]
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // ネオン都市の遠景シルエット
-    ctx.globalAlpha = 0.18
-    ctx.fillStyle = '#080015'
-    const sector = Math.floor(offsetX / 500)
-    ctx.beginPath(); ctx.moveTo(0, gY)
-    for (let sx = 0; sx <= W; sx += 2) {
-      const wx = sx - offsetX * 0.08
-      const bh = (Math.sin(wx * 0.008) * 0.5 + 0.5) * 120 + 60 +
-                 (Math.sin(wx * 0.02 + 1) * 0.5 + 0.5) * 40
-      ctx.lineTo(sx, gY - bh)
-    }
-    ctx.lineTo(W, gY); ctx.closePath(); ctx.fill()
+    const px = new PixelCanvas(ctx)
 
-    // ネオン縦ライン（ビル窓）
-    ctx.globalAlpha = 0.06
-    for (let s = sector - 1; s <= sector + 3; s++) {
-      const h2 = (s * 2011) & 0xffff
-      const bx = s * 500 - offsetX * 0.08 + (h2 % 300)
-      const colors = ['#ff0088', '#0088ff', '#00ffcc', '#ff8800']
-      ctx.fillStyle = colors[h2 % colors.length]
-      ctx.fillRect(bx, gY * 0.35, 2, gY * 0.5)
-    }
-    ctx.globalAlpha = 1
+    // ネオン都市の遠景シルエット（式は無変更、階段状のシルエットへ）
+    px.withAlpha(0.18, () => {
+      px.ridge(0, W, gY, (sx) => {
+        const wx = sx - offsetX * 0.08
+        return (Math.sin(wx * 0.008) * 0.5 + 0.5) * 120 + 60 +
+               (Math.sin(wx * 0.02 + 1) * 0.5 + 0.5) * 40
+      }, '#080015')
+    })
+
+    // ネオン縦ライン（ビル窓）。配置ハッシュは無変更
+    const sector = Math.floor(offsetX / 500)
+    const colors = ['#ff0088', '#0088ff', '#00ffcc', '#ff8800']
+    px.withAlpha(0.5, () => {
+      for (let s = sector - 1; s <= sector + 3; s++) {
+        const h2 = (s * 2011) & 0xffff
+        const bx = s * 500 - offsetX * 0.08 + (h2 % 300)
+        px.rect(bx, gY * 0.35, 2, gY * 0.5, colors[h2 % colors.length])
+      }
+    })
   }
 
   drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // 近景ビル（ネオン看板付き）
-    ctx.globalAlpha = 0.7
-    ctx.fillStyle = '#0a0018'
+    const px = new PixelCanvas(ctx)
+
+    // 近景ビル（ネオン看板付き）。配置ハッシュは無変更
     const sector = Math.floor(offsetX / 300)
-    for (let s = sector - 1; s <= sector + 3; s++) {
-      const h2 = (s * 1447) & 0xffff
-      const bx = s * 300 - offsetX + (h2 % 150)
-      const bh = 60 + (h2 >> 4) % 100
-      const bw = 28 + (h2 >> 8) % 40
-      ctx.fillRect(bx, gY - bh, bw, bh)
+    const neonColors = ['#ff0088', '#00ccff', '#ff6600']
+    px.withAlpha(0.7, () => {
+      for (let s = sector - 1; s <= sector + 3; s++) {
+        const h2 = (s * 1447) & 0xffff
+        const bx = s * 300 - offsetX + (h2 % 150)
+        const bh = 60 + (h2 >> 4) % 100
+        const bw = 28 + (h2 >> 8) % 40
+        px.rect(bx, gY - bh, bw, bh, '#0a0018')
 
-      // ネオン看板の光
-      ctx.globalAlpha = 0.3
-      const neonColors = ['#ff0088', '#00ccff', '#ff6600']
-      ctx.fillStyle = neonColors[(s + h2) % neonColors.length]
-      ctx.fillRect(bx + 2, gY - bh + 8, bw - 4, 6)
-      ctx.globalAlpha = 0.7
-    }
-    ctx.globalAlpha = 1
+        // ネオン看板の光（shadowBlur → px.halo）
+        const signColor = neonColors[(s + h2) % neonColors.length]
+        px.halo((expand, c) => px.rect(bx + 2 - expand, gY - bh + 8 - expand, bw - 4 + expand * 2, 6 + expand * 2, c),
+          signColor, PIXELART.haloSteps)
+        px.rect(bx + 2, gY - bh + 8, bw - 4, 6, signColor)
+      }
+    })
 
-    // 流れる横ネオンライン（地面近く）
+    // 流れる横ネオンライン（地面近く）。流れる速度・位置の式は無変更
     const t = performance.now() / 1000
     const lineAlpha = 0.12 + Math.sin(t * 3) * 0.04
-    ctx.globalAlpha = lineAlpha
-    ctx.strokeStyle = '#cc00ff'
-    ctx.lineWidth = 1.5
-    ctx.setLineDash([30, 20])
-    ctx.beginPath()
-    ctx.moveTo(-offsetX * 0.5 % 300 - 100, gY - 40)
-    ctx.lineTo(W + 100, gY - 40)
-    ctx.stroke()
-    ctx.setLineDash([])
-    ctx.globalAlpha = 1
+    const dashStart = -offsetX * 0.5 % 300 - 100
+    px.withAlpha(lineAlpha * 3, () => {
+      for (let x = dashStart; x < W + 100; x += 50) {
+        px.rect(x, gY - 41, 30, 1.5, '#cc00ff')
+      }
+    })
   }
 
   drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, _onGround: boolean, runCycle: number): void {
-    const t = performance.now() / 80
-    const legSwing = Math.sin(runCycle * Math.PI * 2) * 9
+    const px = new PixelCanvas(ctx)
 
     // 影
-    ctx.fillStyle = 'rgba(200,0,200,0.15)'
-    ctx.beginPath()
-    ctx.ellipse(w / 2, h + 2, w * 0.4, 4, 0, 0, Math.PI * 2)
-    ctx.fill()
+    px.ellipse(w / 2, h + 2, w * 0.4, 4, 'rgba(200,0,200,0.15)')
 
-    // ボディ（サイバースーツ）
-    ctx.fillStyle = '#1a0040'
-    this._roundRect(ctx, 2, h * 0.36, w - 4, h * 0.4, 4)
-    ctx.fill()
-
-    // ネオンアーマーライン
-    ctx.strokeStyle = '#ff00cc'
-    ctx.lineWidth = 1.5
-    ctx.shadowColor = '#ff00cc'
-    ctx.shadowBlur = 8
-    ctx.beginPath()
-    ctx.moveTo(4, h * 0.42)
-    ctx.lineTo(w * 0.45, h * 0.38)
-    ctx.lineTo(w - 4, h * 0.42)
-    ctx.stroke()
-    ctx.shadowBlur = 0
-
-    // 頭（ヘルメット）
-    ctx.fillStyle = '#0a0020'
-    ctx.beginPath()
-    ctx.arc(w * 0.55, h * 0.2, h * 0.21, 0, Math.PI * 2)
-    ctx.fill()
-
-    // バイザー（光るシールド）
-    const shimmer = `hsl(${(t * 2 + 180) % 360}, 100%, 65%)`
-    ctx.fillStyle = shimmer
-    ctx.globalAlpha = 0.8
-    ctx.beginPath()
-    ctx.arc(w * 0.6, h * 0.19, h * 0.1, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.globalAlpha = 1
-
-    // 脚
-    ctx.lineWidth = 5.5; ctx.strokeStyle = '#2a0050'; ctx.lineCap = 'round'
-    ctx.beginPath(); ctx.moveTo(w * 0.38, h * 0.74); ctx.lineTo(w * 0.28 - legSwing * 0.4, h * 0.98); ctx.stroke()
-    ctx.beginPath(); ctx.moveTo(w * 0.60, h * 0.74); ctx.lineTo(w * 0.72 + legSwing * 0.4, h * 0.98); ctx.stroke()
-
-    // 脚のネオン
-    ctx.strokeStyle = '#8800ff'
-    ctx.lineWidth = 1.5
-    ctx.shadowColor = '#8800ff'; ctx.shadowBlur = 6
-    ctx.beginPath(); ctx.moveTo(w * 0.28 - legSwing * 0.4, h * 0.98 - 2); ctx.lineTo(w * 0.28 - legSwing * 0.4 + 10, h * 0.98 - 2); ctx.stroke()
-    ctx.beginPath(); ctx.moveTo(w * 0.72 + legSwing * 0.4 - 10, h * 0.98 - 2); ctx.lineTo(w * 0.72 + legSwing * 0.4, h * 0.98 - 2); ctx.stroke()
-    ctx.shadowBlur = 0
+    const frame = Math.floor(runCycle * RUNNER_RUN_FRAME_COUNT) % 2 === 0 ? 'run_a' : 'run_b'
+    px.sprite('player_cyber_runner', 0, 0, w, h, { frame })
   }
 }
 

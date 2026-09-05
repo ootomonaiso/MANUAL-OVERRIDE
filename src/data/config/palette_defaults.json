@@ -1,0 +1,8 @@
+{
+  "$comment": "JSONGenrePlugin のパレットフォールバック値",
+  "section": "palette_defaults",
+  "danger": "#ff6b6b",
+  "dangerGlow": "#ff9999",
+  "safe": "#4ecdc4",
+  "safeGlow": "#80e8dd"
+}

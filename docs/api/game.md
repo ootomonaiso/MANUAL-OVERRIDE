@@ -137,7 +137,7 @@ Canvas ゲームエンジン本体。横スクロールと縦スクロールの�
 
 ### `PuzzleFeature.ts`
 
-**handles:** `grid_stop`, `puzzle_solve`
+**handles:** `lights_out`
 
 - `update()`: move/solve フェーズの交互切替。solve 中は `scrollSpeed=0` で停止し、ターゲットセル判定でコンボ・スコアを加算（不正解でリセット）
 
@@ -156,5 +156,24 @@ Canvas ゲームエンジン本体。横スクロールと縦スクロールの�
 - `update()`: テトリミノ落下・操作・ライン消去・スコア・コンボ（10×20 グリッド、7-Bag、ゴースト、ロックディレイ、ウォールキック）
 - `render()`: グリッド・ブロック・ゴーストピース描画
 - `onInit()` / `onDisable()`: `scrollDirection`・`scrollSpeed` の保存と復元
+
+### `SurvivalFeature.ts`
+
+**handles:** `survival_hunger`, `survival_melee`, `survival_level`
+
+- `update()`: survival_hunger（時間経過でHP減衰）、survival_level（XP蓄積・レベルアップ）
+- `onPlayerHit()`: survival_melee 実装（近接攻撃による被弾処理）
+
+### `MeleeKillFeature.ts`
+
+**handles:** `melee_kill`
+
+- `update()`: Zキー押下時に矩形範囲内のハザードを一撃破壊
+
+### `NearMissComboFeature.ts`
+
+**handles:** `near_miss_combo`
+
+- `update()`: ハザードが衝突なしでプレイヤーを通過した際にコンボ加算（垂直間隔が near_miss.json の閾値以内）
 
 > 射撃・リズムのロジックは各 `ShootFeature` / `RhythmFeature` 内に実装されている（独立した `shootSystem.ts` / `rhythmSystem.ts` は存在しない）。

@@ -16,10 +16,10 @@
 | `GenreParams` | `Partial<Record<GenreParam, number>>` — 軸パラメータのマップ |
 | `GenreId` | ジャンルID。実体は `string` 型（union ではない）。定義は 22種（base 含む）: base, runner, stg, rpg, puzzle, rhythm, aerial_stg, bullet_hell, survival, stealth_action, racing, platformer, dungeon, tower_def, sports, idle, bullet_runner, arena, aquatic, horror, hack_slash, tetris |
 | `Phase` | ゲームフェーズ (`title`, `tutorialIntro`, `tutorial`, `updating`, `playing`, `genreLocked`, `throwing`, `ending`) |
-| `ManualTheme` | 説明書テーマ (15種: `plain`, `stg`, `rpg`, `puzzle`, `rhythm`, `horror`, `aquatic`, `runner`, `stealth`, `racing`, `platformer`, `dungeon`, `hack_slash`, `survival`, `tetris`) |
+| `ManualTheme` | 説明書テーマ (16種: `plain`, `stg`, `rpg`, `puzzle`, `rhythm`, `horror`, `aquatic`, `runner`, `stealth`, `racing`, `platformer`, `dungeon`, `hack_slash`, `survival`, `tetris`, `glitch`) |
 | `ScrollDirection` | スクロール方向 (`horizontal`, `vertical`, `none`) |
 | `EnvironmentId` | 環境設定 (`ground`, `sky`, `space`, `ocean`, `dungeon`, `forest`, `city`) |
-| `FeatureId` | Feature フラグ。実体は `string` 型（union ではない）。既知の ID: shoot, three_way, charge_shot, spread_shot, bomb, enemy_hp, boss, movement, auto_run, slow_precise, double_jump, long_air, dash, wall_jump, slide, gravity_flip, vertical_scroll, hp, exp, item_pickup, shield, grid_stop, puzzle_solve, beat_hazard, just_input, beat_dash, stealth_mode, time_bonus, tower, color_touch, tetris_mode |
+| `FeatureId` | Feature フラグ。実体は `string` 型（union ではない）。既知の ID: shoot, three_way, charge_shot, spread_shot, bomb, enemy_hp, boss, movement, auto_run, slow_precise, double_jump, long_air, dash, wall_jump, slide, gravity_flip, vertical_scroll, hp, exp, item_pickup, shield, lights_out, grid_stop, puzzle_solve, beat_hazard, just_input, beat_dash, stealth_mode, time_bonus, tower, color_touch, tetris_mode, survival_hunger, survival_melee, survival_level, melee_kill, near_miss_combo |
 | `Controls` | キー設定 (`jump`, `moveLeft`, `moveRight`, `moveUp`, `moveDown`, `shoot?`, `dash?`, `slide?`) |
 | `Choice` | 説明書選択肢 (`id`, `label`, `hint?`, `next`, `genreParams`, `paramMultiplier?`) |
 | `ManualRuntimeConfig` | バージョン固有のruntime上書き (`scrollSpeed?`, `gravity?`, `bpm?`, `scrollDirection?`, `environment?`, `playerMaxHp?`, `timescale?`, `colorTouchScore?`, `forceGenreId?`) |

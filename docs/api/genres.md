@@ -33,9 +33,9 @@
 | ハザード | 赤 (`#e74c3c`) / 青 (`#3498db`) |
 | スポーン | rect(ground), spike(ground), pillar(ground), diamond(float) |
 
-### クラス `RunnerPlugin`
+### クラス `RunnerPlugin`（`BasePlugin.ts` 内に定義）
 
-**id:** `runner` — エンドレスランナー。
+**id:** `runner` — エンドレスランナー。`BasePlugin.ts` は `BasePlugin` と `RunnerPlugin` の2インスタンスを配列で default export する。
 
 | 特性 | 値 |
 |---|---|
@@ -255,7 +255,7 @@
 | クラス | ジャンルID |
 |---|---|
 | `BasePlugin` | `base` |
-| `RunnerPlugin` | `runner` |
+| `RunnerPlugin`（BasePlugin.ts 内） | `runner` |
 | `StgPlugin` | `stg` |
 | `RpgPlugin` | `rpg` |
 | `RhythmPlugin` | `rhythm` |
@@ -271,4 +271,4 @@
 | `HackSlashPlugin` | `hack_slash` |
 | `TetrisPlugin` | `tetris` |
 
-※ `bullet_hell`, `stealth_action`, `tower_def`, `sports`, `idle`, `horror` は専用 TSプラグインを持たず、`JSONGenrePlugin` フォールバックで描画される。
+※ `bullet_hell`, `stealth_action`, `tower_def`, `sports`, `idle`, `horror`, `glitch` は専用 TSプラグインを持たず、`JSONGenrePlugin` フォールバックで描画される。

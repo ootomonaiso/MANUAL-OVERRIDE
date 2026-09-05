@@ -60,7 +60,7 @@ node tests/test_infinite_choices.mjs
 ## フィーチャー系テスト（`feature-*.test.mjs`）
 
 開発サーバー・ブラウザ不要。各 Feature（`dash` / `wall_jump` / `vertical_scroll` / `boss` /
-`grid_stop` / `puzzle_solve` / `stealth_mode` / `time_bonus` / `tower`）について、
+`lights_out` / `stealth_mode` / `tetris` / `time_bonus` / `tower`）について、
 実装ファイル（`MovementFeature.ts` / `PuzzleFeature.ts` / `SpecialFeature.ts`）が
 「未実装警告」を出さなくなっていること、必要な config キーが揃っていること、
 そのフィーチャーを有効化するジャンルが **`src/data/genres/*.json`**（実際にロードされる

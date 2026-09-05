@@ -104,11 +104,9 @@ function _makeWorld(
 function _makeInput(): InputSnapshot {
   return {
     keys: new Set<string>(),
-    justPressed: new Set(),
-    justReleased: new Set(),
-    mouse: { x: 0, y: 0, down: false },
-    touch: null,
-  }
+    justPressed: new Set<string>(),
+    justReleased: new Set<string>(),
+  } as InputSnapshot
 }
 
 describe('ShootFeature regression', () => {

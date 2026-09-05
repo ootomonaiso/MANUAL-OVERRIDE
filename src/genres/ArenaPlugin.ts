@@ -10,6 +10,10 @@ import { GenrePluginBase } from '../engine/GenrePluginBase'
 import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
 import { BOSS } from '../data/tunables'
+import { PixelCanvas } from '../game/render'
+
+// プレイヤーの走りアニメーションのフレーム数（run_a / run_b の2枚）
+const GLADIATOR_RUN_FRAME_COUNT = 2
 
 export class ArenaPlugin extends GenrePluginBase {
   readonly id: GenreId = 'arena'
@@ -54,123 +58,63 @@ export class ArenaPlugin extends GenrePluginBase {
   // spawnDensity is sourced from JSON config (arena.json) — see genres/index.ts merge
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // 闘技場のアーチのシルエット（遠景）
-    ctx.globalAlpha = 0.22
-    ctx.fillStyle = this.farLayerColor
+    const px = new PixelCanvas(ctx)
+
+    // 闘技場のアーチのシルエット（配置ハッシュ・間隔は無変更）
     const archSpan = 200
     const sector = Math.floor(offsetX * 0.06 / archSpan)
-    for (let s = sector - 1; s <= sector + 4; s++) {
-      const ax = s * archSpan - offsetX * 0.06 + 30
-      const archH = 130
-      const archW = archSpan * 0.75
-      // 柱
-      ctx.fillRect(ax - 4, gY - archH, 8, archH)
-      ctx.fillRect(ax + archW - 4, gY - archH, 8, archH)
-      // アーチ上部
-      ctx.beginPath()
-      ctx.arc(ax + archW / 2, gY - archH, archW / 2, Math.PI, 0)
-      ctx.closePath()
-      ctx.fill()
-    }
-    ctx.globalAlpha = 1
+    px.withAlpha(0.22, () => {
+      for (let s = sector - 1; s <= sector + 4; s++) {
+        const ax = s * archSpan - offsetX * 0.06 + 30
+        const archH = 130
+        const archW = archSpan * 0.75
+        // 柱
+        px.rect(ax - 4, gY - archH, 8, archH, this.farLayerColor)
+        px.rect(ax + archW - 4, gY - archH, 8, archH, this.farLayerColor)
+        // アーチ上部（ブロック半円 = 階段状アーチ）
+        px.halfCircle(ax + archW / 2, gY - archH, archW / 2, 'up', this.farLayerColor)
+      }
+    })
   }
 
   drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // 中景：松明と石柱
-    ctx.globalAlpha = 0.55
-    ctx.fillStyle = this.midLayerColor
+    const px = new PixelCanvas(ctx)
+
+    // 中景：石柱（配置ハッシュは無変更）
     const sector = Math.floor(offsetX / 180)
+    px.withAlpha(0.55, () => {
+      for (let s = sector - 1; s <= sector + 5; s++) {
+        const h = (s * 1873) & 0xffff
+        const pxPos = s * 180 - offsetX + (h % 80)
+        const pillarH = 60 + (h >> 4) % 50
+        px.rect(pxPos - 7, gY - pillarH, 14, pillarH, this.midLayerColor)
+      }
+    })
+
+    // 松明の炎エフェクト（駆動式は無変更）
+    const t = performance.now() / 800
     for (let s = sector - 1; s <= sector + 5; s++) {
       const h = (s * 1873) & 0xffff
-      const px = s * 180 - offsetX + (h % 80)
-      const pillarH = 60 + (h >> 4) % 50
-      ctx.fillRect(px - 7, gY - pillarH, 14, pillarH)
-    }
-    ctx.globalAlpha = 1
-
-    // 松明の炎エフェクト
-    const t = performance.now() / 800
-    const torchSector = Math.floor(offsetX / 180)
-    for (let s = torchSector - 1; s <= torchSector + 5; s++) {
-      const h = (s * 1873) & 0xffff
-      const px = s * 180 - offsetX + (h % 80)
+      const pxPos = s * 180 - offsetX + (h % 80)
       const pillarH = 60 + (h >> 4) % 50
       const flicker = 0.5 + Math.sin(t + s) * 0.3
-      ctx.globalAlpha = flicker * 0.6
-      ctx.fillStyle = '#ff8800'
-      ctx.beginPath()
-      ctx.arc(px, gY - pillarH - 8, 7, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.globalAlpha = flicker * 0.3
-      ctx.fillStyle = '#ffdd00'
-      ctx.beginPath()
-      ctx.arc(px, gY - pillarH - 10, 4, 0, Math.PI * 2)
-      ctx.fill()
+      px.withAlpha(flicker * 0.6, () => px.circle(pxPos, gY - pillarH - 8, 7, '#ff8800'))
+      px.withAlpha(flicker * 0.3, () => px.circle(pxPos, gY - pillarH - 10, 4, '#ffdd00'))
     }
-    ctx.globalAlpha = 1
   }
 
   drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, _onGround: boolean, runCycle: number): void {
-    const legSwing = Math.sin(runCycle * Math.PI * 2) * 9
+    const px = new PixelCanvas(ctx)
 
     // 影
-    ctx.fillStyle = 'rgba(0,0,0,0.35)'
-    ctx.beginPath()
-    ctx.ellipse(w / 2, h + 2, w * 0.38, 4, 0, 0, Math.PI * 2)
-    ctx.fill()
+    px.ellipse(w / 2, h + 2, w * 0.38, 4, 'rgba(0,0,0,0.35)')
 
-    // 鎧の脚
-    ctx.lineWidth = 6; ctx.strokeStyle = '#554433'; ctx.lineCap = 'round'
-    ctx.beginPath(); ctx.moveTo(w * 0.36, h * 0.75); ctx.lineTo(w * 0.24 - legSwing * 0.4, h); ctx.stroke()
-    ctx.beginPath(); ctx.moveTo(w * 0.60, h * 0.75); ctx.lineTo(w * 0.74 + legSwing * 0.4, h); ctx.stroke()
+    const frame = Math.floor(runCycle * GLADIATOR_RUN_FRAME_COUNT) % 2 === 0 ? 'run_a' : 'run_b'
+    px.sprite('player_gladiator', 0, 0, w, h, { frame })
 
-    // 胸鎧（グラディエーター）
-    ctx.fillStyle = '#884422'
-    this._roundRect(ctx, 4, h * 0.38, w - 8, h * 0.4, 3)
-    ctx.fill()
-
-    // 金属バンド
-    ctx.strokeStyle = '#cc9933'
-    ctx.lineWidth = 2.5
-    ctx.beginPath()
-    ctx.moveTo(4, h * 0.52)
-    ctx.lineTo(w - 4, h * 0.52)
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.moveTo(4, h * 0.64)
-    ctx.lineTo(w - 4, h * 0.64)
-    ctx.stroke()
-
-    // 頭（ヘルメット）
-    ctx.fillStyle = '#774411'
-    ctx.beginPath()
-    ctx.arc(w * 0.55, h * 0.22, h * 0.19, 0, Math.PI * 2)
-    ctx.fill()
-
-    // ヘルメット頂部の飾り羽根（赤）
-    ctx.fillStyle = '#cc2200'
-    ctx.beginPath()
-    ctx.ellipse(w * 0.55, h * 0.04, 4, 12, 0, 0, Math.PI * 2)
-    ctx.fill()
-
-    // 盾（左腕）
-    ctx.fillStyle = '#663300'
-    ctx.strokeStyle = '#cc9933'
-    ctx.lineWidth = 2
-    this._roundRect(ctx, 0, h * 0.3, w * 0.22, h * 0.38, 3)
-    ctx.fill()
-    ctx.stroke()
-
-    // 剣（右側に突き出し）
-    ctx.strokeStyle = '#dddddd'
-    ctx.lineWidth = 3
-    ctx.shadowColor = '#aabbff'
-    ctx.shadowBlur = 4
-    ctx.beginPath()
-    ctx.moveTo(w - 2, h * 0.35)
-    ctx.lineTo(w + 16, h * 0.22)
-    ctx.stroke()
-    ctx.shadowBlur = 0
+    // 剣（本体の箱を大きく超えて右へ伸びるため専用プリミティブとして残す。
+    // 04/05/08 と同じ方針）
+    px.line(w - 2, h * 0.35, w + 16, h * 0.22, '#dddddd', 1)
   }
 }
 

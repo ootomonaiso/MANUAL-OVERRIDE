@@ -79,6 +79,8 @@
 | `stealth_action` | Stealth | ステルスアクション |
 | `base` | Base | 横スクロール（原点） |
 
+加えて `glitch`（壊れたゲーム、`resolvable: false`）が矛盾カードのトリガー専用として定義されている（通常到達不可。ファイル数は計23）。
+
 ### 分岐の決まり方
 
 各選択がジャンルパラメータを加算する。蓄積値が閾値を超えたジャンルに収束。
@@ -108,7 +110,7 @@ src/
 ├── engine/          # GenrePlugin・FeatureSystem インターフェース + GameRegistry
 ├── domain/          # 純粋ロジック（ruleEngine, genreResolver, scoreCalc, LearningSystem）
 ├── framework/       # ConfigLoader・ManualBuilder・ManualValidator（JSON読み込み基盤）
-├── genres/          # ジャンルプラグイン（TS実装 15種）
+├── genres/          # ジャンルプラグイン（TS実装 16種・15ファイル。BasePlugin.ts に Base + Runner の2クラスを含む）
 ├── plugins/         # PluginManager・SoundManager・SfxSound・JSONGenrePlugin
 ├── tools/           # 開発専用ツール（本番ビルド対象外。production から import 禁止）
 ├── game/
@@ -116,13 +118,13 @@ src/
 │   ├── InputManager.ts   # キー入力の受付・正規化・エッジ検出
 │   ├── ParticleSystem.ts # パーティクル生成・更新・描画
 │   ├── entities.ts       # Player・Hazard・Bullet・Item
-│   └── systems/          # FeatureSystem 実装（MovementFeature 他6種）
+│   └── systems/          # FeatureSystem 実装（10種: Shoot / Movement / Rhythm / Rpg / Puzzle / Special / Tetris / Survival / MeleeKill / NearMissCombo）
 ├── composables/     # Vue ViewModel（useGameState, useManual, useScoreAnimation）
 ├── components/      # Vue UI コンポーネント
 ├── tutorial/        # チュートリアル画面
 └── data/
-    ├── config/      # 設定JSON（21ファイル: score.json, genres.json, physics.json 等）
-    ├── genres/      # ジャンル定義JSON（22ファイル）
+    ├── config/      # 設定JSON（27ファイル: score.json, genres.json, physics.json 等）
+    ├── genres/      # ジャンル定義JSON（23ファイル: 22ジャンル + glitch）
     └── cards/       # カードデッキJSON（starter-cards.json 等）
 ```
 
@@ -198,6 +200,12 @@ src/
 | `extra_movement.json` | 拡張移動フィーチャー（wall jump / dash のパーティクル設定） |
 | `special.json` | 特殊フィーチャー（タワー / ボス撃破 / タイムボーナス） |
 | `puzzle.json` | パズルフィーチャー（グリッドサイズ・フェーズ時間・スコア） |
+| `pixelart.json` | PixelArt化レンダリング（セルサイズ・量子化段数・文字の焼き込み倍率と下限） |
+| `genre_defaults.json` | ジャンル定義のデフォルト値（`normalizeGenreDef` で使用） |
+| `hud_safezone.json` | HUDセーフゾーン比率 |
+| `near_miss.json` | near-miss combo パラメータ |
+| `palette_defaults.json` | JSONGenrePlugin のパレットフォールバック |
+| `survival.json` | survival ジャンル固有パラメータ |
 
 ### ジャンル定義 (`src/data/genres/stg.json` 等)
 
@@ -261,7 +269,7 @@ src/
 - [x] 説明書UI（右下常時表示、テーマ切り替え対応）
 - [x] 説明書の多段階更新と2択選択
 - [x] ジャンルパラメータの蓄積と収束判定（genreParams / genrePoints / ベイズ収束 3方式）
-- [x] 22ジャンルの完全実装（JSON定義 + TSプラグイン15種 / JSON汎用プラグイン7種）
+- [x] 22ジャンルの完全実装（JSON定義23ファイル + TSプラグイン16種 / JSONフォールバック7種）
 
 ### 高度な機能
 - [x] 無限選択肢システム（100+ 選択肢、ver 9.0～15.0）
@@ -281,7 +289,7 @@ src/
 - [x] InputManager 分離（キー入力ロジックを SideScroller から独立）
 - [x] ParticleSystem 分離（パーティクル処理を SideScroller から独立）
 - [x] FeatureSystem インターフェース（Feature 追加が1ファイル+1行で完結）
-- [x] JSON駆動設計（config/ 21ファイル、genres/ 22ファイル）
+- [x] JSON駆動設計（config/ 27ファイル、genres/ 23ファイル）
 - [x] テーマカラーの完全JSON駆動化（CSS ハードコードなし）
 - [x] オフライン完全動作
 - [x] CI/CDパイプライン整備
@@ -309,9 +317,8 @@ src/
 ## Feature の追加方法
 
 ```
-1. domain/types.ts の FeatureId に追加
-2. src/game/systems/ に FeatureSystem 実装クラスを作成
-3. src/game/systems/index.ts で GameRegistry.registerFeature() を呼ぶ（1行追加）
+1. src/game/systems/ に FeatureSystem 実装クラスを作成（handles に FeatureId を宣言。FeatureId は string 型なので types.ts 編集不要）
+2. src/game/systems/index.ts で GameRegistry.registerFeature() を呼ぶ（1行追加）
 ```
 
 ---

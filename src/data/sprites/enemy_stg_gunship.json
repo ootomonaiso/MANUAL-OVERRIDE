@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../schemas/sprite.schema.json",
+  "id": "enemy_stg_gunship",
+  "w": 24,
+  "h": 16,
+  "palette": {
+    "M": "@main",
+    "S": "@shade",
+    "L": "@light",
+    "G": "@glow",
+    "O": "#0a0a12"
+  },
+  "frames": {
+    "idle": [
+      "........OOO...OOO.......",
+      ".......OGGGO.OGGGO......",
+      ".....OOOGGGOOOGGGOOOOOOO",
+      "....OMMMMMMMMMMLLLLLLLLL",
+      "....OMMMMMMMMMMLLLLLLLLL",
+      "OOOOMMMMMMMMMMMLLLLLLLLL",
+      "SSSSMSSSSSSSSSSSSSSSSSSS",
+      "SSSSMSSSSSSSSSSSSSSSSSSS",
+      "SSSSMMMMMMMMMMMLLLLLLLLL",
+      "SSSSMMMMMMMMMMMLLLLLLLLL",
+      "SSSSMSSSSSSSSSSSSSSSSSSS",
+      "OOOOMSSSSSSSSSSSSSSSSSSS",
+      "....OMMMMMMMMMMLLLLLLLLL",
+      "....OMMMMMMMMMMLLLLLLLLL",
+      ".....OOOOOOOOOOOOOOOOOOO",
+      "........................"
+    ]
+  }
+}

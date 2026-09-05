@@ -10,12 +10,20 @@ import { GenrePluginBase } from '../engine/GenrePluginBase'
 import type { SpawnEntry, MutableWorld } from '../engine/types'
 import type { Hazard } from '../game/entities'
 import type { GenreId } from '../domain/types'
+import { PixelCanvas } from '../game/render'
+import { PIXELART } from '../data/tunables'
+
+// 炎の明滅（2値点滅）の頻度。新しい状態は追加せず、既存の値に掛けて floor%2 で判定する
+const FLAME_FLICKER_RATE = 6
 
 export class AerialStgPlugin extends GenrePluginBase {
   readonly id: GenreId = 'aerial_stg'
 
   // 機体を機首=上で描くため、縦スクロール時の engine 側 -90° 回転を無効化する（#102 の二重回転回避）
   readonly spriteFacesUp = true
+
+  // STG バランス修正: 敵の速度を緩やかに（ユーザー指摘: 敵速すぎ）
+  readonly scrollSpeedBonus = -80
 
   readonly skyColors    = ['#050a18', '#0d1f3c'] as const
   readonly groundColors = ['#091520', '#091520'] as const
@@ -60,13 +68,10 @@ export class AerialStgPlugin extends GenrePluginBase {
 
   // ─── 描画カラー（ハードコード回避のため readonly に集約） ──────────
   private readonly jetColors = {
-    bodyLight: '#c0c8d0', bodyDark: '#8090a0', edge: '#dfe6ee',
-    canopy: '#1b2436', canopyGlow: '#3a5fa0',
     flameCore: '#bfe6ff', flameMid: '#ff9a3c', flameTip: 'rgba(255,180,80,0.5)',
   }
-  private readonly enemyColors  = { fill: '#5a1414', edge: '#ff7a7a', canopy: '#2a0a0a' }
-  private readonly bomberColors = { body: '#3a2a2e', bodyEdge: '#7a4a4a', engine: '#ff7a3c' }
-  private readonly missileColors = { body: '#b0b8c0', head: '#ff5a5a', flame: '#ffce6a' }
+  private readonly bomberColors = { engine: '#ff7a3c' }
+  private readonly missileColors = { flame: '#ffce6a' }
 
   // 遠景: 空グラデーション（深い夜空→明るい青）
   private readonly farSkyGrad = {
@@ -80,20 +85,20 @@ export class AerialStgPlugin extends GenrePluginBase {
     tileH:      320,
     minR:       5,
     rangeR:     12,
-    alphaBase:  0.08,
-    alphaRange: 0.10,
-    colors: ['rgba(220,235,250,', 'rgba(200,218,240,'] as readonly string[],
+    alphaBase:  0.16,
+    alphaRange: 0.20,
+    colors: ['#dcebfa', '#c8daf0'] as readonly string[],
   }
 
-  // 中景雲塊（ctx.arc の組み合わせ、全画面に散らばる）
+  // 中景雲塊（ブロック塊、全画面に散らばる）
   private readonly midCloudCfg = {
     count:      5,
     tileH:      240,
     minR:       20,
     rangeR:     36,
-    alphaBase:  0.16,
-    alphaRange: 0.18,
-    colors: ['rgba(240,248,255,', 'rgba(160,185,210,'] as readonly string[],
+    alphaBase:  0.30,
+    alphaRange: 0.30,
+    colors: ['#f0f8ff', '#a0b9d2'] as readonly string[],
   }
 
   private readonly hudColors = {
@@ -107,15 +112,11 @@ export class AerialStgPlugin extends GenrePluginBase {
   }
 
   // 縦モード: 全ハザードが画面上端からスポーン。placement は無視される。
-  // hpOverride: enemy_hp 有効時の敵HPを2に固定。safeChance: 安全敵を完全排除。
   readonly spawnTable: readonly SpawnEntry[] = [
     { shape: 'diamond', placement: 'air', weightStart: 2, weightEnd: 6, wRange: [24, 34], hRange: [26, 38], safeChance: 0, hpOverride: 2 },
     { shape: 'rect',    placement: 'air', weightStart: 1, weightEnd: 4, wRange: [40, 60], hRange: [24, 36], safeChance: 0, hpOverride: 2 },
     { shape: 'pillar',  placement: 'air', weightStart: 1, weightEnd: 5, wRange: [12, 18], hRange: [40, 64], safeChance: 0, hpOverride: 2 },
   ]
-
-  // scrollSpeedBonus: STG は敵を撃てる時間を稼ぐため、スクロールを軽く減速する。
-  readonly scrollSpeedBonus = -80
 
   // ════════════════════════════════════════════════════════════════
   // 背景（高高度の空・雲海）
@@ -124,17 +125,14 @@ export class AerialStgPlugin extends GenrePluginBase {
   // 遠景: 空グラデーション + 遠景雲（薄く・小さく）。上から下へ流れる。
   // engine が渡す offsetX = distance * parallax.far を Y スクロール量として使う。
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
+    const px = new PixelCanvas(ctx)
     const scrollY = offsetX   // Y 方向スクロール量（distance × parallax.far）
     const H  = gY
     const sg = this.farSkyGrad
     const c  = this.farCloudCfg
 
     // 空グラデーション: 上部 #0a1628（深い夜空）→ 下部 #1a4a7a（明るい青）
-    const grad = ctx.createLinearGradient(0, 0, 0, H)
-    grad.addColorStop(0, sg.top)
-    grad.addColorStop(1, sg.bot)
-    ctx.fillStyle = grad
-    ctx.fillRect(0, 0, W, H)
+    px.bandGradient(0, 0, W, H, [[0, sg.top], [1, sg.bot]], 'v', PIXELART.gradientSteps)
 
     // 遠景の雲: タイル分割して Y スクロール、Math.sin ベース決定的配置
     const sector = Math.floor(scrollY / c.tileH)
@@ -149,15 +147,15 @@ export class AerialStgPlugin extends GenrePluginBase {
         const r  = c.minR + this._rand(seed + 2) * c.rangeR
         const a  = c.alphaBase + this._rand(seed + 3) * c.alphaRange
         const ci = Math.floor(this._rand(seed + 4) * c.colors.length)
-        ctx.fillStyle = `${c.colors[ci]}${a.toFixed(2)})`
-        this._drawCloud(ctx, cx, cy, r)
+        px.withAlpha(a, () => this._drawCloud(px, cx, cy, r, c.colors[ci]))
       }
     }
   }
 
-  // 中景: 雲塊（ctx.arc の組み合わせ）を全画面に散らばらせる。
+  // 中景: 雲塊（ブロック円の組み合わせ）を全画面に散らばらせる。
   // engine が渡す offsetX = distance * parallax.mid を Y スクロール量として使う（遠景より速い）。
   drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
+    const px = new PixelCanvas(ctx)
     const scrollY = offsetX   // distance × 1.5（遠景より速い Y スクロール）
     const H       = gY
     const c       = this.midCloudCfg
@@ -174,140 +172,65 @@ export class AerialStgPlugin extends GenrePluginBase {
         const r  = c.minR + this._rand(seed + 2) * c.rangeR
         const a  = c.alphaBase + this._rand(seed + 3) * c.alphaRange
         const ci = Math.floor(this._rand(seed + 4) * c.colors.length)
-        ctx.fillStyle = `${c.colors[ci]}${a.toFixed(2)})`
-        this._drawCloud(ctx, cx, cy, r)
+        px.withAlpha(a, () => this._drawCloud(px, cx, cy, r, c.colors[ci]))
       }
     }
   }
 
   // 前景: ビネット + 四隅 HUD ブラケット（横スクロール前提の演出は廃止）。
   drawForeground(ctx: CanvasRenderingContext2D, _offsetX: number, W: number, H: number, _gY: number): void {
+    const px = new PixelCanvas(ctx)
     const hc = this.hudColors
-    ctx.strokeStyle = hc.bracket
-    ctx.lineWidth = 2
     const m = 18, len = 26
     const corners = [
       [m, m, 1, 1], [W - m, m, -1, 1], [m, H - m, 1, -1], [W - m, H - m, -1, -1],
     ] as const
-    for (const [px, py, dx, dy] of corners) {
-      ctx.beginPath()
-      ctx.moveTo(px, py + dy * len)
-      ctx.lineTo(px, py)
-      ctx.lineTo(px + dx * len, py)
-      ctx.stroke()
+    for (const [cx, cy, dx, dy] of corners) {
+      px.line(cx, cy + dy * len, cx, cy, hc.bracket, 1)
+      px.line(cx, cy, cx + dx * len, cy, hc.bracket, 1)
     }
-    const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.72)
-    vg.addColorStop(0, 'rgba(0,0,0,0)')
-    vg.addColorStop(1, hc.vignette)
-    ctx.fillStyle = vg
-    ctx.fillRect(0, 0, W, H)
+    px.bandRadial(W / 2, H / 2, Math.min(W, H) * 0.35, Math.max(W, H) * 0.72, [
+      [0, 'rgba(0,0,0,0)'],
+      [1, hc.vignette],
+    ], PIXELART.gradientSteps)
   }
 
-  // 雲の塊（arc の組み合わせ）
-  private _drawCloud(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+  // 雲の塊（ブロック円の組み合わせ。ドット絵らしい明瞭な塊で表現する）
+  private _drawCloud(px: PixelCanvas, cx: number, cy: number, r: number, color: string): void {
     const lobes = [[-r, 0.2 * r, 0.7], [0, -0.2 * r, 1.0], [r, 0.15 * r, 0.75], [r * 1.8, 0.3 * r, 0.5]] as const
     for (const [dx, dy, rr] of lobes) {
-      ctx.beginPath()
-      ctx.arc(cx + dx, cy + dy, r * rr, 0, Math.PI * 2)
-      ctx.fill()
+      px.circle(cx + dx, cy + dy, r * rr, color)
     }
   }
 
-  // Math.sin ベースの決定的擬似乱数（0..1）
+  // Math.sin ベースの決定的擬似乱数（0..1）。配置がフレーム間で飛ばないよう一切変更しない
   private _rand(n: number): number {
     const x = Math.sin(n * 12.9898) * 43758.5453
     return x - Math.floor(x)
   }
 
   // ════════════════════════════════════════════════════════════════
-  // プレイヤー（近代戦闘機・俯瞰視点・上向き）
+  // プレイヤー（近代戦闘機・俯瞰視点）
   // ════════════════════════════════════════════════════════════════
 
-  drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, _onGround: boolean, _runCycle: number): void {
-    const cx = w / 2
+  // 縦スクロール時 sideScroller._drawPlayer() が -90° 回転を適用し、
+  // 「ローカル座標で右向き」を前提としている。本プラグインは元々「機首が上」で
+  // 描いており、回転後は機首が左を向いてしまう不具合があった（Q5 で確認・修正承認）。
+  // スプライトは右向きで作り、回転後に正しく上を向くようにする。
+  drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, _onGround: boolean, runCycle: number): void {
+    const px = new PixelCanvas(ctx)
+    const cy = h / 2
     const jc = this.jetColors
 
-    // 後方エンジン炎（機体より先に描いて背面へ）
-    const jitter = Math.random() * 4
-    ctx.fillStyle = jc.flameTip
-    ctx.beginPath()
-    ctx.moveTo(w * 0.38, h * 0.82); ctx.lineTo(cx, h + 22 + jitter * 2); ctx.lineTo(w * 0.62, h * 0.82)
-    ctx.closePath(); ctx.fill()
-    ctx.fillStyle = jc.flameMid
-    ctx.beginPath()
-    ctx.moveTo(w * 0.42, h * 0.82); ctx.lineTo(cx, h + 12 + jitter); ctx.lineTo(w * 0.58, h * 0.82)
-    ctx.closePath(); ctx.fill()
-    ctx.fillStyle = jc.flameCore
-    ctx.beginPath()
-    ctx.moveTo(w * 0.46, h * 0.82); ctx.lineTo(cx, h + 6 + jitter); ctx.lineTo(w * 0.54, h * 0.82)
-    ctx.closePath(); ctx.fill()
+    // 後方エンジン炎（機体の箱からはみ出すため専用プリミティブとして残す。
+    // player_base の影・StgPlugin の炎と同じ方針）
+    const flicker = Math.floor(runCycle * FLAME_FLICKER_RATE) % 2 === 0
+    const flameLen = flicker ? h * 0.22 : h * 0.30
+    px.tri(-flameLen, cy - h * 0.14, flameLen + w * 0.42, h * 0.28, 'left', jc.flameTip)
+    px.tri(-flameLen * 0.6, cy - h * 0.08, flameLen * 0.6 + w * 0.42, h * 0.16, 'left', jc.flameMid)
+    px.tri(-flameLen * 0.3, cy - h * 0.04, flameLen * 0.3 + w * 0.42, h * 0.08, 'left', jc.flameCore)
 
-    // 機体グラデーション（中央が明るい金属光沢）
-    const bodyGrad = ctx.createLinearGradient(0, 0, w, 0)
-    bodyGrad.addColorStop(0, jc.bodyDark)
-    bodyGrad.addColorStop(0.5, jc.bodyLight)
-    bodyGrad.addColorStop(1, jc.bodyDark)
-
-    // 主翼（後退翼）
-    ctx.fillStyle = bodyGrad
-    ctx.beginPath()
-    ctx.moveTo(cx, h * 0.30)
-    ctx.lineTo(w * 0.02, h * 0.72)
-    ctx.lineTo(w * 0.20, h * 0.74)
-    ctx.lineTo(cx, h * 0.64)
-    ctx.lineTo(w * 0.80, h * 0.74)
-    ctx.lineTo(w * 0.98, h * 0.72)
-    ctx.closePath(); ctx.fill()
-
-    // 尾翼
-    ctx.fillStyle = jc.bodyDark
-    ctx.beginPath()
-    ctx.moveTo(cx, h * 0.72)
-    ctx.lineTo(w * 0.30, h * 0.96)
-    ctx.lineTo(w * 0.42, h * 0.96)
-    ctx.lineTo(cx, h * 0.80)
-    ctx.lineTo(w * 0.58, h * 0.96)
-    ctx.lineTo(w * 0.70, h * 0.96)
-    ctx.closePath(); ctx.fill()
-
-    // 機体（機首は上）
-    ctx.fillStyle = bodyGrad
-    ctx.beginPath()
-    ctx.moveTo(cx, 0)
-    ctx.lineTo(w * 0.40, h * 0.45)
-    ctx.lineTo(w * 0.42, h * 0.92)
-    ctx.lineTo(w * 0.58, h * 0.92)
-    ctx.lineTo(w * 0.60, h * 0.45)
-    ctx.closePath(); ctx.fill()
-
-    // 機体エッジハイライト
-    ctx.strokeStyle = jc.edge
-    ctx.lineWidth = 1
-    ctx.beginPath()
-    ctx.moveTo(cx, 0); ctx.lineTo(w * 0.40, h * 0.45)
-    ctx.moveTo(cx, 0); ctx.lineTo(w * 0.60, h * 0.45)
-    ctx.stroke()
-
-    // キャノピー（機首方向を明確化するため発光を強化）
-    ctx.fillStyle = jc.canopy
-    ctx.beginPath()
-    ctx.ellipse(cx, h * 0.30, w * 0.10, h * 0.13, 0, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.globalAlpha = 0.5
-    ctx.fillStyle = jc.canopyGlow
-    ctx.beginPath()
-    ctx.ellipse(cx, h * 0.27, w * 0.05, h * 0.07, 0, 0, Math.PI * 2)
-    ctx.fill()
-    // 機首方向を示す発光（上方向へのグラデーション）
-    ctx.shadowColor = '#88ccff'
-    ctx.shadowBlur = 6
-    ctx.globalAlpha = 0.35
-    ctx.fillStyle = '#aaddff'
-    ctx.beginPath()
-    ctx.ellipse(cx, h * 0.15, w * 0.04, h * 0.06, 0, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.shadowBlur = 0
-    ctx.globalAlpha = 1
+    px.sprite('player_aerial', 0, 0, w, h)
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -315,212 +238,82 @@ export class AerialStgPlugin extends GenrePluginBase {
   // ════════════════════════════════════════════════════════════════
 
   drawHazard(ctx: CanvasRenderingContext2D, hazard: Hazard, sx: number, world: MutableWorld): boolean {
+    const px = new PixelCanvas(ctx)
     const x  = sx
     const y  = hazard.y
     const w  = hazard.w
     const hh = hazard.h
 
-    ctx.save()
-    ctx.shadowColor = hazard.glowColor
-    ctx.shadowBlur  = this.hazardConfig.glowBlur
+    px.halo((expand, c) => px.rect(x - expand, y - expand, w + expand * 2, hh + expand * 2, c),
+      hazard.glowColor, PIXELART.haloSteps)
 
     switch (hazard.shape) {
-      case 'rect':   this._drawBomber(ctx, x, y, w, hh, hazard.color); break
-      case 'pillar': this._drawMissile(ctx, x, y, w, hh, hazard.color); break
-      default:       this._drawEnemyFighter(ctx, x, y, w, hh, hazard.color)
+      case 'rect':   this._drawBomber(px, x, y, w, hh, hazard.color); break
+      case 'pillar': this._drawMissile(px, x, y, w, hh, hazard.color, hazard.pulse); break
+      default:       this._drawEnemyFighter(px, x, y, w, hh, hazard.color)
     }
 
-    ctx.shadowBlur = 0
     if (world.rules.features.has('enemy_hp') && hazard.maxHp > 1) {
-      this._drawHpBar(ctx, x, y, w, hazard.hp, hazard.maxHp)
+      this._drawHpBar(px, x, y, w, hazard.hp, hazard.maxHp)
     }
-    ctx.restore()
     return true
   }
 
   // diamond → 敵戦闘機（機首が下・赤みがかったシルエット）
-  // 発光コア（脈動）+ 翼のフラッターアニメ + 色相シフト（赤系）
-  private _drawEnemyFighter(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string): void {
-    const cx   = x + w / 2
-    const ec   = this.enemyColors
-    const t    = performance.now() / 1000
-    const pulse = (Math.sin(t * 4) + 1) * 0.5  // 0〜1
-    // 色相シフト: 赤系（color 自体が既に赤みがかった値を持つ）
-
-    const grad = ctx.createLinearGradient(x, y, x + w, y)
-    grad.addColorStop(0, ec.fill)
-    grad.addColorStop(0.5, color)
-    grad.addColorStop(1, ec.fill)
-
-    ctx.fillStyle = grad
-    ctx.beginPath()
-    ctx.moveTo(cx, y + h * 0.70)
-    ctx.lineTo(x + w * 0.02, y + h * 0.28)
-    ctx.lineTo(x + w * 0.20, y + h * 0.26)
-    ctx.lineTo(cx, y + h * 0.36)
-    ctx.lineTo(x + w * 0.80, y + h * 0.26)
-    ctx.lineTo(x + w * 0.98, y + h * 0.28)
-    ctx.closePath(); ctx.fill()
-
-    ctx.beginPath()
-    ctx.moveTo(cx, y + h)
-    ctx.lineTo(x + w * 0.40, y + h * 0.55)
-    ctx.lineTo(x + w * 0.42, y + h * 0.08)
-    ctx.lineTo(x + w * 0.58, y + h * 0.08)
-    ctx.lineTo(x + w * 0.60, y + h * 0.55)
-    ctx.closePath(); ctx.fill()
-
-    // 翼のフラッターアニメ（上下に揺れる）
-    const flutter = Math.sin(t * 12) * 0.06
-    ctx.fillStyle = ec.fill
-    ctx.beginPath()
-    ctx.moveTo(cx, y + h * 0.45)
-    ctx.lineTo(x + w * 0.05 + flutter * w, y + h * 0.55)
-    ctx.lineTo(x + w * 0.15 + flutter * w, y + h * 0.50)
-    ctx.lineTo(cx, y + h * 0.42)
-    ctx.closePath(); ctx.fill()
-    ctx.beginPath()
-    ctx.moveTo(cx, y + h * 0.45)
-    ctx.lineTo(x + w * 0.95 - flutter * w, y + h * 0.55)
-    ctx.lineTo(x + w * 0.85 - flutter * w, y + h * 0.50)
-    ctx.lineTo(cx, y + h * 0.42)
-    ctx.closePath(); ctx.fill()
-
-    // キャノピー
-    ctx.fillStyle = ec.canopy
-    ctx.beginPath()
-    ctx.ellipse(cx, y + h * 0.62, w * 0.09, h * 0.11, 0, 0, Math.PI * 2)
-    ctx.fill()
-
-    // 機首の発光コア（脈動する赤い点）
-    const coreR = h * (0.08 + pulse * 0.04)
-    ctx.shadowColor = '#ff4444'
-    ctx.shadowBlur = 8 + pulse * 6
-    ctx.fillStyle = '#ffffff'
-    ctx.beginPath()
-    ctx.arc(cx, y + h * 0.72, coreR, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.shadowBlur = 0
+  private _drawEnemyFighter(px: PixelCanvas, x: number, y: number, w: number, h: number, color: string): void {
+    px.sprite('enemy_aerial_fighter', x, y, w, h, {
+      slots: { main: color, shade: this._shade(color, -55), light: this._shade(color, 55) },
+    })
   }
 
   // rect → 爆撃機（横長・重装甲・複数エンジン）
-  // 主砲の発光 + 色相シフト（紫系）+ エンジン炎アニメ
-  private _drawBomber(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, _color: string): void {
+  private _drawBomber(px: PixelCanvas, x: number, y: number, w: number, h: number, color: string): void {
+    px.sprite('enemy_aerial_bomber', x, y, w, h, {
+      slots: { main: color, shade: this._shade(color, -55), light: this._shade(color, 55) },
+    })
     const bc = this.bomberColors
-    const cx = x + w / 2
-    const t  = performance.now() / 1000
-    const pulse = (Math.sin(t * 3) + 1) * 0.5
-
-    ctx.fillStyle = bc.body
-    this._roundRect(ctx, x, y + h * 0.40, w, h * 0.22, 3)
-    ctx.fill()
-
-    const grad = ctx.createLinearGradient(x, y, x, y + h)
-    grad.addColorStop(0, bc.bodyEdge)
-    grad.addColorStop(1, bc.body)
-    ctx.fillStyle = grad
-    this._roundRect(ctx, x + w * 0.06, y + h * 0.30, w * 0.88, h * 0.45, Math.min(6, h * 0.2))
-    ctx.fill()
-
-    // 主砲（前方下部）の発光
-    const gunGlow = 0.4 + pulse * 0.6
-    ctx.shadowColor = '#ff66ff'
-    ctx.shadowBlur = 6 + pulse * 4
-    ctx.fillStyle = `rgba(255,100,255,${gunGlow})`
-    ctx.beginPath()
-    ctx.moveTo(cx, y + h)
-    ctx.lineTo(cx - w * 0.10, y + h * 0.72)
-    ctx.lineTo(cx + w * 0.10, y + h * 0.72)
-    ctx.closePath(); ctx.fill()
-    ctx.shadowBlur = 0
-
-    // エンジン炎アニメ（4基が個別に点滅）
-    const engineColors = ['#ff7a3c', '#ffaa3c', '#ff5a2c', '#ff8a4c']
-    for (let i = 0; i < 4; i++) {
-      const fx = [0.22, 0.40, 0.60, 0.78][i]
-      const flicker = Math.sin(t * 8 + i * 1.5) * 0.3 + 0.7
-      const er = Math.max(2, w * 0.03) * flicker
-      ctx.shadowColor = engineColors[i]
-      ctx.shadowBlur = 4
-      ctx.fillStyle = engineColors[i]
-      ctx.beginPath()
-      ctx.arc(x + w * fx, y + h * 0.62, er, 0, Math.PI * 2)
-      ctx.fill()
+    for (const fx of [0.22, 0.40, 0.60, 0.78]) {
+      px.circle(x + w * fx, y + h * 0.62, Math.max(2, w * 0.03), bc.engine)
     }
-    ctx.shadowBlur = 0
   }
 
   // pillar → ミサイル（細長い円筒・後方に炎）
-  // 尾炎の揺らぎ + 機体の回転アニメ + 色相シフト（橙系）
-  private _drawMissile(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string): void {
+  private _drawMissile(px: PixelCanvas, x: number, y: number, w: number, h: number, color: string, pulse: number): void {
     const mc = this.missileColors
-    const cx = x + w / 2
-    const t  = performance.now() / 1000
+    // 炎（本体の箱の外・上方向にはみ出すため別描画）
+    const flicker = Math.floor(pulse * FLAME_FLICKER_RATE) % 2 === 0
+    const jitter = flicker ? 0 : w * 0.15
+    px.withAlpha(0.8, () => {
+      px.tri(x + w * 0.30, y - 12 - jitter, w * 0.40, 12 + jitter, 'up', mc.flame)
+    })
 
-    // 尾炎の揺らぎ（幅と長さが時間とともに変動）
-    const flameJitter = Math.sin(t * 20) * 3
-    const flameLen    = 10 + Math.sin(t * 15) * 5
-    ctx.fillStyle = mc.flame
-    ctx.globalAlpha = 0.7 + Math.sin(t * 18) * 0.2
-    ctx.beginPath()
-    ctx.moveTo(x + w * 0.25, y)
-    ctx.lineTo(cx + flameJitter, y - flameLen)
-    ctx.lineTo(x + w * 0.75, y)
-    ctx.closePath(); ctx.fill()
-    // 炎の内部（白熱コア）
-    ctx.fillStyle = '#ffffff'
-    ctx.globalAlpha = 0.5
-    ctx.beginPath()
-    ctx.moveTo(x + w * 0.35, y)
-    ctx.lineTo(cx + flameJitter * 0.5, y - flameLen * 0.5)
-    ctx.lineTo(x + w * 0.65, y)
-    ctx.closePath(); ctx.fill()
-    ctx.globalAlpha = 1
-
-    // 機体の回転アニメ（微妙に左右に振れる）
-    const bodySway = Math.sin(t * 3.5) * 0.02
-
-    ctx.save()
-    ctx.translate(cx, y + h * 0.5)
-    ctx.rotate(bodySway)
-    ctx.translate(-cx, -(y + h * 0.5))
-
-    const grad = ctx.createLinearGradient(x, y, x + w, y)
-    grad.addColorStop(0, color)
-    grad.addColorStop(0.5, mc.body)
-    grad.addColorStop(1, color)
-    ctx.fillStyle = grad
-    ctx.fillRect(x + w * 0.20, y + h * 0.12, w * 0.60, h * 0.72)
-
-    ctx.fillStyle = mc.body
-    ctx.beginPath()
-    ctx.moveTo(x + w * 0.20, y + h * 0.20); ctx.lineTo(x, y + h * 0.05); ctx.lineTo(x + w * 0.20, y + h * 0.05); ctx.closePath()
-    ctx.moveTo(x + w * 0.80, y + h * 0.20); ctx.lineTo(x + w, y + h * 0.05); ctx.lineTo(x + w * 0.80, y + h * 0.05); ctx.closePath()
-    ctx.fill()
-
-    ctx.fillStyle = mc.head
-    ctx.beginPath()
-    ctx.moveTo(cx, y + h); ctx.lineTo(x + w * 0.20, y + h * 0.84); ctx.lineTo(x + w * 0.80, y + h * 0.84)
-    ctx.closePath(); ctx.fill()
-
-    ctx.restore()
+    px.sprite('enemy_aerial_missile', x, y, w, h, {
+      slots: { main: color, shade: this._shade(color, -55) },
+    })
   }
 
   // enemy_hp 用セグメント式 HP バー
-  private _drawHpBar(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, hp: number, maxHp: number): void {
+  private _drawHpBar(px: PixelCanvas, x: number, y: number, w: number, hp: number, maxHp: number): void {
     const b    = this.hpBar
     const segW = (w - b.segGap * (maxHp - 1)) / maxHp
     const barY = y - b.offsetY
     const color = hp / maxHp > b.threshold ? b.high : b.low
     for (let i = 0; i < maxHp; i++) {
       const segX = x + i * (segW + b.segGap)
-      ctx.fillStyle = b.bg
-      ctx.fillRect(segX, barY, segW, b.height)
-      if (i < hp) {
-        ctx.fillStyle = color
-        ctx.fillRect(segX, barY, segW, b.height)
-      }
+      px.rect(segX, barY, segW, b.height, b.bg)
+      if (i < hp) px.rect(segX, barY, segW, b.height, color)
     }
+  }
+
+  // hex 色を amount だけ増減した rgb 文字列を返す（非 hex はそのまま返す）
+  private _shade(hex: string, amount: number): string {
+    if (!hex.startsWith('#') || hex.length < 7) return hex
+    const r = parseInt(hex.slice(1, 3), 16)
+    const g = parseInt(hex.slice(3, 5), 16)
+    const b = parseInt(hex.slice(5, 7), 16)
+    if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return hex
+    const cl = (v: number): number => Math.max(0, Math.min(255, v + amount))
+    return `rgb(${cl(r)},${cl(g)},${cl(b)})`
   }
 }
 

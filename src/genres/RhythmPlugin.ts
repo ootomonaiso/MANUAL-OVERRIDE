@@ -7,6 +7,7 @@ import type { GenrePlugin } from '../engine/GenrePlugin'
 import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
 import { DarkThemePlugin } from './BasePlugin'
+import { PixelCanvas } from '../game/render'
 
 export class RhythmPlugin extends DarkThemePlugin {
   readonly id: GenreId = 'rhythm'
@@ -27,15 +28,15 @@ export class RhythmPlugin extends DarkThemePlugin {
   ]
 
   override drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
-    // 縦ラインの光（ビート感）
-    ctx.globalAlpha = 0.08
-    ctx.fillStyle = '#cc44ff'
+    // 縦ラインの光（ビート感）。間隔・位置の計算式（BPM同期）は無変更
+    const px = new PixelCanvas(ctx)
     const spacing = 120
     const start = -(offsetX % spacing)
-    for (let x = start; x < W; x += spacing) {
-      ctx.fillRect(x, 0, 2, gY)
-    }
-    ctx.globalAlpha = 1
+    px.withAlpha(0.08, () => {
+      for (let x = start; x < W; x += spacing) {
+        px.rect(x, 0, 2, gY, '#cc44ff')
+      }
+    })
     // 建物シルエット（親クラス呼び出し）
     super.drawMidLayer(ctx, offsetX, W, gY)
   }

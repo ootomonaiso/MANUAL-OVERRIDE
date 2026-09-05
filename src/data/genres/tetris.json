@@ -2,7 +2,7 @@
   "$schema": "../../../schemas/genre.schema.json",
   "id": "tetris",
   "label": "テトリス",
-  "thresholds": { "combo": 10, "craft": 10 },
+  "thresholds": { "combo": 5, "craft": 3 },
   "enableFeatures": ["tetris_mode"],
   "disableFeatures": ["auto_run", "shoot", "beat_hazard", "boss", "stealth_mode", "slow_precise"],
   "scoreFormula": "maxCombo * 300 + survivedSec * 10",

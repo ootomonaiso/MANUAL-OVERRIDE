@@ -93,6 +93,8 @@ src/
     │   ├── genreResolver.ts  resolveGenre() — 収束アルゴリズム
     │   ├── scoreCalc.ts      最終スコア計算(投擲込み)
     │   ├── LearningSystem.ts 行動統計 → 追加ルール発火
+    │   ├── playStyleDetector.ts  プレイスタイル検出
+    │   ├── contradictionTracker.ts  矛盾カード追跡
     │   ├── hudLayout.ts      HUDレイアウト分類・セーフゾーン幾何（engine と Vue が共有）
     │   └── defaults.ts       デフォルト値定義
 │
@@ -109,17 +111,21 @@ src/
     │   ├── entities.ts       Player / Hazard / Item / Bullet / Enemy
     │   ├── throwEngine.ts    投擲フェーズ物理
     │   └── systems/
-    │       ├── index.ts               全 FeatureSystem を一括登録（7系統）
+    │       ├── index.ts               全 FeatureSystem を一括登録（10系統）
     │       ├── ShootFeature.ts        shoot 系 Feature 実装
     │       ├── RhythmFeature.ts       rhythm 系 Feature 実装
     │       ├── MovementFeature.ts     movement 系 Feature 実装（dash/wall_jump/vertical_scroll も統合）
     │       ├── RpgFeature.ts          hp/exp/item_pickup 実装
-    │       ├── PuzzleFeature.ts       grid_stop/puzzle_solve 実装
+    │       ├── PuzzleFeature.ts       lights_out 実装
     │       ├── SpecialFeature.ts      stealth_mode/time_bonus/tower/boss/color_touch 実装
-    │       └── TetrisFeature.ts       tetris_mode 実装
+    │       ├── TetrisFeature.ts       tetris_mode 実装
+    │       ├── SurvivalFeature.ts     survival_hunger/survival_melee/survival_level 実装
+    │       ├── MeleeKillFeature.ts    melee_kill 実装
+    │       ├── NearMissComboFeature.ts  near_miss_combo 実装
+    │       └── meleeShared.ts / tetris-colors.ts  ヘルパー
 │
 ├── genres/
-    │   ├── index.ts           全 GenrePlugin を自動収集・登録（16種 + JSONフォールバックプラグイン）
+    │   ├── index.ts           全 GenrePlugin を自動収集・登録（16種 + JSONフォールバック7種）
     │   ├── BasePlugin.ts      base / runner
     │   ├── StgPlugin.ts       stg
     │   ├── RpgPlugin.ts       rpg
@@ -138,7 +144,7 @@ src/
 │
 ├── data/
     │   ├── config.ts          GAME_CONFIG エントリポイント
-    │   ├── config/            JSON設定ファイル群（23個）
+    │   ├── config/            JSON設定ファイル群（26個）
     │   │   ├── genres.json    22 種の GenreDef
     │   │   ├── game_balance.json   スコア比率/投擲重み/基本速度
     │   │   ├── difficulty.json     難易度カーブ/アップデート距離
@@ -159,6 +165,8 @@ src/
     │   ├── ManualValidator.ts 開発時バリデーション
     │   ├── ConfigLoader.ts    JSON設定ファイルのローディング
     │   ├── ConfigValidator.ts 設定ファイルのバリデーション
+    │   ├── SfxLoader.ts       SFX JSON 読み込み
+    │   ├── sfx-types.ts       SFX 型定義
     │   └── index.ts           framework エクスポート
     │
     ├── plugins/
