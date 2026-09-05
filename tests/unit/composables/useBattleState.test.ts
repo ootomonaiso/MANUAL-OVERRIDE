@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { computed, toRaw } from 'vue'
 import { useBattleState, type BattleScheduler } from '../../../src/composables/useBattleState'
 import { BATTLE_CONTENT } from '../../../src/data/rpg/battleContent'
-import { BATTLE } from '../../../src/data/tunables'
+import { BATTLE, ENCOUNTER_GROUPS } from '../../../src/data/tunables'
 import { GENRES } from '../../../src/data/genres'
 import { evalScoreFormula } from '../../../src/domain/scoreCalc'
 import type { BattleStatus } from '../../../src/domain/battle/types'
@@ -164,9 +164,11 @@ describe('useBattleState: リアクティビティ', () => {
   it('エフェクトキューの長さが computed に反映される', () => {
     const { battle, act } = winningHarness()
     const queued = computed(() => battle.effectQueue.value.length)
-    expect(queued.value).toBe(0)
+    // 敵の初期配置は敵グループから抽選されるため、初期状態で必ず0件とは限らない
+    // （AGIが高い敵が先手を取ることがある）。act() で増えることだけを確かめる
+    const before = queued.value
     act()
-    expect(queued.value).toBeGreaterThan(0)
+    expect(queued.value).toBeGreaterThan(before)
   })
 
 })
@@ -404,35 +406,52 @@ describe('useBattleState: 決着とスコア', () => {
     expect(h.battle.state.player.alive).toBe(false)
   })
 
-  it('ボスを倒すと勝利で終了する', () => {
+  /**
+   * ボスは bossIntervalBattles 戦ごとに周期的に出現し、groupOrder を一巡するたびに
+   * lapsForTrueClear 回重ねてようやく「真のクリア」になる（1回倒しただけでは終了しない）。
+   * 250戦近く実戦をシミュレートするのは非現実的なため、drafting 中に battleIndex を
+   * 直接書き換えて次の startBattle() の抽選対象を差し替える（toRaw 越しの書き換えは
+   * 10-state.md の「readonly プロキシへの書き込みが no-op になる」を回避する既存パターン）。
+   */
+  it('ボスを倒しても、真のクリアでなければ即終了せず3連続ドラフトへ進む', () => {
     const h = winningHarness()
-    for (let i = 0; i <= BATTLE.bossBattleIndex + 1; i++) {
-      fightUntilBattleEnds(h)
-      if (h.battle.state.status === 'finished') break
-      if (h.battle.state.status === 'drafting') h.battle.selectDraft(0)
-      if (h.battle.state.status === 'swapping') h.battle.confirmSwap(3)
-    }
+    const bossBattleIndex = ENCOUNTER_GROUPS.bossIntervalBattles - 1
+
+    fightUntilBattleEnds(h)
+    expect(h.battle.state.status).toBe('drafting')
+    toRaw(h.battle.state).battleIndex = bossBattleIndex
+    h.battle.selectDraft(0)
+    if (h.battle.state.status === 'swapping') h.battle.confirmSwap(3)
+
+    expect(h.battle.state.enemies).toHaveLength(1)
+    expect(h.battle.state.enemies[0].isBoss).toBe(true)
+
+    fightUntilBattleEnds(h)
+    expect(h.battle.state.bossDefeated).toBe(true)
+    expect(h.battle.state.status).toBe('drafting')
+    expect(h.battle.state.pendingDraftRounds).toBe(ENCOUNTER_GROUPS.bossDraftRounds)
+    expect(h.battle.state.runOutcome).toBeNull()
+  })
+
+  it('真のクリア到達時のボス撃破で勝利終了する', () => {
+    const h = winningHarness()
+    const trueClearBattleIndex =
+      ENCOUNTER_GROUPS.groupOrder.length * ENCOUNTER_GROUPS.lapsForTrueClear * ENCOUNTER_GROUPS.bossIntervalBattles - 1
+
+    fightUntilBattleEnds(h)
+    expect(h.battle.state.status).toBe('drafting')
+    toRaw(h.battle.state).battleIndex = trueClearBattleIndex
+    h.battle.selectDraft(0)
+    if (h.battle.state.status === 'swapping') h.battle.confirmSwap(3)
+
+    expect(h.battle.state.enemies).toHaveLength(1)
+    expect(h.battle.state.enemies[0].isBoss).toBe(true)
+
+    fightUntilBattleEnds(h)
     expect(h.battle.state.bossDefeated).toBe(true)
     expect(h.battle.state.runOutcome).toBe('won')
     expect(h.battle.state.status).toBe('finished')
     expect(h.battle.playScore.value).toBe(expectedScore(h.battle))
-  })
-
-  it('ボス戦ではボスが1体だけ出現する', () => {
-    const h = winningHarness()
-    let sawBoss = false
-    for (let i = 0; i <= BATTLE.bossBattleIndex + 1; i++) {
-      if (h.battle.state.battleIndex === BATTLE.bossBattleIndex && h.battle.state.status === 'battle') {
-        expect(h.battle.state.enemies).toHaveLength(1)
-        expect(h.battle.state.enemies[0].isBoss).toBe(true)
-        sawBoss = true
-      }
-      fightUntilBattleEnds(h)
-      if (h.battle.state.status === 'finished') break
-      if (h.battle.state.status === 'drafting') h.battle.selectDraft(0)
-      if (h.battle.state.status === 'swapping') h.battle.confirmSwap(3)
-    }
-    expect(sawBoss).toBe(true)
   })
 })
 

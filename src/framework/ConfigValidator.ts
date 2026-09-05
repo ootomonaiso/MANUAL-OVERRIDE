@@ -175,7 +175,6 @@ export function validateGameConfig(config: GameConfigMap): ConfigValidationResul
       ['dodge.cooldown', b.dodge?.cooldown, 0],
       ['shield.cutRate', b.shield?.cutRate, 0, 1],
       ['shield.cutRateVsSpecial', b.shield?.cutRateVsSpecial, 0, 1],
-      ['bossBattleIndex', b.bossBattleIndex, 1],
     ]
     for (const [path, val, min, max] of nested) {
       if (typeof val !== 'number') {
@@ -194,6 +193,30 @@ export function validateGameConfig(config: GameConfigMap): ConfigValidationResul
     }
     if (b.initialStats && b.initialStats.baseMin > b.initialStats.baseMax) {
       errors.push('config.battle.initialStats: baseMin が baseMax を上回っています')
+    }
+  }
+
+  // encounterGroups: グループ構成・重み・周期の妥当性
+  if (config.encounterGroups) {
+    const eg = config.encounterGroups
+    if (eg.bossIntervalBattles < 1) errors.push('config.encounterGroups.bossIntervalBattles は1以上が必要です')
+    if (eg.lapsForTrueClear < 1) errors.push('config.encounterGroups.lapsForTrueClear は1以上が必要です')
+    if (eg.bossDraftRounds < 1) errors.push('config.encounterGroups.bossDraftRounds は1以上が必要です')
+    if (!Array.isArray(eg.groupOrder) || eg.groupOrder.length === 0) {
+      errors.push('config.encounterGroups.groupOrder は1件以上の配列が必要です')
+    } else {
+      for (const g of eg.groupOrder) {
+        if (!eg.groups || !(g in eg.groups)) {
+          errors.push(`config.encounterGroups.groups に groupOrder のグループ "${g}" が定義されていません`)
+        }
+      }
+    }
+    for (const tier of eg.spawnWeightTiers ?? []) {
+      for (const g of Object.keys(tier.weights)) {
+        if (!eg.groupOrder.includes(g)) {
+          errors.push(`config.encounterGroups.spawnWeightTiers が未知のグループ "${g}" を参照しています`)
+        }
+      }
     }
   }
 

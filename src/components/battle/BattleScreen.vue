@@ -43,6 +43,7 @@ import { STACKS_REQUIRED, nextCategoryThreshold } from '../../domain/battle/skil
 import { damageMagnitude, MAGNITUDE_LABEL } from '../../domain/battle/damagePreview'
 import { computeAffinityStage, effectivenessHint } from '../../domain/battle/damageCalc'
 import { BATTLE_CONTENT } from '../../data/rpg/battleContent'
+import { BATTLE } from '../../data/tunables'
 import { findBattleBackground } from '../../data/rpg/battleBackgrounds'
 import { soundManager } from '../../plugins/SoundManager'
 
@@ -87,8 +88,24 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
 // 比率を少し抑える（以前は自キャラを画面下端で見切れさせていたが、HPプレートが画面外に
 // はみ出してしまうため、全身を収める配置へ変更した）。
 const playerSpriteHeight = computed(() => Math.round(viewportHeight.value * 0.34))
+
+/**
+ * 同時出現数に応じたスプライト縮小率・並びの隙間（`config/battle.json:enemyScaleByCount`）。
+ * 複数体編成（敵セット）が画面外にはみ出さないようにするための調整で、体数が増えるほど縮む
+ */
+function enemyCountKey(count: number): string {
+  return String(Math.min(Math.max(count, 1), 5))
+}
+const enemyCountScale = computed(() => {
+  const key = enemyCountKey(battle.state.enemies.length)
+  return BATTLE.enemyScaleByCount.spriteScale[key] ?? 1
+})
+const enemyLineGapPx = computed(() => {
+  const key = enemyCountKey(battle.state.enemies.length)
+  return BATTLE.enemyScaleByCount.gapPx[key] ?? 40
+})
 function enemySpriteHeight(isBoss: boolean): number {
-  return Math.round(viewportHeight.value * (isBoss ? 0.36 : 0.27))
+  return Math.round(viewportHeight.value * (isBoss ? 0.36 : 0.27) * enemyCountScale.value)
 }
 
 function statRows(c: CombatantView): StatRowView[] {
@@ -560,7 +577,7 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
       :style="{ '--shake-mag': fx.screenShake.value || 1 }"
     >
       <div v-if="fx.screenCriticalFlash.value" class="critical-screen-flash" />
-      <div class="enemy-line" :style="{ bottom: `${(1 - FLOOR_TOP) * 100}%` }">
+      <div class="enemy-line" :style="{ bottom: `${(1 - FLOOR_TOP) * 100}%`, gap: `${enemyLineGapPx}px` }">
         <CharacterFrame
           v-for="(e, i) in battle.state.enemies"
           :key="e.id"
@@ -788,7 +805,6 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 40px;
 }
 /* HPプレートが足元の外（通常のフロー）に付くぶん、画面下部の説明書投擲ボタンと
    重ならない高さまで持ち上げる */

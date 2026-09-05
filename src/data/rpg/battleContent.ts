@@ -12,7 +12,7 @@
 
 import type {
   ActiveSkillDef, PassiveSkillDef, TraitDef, EnemyDef, BattleEffectDef,
-  BattleContent, EnemySkillRefResolved,
+  BattleContent, EnemySkillRefResolved, EnemySet,
 } from '../../domain/battle/types'
 
 type SkillJson = Partial<ActiveSkillDef> & Partial<PassiveSkillDef> & { id?: string; kind?: string }
@@ -93,6 +93,21 @@ for (const [path, mod] of Object.entries(_enemyModules)) {
   })
 }
 
+// ── 敵セット（グループに登録する単位。1〜5体の組み合わせ） ─────────────
+const _enemySetModules = import.meta.glob('./enemy-sets/*.json', { eager: true })
+const _enemySets = new Map<string, EnemySet>()
+for (const [path, mod] of Object.entries(_enemySetModules)) {
+  const raw = ((mod as { default?: unknown }).default ?? mod) as Partial<EnemySet> & { id?: string }
+  if (typeof raw.id !== 'string' || !Array.isArray(raw.members) || raw.members.length === 0) {
+    console.error(`[battleContent] ${path}: id/members が不正です。この敵セットはスキップされます。`)
+    continue
+  }
+  if (_enemySets.has(raw.id)) {
+    console.warn(`[battleContent] 敵セットID "${raw.id}" が重複しています (${path})。上書きします。`)
+  }
+  _enemySets.set(raw.id, { id: raw.id, label: raw.label ?? raw.id, members: raw.members })
+}
+
 // ── エフェクト ─────────────────────────────────────────────────
 const _effectModules = import.meta.glob('./battle-effects/*.json', { eager: true })
 const _effects = new Map<string, BattleEffectDef>()
@@ -111,7 +126,8 @@ for (const [path, mod] of Object.entries(_effectModules)) {
 export const SKILLS: ReadonlyMap<string, ActiveSkillDef | PassiveSkillDef> = _skills
 export const TRAITS: ReadonlyMap<string, TraitDef> = _traits
 export const ENEMIES: ReadonlyMap<string, EnemyDef> = _enemies
+export const ENEMY_SETS: ReadonlyMap<string, EnemySet> = _enemySets
 export const BATTLE_EFFECTS: ReadonlyMap<string, BattleEffectDef> = _effects
 
 /** domain/battle 層へ渡す純粋なコンテンツ束（Vue・Viteのローダに依存しない形） */
-export const BATTLE_CONTENT: BattleContent = { skills: SKILLS, traits: TRAITS, enemies: ENEMIES }
+export const BATTLE_CONTENT: BattleContent = { skills: SKILLS, traits: TRAITS, enemies: ENEMIES, enemySets: ENEMY_SETS }

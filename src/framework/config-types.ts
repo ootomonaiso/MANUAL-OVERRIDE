@@ -380,10 +380,7 @@ export interface BattleConfig {
   fallbackStatBoost: { hp: number; other: number }
   /** 戦闘終了時、特性の有無に関わらず無条件で回復する最大HP比率 */
   postBattleHealRate: number
-  /** 何戦目にボスを出すか（実装後に持ち越しの暫定値） */
-  bossBattleIndex: number
   multiHitIntervalMs: number
-  initialEnemyCount: { min: number; max: number }
   /** プレイヤーの見た目に使うスプライトID（src/data/sprites/*.json） */
   playerSprite: string
   /** 戦闘演出の尺。0 に近づけるほどテンポは速いが手応えは薄くなる */
@@ -395,6 +392,27 @@ export interface BattleConfig {
     attackPoseMs: number
     battleEndMs: number
   }
+  /** 同時出現する敵の体数に応じたスプライト縮小率・敵同士の間隔（画面外へのはみ出し防止） */
+  enemyScaleByCount: {
+    spriteScale: Record<string, number>
+    gapPx: Record<string, number>
+  }
+}
+
+/**
+ * 敵グループ/難易度スケーリング（CLAUDE_TASKS.md 第6フェーズ）。
+ * groups の値は src/data/rpg/enemy-sets/*.json の id。数値・構成は仮値（調整前提）
+ */
+export interface EncounterGroupsConfig {
+  groupOrder: string[]
+  /** 何周（groupOrderを何巡）した時点のボス撃破を「真のクリア」とするか */
+  lapsForTrueClear: number
+  /** 何戦ごとにボス戦になるか */
+  bossIntervalBattles: number
+  /** ボス撃破時（真のクリアでない場合）、通常の1回の代わりに何連続でドラフトを行うか */
+  bossDraftRounds: number
+  groups: Record<string, string[]>
+  spawnWeightTiers: { minBattleIndex: number; weights: Record<string, number> }[]
 }
 
 /** survival.json — サバイバルゲーム固有パラメータ */
@@ -686,6 +704,7 @@ export interface GameConfigMap {
   genre_defaults: GenreDefaultsConfig
   palette_defaults: PaletteDefaultsConfig
   battle: BattleConfig
+  encounterGroups: EncounterGroupsConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap

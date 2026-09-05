@@ -26,6 +26,7 @@ import schemaTrait from '../../schemas/battle-trait.schema.json'
 import schemaEnemy from '../../schemas/battle-enemy.schema.json'
 import schemaEffect from '../../schemas/battle-effect.schema.json'
 import schemaBackground from '../../schemas/battle-background.schema.json'
+import schemaEnemySet from '../../schemas/battle-enemy-set.schema.json'
 import { SPRITES } from '../data/sprites'
 import { CATEGORY_LABEL, ELEMENT_LABEL, STAT_LABEL, MODIFIER_SCOPE_LABEL } from '../domain/battle/skillText'
 import { CATEGORY_IDS, STAT_KEYS, isPercentStat, type CategoryId, type Element, type StatKey } from '../domain/battle/types'
@@ -37,7 +38,7 @@ import {
 
 const API = '/__content-editor/api'
 
-type CategoryKey = 'skills' | 'traits' | 'enemies' | 'battleEffects' | 'battleBackgrounds'
+type CategoryKey = 'skills' | 'traits' | 'enemies' | 'battleEffects' | 'battleBackgrounds' | 'enemySets'
 
 interface TabDef {
   key: string
@@ -56,6 +57,7 @@ const TABS: TabDef[] = [
   { key: 'skills-passive', apiCategory: 'skills', label: 'パッシブ', kindFilter: 'passive' },
   { key: 'traits', apiCategory: 'traits', label: '特性' },
   { key: 'enemies', apiCategory: 'enemies', label: '敵' },
+  { key: 'enemySets', apiCategory: 'enemySets', label: '敵セット' },
   { key: 'battleEffects', apiCategory: 'battleEffects', label: 'エフェクト' },
   { key: 'battleBackgrounds', apiCategory: 'battleBackgrounds', label: '背景' },
 ]
@@ -66,6 +68,7 @@ const CATEGORY_ID_HINT: Record<CategoryKey, string> = {
   enemies: 'enemy_xxx',
   battleEffects: 'fx_xxx',
   battleBackgrounds: 'bg_xxx',
+  enemySets: 'set_xxx',
 }
 const CATEGORY_SCHEMA: Record<CategoryKey, JsonSchema> = {
   skills: schemaSkill as JsonSchema,
@@ -73,6 +76,7 @@ const CATEGORY_SCHEMA: Record<CategoryKey, JsonSchema> = {
   enemies: schemaEnemy as JsonSchema,
   battleEffects: schemaEffect as JsonSchema,
   battleBackgrounds: schemaBackground as JsonSchema,
+  enemySets: schemaEnemySet as JsonSchema,
 }
 
 interface EntrySummary {
@@ -88,6 +92,7 @@ interface RefsResponse {
   effectIds: RefOption[]
   sfxIds: string[]
   spriteIds: string[]
+  enemyIds: RefOption[]
 }
 
 // ── どのフィールドを refs から補完するか（category.path -> refs のキー） ──
@@ -99,6 +104,9 @@ const REF_DATALIST_FIELDS: Record<string, keyof RefsResponse> = {
   'skills.sfx.cast': 'sfxIds',
   'skills.sfx.impact': 'sfxIds',
   'battleEffects.sfx': 'sfxIds',
+  // enemySets.members は array-object の汎用ウィジェットで描画されるため、
+  // 配列の中の各要素は pathPrefix='' で辿られる（= フィールドパスは "enemyId" のまま）
+  'enemySets.enemyId': 'enemyIds',
 }
 
 // ── 列挙値の日本語ラベル（値そのものは変えない。表示だけ添える） ──
@@ -209,8 +217,8 @@ function optionLabel(value: string, labelMap?: Record<string, string>): string {
 }
 
 // ── 状態 ──────────────────────────────────────────────────────
-let refs: RefsResponse = { activeSkillIds: [], passiveSkillIds: [], traitIds: [], effectIds: [], sfxIds: [], spriteIds: [] }
-let lists: Record<CategoryKey, EntrySummary[]> = { skills: [], traits: [], enemies: [], battleEffects: [], battleBackgrounds: [] }
+let refs: RefsResponse = { activeSkillIds: [], passiveSkillIds: [], traitIds: [], effectIds: [], sfxIds: [], spriteIds: [], enemyIds: [] }
+let lists: Record<CategoryKey, EntrySummary[]> = { skills: [], traits: [], enemies: [], battleEffects: [], battleBackgrounds: [], enemySets: [] }
 let currentTabKey = TABS[0].key
 let currentCategory: CategoryKey = TABS[0].apiCategory
 let currentId: string | null = null

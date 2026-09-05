@@ -3,7 +3,7 @@
  *
  * content-editor（npm run content-editor）用の Vite dev サーバー middleware。
  * dev サーバー起動中だけ有効な（apply: 'serve'）API を生やし、
- * src/data/rpg/{skills,traits,enemies,battle-effects,battle-backgrounds}/*.json の
+ * src/data/rpg/{skills,traits,enemies,battle-effects,battle-backgrounds,enemy-sets}/*.json の
  * 一覧取得・単体取得・保存（新規/更新）・削除を行う。
  *
  * ブラウザ側は import.meta.glob で読み込んだ static snapshot しか持てず書き込みも
@@ -48,6 +48,11 @@ const CATEGORIES = {
     dir: 'src/data/rpg/battle-backgrounds',
     schema: 'schemas/battle-background.schema.json',
     idPattern: /^bg_[a-z0-9_]+$/,
+  },
+  enemySets: {
+    dir: 'src/data/rpg/enemy-sets',
+    schema: 'schemas/battle-enemy-set.schema.json',
+    idPattern: /^set_[a-z0-9_]+$/,
   },
 }
 
@@ -186,6 +191,7 @@ export function contentEditorPlugin() {
               passiveSkillIds: skillFiles.filter(s => s.kind === 'passive').map(s => ({ id: s.id, label: s.label })),
               traitIds: listEntries('traits').map(t => ({ id: t.id, label: t.label })),
               effectIds: listEntries('battleEffects').map(e => ({ id: e.id, label: e.label })),
+              enemyIds: listEntries('enemies').map(e => ({ id: e.id, label: e.label })),
               sfxIds: existsSync(join(ROOT, 'src/data/sfx'))
                 ? readdirSync(join(ROOT, 'src/data/sfx')).filter(f => f.endsWith('.json')).map(f => f.replace(/\.json$/, ''))
                 : [],

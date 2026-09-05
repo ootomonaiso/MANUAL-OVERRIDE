@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_slime_solo",
+  "label": "スライム",
+  "members": [
+    { "enemyId": "enemy_slime" }
+  ]
+}

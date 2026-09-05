@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_boss_manual_keeper",
+  "label": "説明書の番人",
+  "members": [
+    { "enemyId": "enemy_manual_keeper" }
+  ]
+}

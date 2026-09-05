@@ -21,7 +21,7 @@ import {
   initPlayer, spawnEnemyFromDef, pickEnemyDefs, resolveEffectiveStats,
   resolvePlayerFocus, useActiveSkill, useBuiltinAction, hasReplaceGuard,
   enemyTakeTurn, endOfRound, checkBattleOutcome, finishBattleOnVictory,
-  buildBattleScoreVars,
+  buildBattleScoreVars, isTrueClearBattleIndex,
 } from '../domain/battle/battleEngine'
 import { buildTurnQueue, previewEnemyNextSkill } from '../domain/battle/turnQueue'
 import {
@@ -34,7 +34,7 @@ import { estimateSkillDamage } from '../domain/battle/damagePreview'
 import { estimateHitCount } from '../domain/battle/effectTiming'
 import { BATTLE_CONTENT } from '../data/rpg/battleContent'
 import { BATTLE_BACKGROUNDS } from '../data/rpg/battleBackgrounds'
-import { BATTLE } from '../data/tunables'
+import { BATTLE, ENCOUNTER_GROUPS } from '../data/tunables'
 import { evalScoreFormula } from '../domain/scoreCalc'
 import type { ScoreVars } from '../domain/types'
 import { GENRES } from '../data/genres'
@@ -90,7 +90,7 @@ function zeroCategoryPoints(): Record<CategoryId, number> {
 
 function freshState(): BattleState {
   return {
-    battleIndex: 0, battlesWon: 0, bossDefeated: false, runOutcome: null,
+    battleIndex: 0, battlesWon: 0, bossDefeated: false, bossesDefeatedCount: 0, runOutcome: null,
     player: initPlayer(Math.random),
     enemies: [],
     turnQueue: [], turnIndex: 0, roundCount: 0,
@@ -100,6 +100,7 @@ function freshState(): BattleState {
     pendingSwapSkillId: null,
     categoryPoints: zeroCategoryPoints(),
     rerollCharges: 0,
+    pendingDraftRounds: 1,
     seenIds: new Set(),
     ui: { statusPanelMode: 'effective', showBuffDiff: true, statusPanelCollapsed: false, skillListCollapsed: false },
     playScore: 0,
@@ -212,10 +213,10 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   // ── 戦闘開始 ──────────────────────────────────────────────────
   function startBattle(): void {
     const r = raw()
-    const defs = pickEnemyDefs(content, r.battleIndex, rng)
-    state.enemies = defs.map((d, i) => spawnEnemyFromDef(d, i))
+    const picks = pickEnemyDefs(content, r.battleIndex, rng)
+    state.enemies = picks.map((p, i) => spawnEnemyFromDef(p.def, i, p.statsOverride))
     state.backgroundId = pickBackgroundId(
-      BATTLE_BACKGROUNDS, defs.some(d => d.isBoss), state.backgroundId, rng,
+      BATTLE_BACKGROUNDS, picks.some(p => p.def.isBoss), state.backgroundId, rng,
     )
     state.status = 'battle'
     state.lastBattleEndNotices = []
@@ -307,15 +308,21 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     const r = raw()
     clearPresentation()
     if (outcome === 'won') {
+      // finishBattleOnVictory が battleIndex を内部でインクリメントするため、
+      // 「今終わった戦闘が何戦目だったか」は真のクリア判定に使うので先に控えておく
+      const finishedBattleIndex = r.battleIndex
       finishBattleOnVictory(r, content)
-      if (r.bossDefeated) {
+      const trueClear = r.bossDefeated && isTrueClearBattleIndex(finishedBattleIndex, ENCOUNTER_GROUPS)
+      if (trueClear) {
         state.runOutcome = 'won'
         state.status = 'finished'
         finalizeScore()
-      } else {
-        state.status = 'drafting'
-        state.draftOptions = rollDraft(r.player, content, rng)
+        return
       }
+      // ボス撃破の見返り: 通常1回のところ、ボス撃破時はドラフトを bossDraftRounds 回連続で行う
+      state.pendingDraftRounds = r.bossDefeated ? ENCOUNTER_GROUPS.bossDraftRounds : 1
+      state.status = 'drafting'
+      state.draftOptions = rollDraft(r.player, content, rng)
     } else {
       state.runOutcome = 'lost'
       state.status = 'finished'
@@ -402,7 +409,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
       state.status = 'swapping'
     } else {
       state.draftOptions = null
-      startBattle()
+      proceedAfterDraftRound()
     }
   }
 
@@ -412,6 +419,22 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     confirmSwapSkill(r.player, r.pendingSwapSkillId, targetSlotIndex)
     state.pendingSwapSkillId = null
     state.draftOptions = null
+    proceedAfterDraftRound()
+  }
+
+  /**
+   * 1回分のドラフト（＋必要なら入れ替え）が終わった直後に呼ぶ。
+   * 残りドラフト回数（ボス撃破時の3連続等）があれば次のドラフトへ、無ければ次の戦闘へ進む
+   */
+  function proceedAfterDraftRound(): void {
+    const r = raw()
+    if (r.pendingDraftRounds > 1) {
+      state.pendingDraftRounds--
+      state.status = 'drafting'
+      state.draftOptions = rollDraft(r.player, content, rng)
+      return
+    }
+    state.pendingDraftRounds = 1
     startBattle()
   }
 

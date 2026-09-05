@@ -5,7 +5,7 @@
 
 import type {
   BattleStats, Combatant, BattleContent, ActiveSkillDef, PassiveSkillDef,
-  TraitDef, EnemyDef, BattleState, CategoryId, EffectRequest, EffectContext,
+  TraitDef, EnemyDef, EnemySet, BattleState, CategoryId, EffectRequest, EffectContext,
   EffectNode, SkillDef,
 } from '../../../../src/domain/battle/types'
 import { CATEGORY_IDS } from '../../../../src/domain/battle/types'
@@ -87,12 +87,18 @@ export function makeContent(parts: {
   skills?: (ActiveSkillDef | PassiveSkillDef)[]
   traits?: TraitDef[]
   enemies?: EnemyDef[]
+  enemySets?: EnemySet[]
 } = {}): BattleContent {
   return {
     skills: new Map((parts.skills ?? []).map(s => [s.id, s])),
     traits: new Map((parts.traits ?? []).map(t => [t.id, t])),
     enemies: new Map((parts.enemies ?? []).map(e => [e.id, e])),
+    enemySets: new Map((parts.enemySets ?? []).map(s => [s.id, s])),
   }
+}
+
+export function makeEnemySet(over: Partial<EnemySet> & { id: string }): EnemySet {
+  return { label: over.id, members: [{ enemyId: 'enemy_test' }], ...over }
 }
 
 export function zeroPoints(): Record<CategoryId, number> {
@@ -104,6 +110,7 @@ export function zeroPoints(): Record<CategoryId, number> {
 export function makeState(over: Partial<BattleState> = {}): BattleState {
   return {
     battleIndex: 0, battlesWon: 0, bossDefeated: false, runOutcome: null,
+    bossesDefeatedCount: 0, pendingDraftRounds: 1,
     player: makePlayer(),
     enemies: [],
     turnQueue: [], turnIndex: 0, roundCount: 0,

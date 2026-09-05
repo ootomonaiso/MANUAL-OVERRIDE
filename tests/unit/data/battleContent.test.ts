@@ -4,7 +4,7 @@ import { KNOWN_OP_IDS } from '../../../src/domain/battle/effectOps'
 import { CATEGORY_IDS, STAT_KEYS } from '../../../src/domain/battle/types'
 import type { EffectNode, CategoryId } from '../../../src/domain/battle/types'
 import { buildSkillText } from '../../../src/domain/battle/skillText'
-import { BATTLE } from '../../../src/data/tunables'
+import { BATTLE, ENCOUNTER_GROUPS } from '../../../src/data/tunables'
 import { SPRITES } from '../../../src/data/sprites'
 import { SFX_DEFS } from '../../../src/framework/SfxLoader'
 import skillSchema from '../../../schemas/battle-skill.schema.json'
@@ -246,7 +246,7 @@ describe('battleContent: 敵定義', () => {
 
   it('ボス戦の番号までに出せる通常敵が用意されている', () => {
     expect(ALL_ENEMIES.filter(e => !e.isBoss).length).toBeGreaterThan(0)
-    expect(BATTLE.bossBattleIndex).toBeGreaterThan(0)
+    expect(ENCOUNTER_GROUPS.bossIntervalBattles).toBeGreaterThan(0)
   })
 })
 

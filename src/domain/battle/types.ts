@@ -195,6 +195,23 @@ export interface EnemyDef {
 }
 
 // ─────────────────────────────────────────────────────────────
+// 敵セット（複数の敵の組み合わせをまとめて出現させる。グループに登録する単位）
+// ─────────────────────────────────────────────────────────────
+
+/** セット内の1体ぶん。既存の EnemyDef はデフォルト値として使い、statsOverride で指定した項目だけ上書きする */
+export interface EnemySetMember {
+  enemyId: string
+  statsOverride?: Partial<BattleStats>
+}
+
+/** 1〜5体の敵の組み合わせ。不可能な組み合わせの出現を防ぐため、出現ロジックはこの単位で抽選する */
+export interface EnemySet {
+  id: string
+  label: string
+  members: EnemySetMember[]
+}
+
+// ─────────────────────────────────────────────────────────────
 // エフェクト定義
 // ─────────────────────────────────────────────────────────────
 export type EffectTiming =
@@ -324,6 +341,7 @@ export interface BattleContent {
   skills: ReadonlyMap<string, ActiveSkillDef | PassiveSkillDef>
   traits: ReadonlyMap<string, TraitDef>
   enemies: ReadonlyMap<string, EnemyDef>
+  enemySets: ReadonlyMap<string, EnemySet>
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -375,7 +393,10 @@ export type BattleStatus = 'battle' | 'drafting' | 'swapping' | 'finished'
 export interface BattleState {
   battleIndex: number
   battlesWon: number
+  /** 直近の戦闘でボスを倒したか（一時フラグ。背景選択・UI表示用） */
   bossDefeated: boolean
+  /** ラン通算のボス撃破数。真のクリア判定・スコアはこちらを使う（ボスは周回で何度も出現するため） */
+  bossesDefeatedCount: number
   runOutcome: 'won' | 'lost' | 'gaveup' | null
 
   player: Combatant
@@ -398,6 +419,13 @@ export interface BattleState {
 
   /** ドラフトの引き直し回数。戦闘に勝つたび1増え、使うと1減る */
   rerollCharges: number
+
+  /**
+   * 残りドラフト回数。通常は1（1回選べば次の戦闘へ）。ボス撃破時（真のクリアでない場合）は
+   * 見返りとして bossDraftRounds（既定3）にセットされ、1回選ぶたびに1減り、0になるまで
+   * ドラフトを繰り返す（status は 'drafting' のまま）
+   */
+  pendingDraftRounds: number
 
   seenIds: Set<string>
 

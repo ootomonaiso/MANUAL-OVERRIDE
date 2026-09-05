@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_wraith_solo",
+  "label": "落丁の影",
+  "members": [
+    { "enemyId": "enemy_wraith" }
+  ]
+}

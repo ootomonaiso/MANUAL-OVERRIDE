@@ -33,7 +33,9 @@ const SCHEMAS = {
   'palette_defaults.json': ['section', 'danger', 'dangerGlow', 'safe', 'safeGlow'],
   'battle.json': ['section', 'initialStats', 'cut', 'evade', 'affinity', 'guard', 'dodge', 'shield',
                     'playerSprite', 'presentation',
-                  'categoryUnlockThresholds', 'fallbackStatBoost', 'bossBattleIndex', 'multiHitIntervalMs'],
+                  'categoryUnlockThresholds', 'fallbackStatBoost', 'multiHitIntervalMs', 'enemyScaleByCount'],
+  'encounter_groups.json': ['section', 'groupOrder', 'lapsForTrueClear', 'bossIntervalBattles',
+                              'bossDraftRounds', 'groups', 'spawnWeightTiers'],
 }
 
 // pixelart.json の数値範囲チェック（docs/pixelart-rebuild/00-rendering-system.md §9）
@@ -464,6 +466,7 @@ const _battleEnemySchema = JSON.parse(readFileSync('schemas/battle-enemy.schema.
 const _battleEffectSchema = JSON.parse(readFileSync('schemas/battle-effect.schema.json', 'utf8'))
 const ALLOWED_OPS = _battleSkillSchema.allowedOps
 const _battleBackgroundSchema = JSON.parse(readFileSync('schemas/battle-background.schema.json', 'utf8'))
+const _battleEnemySetSchema = JSON.parse(readFileSync('schemas/battle-enemy-set.schema.json', 'utf8'))
 
 const ajvBattle = new Ajv({ strict: false, allErrors: true })
 const validateSkillSchema = ajvBattle.compile(_battleSkillSchema)
@@ -471,6 +474,7 @@ const validateTraitSchema = ajvBattle.compile(_battleTraitSchema)
 const validateEnemySchema = ajvBattle.compile(_battleEnemySchema)
 const validateEffectSchema = ajvBattle.compile(_battleEffectSchema)
 const validateBackgroundSchema = ajvBattle.compile(_battleBackgroundSchema)
+const validateEnemySetSchema = ajvBattle.compile(_battleEnemySetSchema)
 const PROBLEM_SEPARATOR = String.fromCharCode(10) + '       '
 
 /** effect ノード配列を再帰的に走査し、参照する op / stat / repeat 構造の粗い妥当性を見る */
@@ -581,9 +585,10 @@ function validateBattleTraits() {
   return traitIds
 }
 
-/** src/data/rpg/enemies/*.json を検証する（skill/trait の参照整合性を含む） */
+/** src/data/rpg/enemies/*.json を検証する（skill/trait の参照整合性を含む）。戻り値: { enemyIds, bossEnemyIds } */
 function validateBattleEnemies(activeIds, passiveIds, traitIds, spriteFrames) {
   const seen = new Set()
+  const bossEnemyIds = new Set()
   let bossCount = 0
 
   for (const file of walkJson('src/data/rpg/enemies')) {
@@ -599,7 +604,7 @@ function validateBattleEnemies(activeIds, passiveIds, traitIds, spriteFrames) {
     if (data.id !== basename(file, '.json')) problems.push(`id "${data.id}" とファイル名が一致していません`)
     if (seen.has(data.id)) problems.push(`id "${data.id}" が他の敵と重複しています`)
     seen.add(data.id)
-    if (data.isBoss) bossCount++
+    if (data.isBoss) { bossCount++; bossEnemyIds.add(data.id) }
 
     const frames = spriteFrames.get(data.sprite)
     if (!frames) {
@@ -635,6 +640,62 @@ function validateBattleEnemies(activeIds, passiveIds, traitIds, spriteFrames) {
   if (bossCount === 0) {
     fail('src/data/rpg/enemies/*.json', 'isBoss:true の敵が1体もありません（ランがクリアできません）')
   }
+  return { enemyIds: seen, bossEnemyIds }
+}
+
+/** src/data/rpg/enemy-sets/*.json を検証する（敵IDの参照整合性を含む）。戻り値: { setIds, bossSetIds } */
+function validateEnemySets(enemyIds, bossEnemyIds) {
+  const seen = new Set()
+  const bossSetIds = new Set()
+
+  for (const file of walkJson('src/data/rpg/enemy-sets')) {
+    const rel = relPath(file)
+    const { data, error } = parseJson(file)
+    if (data === null) { fail(rel, `JSON parse error: ${error}`); continue }
+
+    const problems = []
+    const schemaValid = validateEnemySetSchema(data)
+    if (!schemaValid && validateEnemySetSchema.errors) {
+      for (const err of validateEnemySetSchema.errors) problems.push(`schema: ${err.instancePath || '(root)'} ${err.message}`)
+    }
+    if (data.id !== basename(file, '.json')) problems.push(`id "${data.id}" とファイル名が一致していません`)
+    if (seen.has(data.id)) problems.push(`id "${data.id}" が他の敵セットと重複しています`)
+    seen.add(data.id)
+
+    for (const member of data.members ?? []) {
+      if (!enemyIds.has(member.enemyId)) {
+        problems.push(`members: 存在しない敵 "${member.enemyId}" を参照しています`)
+      } else if (bossEnemyIds.has(member.enemyId)) {
+        bossSetIds.add(data.id)
+      }
+    }
+
+    if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
+    else ok(rel)
+  }
+  return { setIds: seen, bossSetIds }
+}
+
+/** encounter_groups.json の groups/spawnWeightTiers が実在するセット/グループを参照しているか検証する */
+function validateEncounterGroups(setIds) {
+  const rel = 'src/data/config/encounter_groups.json'
+  const { data, error } = parseJson(rel)
+  if (data === null) { fail(rel, `JSON parse error: ${error}`); return }
+
+  const problems = []
+  const groupOrder = Array.isArray(data.groupOrder) ? data.groupOrder : []
+  for (const [group, sets] of Object.entries(data.groups ?? {})) {
+    for (const setId of sets) {
+      if (!setIds.has(setId)) problems.push(`groups.${group}: 存在しない敵セット "${setId}" を参照しています`)
+    }
+  }
+  for (const tier of data.spawnWeightTiers ?? []) {
+    for (const g of Object.keys(tier.weights ?? {})) {
+      if (!groupOrder.includes(g)) problems.push(`spawnWeightTiers: groupOrder に無いグループ "${g}" を参照しています`)
+    }
+  }
+  if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
+  else ok(rel)
 }
 
 /** src/data/rpg/battle-effects/*.json を検証する。戻り値: エフェクトIDの集合 */
@@ -770,7 +831,10 @@ const {
 } = validateBattleSkills()
 validateBattleTransformsIntoReferences(battleTransformsIntoRefs, battleActiveIds)
 const battleTraitIds = validateBattleTraits()
-validateBattleEnemies(battleActiveIds, battlePassiveIds, battleTraitIds, spriteFrames)
+const { enemyIds: battleEnemyIds, bossEnemyIds: battleBossEnemyIds } =
+  validateBattleEnemies(battleActiveIds, battlePassiveIds, battleTraitIds, spriteFrames)
+const { setIds: battleEnemySetIds } = validateEnemySets(battleEnemyIds, battleBossEnemyIds)
+validateEncounterGroups(battleEnemySetIds)
 const {
   effectIds: battleEffectIds,
   effectTimings: battleEffectTimings,

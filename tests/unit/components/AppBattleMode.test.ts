@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest'
 import { createApp, h, nextTick, type App as VueApp } from 'vue'
 import App from '../../../src/App.vue'
 
@@ -112,12 +112,24 @@ describe('App.vue: rpg 戦闘モードへの切り替え', () => {
   })
 
   it('戦闘UIは戦闘の初期状態を描画している', async () => {
-    const h = mountApp()
-    await startWithGenre(h, 'rpg')
-    expect(h.host.querySelectorAll('.char-unit').length).toBeGreaterThanOrEqual(2)
-    expect(h.host.querySelector('.battle-backdrop')).not.toBeNull()
-    expect(h.host.querySelector('.turn-badge')).not.toBeNull()
-    expect(h.host.querySelector('.command-menu')).not.toBeNull()
+    // 敵グループ抽選で先攻が敵側（AGIが高い敵）になることがあり、その場合
+    // TIMED_SCHEDULER の実タイマー分の演出が終わるまでコマンドメニューが出ない。
+    // 裏で動く SideScroller の requestAnimationFrame ポリフィルが setTimeout を
+    // 際限なく積み続けるため runAllTimers は使えない（無限ループ判定で落ちる）。
+    // 先攻の敵ターンの演出が確実に終わる時間ぶんだけ固定で進める
+    vi.useFakeTimers()
+    try {
+      const h = mountApp()
+      await startWithGenre(h, 'rpg')
+      vi.advanceTimersByTime(5000)
+      await nextTick()
+      expect(h.host.querySelectorAll('.char-unit').length).toBeGreaterThanOrEqual(2)
+      expect(h.host.querySelector('.battle-backdrop')).not.toBeNull()
+      expect(h.host.querySelector('.turn-badge')).not.toBeNull()
+      expect(h.host.querySelector('.command-menu')).not.toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

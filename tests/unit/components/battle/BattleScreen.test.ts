@@ -44,9 +44,21 @@ function mountBattle(battle: Battle, beforeAct: () => void = () => {}): Harness 
     beforeAct()
     await openBattleMenu(host)
     await selectSlot(slotButtons(host)[0])
+    await resolveFocusIfNeeded(host)
   }
   current = { host, app, battle, act }
   return current
+}
+
+/**
+ * 敵セット導入により複数の敵が出現しうるようになったため、単体攻撃かつ敵が2体以上いる場合は
+ * 技選択のあとに対象選択（フォーカス）画面を挟む。生存している先頭の敵をクリックして確定する。
+ */
+async function resolveFocusIfNeeded(host: HTMLElement): Promise<void> {
+  if (!$(host, '.focus-hint')) return
+  const target = $$(host, '.char-unit.enemy:not(.defeated)')[0]
+  target?.click()
+  await nextTick()
 }
 
 /**

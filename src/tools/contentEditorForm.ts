@@ -181,6 +181,8 @@ export function blankEntrySkeleton(category: string, id: string, opts?: { kind?:
         floor: { top: '#3a3020', bottom: '#1a1508', line: '#5a4a30' },
         layers: [], accent: '#e0c46a',
       }
+    case 'enemySets':
+      return { id, label: '', members: [{ enemyId: '' }] }
     default:
       return { id }
   }

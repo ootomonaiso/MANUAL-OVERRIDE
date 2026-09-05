@@ -228,23 +228,25 @@ interface EnemyRuntime {
 敵のアクティブスキルも**クールタイムを持つ**。`actionPattern` で指定されたスキルがクールタイム中の場合、**そのスキルを飛ばして次の使用可能なスキルへ進む**。すべてクールタイム中なら「何もしない」を行う。
 
 ```ts
-/** パターンを進めながら、最初に使用可能なスキルを返す。全てCT中なら null */
-export function pickEnemySkill(enemy: Combatant): string | null {
+/** パターンを進めながら、最初に使用可能なスキルを返す。全てCT中／minRound未達なら null */
+export function pickEnemySkill(enemy: Combatant, content: BattleContent, roundCount: number): string | null {
   const pattern = enemy.actionPattern
+  if (pattern.length === 0) return null
+  const byId = new Map(enemy.actives.map(a => [a.id, a]))
   for (let i = 0; i < pattern.length; i++) {
     const idx = (enemy.patternIndex + i) % pattern.length
     const skillId = pattern[idx]
-    const owned = enemy.actives.find(a => a.id === skillId)
-    if (owned && owned.cooldown <= 0) {
+    const owned = byId.get(skillId)
+    if (owned && owned.cooldown <= 0 && meetsMinRound(skillId, content, roundCount)) {
       enemy.patternIndex = (idx + 1) % pattern.length   // 使ったものの次から再開
       return skillId
     }
   }
-  return null   // 全てクールタイム中 → 何もしない
+  return null   // 全てクールタイム中／使用可能ターン未到達 → 何もしない
 }
 ```
 
-**飛ばしたスキルは消費扱いにしない**（`patternIndex` は実際に使用したものの次を指す）。次のターンにクールタイムが明ければ、そのスキルから再開される。
+**飛ばしたスキルは消費扱いにしない**（`patternIndex` は実際に使用したものの次を指す）。次のターンにクールタイムが明ければ、そのスキルから再開される。`content`/`roundCount` は W1-S8（`minRound`、CLAUDE_TASKS.md 第4フェーズ）で追加された引数で、`meetsMinRound` は `content.skills.get(skillId).minRound` と現在のラウンド数を比較する。
 
 「次に使うスキルの公開」も、この関数の結果を表示する（クールタイム中で飛ばされるスキルは公開しない）。
 
@@ -285,21 +287,50 @@ export function pickEnemySkill(enemy: Combatant): string | null {
 
 ## ラン終了条件
 
+**2026-09-05（第6フェーズ）で見直し。** 当初は「ボスに1回勝利した時点でクリア」だったが、
+ボスが `groupOrder`（既定 A〜E）を巡回して繰り返し出現する方式に変更したため、
+**1回のボス撃破では終了しない**（真のクリア判定は下記）。
+
 | 条件 | 実装 |
 |---|---|
-| **ボスに勝利**（クリア） | `isBoss` の敵を倒した時点で終了 |
+| **真のクリア** | ボスを規定回数（既定 `groupOrder.length × lapsForTrueClear` = 25回）撃破した時点で終了 |
 | **プレイヤーが戦闘不能**（敗北） | HPが0以下 |
 | **自分で終了を選ぶ** | 既存のギブアップボタン |
 
 いずれも `gameState.startThrowing()` を呼び、`throwing` へ遷移する。以降の投擲・エンディングは他ジャンルと共通。
 
-### ボスの出現タイミング
+### 敵の出現・ボスの出現タイミング（敵グループ/難易度スケーリング）
 
-**未定（実装後に持ち越し）。** 暫定的に `battle.json` の `bossBattleIndex` で「何戦目にボスを出すか」を指定できる形にし、値は後から差し替え可能にする。
+**実装済み（第6フェーズ）。** `src/data/config/encounter_groups.json`（`ENCOUNTER_GROUPS`）で管理する。
 
 ```jsonc
-{ "bossBattleIndex": 10 }   // 暫定値。要調整
+{
+  "groupOrder": ["A", "B", "C", "D", "E"],
+  "lapsForTrueClear": 5,
+  "bossIntervalBattles": 10,
+  "bossDraftRounds": 3,
+  "groups": { "A": ["set_slime_solo", "set_boss_manual_keeper", "..."], "B": ["..."] },
+  "spawnWeightTiers": [
+    { "minBattleIndex": 0, "weights": { "A": 0.8, "B": 0.2 } },
+    { "minBattleIndex": 5, "weights": { "A": 0.5, "B": 0.3, "C": 0.2 } }
+  ]
+}
 ```
+
+- **敵セット** (`src/data/rpg/enemy-sets/*.json`): 1〜5体の敵の組み合わせを1単位として登録する
+  （`EnemySet { id, label, members: { enemyId, statsOverride? }[] }`）。`groups` は敵IDではなく
+  **セットID** の配列を持つ。同時出現を避けたい／強さを調整したい組み合わせをセット側で固定できる
+- **通常戦**: `spawnWeightTiers` から現在の `battleIndex` に該当する（`minBattleIndex` 以上で最も新しい）
+  ティアの重みでグループを1つ抽選し、そのグループ内の**非ボスセット**から一様ランダムに1つ選ぶ
+- **ボス戦**: `(battleIndex+1) % bossIntervalBattles === 0` の戦闘。`groupOrder` を出現回数ぶん巡回した
+  グループの**ボス入りセット**（`isBoss:true` の敵を含むセット）から一様ランダムに1つ選ぶ。
+  該当グループにボス入りセットが無ければ全グループを横断して探すフォールバックを行う
+- **ボス撃破の見返り**: 通常の1回のドラフトの代わりに `bossDraftRounds`（既定3）回連続でドラフトを行う
+  （`state.pendingDraftRounds`）。真のクリアでない限り、ボスを倒してもランは終了せず次の戦闘へ進む
+- 実装: `src/domain/battle/battleEngine.ts::pickEnemyDefs()`（グループ/セット抽選）・
+  `isBossBattleIndex`/`bossOccurrenceNumber`/`bossGroupFor`/`isTrueClearBattleIndex`（判定用の純粋関数）
+- 敵の視覚スケーリング（同時出現数に応じたスプライト縮小・並びの隙間調整）は
+  `config/battle.json:enemyScaleByCount` → `BattleScreen.vue::enemySpriteHeight()`
 
 ---
 
@@ -389,7 +420,9 @@ const vars: ScoreVars = {
 | `src/domain/scoreCalc.ts` | **変更不要**（`parseVar` が動的索引のため） |
 | `src/game/sideScroller.ts` | **変更不要**（オプショナルにしたため） |
 | `src/data/genres/rpg.json` | `scoreFormula` 差し替え |
-| `src/data/config/battle.json` | `bossBattleIndex` 等 |
+| `src/data/config/battle.json` | `enemyScaleByCount` 等 |
+| `src/data/config/encounter_groups.json` | 敵グループ/難易度スケーリング設定（第6フェーズで新設） |
+| `src/data/rpg/enemy-sets/*.json` | 敵セット定義（第6フェーズで新設） |
 
 ---
 

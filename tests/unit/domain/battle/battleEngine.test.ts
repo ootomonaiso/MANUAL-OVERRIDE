@@ -6,11 +6,12 @@ import {
   finishBattleOnVictory, buildBattleScoreVars, zeroCategoryPoints,
 } from '../../../../src/domain/battle/battleEngine'
 import { BATTLE } from '../../../../src/data/tunables'
+import type { EncounterGroupsConfig } from '../../../../src/framework/config-types'
 import { CATEGORY_IDS } from '../../../../src/domain/battle/types'
 import type { Combatant } from '../../../../src/domain/battle/types'
 import {
   makeStats, makeCombatant, makePlayer, makeActive, makePassive, makeTrait,
-  makeEnemyDef, makeContent, makeState, seqRng, constRng, captureEffects, node,
+  makeEnemyDef, makeEnemySet, makeContent, makeState, seqRng, constRng, captureEffects, node,
 } from './_helpers'
 
 /** initPlayer は rng を「初期スキル → str/def/int/ref/agi → hp」の順に7回引く */
@@ -106,30 +107,45 @@ describe('battleEngine: 敵の生成', () => {
 describe('battleEngine: 出現する敵の選定', () => {
   const mob = makeEnemyDef({ id: 'mob' })
   const boss = makeEnemyDef({ id: 'boss', isBoss: true })
-  const content = makeContent({ enemies: [mob, boss] })
+  const mobSet = makeEnemySet({ id: 'set_mob', members: [{ enemyId: 'mob' }] })
+  const bossSet = makeEnemySet({ id: 'set_boss', members: [{ enemyId: 'boss' }] })
+  const content = makeContent({ enemies: [mob, boss], enemySets: [mobSet, bossSet] })
+  const eg: EncounterGroupsConfig = {
+    groupOrder: ['A'],
+    lapsForTrueClear: 1,
+    bossIntervalBattles: 3,
+    bossDraftRounds: 1,
+    groups: { A: ['set_mob', 'set_boss'] },
+    spawnWeightTiers: [{ minBattleIndex: 0, weights: { A: 1 } }],
+  }
+  const bossBattleIndex = eg.bossIntervalBattles - 1
 
   it('ボス戦の番号ではボスが1体だけ出る', () => {
-    const picked = pickEnemyDefs(content, BATTLE.bossBattleIndex, constRng(0.5))
+    const picked = pickEnemyDefs(content, bossBattleIndex, constRng(0.5), eg)
     expect(picked).toHaveLength(1)
-    expect(picked[0].isBoss).toBe(true)
+    expect(picked[0].def.isBoss).toBe(true)
   })
 
   it('通常戦ではボスは出ない', () => {
-    for (let i = 0; i < BATTLE.bossBattleIndex; i++) {
-      const picked = pickEnemyDefs(content, i, Math.random)
+    for (let i = 0; i < bossBattleIndex; i++) {
+      const picked = pickEnemyDefs(content, i, Math.random, eg)
       expect(picked.length).toBeGreaterThan(0)
-      expect(picked.every(e => !e.isBoss)).toBe(true)
+      expect(picked.every(p => !p.def.isBoss)).toBe(true)
     }
   })
 
-  it('該当プールが空なら全体から選ぶ（詰まって0体にならない）', () => {
-    const onlyBoss = makeContent({ enemies: [boss] })
-    const picked = pickEnemyDefs(onlyBoss, 0, constRng(0.5))
+  it('該当グループが空なら他グループから選ぶ（詰まって0体にならない）', () => {
+    const egSparse: EncounterGroupsConfig = {
+      ...eg,
+      groups: { A: [], B: ['set_mob'] },
+    }
+    const picked = pickEnemyDefs(content, 0, constRng(0.5), egSparse)
     expect(picked).toHaveLength(1)
+    expect(picked[0].def.isBoss).toBe(false)
   })
 
   it('敵が1体も定義されていなければ空配列', () => {
-    expect(pickEnemyDefs(makeContent(), 0, constRng(0.5))).toEqual([])
+    expect(pickEnemyDefs(makeContent(), 0, constRng(0.5), eg)).toEqual([])
   })
 })
 
@@ -215,6 +231,37 @@ describe('battleEngine: フォーカスの解決', () => {
     const e = enemies[0]
     expect(resolveEnemyFocus({ side: 'enemy', range: 'single' }, e, player)).toEqual([player])
     expect(resolveEnemyFocus({ side: 'self', range: 'single' }, e, player)).toEqual([e])
+  })
+})
+
+/**
+ * 敵セット導入により最大5体編成が起こりうるようになったため（CLAUDE_TASKS.md 第6フェーズ X-7）、
+ * 上の3体編成の確認に加えて、上限の5体編成でも single/adjacent3/all/random が壊れていないことを確認する。
+ */
+describe('battleEngine: フォーカスの解決（5体編成の回帰確認）', () => {
+  const player = makePlayer()
+  const enemies5: Combatant[] = [0, 1, 2, 3, 4].map(i => makeCombatant({ id: `e${i}`, formationIndex: i }))
+
+  it('単体攻撃は5体編成でも指定した1体だけを対象にする（両端含む）', () => {
+    expect(resolvePlayerFocus({ side: 'enemy', range: 'single' }, player, enemies5, 0, constRng(0)).map(t => t.id)).toEqual(['e0'])
+    expect(resolvePlayerFocus({ side: 'enemy', range: 'single' }, player, enemies5, 4, constRng(0)).map(t => t.id)).toEqual(['e4'])
+  })
+
+  it('隣接3体は編成の両端では中心の片側だけになる（範囲外へはみ出さない）', () => {
+    expect(resolvePlayerFocus({ side: 'enemy', range: 'adjacent3' }, player, enemies5, 0, constRng(0)).map(t => t.id)).toEqual(['e0', 'e1'])
+    expect(resolvePlayerFocus({ side: 'enemy', range: 'adjacent3' }, player, enemies5, 4, constRng(0)).map(t => t.id)).toEqual(['e3', 'e4'])
+    expect(resolvePlayerFocus({ side: 'enemy', range: 'adjacent3' }, player, enemies5, 2, constRng(0)).map(t => t.id)).toEqual(['e1', 'e2', 'e3'])
+  })
+
+  it('全体攻撃は5体編成の生存者すべてを対象にする', () => {
+    const withDead = enemies5.map((e, i) => (i === 2 ? makeCombatant({ id: e.id, alive: false }) : e))
+    const targets = resolvePlayerFocus({ side: 'enemy', range: 'all' }, player, withDead, null, constRng(0))
+    expect(targets.map(t => t.id)).toEqual(['e0', 'e1', 'e3', 'e4'])
+  })
+
+  it('ランダム対象は5体編成の両端を含めて選べる', () => {
+    expect(resolvePlayerFocus({ side: 'enemy', range: 'random' }, player, enemies5, null, constRng(0)).map(t => t.id)).toEqual(['e0'])
+    expect(resolvePlayerFocus({ side: 'enemy', range: 'random' }, player, enemies5, null, constRng(0.999)).map(t => t.id)).toEqual(['e4'])
   })
 })
 
@@ -706,7 +753,7 @@ describe('battleEngine: 勝利時の後処理', () => {
 describe('battleEngine: スコア変数', () => {
   it('勝利数・ボス撃破・最大スキルレベル・特性数を集計する', () => {
     const state = makeState({
-      battlesWon: 7, bossDefeated: true,
+      battlesWon: 7, bossesDefeatedCount: 3,
       player: makePlayer({
         actives: [
           { id: 'a', level: 2, stacks: 0, cooldown: 0, slotIndex: 0 },
@@ -717,7 +764,7 @@ describe('battleEngine: スコア変数', () => {
       }),
     })
     expect(buildBattleScoreVars(state)).toEqual({
-      battlesWon: 7, bossDefeated: 1, maxSkillLevel: 4, traitsAcquired: 2,
+      battlesWon: 7, bossDefeated: 3, maxSkillLevel: 4, traitsAcquired: 2,
     })
   })
 

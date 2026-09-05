@@ -150,7 +150,7 @@
 | `activeSkills` | ✅ | 所持アクティブスキル。文字列またはオブジェクト（後述） |
 | `passiveSkills` | ✅ | 所持パッシブスキル。同上 |
 | `actionPattern` | ✅ | 行動パターン。**ループする**。文字列IDのみ。`activeSkills` に含まれるIDのみ |
-| `isBoss` | ✅ | ボスフラグ。撃破でランがクリア終了 |
+| `isBoss` | ✅ | ボスフラグ。**第6フェーズで意味が変更**: 撃破で即クリア終了ではなく、ボス撃破が規定回数（既定25回）に達した時が「真のクリア」になる（詳細は[04-battle-flow.md](04-battle-flow.md)「ラン終了条件」） |
 
 ### 見た目の一元管理（`sprite`）
 
@@ -178,6 +178,78 @@
 
 `idle` / `attack` の2フレームが必須。攻撃中は `attack` に差し替わり、CSS で相手側へ踏み込む。
 プレイヤーのスプライトIDは `src/data/config/battle.json` の `playerSprite` で指定する。
+
+---
+
+## 敵セット・出現グループ定義（第6フェーズで新設）
+
+**目的**: 敵の出現を「不可能な組み合わせを防ぎつつ、戦闘回数が進むごとに徐々に強くする」ため。
+個々の敵定義（上記）はデフォルト値として使い、実際の出現は必ず**敵セット**を介して行う。
+
+### 敵セット (`src/data/rpg/enemy-sets/*.json`)
+
+1ファイル1セット（スキーマ: `schemas/battle-enemy-set.schema.json`）。1〜5体の敵をまとめて出現させる単位。
+
+```jsonc
+// src/data/rpg/enemy-sets/set_goblin_bat_duo.json
+{
+  "id": "set_goblin_bat_duo",
+  "label": "ゴブリン&コウモリ",
+  "members": [
+    { "enemyId": "enemy_goblin" },
+    { "enemyId": "enemy_bat", "statsOverride": { "hp": 900 } }
+  ]
+}
+```
+
+| キー | 必須 | 内容 |
+|---|---|---|
+| `id` | ✅ | `set_` プレフィックス |
+| `label` | ✅ | 一覧・content-editor表示用 |
+| `members` | ✅ | 1〜5件。同じ `enemyId` を複数回入れてもよい（出現時に `${enemyId}#${formationIndex}` でユニーク化される） |
+| `members[].enemyId` | ✅ | 敵定義（上記）への参照 |
+| `members[].statsOverride` | — | `stats` の一部だけを上書きする `Partial<BattleStats>`。**指定した項目だけ**が敵定義のデフォルト値を上書きし、未指定項目はそのまま使われる |
+
+単体の敵をそのまま出したい場合も、`members` が1件のセット（例: `set_slime_solo`）として登録する。
+`isBoss:true` の敵を含むセットは、そのままボス戦専用の候補になる（後述）。
+
+### 出現グループ設定 (`src/data/config/encounter_groups.json`)
+
+```jsonc
+{
+  "section": "encounterGroups",
+  "groupOrder": ["A", "B", "C", "D", "E"],
+  "lapsForTrueClear": 5,
+  "bossIntervalBattles": 10,
+  "bossDraftRounds": 3,
+  "groups": {
+    "A": ["set_slime_solo", "set_bat_solo", "set_goblin_bat_duo", "set_boss_manual_keeper"],
+    "B": ["set_goblin_solo", "set_orc_solo"]
+  },
+  "spawnWeightTiers": [
+    { "minBattleIndex": 0, "weights": { "A": 0.8, "B": 0.2 } },
+    { "minBattleIndex": 5, "weights": { "A": 0.5, "B": 0.3, "C": 0.2 } }
+  ]
+}
+```
+
+| キー | 内容 |
+|---|---|
+| `groupOrder` | ボスが巡回するグループの順序 |
+| `lapsForTrueClear` | 「真のクリア」に必要な周回数。既定5（＝`groupOrder.length × lapsForTrueClear` = 25回目のボス撃破でクリア） |
+| `bossIntervalBattles` | 何戦に1回ボス戦にするか（`(battleIndex+1) % bossIntervalBattles === 0`） |
+| `bossDraftRounds` | ボス撃破時に連続で行うドラフト回数 |
+| `groups` | グループごとの**セットID**の配列。**ボス入りセットも同じ配列に混在させる**（ボス専用の別リストは持たない） |
+| `spawnWeightTiers` | 通常戦のグループ抽選重み。`battleIndex` がしきい値以上になった、最も新しいティアを使う（階段状に変化） |
+
+出現ロジック本体（グループ/セット抽選・ボス周回・フォールバック）は
+`src/domain/battle/battleEngine.ts::pickEnemyDefs()`。詳細は[04-battle-flow.md](04-battle-flow.md)「敵の出現・ボスの出現タイミング」参照。
+
+### 同時出現数に応じた視覚スケーリング
+
+`members` が2体以上のセットが選ばれた場合、画面幅に収まるよう `src/data/config/battle.json:enemyScaleByCount`
+（体数1〜5をキーとする `spriteScale`/`gapPx`）でスプライトの縮小率と並びの隙間を調整する
+（`BattleScreen.vue::enemySpriteHeight()`）。
 
 ---
 
@@ -367,6 +439,7 @@ const skillModules = import.meta.glob<SkillDef>('./skills/*.json', { eager: true
 export const SKILLS: ReadonlyMap<string, SkillDef> = ...
 export const TRAITS: ReadonlyMap<string, TraitDef> = ...
 export const ENEMIES: ReadonlyMap<string, EnemyDef> = ...
+export const ENEMY_SETS: ReadonlyMap<string, EnemySet> = ...   // 第6フェーズで追加
 ```
 
 ロード時に**実行時検証**も行う（`validate-json.mjs` はビルド前チェックであり、ユーザーがプラグインで追加する経路をカバーしないため）。
@@ -403,7 +476,7 @@ export const ENEMIES: ReadonlyMap<string, EnemyDef> = ...
 |---|---|
 | スキルが1つも無い | `validate-json.mjs` で失敗させる（ドラフトが成立しない） |
 | 敵が1体も無い | 同上 |
-| `isBoss: true` の敵が複数 | 許容する。出現するのは1体のみ（選択はランダム） |
+| `isBoss: true` の敵が複数 | 許容する。**第6フェーズ以降**: どのセットが選ばれるかはランダムだが、選ばれたセットに`isBoss:true`の敵が複数（例: 2体）含まれていれば、その戦闘には複数体のボスが出現しうる |
 | 循環参照 | 発生しない（スキルが他スキルを参照する仕組みを持たないため） |
 | `unlockCondition` を持つものが通常候補にも出る | 出さない。`unlockCondition` があれば条件達成まで候補外 |
 
@@ -414,8 +487,9 @@ export const ENEMIES: ReadonlyMap<string, EnemyDef> = ...
 | ファイル | 変更 |
 |---|---|
 | `schemas/battle-skill.schema.json` 他2件 | 新規 |
-| `scripts/validate-json.mjs` | 検証関数を3つ追加 |
-| `src/data/battleContent.ts` | 新規（ローダ） |
+| `schemas/battle-enemy-set.schema.json` | 新規（第6フェーズ） |
+| `scripts/validate-json.mjs` | 検証関数を3つ追加。第6フェーズで敵セット/出現グループの検証を追加 |
+| `src/data/battleContent.ts` | 新規（ローダ）。第6フェーズで `ENEMY_SETS` を追加 |
 | `src/data/genres/rpg.json` | `enableFeatures` / `scoreFormula` |
 | `src/framework/ConfigValidator.ts` | `battle` を必須セクションへ |
 

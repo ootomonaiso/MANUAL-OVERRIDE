@@ -5,10 +5,12 @@
  * reactive オブジェクトを toRaw() してから渡すこと（10-state.md「リアクティビティの注意」）。
  */
 
-import { BATTLE } from '../../data/tunables'
+import { BATTLE, ENCOUNTER_GROUPS } from '../../data/tunables'
+import type { EncounterGroupsConfig } from '../../framework/config-types'
 import type {
   BattleState, Combatant, BattleContent, EffectRequest,
   FocusSpec, ActiveSkillDef, SkillDef, StatKey, CategoryId, ScoreVarsBattle,
+  BattleStats, EnemyDef, EnemySet,
 } from './types'
 import { STAT_KEYS } from './types'
 import {
@@ -76,11 +78,14 @@ export function initPlayer(rng: () => number): Combatant {
   return c
 }
 
-/** 敵定義から Combatant を構築する（毎戦フレッシュに生成。敵はランをまたいで持ち越さない） */
-export function spawnEnemyFromDef(def: import('./types').EnemyDef, formationIndex: number): Combatant {
+/** 敵定義から Combatant を構築する（毎戦フレッシュに生成。敵はランをまたいで持ち越さない）。
+ * statsOverride を渡すと、指定した項目だけ敵定義のデフォルト値を上書きする（敵セット想定） */
+export function spawnEnemyFromDef(
+  def: EnemyDef, formationIndex: number, statsOverride?: Partial<BattleStats>,
+): Combatant {
   const c = freshCombatant(`${def.id}#${formationIndex}`, def.label, false, formationIndex)
   c.spriteId = def.sprite
-  c.baseStats = { ...def.stats }
+  c.baseStats = { ...def.stats, ...statsOverride }
   c.isBoss = def.isBoss
   c.traits = def.traits.map(id => ({ id }))
   c.passives = def.passiveSkills.map(ref => ({ id: ref.id, level: ref.level, stacks: 0 }))
@@ -91,27 +96,129 @@ export function spawnEnemyFromDef(def: import('./types').EnemyDef, formationInde
   return c
 }
 
+// ─────────────────────────────────────────────────────────────
+// 敵グループ/難易度スケーリング（CLAUDE_TASKS.md 第6フェーズ）
+// ─────────────────────────────────────────────────────────────
+
+/** battleIndex(0始まり) が bossIntervalBattles 戦ごとのボス戦かどうか */
+export function isBossBattleIndex(battleIndex: number, bossIntervalBattles: number): boolean {
+  return (battleIndex + 1) % bossIntervalBattles === 0
+}
+
+/** 何回目のボス出現か（1始まり）。ボス戦でない battleIndex に対しても計算はできるが意味を持たない */
+export function bossOccurrenceNumber(battleIndex: number, bossIntervalBattles: number): number {
+  return Math.floor(battleIndex / bossIntervalBattles) + 1
+}
+
+/** ボスは groupOrder（例: A→B→C→D→E）を順番に巡回する。Eの次は再びA */
+export function bossGroupFor(occurrenceNumber: number, groupOrder: readonly string[]): string {
+  return groupOrder[(occurrenceNumber - 1) % groupOrder.length]
+}
+
+/** groupOrder を lapsForTrueClear 周した時点のボス撃破が「真のクリア」になる */
+export function isTrueClearOccurrence(occurrenceNumber: number, groupOrder: readonly string[], lapsForTrueClear: number): boolean {
+  return occurrenceNumber === groupOrder.length * lapsForTrueClear
+}
+
+/** battleIndex が「真のクリア」となるボス戦かどうか（isBossBattleIndex + isTrueClearOccurrence の合成） */
+export function isTrueClearBattleIndex(
+  battleIndex: number,
+  encounterGroups: { bossIntervalBattles: number; groupOrder: readonly string[]; lapsForTrueClear: number },
+): boolean {
+  if (!isBossBattleIndex(battleIndex, encounterGroups.bossIntervalBattles)) return false
+  const occurrence = bossOccurrenceNumber(battleIndex, encounterGroups.bossIntervalBattles)
+  return isTrueClearOccurrence(occurrence, encounterGroups.groupOrder, encounterGroups.lapsForTrueClear)
+}
+
+/** battleIndex に対応する spawnWeightTiers の重みを返す（閾値以下で最も新しいティア） */
+function weightsForBattleIndex(
+  tiers: readonly { minBattleIndex: number; weights: Record<string, number> }[],
+  battleIndex: number,
+): Record<string, number> {
+  let chosen: Record<string, number> = {}
+  for (const tier of tiers) {
+    if (tier.minBattleIndex <= battleIndex) chosen = tier.weights
+  }
+  return chosen
+}
+
+/** 重み付き抽選で1つキーを選ぶ。重みの合計が0以下なら null */
+function weightedPick<T extends string>(weights: Record<T, number>, rng: () => number): T | null {
+  const entries = Object.entries(weights) as [T, number][]
+  const total = entries.reduce((sum, [, w]) => sum + Math.max(0, w), 0)
+  if (total <= 0) return null
+  let roll = rng() * total
+  for (const [key, w] of entries) {
+    roll -= Math.max(0, w)
+    if (roll <= 0) return key
+  }
+  return entries[entries.length - 1]?.[0] ?? null
+}
+
+/** グループ内のセットのうち、ボス入り／非ボスだけを絞り込む */
+function filterSetsByBossFlag(setIds: readonly string[], content: BattleContent, wantBoss: boolean): EnemySet[] {
+  const sets: EnemySet[] = []
+  for (const id of setIds) {
+    const set = content.enemySets.get(id)
+    if (!set) continue
+    const hasBoss = set.members.some(m => content.enemies.get(m.enemyId)?.isBoss)
+    if (hasBoss === wantBoss) sets.push(set)
+  }
+  return sets
+}
+
+export interface EnemySpawnPick {
+  def: EnemyDef
+  statsOverride?: Partial<BattleStats>
+}
+
 /**
- * 何戦目かに応じて出現させる敵プールを選ぶ。
- * ボス戦（bossBattleIndex）ちょうどのときは isBoss を1体、それ以外は非ボスから選ぶ。
- * 実際の出現数・重み付けは呼び出し側（useBattleState）が enemies マップと相談して決める簡易版。
+ * 何戦目かに応じて出現させる敵セットを選ぶ。
+ * ボス戦（bossIntervalBattles戦ごと）は groupOrder を巡回するグループから、ボス入りセットを1つ選ぶ。
+ * 通常戦は spawnWeightTiers の重みでグループを1つ選び、そのグループの非ボスセットから1つ選ぶ。
+ * 該当グループに候補が無い場合は全グループを横断して探すフォールバックを行う（コンテンツ未整備でも落ちない）。
+ * encounterGroups は省略時 ENCOUNTER_GROUPS（実設定）。テストが独自シナリオを注入できるよう引数化してある。
  */
 export function pickEnemyDefs(
   content: BattleContent,
   battleIndex: number,
   rng: () => number,
-): import('./types').EnemyDef[] {
-  const all = [...content.enemies.values()]
-  const isBossBattle = battleIndex === BATTLE.bossBattleIndex
-  const pool = all.filter(e => e.isBoss === isBossBattle)
-  const usable = pool.length > 0 ? pool : all
-  if (usable.length === 0) return []
-  if (isBossBattle) return [usable[Math.floor(rng() * usable.length)]]
+  encounterGroups: EncounterGroupsConfig = ENCOUNTER_GROUPS,
+): EnemySpawnPick[] {
+  const eg = encounterGroups
+  const bossBattle = isBossBattleIndex(battleIndex, eg.bossIntervalBattles)
 
-  const count = Math.max(1, Math.round(randRange(rng, BATTLE.initialEnemyCount.min, BATTLE.initialEnemyCount.max)))
-  const picked: import('./types').EnemyDef[] = []
-  for (let i = 0; i < count; i++) picked.push(usable[Math.floor(rng() * usable.length)])
-  return picked
+  let candidateSets: EnemySet[]
+  if (bossBattle) {
+    const occurrence = bossOccurrenceNumber(battleIndex, eg.bossIntervalBattles)
+    const group = bossGroupFor(occurrence, eg.groupOrder)
+    candidateSets = filterSetsByBossFlag(eg.groups[group] ?? [], content, true)
+    if (candidateSets.length === 0) {
+      // フォールバック: 該当グループにボス入りセットが無ければ全グループから探す
+      console.warn(`[battleEngine] グループ "${group}" にボス入りセットが無いため、全グループから探します`)
+      candidateSets = filterSetsByBossFlag(Object.values(eg.groups).flat(), content, true)
+    }
+  } else {
+    const weights = weightsForBattleIndex(eg.spawnWeightTiers, battleIndex)
+    const group = weightedPick(weights, rng)
+    candidateSets = filterSetsByBossFlag(group ? (eg.groups[group] ?? []) : [], content, false)
+    if (candidateSets.length === 0) {
+      candidateSets = filterSetsByBossFlag(Object.values(eg.groups).flat(), content, false)
+    }
+  }
+
+  if (candidateSets.length === 0) {
+    console.warn('[battleEngine] 出現可能な敵セットが1つも見つかりませんでした')
+    return []
+  }
+  const set = candidateSets[Math.floor(rng() * candidateSets.length)]
+  const picks: EnemySpawnPick[] = []
+  for (const member of set.members) {
+    const def = content.enemies.get(member.enemyId)
+    if (!def) continue
+    picks.push({ def, statsOverride: member.statsOverride })
+  }
+  return picks
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -422,7 +529,8 @@ export function finishBattleOnVictory(state: BattleState, content: BattleContent
   clampHpToMax(player, resolveEffectiveStats(player, content).hp)
 
   state.battlesWon++
-  if (wonBoss) state.bossDefeated = true
+  state.bossDefeated = wonBoss
+  if (wonBoss) state.bossesDefeatedCount++
   state.battleIndex++
   state.rerollCharges++
 }
@@ -437,7 +545,7 @@ export function buildBattleScoreVars(state: BattleState): ScoreVarsBattle {
   for (const p of state.player.passives) maxSkillLevel = Math.max(maxSkillLevel, p.level)
   return {
     battlesWon: state.battlesWon,
-    bossDefeated: state.bossDefeated ? 1 : 0,
+    bossDefeated: state.bossesDefeatedCount,
     maxSkillLevel,
     traitsAcquired: state.player.traits.length,
   }
