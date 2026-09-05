@@ -103,7 +103,7 @@ function _makeWorld(
 
 function _makeInput(): InputSnapshot {
   return {
-    keys: {},
+    keys: new Set<string>(),
     justPressed: new Set(),
     justReleased: new Set(),
     mouse: { x: 0, y: 0, down: false },
