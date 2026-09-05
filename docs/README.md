@@ -72,6 +72,7 @@
 | [CHANGELOG.md](CHANGELOG.md) | 開発者 | 変更履歴・バグ修正ログ |
 | [../SPECIFICATION.md](../SPECIFICATION.md) | 開発者・企画 | 要件定義書・仕様書・設計書（統合版、リポジトリ直下） |
 | [../plan/engine-audit-report.md](../plan/engine-audit-report.md) | 開発者 | エンジン構造の静的監査（バグ優先度・対応状況付き）。修正前に既知の問題と重複していないか確認する |
+| [refactoring/README.md](refactoring/README.md) | 開発者・AIエージェント | `feature/rpg-roguelike-battle` のリファクタリング計画（問題の全数調査・フェーズ計画・検証ゲート）。同ブランチで作業する前に読む |
 
 ---
 
