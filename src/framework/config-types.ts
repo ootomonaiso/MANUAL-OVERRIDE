@@ -415,6 +415,20 @@ export interface EncounterGroupsConfig {
   spawnWeightTiers: { minBattleIndex: number; weights: Record<string, number> }[]
 }
 
+/**
+ * スキルポイント制度（CLAUDE_TASKS.md 第7フェーズ）。数値は仮値（調整前提）
+ */
+export interface SkillPointsConfig {
+  /** index=レベル-1、値=そのレベルに達するまでの累計投資ポイント（Lv1は常に0） */
+  pointsForLevel: number[]
+  /** 何戦ごとにスキル/ステータスポイント配分パネルを挟むか */
+  panelIntervalBattles: number
+  panelSkillPoints: number
+  panelStatPoints: number
+  /** 装備中アクティブの重複がドラフト候補に出現する重み（通常候補の何倍か） */
+  duplicateDraftWeight: number
+}
+
 /** survival.json — サバイバルゲーム固有パラメータ */
 export interface SurvivalConfig {
   maxHunger: number
@@ -705,6 +719,7 @@ export interface GameConfigMap {
   palette_defaults: PaletteDefaultsConfig
   battle: BattleConfig
   encounterGroups: EncounterGroupsConfig
+  skillPoints: SkillPointsConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap

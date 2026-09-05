@@ -73,7 +73,7 @@ export function initPlayer(rng: () => number): Combatant {
   }
   c.baseStats.hp = Math.round(randRange(rng, s.hpMin, s.hpMax))
 
-  c.actives.push({ id: initialSkillId, level: 1, stacks: 0, cooldown: 0, slotIndex: 0 })
+  c.actives.push({ id: initialSkillId, points: 0, level: 1, cooldown: 0, slotIndex: 0 })
   c.hp = c.baseStats.hp
   return c
 }
@@ -88,7 +88,7 @@ export function spawnEnemyFromDef(
   c.baseStats = { ...def.stats, ...statsOverride }
   c.isBoss = def.isBoss
   c.traits = def.traits.map(id => ({ id }))
-  c.passives = def.passiveSkills.map(ref => ({ id: ref.id, level: ref.level, stacks: 0 }))
+  c.passives = def.passiveSkills.map(ref => ({ id: ref.id, level: ref.level }))
   const built = buildEnemyActivesFromPattern(def)
   c.actives = built.actives
   c.actionPattern = built.actionPattern

@@ -9,8 +9,10 @@ export interface SkillListItemView {
   label: string
   visibility: 'unseen' | 'seen' | 'owned'
   level?: number
-  stacks?: number
-  stacksRequired?: number
+  /** アクティブのみ。投資済みポイント（累計） */
+  points?: number
+  /** アクティブのみ。次のレベルに必要な累計ポイント（Lv4なら無し＝カンスト） */
+  pointsRequired?: number
   stored?: boolean
   flavorText?: string
   effectTokens?: SkillTextToken[]
@@ -77,8 +79,8 @@ function toggle(id: string) {
               <span v-if="item.stored" class="item-badge">保管中</span>
               <span v-if="item.cooldown" class="item-cooldown">CT{{ item.cooldown }}</span>
               <span v-if="item.level" class="item-level">Lv{{ item.level }}</span>
-              <span v-if="item.level && item.level < 4 && item.stacksRequired" class="item-stacks">
-                {{ item.stacks }}/{{ item.stacksRequired }}
+              <span v-if="item.pointsRequired !== undefined" class="item-stacks">
+                {{ item.points }}/{{ item.pointsRequired }}pt
               </span>
             </div>
             <div v-if="pinnedId === item.id && item.visibility !== 'unseen'" class="item-detail">

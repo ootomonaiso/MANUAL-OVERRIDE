@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { createApp, h, nextTick, type App } from 'vue'
+import { createApp, h, nextTick, toRaw, type App } from 'vue'
 import BattleScreen from '../../../../src/components/battle/BattleScreen.vue'
 import { useBattleState, type BattleScheduler } from '../../../../src/composables/useBattleState'
 import { BATTLE_CONTENT, BATTLE_EFFECTS } from '../../../../src/data/rpg/battleContent'
 import { soundManager } from '../../../../src/plugins/SoundManager'
-import { BATTLE } from '../../../../src/data/tunables'
+import { BATTLE, SKILL_POINTS } from '../../../../src/data/tunables'
 import type { BattleStatus } from '../../../../src/domain/battle/types'
 
 type Battle = ReturnType<typeof useBattleState>
@@ -496,50 +496,58 @@ describe('BattleScreen: ドラフト', () => {
   })
 })
 
-describe('BattleScreen: アクティブ枠の入れ替え', () => {
-  /** 未所持アクティブを優先して取り、枠が埋まって入れ替えを要求される所まで進める */
-  async function advanceUntilSwap(h: Harness): Promise<boolean> {
-    for (let i = 0; i < 12; i++) {
-      await fightUntilDraft(h)
-      if (statusOf(h.battle) !== 'drafting') return false
-      await nextTick()
-      const options = h.battle.state.draftOptions ?? []
-      const idx = options.findIndex(o => o.kind === 'active' && !o.isFallback && o.currentLevel === undefined)
-      ;($$(h.host, '.draft-card')[idx >= 0 ? idx : 0] as HTMLButtonElement).click()
-      await nextTick()
-      if (statusOf(h.battle) === 'swapping') return true
-    }
-    return false
+describe('BattleScreen: スキルパネル（5戦ごとのポイント配分、第7フェーズ）', () => {
+  /**
+   * 5戦ごとにスキルパネルへ遷移する条件は勝利数の節目（useBattleState.test.ts と同じ理由で
+   * 250戦近い実プレイは避け、toRaw 越しに battlesWon を書き換えてから通常のドラフトを1回
+   * 完了させ、実際の遷移ロジック・DOM描画を検証する）。
+   */
+  async function advanceToSkillPanel(h: Harness): Promise<void> {
+    await fightUntilDraft(h)
+    toRaw(h.battle.state).battlesWon = SKILL_POINTS.panelIntervalBattles
+    ;($$(h.host, '.draft-card')[0] as HTMLButtonElement).click()
+    await nextTick()
   }
 
-  it('枠が埋まると入れ替え先を選ぶ画面になる', async () => {
+  it('5戦ごとにスキルパネルが表示される', async () => {
     const h = mount()
-    expect(await advanceUntilSwap(h)).toBe(true)
-    expect($(h.host, '.swap-picker')).not.toBeNull()
-    expect($$(h.host, '.swap-slot')).toHaveLength(4)
-    expect($(h.host, '.draft-cards')).toBeNull()
+    await advanceToSkillPanel(h)
+    expect(h.battle.state.status).toBe('skillPanel')
+    expect($(h.host, '.skill-panel-overlay')).not.toBeNull()
   })
 
-  it('キャンセルするとカード選択へ戻る', async () => {
+  it('装備中のアクティブへ配分すると、ポイントが減って表示が更新される', async () => {
     const h = mount()
-    expect(await advanceUntilSwap(h)).toBe(true)
-    ;($(h.host, '.swap-cancel') as HTMLButtonElement).click()
+    await advanceToSkillPanel(h)
+    const before = h.battle.state.skillPoints
+    ;($(h.host, '.active-row .panel-btn:not(.ghost)') as HTMLButtonElement).click()
     await nextTick()
-    expect($$(h.host, '.draft-card')).toHaveLength(3)
+    expect(h.battle.state.skillPoints).toBe(before - 1)
   })
 
-  it('枠を選ぶと新しいスキルがその枠に入って戦闘が再開する', async () => {
+  it('ステータスへ+1すると未配分ポイントが減る', async () => {
     const h = mount()
-    expect(await advanceUntilSwap(h)).toBe(true)
-    const incoming = h.battle.state.pendingSwapSkillId as string
-    ;($$(h.host, '.swap-slot')[3] as HTMLButtonElement).click()
+    await advanceToSkillPanel(h)
+    const before = h.battle.state.statPoints
+    ;($(h.host, '.stat-row .stepper:not(:disabled)') as HTMLButtonElement)?.click()
+    await nextTick()
+    expect(h.battle.state.statPoints).toBe(before - 1)
+  })
+
+  it('パネルを閉じると戦闘が再開する', async () => {
+    const h = mount()
+    await advanceToSkillPanel(h)
+    ;($(h.host, '.panel-close') as HTMLButtonElement).click()
     await nextTick()
     expect(h.battle.state.status).toBe('battle')
-    expect($(h.host, '.draft-overlay')).toBeNull()
-    await openBattleMenu(h.host)
-    const label = BATTLE_CONTENT.skills.get(incoming)?.label ?? ''
-    expect(slotButtons(h.host).some(b => b.textContent?.includes(label))).toBe(true)
+    expect($(h.host, '.skill-panel-overlay')).toBeNull()
   })
+
+  // 「枠が全て埋まった状態で倉庫のスキルをセットしようとすると入れ替え画面になる」経路は
+  // useBattleState.test.ts（レンダリングを伴わないため toRaw 越しの状態組み立てが安全に効く）
+  // で検証済み。BattleScreen（実DOM）側では、readonly(state) 経由の computed が
+  // toRaw() 越しの生の配列差し替えを検知できず描画が更新されないため、ここでは
+  // 実際に描画されるUIの配線（表示・クリックで正しい composable 関数が呼ばれること）だけを確認する。
 })
 
 describe('BattleScreen: 効果音', () => {

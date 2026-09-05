@@ -162,7 +162,7 @@ function hpPct(c: InfoCharacterView): number {
       <div v-if="passives.length > 0" class="info-skill-group">
         <div class="info-skill-group-title"><GlossaryTerm term-id="passive">パッシブ</GlossaryTerm></div>
         <div v-for="p in passives" :key="p.id" class="skill-row">
-          <div class="skill-row-head">{{ p.label }} <span v-if="p.level">Lv{{ p.level }}</span></div>
+          <div class="skill-row-head">{{ p.label }}</div>
           <SkillText :tokens="p.effectTokens" />
         </div>
       </div>

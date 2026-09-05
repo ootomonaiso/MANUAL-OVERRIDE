@@ -29,21 +29,23 @@ import InfoPanel from './InfoPanel.vue'
 import type { InfoSkillRow, InfoCharacterView } from './InfoPanel.vue'
 import SkillDraftPanel from './SkillDraftPanel.vue'
 import type { DraftCardView, SwapSlotView } from './SkillDraftPanel.vue'
+import SkillPanel from './SkillPanel.vue'
+import type { PanelActiveView, StatRowView as PanelStatRowView } from './SkillPanel.vue'
 import BattleBackdrop from './BattleBackdrop.vue'
 import SkillCastBanner from './SkillCastBanner.vue'
 import HelpGuide from './HelpGuide.vue'
 import { useGlossaryPanel } from '../../composables/useGlossaryPanel'
-import type { PlayerAction, SkillDef, Element } from '../../domain/battle/types'
-import { STAT_KEYS, CATEGORY_IDS } from '../../domain/battle/types'
+import type { PlayerAction, SkillDef, Element, GrowthStatKey } from '../../domain/battle/types'
+import { STAT_KEYS, CATEGORY_IDS, GROWTH_STAT_KEYS } from '../../domain/battle/types'
 import {
   STAT_LABEL, CATEGORY_LABEL, CATEGORY_COLOR, buildSkillText, describeTemporaryModifier,
   PERCENT_STAT_KEYS,
 } from '../../domain/battle/skillText'
-import { STACKS_REQUIRED, nextCategoryThreshold } from '../../domain/battle/skillDraft'
+import { nextCategoryThreshold, MAX_ACTIVE_LEVEL } from '../../domain/battle/skillDraft'
 import { damageMagnitude, MAGNITUDE_LABEL } from '../../domain/battle/damagePreview'
 import { computeAffinityStage, effectivenessHint } from '../../domain/battle/damageCalc'
 import { BATTLE_CONTENT } from '../../data/rpg/battleContent'
-import { BATTLE } from '../../data/tunables'
+import { BATTLE, SKILL_POINTS } from '../../data/tunables'
 import { findBattleBackground } from '../../data/rpg/battleBackgrounds'
 import { soundManager } from '../../plugins/SoundManager'
 
@@ -360,21 +362,22 @@ const skillListView = computed(() => {
     const def = content.skills.get(a.id)
     return {
       id: a.id, kind: 'active', label: def?.label ?? a.id, visibility: 'owned',
-      level: a.level, stacks: a.stacks, stacksRequired: STACKS_REQUIRED[Math.min(a.level, 3)] ?? 0,
+      level: a.level, points: a.points,
+      pointsRequired: a.level < MAX_ACTIVE_LEVEL ? SKILL_POINTS.pointsForLevel[a.level] : undefined,
       stored: a.slotIndex === null, cooldown: a.cooldown,
       categoryLabel: def ? CATEGORY_LABEL[def.mainCategory] : undefined,
       categoryColor: def ? CATEGORY_COLOR[def.mainCategory] : undefined,
       flavorText: def?.flavorText, effectTokens: def ? buildSkillText(def, a.level) : undefined,
     }
   })
+  // パッシブは第7フェーズでレベル/スタックの概念を廃止（所持しているか否かの二値のみ）
   const ownedPassives: SkillListItemView[] = player.passives.map(p => {
     const def = content.skills.get(p.id)
     return {
       id: p.id, kind: 'passive', label: def?.label ?? p.id, visibility: 'owned',
-      level: p.level, stacks: p.stacks, stacksRequired: STACKS_REQUIRED[Math.min(p.level, 3)] ?? 0,
       categoryLabel: def ? CATEGORY_LABEL[def.mainCategory] : undefined,
       categoryColor: def ? CATEGORY_COLOR[def.mainCategory] : undefined,
-      flavorText: def?.flavorText, effectTokens: def ? buildSkillText(def, p.level) : undefined,
+      flavorText: def?.flavorText, effectTokens: def ? buildSkillText(def, 1) : undefined,
     }
   })
   const ownedTraits: SkillListItemView[] = player.traits.map(t => {
@@ -480,14 +483,12 @@ const draftCards = computed<DraftCardView[]>(() => {
     const def = opt.kind === 'trait' ? content.traits.get(opt.id) : content.skills.get(opt.id)
     const category = def && 'mainCategory' in def ? def.mainCategory : null
 
-    // 所持済み(currentLevel あり)を選び直した時、実際にレベルが上がるのは
-    // 必要スタック数に届く時だけ（skillDraft.ts の addStack 参照）。届かない場合に
-    // 「次レベルの効果・Lv遷移」を無条件表示すると、選べば即レベルアップするように
-    // 誤認させてしまうため、届くかどうかで表示を分ける。
+    // セット中アクティブの重複候補は選ぶと必ず+1ポイント入る（skillDraft.ts::addActivePoints）。
+    // その1ポイントが次のレベル閾値を跨ぐかどうかで「Lv遷移」表示を分ける。
     const currentLevel = opt.currentLevel ?? 0
-    const currentStacks = opt.currentStacks ?? 0
-    const required = currentLevel > 0 && currentLevel < 4 ? STACKS_REQUIRED[currentLevel] : 0
-    const willLevelUp = required > 0 && currentStacks + 1 >= required
+    const currentPoints = opt.currentPoints ?? 0
+    const nextThreshold = currentLevel > 0 && currentLevel < MAX_ACTIVE_LEVEL ? SKILL_POINTS.pointsForLevel[currentLevel] : 0
+    const willLevelUp = nextThreshold > 0 && currentPoints + 1 >= nextThreshold
     const displayLevel = currentLevel === 0 ? 1 : willLevelUp ? currentLevel + 1 : currentLevel
 
     return {
@@ -500,7 +501,7 @@ const draftCards = computed<DraftCardView[]>(() => {
         ? undefined
         : willLevelUp
           ? `Lv${currentLevel} → Lv${currentLevel + 1}`
-          : `スタック ${currentStacks + 1}/${required}（今回はレベル据え置き）`,
+          : `ポイント ${currentPoints + 1}/${nextThreshold}（今回はレベル据え置き）`,
       levelTransitionMuted: currentLevel !== 0 && !willLevelUp,
       isUnlocked: opt.isUnlocked,
     }
@@ -516,6 +517,33 @@ const swapSlotsView = computed<SwapSlotView[]>(() => {
   }
   return slots
 })
+
+// ── スキルパネル（5戦ごとのポイント配分、第7フェーズ） ───────────────
+function panelActiveView(a: { id: string; level: number; points: number }): PanelActiveView {
+  const def = content.skills.get(a.id)
+  return {
+    id: a.id, label: def?.label ?? a.id, level: a.level, points: a.points,
+    pointsRequired: a.level < MAX_ACTIVE_LEVEL ? SKILL_POINTS.pointsForLevel[a.level] : undefined,
+    categoryLabel: def && 'mainCategory' in def ? CATEGORY_LABEL[def.mainCategory] : undefined,
+    categoryColor: def && 'mainCategory' in def ? CATEGORY_COLOR[def.mainCategory] : undefined,
+    effectTokens: def ? buildSkillText(def, a.level) : [],
+  }
+}
+const panelEquippedActives = computed<PanelActiveView[]>(() =>
+  battle.state.player.actives.filter(a => a.slotIndex !== null).map(panelActiveView))
+const panelStoredActives = computed<PanelActiveView[]>(() =>
+  battle.state.player.actives.filter(a => a.slotIndex === null).map(panelActiveView))
+const panelStatRows = computed<PanelStatRowView[]>(() => GROWTH_STAT_KEYS.map(key => ({
+  key, label: STAT_LABEL[key],
+  base: battle.state.player.baseStats[key],
+  allocated: battle.state.statAllocations[key],
+})))
+function onPanelStatInc(stat: GrowthStatKey): void {
+  battle.setStatAllocation(stat, battle.state.statAllocations[stat] + 1)
+}
+function onPanelStatDec(stat: GrowthStatKey): void {
+  battle.setStatAllocation(stat, Math.max(0, battle.state.statAllocations[stat] - 1))
+}
 
 function labelForCombatant(id: string | null | undefined): string {
   if (!id) return ''
@@ -677,6 +705,22 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
       @confirm-swap="battle.confirmSwap"
       @cancel-swap="battle.cancelSwap"
       @reroll="onRerollDraft"
+    />
+
+    <SkillPanel
+      v-if="battle.state.status === 'skillPanel'"
+      :equipped-actives="panelEquippedActives"
+      :stored-actives="panelStoredActives"
+      :skill-points="battle.state.skillPoints"
+      :stat-rows="panelStatRows"
+      :stat-points="battle.state.statPoints"
+      @allocate="battle.allocateSkillPoint($event)"
+      @unequip="battle.unequipActive"
+      @equip="battle.selectStoredActiveToEquip"
+      @stat-inc="onPanelStatInc"
+      @stat-dec="onPanelStatDec"
+      @reset-stats="battle.resetStatAllocations"
+      @close="battle.closeSkillPanel"
     />
 
     <InfoPanel

@@ -56,18 +56,20 @@ export interface Combatant {
 ### 所持スキル
 
 ```ts
+// 第7フェーズ（スキルポイント制度）で level/stacks の意味が変わった。docs/genre/rpg/06-draft.md 参照
 export interface OwnedActive {
   id: string
-  level: number          // 1〜4
-  stacks: number         // 現レベルで貯まっている重複数
-  cooldown: number       // 現在のクールタイム残
+  points: number          // 投資済みポイント（累計）。ドラフトの重複取得+パネル配分で増える
+  level: number            // levelForPoints(points) と同期する実効レベル（1〜4）
+  cooldown: number         // 現在のクールタイム残
   slotIndex: number | null   // 0〜3。null = 枠から外して保管中
 }
 
+// レベル/スタックの概念を廃止（所持しているか否かの二値のみ）。
+// level は敵の所持パッシブの強さ調整用に残したフィールドで、プレイヤー取得分は常に1固定
 export interface OwnedPassive {
   id: string
   level: number
-  stacks: number
 }
 
 export interface OwnedTrait {
@@ -117,6 +119,11 @@ export interface BattleState {
   /** カテゴリ別の累計ポイント */
   categoryPoints: Record<CategoryId, number>
 
+  /** スキルポイント制度（第7フェーズ）。docs/genre/rpg/06-draft.md 参照 */
+  skillPoints: number
+  statAllocations: Record<GrowthStatKey, number>
+  statPoints: number
+
   /** 「見たことがあるか」。所持状態とは独立 */
   seenIds: Set<string>
 
@@ -135,7 +142,8 @@ export interface BattleState {
 export type BattleStatus =
   | 'battle'        // 戦闘中
   | 'drafting'      // ドラフト選択中
-  | 'swapping'      // アクティブスキルの入れ替え先選択中
+  | 'swapping'      // アクティブスキルの入れ替え先選択中（第7フェーズ以降、常にスキルパネルから起動する）
+  | 'skillPanel'    // スキルポイント制度: 5戦ごとのポイント配分パネル（第7フェーズ）
   | 'finished'      // ラン終了（勝利・敗北とも）
 ```
 
@@ -145,9 +153,10 @@ export type BattleStatus =
 
 | 設計文書の要求 | 対応 |
 |---|---|
-| アクティブ4枠の スキルID / レベル / スタック / クールタイム | `OwnedActive`（`slotIndex !== null`） |
+| アクティブ4枠の スキルID / レベル / ポイント / クールタイム | `OwnedActive`（`slotIndex !== null`） |
 | 枠から外して保管中のアクティブ | `OwnedActive`（`slotIndex === null`） |
-| 所持パッシブ: ID / レベル / スタック | `OwnedPassive` |
+| 所持パッシブ: ID（レベル概念なし） | `OwnedPassive` |
+| 未配分のスキル/ステータスポイント | `skillPoints` / `statPoints` / `statAllocations` |
 | 所持特性: IDのリスト | `OwnedTrait` |
 | カテゴリ別の取得数 | `categoryPoints` |
 | 10ステータスの現在値 | `baseStats` + 都度算出する実効値 |

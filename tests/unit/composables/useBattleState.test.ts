@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { computed, toRaw } from 'vue'
 import { useBattleState, type BattleScheduler } from '../../../src/composables/useBattleState'
 import { BATTLE_CONTENT } from '../../../src/data/rpg/battleContent'
-import { BATTLE, ENCOUNTER_GROUPS } from '../../../src/data/tunables'
+import { BATTLE, ENCOUNTER_GROUPS, SKILL_POINTS } from '../../../src/data/tunables'
 import { GENRES } from '../../../src/data/genres'
 import { evalScoreFormula } from '../../../src/domain/scoreCalc'
 import type { BattleStatus } from '../../../src/domain/battle/types'
@@ -311,50 +311,141 @@ describe('useBattleState: ドラフトの引き直し', () => {
   })
 })
 
-describe('useBattleState: アクティブ枠の入れ替え', () => {
-  /** 未所持アクティブを優先して取り続け、枠が埋まって入れ替えを要求される所まで進める */
-  function advanceUntilSwapRequested(h: { battle: Battle; act: () => void }): boolean {
-    for (let i = 0; i < 12; i++) {
-      fightUntilBattleEnds(h)
-      if (statusOf(h.battle) !== 'drafting') return false
-      h.battle.selectDraft(pickNewActiveIndex(h.battle))
-      if (statusOf(h.battle) === 'swapping') return true
-    }
-    return false
+describe('useBattleState: スキルパネル（5戦ごとのポイント配分、第7フェーズ）', () => {
+  /**
+   * 5戦ごとにスキルパネルへ遷移する条件は battlesWon（勝利数）の倍数判定
+   * （proceedAfterDraftRound 参照）。250戦近い実プレイを避け、直近の勝利数だけ
+   * toRaw 越しに書き換えてから通常のドラフトを1回完了させ、実際の遷移ロジックを検証する。
+   */
+  function advanceToPanelBoundary(h: { battle: Battle }): void {
+    fightUntilBattleEnds(h)
+    expect(h.battle.state.status).toBe('drafting')
+    toRaw(h.battle.state).battlesWon = SKILL_POINTS.panelIntervalBattles
+    h.battle.selectDraft(0)
   }
 
-  it('4枠が埋まった状態で新規アクティブを選ぶと入れ替え待ちになる', () => {
+  it('通常のドラフトが終わった直後、勝利数が節目ならスキルパネルへ遷移しポイントが付与される', () => {
     const h = winningHarness()
-    expect(advanceUntilSwapRequested(h)).toBe(true)
-    expect(h.battle.state.pendingSwapSkillId).toBeTruthy()
+    advanceToPanelBoundary(h)
+    expect(h.battle.state.status).toBe('skillPanel')
+    expect(h.battle.state.skillPoints).toBe(SKILL_POINTS.panelSkillPoints)
+    expect(h.battle.state.statPoints).toBe(SKILL_POINTS.panelStatPoints)
   })
 
-  it('キャンセルするとドラフトへ戻り、選び直せる', () => {
+  it('節目でなければ通常どおり次の戦闘が始まる', () => {
     const h = winningHarness()
-    expect(advanceUntilSwapRequested(h)).toBe(true)
-    h.battle.cancelSwap()
-    expect(h.battle.state.status).toBe('drafting')
-    expect(h.battle.state.pendingSwapSkillId).toBeNull()
-  })
-
-  it('枠を確定すると新スキルが入り、外れたスキルはレベルを保って保管される', () => {
-    const h = winningHarness()
-    expect(advanceUntilSwapRequested(h)).toBe(true)
-    const incoming = h.battle.state.pendingSwapSkillId
-    const outgoing = h.battle.state.player.actives.find(a => a.slotIndex === 3)
-    const outgoingLevel = outgoing?.level ?? 0
-
-    h.battle.confirmSwap(3)
-
+    fightUntilBattleEnds(h)
+    h.battle.selectDraft(0)
     expect(h.battle.state.status).toBe('battle')
-    expect(h.battle.state.pendingSwapSkillId).toBeNull()
-    expect(h.battle.state.player.actives.find(a => a.slotIndex === 3)?.id).toBe(incoming)
-    const stored = h.battle.state.player.actives.find(a => a.id === outgoing?.id)
-    expect(stored?.slotIndex).toBeNull()
-    expect(stored?.level).toBe(outgoingLevel)
+    expect(h.battle.state.skillPoints).toBe(0)
   })
 
-  it('入れ替え待ちでなければ確定操作は無視される', () => {
+  it('パネルを閉じると次の戦闘が始まる', () => {
+    const h = winningHarness()
+    advanceToPanelBoundary(h)
+    h.battle.closeSkillPanel()
+    expect(h.battle.state.status).toBe('battle')
+  })
+
+  it('skillPanel でない間は閉じる操作を含む各操作が無視される', () => {
+    const h = winningHarness()
+    h.battle.closeSkillPanel()
+    expect(h.battle.state.status).toBe('battle')
+    h.battle.setStatAllocation('str', 2)
+    expect(h.battle.state.statPoints).toBe(0)
+  })
+})
+
+describe('useBattleState: スキルパネルでの配分・入れ替え操作', () => {
+  /** パネル中の状態を直接組み立てる（乱数依存の実戦周回を避け、配分ロジックの配線だけを検証する） */
+  function setupPanel(h: { battle: Battle }): void {
+    const raw = toRaw(h.battle.state)
+    raw.status = 'skillPanel'
+    raw.skillPoints = 3
+    raw.statPoints = 3
+  }
+
+  it('倉庫中のアクティブは空き枠があれば即座に装備される', () => {
+    const h = winningHarness()
+    setupPanel(h)
+    toRaw(h.battle.state).player.actives = [
+      { id: 'skill_fireball', points: 0, level: 1, cooldown: 0, slotIndex: null },
+    ]
+    h.battle.selectStoredActiveToEquip('skill_fireball')
+    expect(h.battle.state.player.actives[0].slotIndex).toBe(0)
+    expect(h.battle.state.status).toBe('skillPanel')
+  })
+
+  it('4枠すべて埋まっていれば入れ替え画面(swapping)へ遷移する', () => {
+    const h = winningHarness()
+    setupPanel(h)
+    toRaw(h.battle.state).player.actives = [
+      { id: 'stored', points: 0, level: 1, cooldown: 0, slotIndex: null },
+      ...[0, 1, 2, 3].map(i => ({ id: `s${i}`, points: 0, level: 1, cooldown: 0, slotIndex: i })),
+    ]
+    h.battle.selectStoredActiveToEquip('stored')
+    expect(h.battle.state.status).toBe('swapping')
+    expect(h.battle.state.pendingSwapSkillId).toBe('stored')
+  })
+
+  it('入れ替えを確定すると装備が入れ替わり、パネルへ戻る', () => {
+    const h = winningHarness()
+    setupPanel(h)
+    toRaw(h.battle.state).player.actives = [
+      { id: 'stored', points: 2, level: 2, cooldown: 0, slotIndex: null },
+      ...[0, 1, 2, 3].map(i => ({ id: `s${i}`, points: 0, level: 1, cooldown: 0, slotIndex: i })),
+    ]
+    h.battle.selectStoredActiveToEquip('stored')
+    h.battle.confirmSwap(2)
+    expect(h.battle.state.status).toBe('skillPanel')
+    expect(h.battle.state.pendingSwapSkillId).toBeNull()
+    expect(h.battle.state.player.actives.find(a => a.slotIndex === 2)).toMatchObject({ id: 'stored', points: 2, level: 2 })
+    expect(h.battle.state.player.actives.find(a => a.id === 's2')?.slotIndex).toBeNull()
+  })
+
+  it('入れ替えをキャンセルするとパネルへ戻る', () => {
+    const h = winningHarness()
+    setupPanel(h)
+    toRaw(h.battle.state).player.actives = [
+      { id: 'stored', points: 0, level: 1, cooldown: 0, slotIndex: null },
+      ...[0, 1, 2, 3].map(i => ({ id: `s${i}`, points: 0, level: 1, cooldown: 0, slotIndex: i })),
+    ]
+    h.battle.selectStoredActiveToEquip('stored')
+    h.battle.cancelSwap()
+    expect(h.battle.state.status).toBe('skillPanel')
+    expect(h.battle.state.pendingSwapSkillId).toBeNull()
+  })
+
+  it('装備中のアクティブを外すと投資済みポイントが未配分プールへ還元される', () => {
+    const h = winningHarness()
+    setupPanel(h)
+    toRaw(h.battle.state).player.actives = [{ id: 's0', points: 3, level: 3, cooldown: 0, slotIndex: 0 }]
+    h.battle.unequipActive('s0')
+    expect(h.battle.state.player.actives[0]).toMatchObject({ points: 0, level: 1, slotIndex: null })
+    expect(h.battle.state.skillPoints).toBe(6)   // 初期3 + 還元3
+  })
+
+  it('スキルポイントを装備中アクティブへ配分できる', () => {
+    const h = winningHarness()
+    setupPanel(h)
+    toRaw(h.battle.state).player.actives = [{ id: 's0', points: 0, level: 1, cooldown: 0, slotIndex: 0 }]
+    h.battle.allocateSkillPoint('s0', 2)
+    expect(h.battle.state.player.actives[0]).toMatchObject({ points: 2, level: 2 })
+    expect(h.battle.state.skillPoints).toBe(1)
+  })
+
+  it('ステータスポイントを成長ステータスへ配分・リセットできる', () => {
+    const h = winningHarness()
+    setupPanel(h)
+    h.battle.setStatAllocation('str', 2)
+    expect(h.battle.state.statAllocations.str).toBe(2)
+    expect(h.battle.state.statPoints).toBe(1)
+    h.battle.resetStatAllocations()
+    expect(h.battle.state.statPoints).toBe(3)
+    expect(h.battle.state.statAllocations.str).toBe(0)
+  })
+
+  it('入れ替え待ちでなければ確定/キャンセル操作は無視される', () => {
     const h = winningHarness()
     h.battle.confirmSwap(0)
     expect(h.battle.state.status).toBe('battle')

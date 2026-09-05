@@ -1,0 +1,9 @@
+{
+  "$comment": "スキルポイント制度。CLAUDE_TASKS.md 第7フェーズ参照。数値は仮値（調整前提）",
+  "section": "skillPoints",
+  "pointsForLevel": [0, 1, 3, 7],
+  "panelIntervalBattles": 5,
+  "panelSkillPoints": 3,
+  "panelStatPoints": 3,
+  "duplicateDraftWeight": 3
+}

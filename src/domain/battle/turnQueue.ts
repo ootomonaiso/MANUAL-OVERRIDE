@@ -54,14 +54,14 @@ export function resolveAdjacent3(enemies: readonly Combatant[], centerIndex: num
  */
 export function buildEnemyActivesFromPattern(
   def: EnemyDef,
-): { actives: { id: string; level: number; stacks: number; cooldown: number; slotIndex: null }[]; actionPattern: string[] } {
+): { actives: { id: string; points: number; level: number; cooldown: number; slotIndex: null }[]; actionPattern: string[] } {
   const seen = new Set<string>()
-  const actives: { id: string; level: number; stacks: number; cooldown: number; slotIndex: null }[] = []
+  const actives: { id: string; points: number; level: number; cooldown: number; slotIndex: null }[] = []
   for (const skillId of def.actionPattern) {
     if (seen.has(skillId)) continue
     seen.add(skillId)
     const ref = def.activeSkills.find(a => a.id === skillId)
-    actives.push({ id: skillId, level: ref?.level ?? 1, stacks: 0, cooldown: 0, slotIndex: null })
+    actives.push({ id: skillId, points: 0, level: ref?.level ?? 1, cooldown: 0, slotIndex: null })
   }
   return { actives, actionPattern: [...def.actionPattern] }
 }

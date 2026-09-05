@@ -11,7 +11,7 @@
 import { reactive, readonly, ref, computed, type DeepReadonly } from 'vue'
 import type {
   BattleState, Combatant, PlayerAction, DraftOption, EffectRequest,
-  CategoryId, EffectiveStats, Element, ActiveSkillDef,
+  CategoryId, EffectiveStats, Element, ActiveSkillDef, GrowthStatKey,
 } from '../domain/battle/types'
 
 /** state: readonly(state) から UI へ渡る Combatant の実体型（配列も再帰的に readonly になる） */
@@ -25,16 +25,21 @@ import {
 } from '../domain/battle/battleEngine'
 import { buildTurnQueue, previewEnemyNextSkill } from '../domain/battle/turnQueue'
 import {
-  rollDraft, applyDraftChoice, confirmSwap as confirmSwapSkill,
+  rollDraft, applyDraftChoice,
   accumulateCategoryPoints, categoryContributionsOf,
 } from '../domain/battle/skillDraft'
 import type { CategoryContribution } from '../domain/battle/skillDraft'
+import {
+  confirmSwap as confirmSwapSkill, equipToFreeSlot, unequipActive as unequipActiveSkill,
+  allocateSkillPoint as allocateSkillPointOn, setStatAllocation as setStatAllocationOn,
+  resetStatAllocations as resetStatAllocationsOn,
+} from '../domain/battle/skillPanel'
 import { pickBackgroundId } from '../domain/battle/backdrop'
 import { estimateSkillDamage } from '../domain/battle/damagePreview'
 import { estimateHitCount } from '../domain/battle/effectTiming'
 import { BATTLE_CONTENT } from '../data/rpg/battleContent'
 import { BATTLE_BACKGROUNDS } from '../data/rpg/battleBackgrounds'
-import { BATTLE, ENCOUNTER_GROUPS } from '../data/tunables'
+import { BATTLE, ENCOUNTER_GROUPS, SKILL_POINTS } from '../data/tunables'
 import { evalScoreFormula } from '../domain/scoreCalc'
 import type { ScoreVars } from '../domain/types'
 import { GENRES } from '../data/genres'
@@ -101,6 +106,9 @@ function freshState(): BattleState {
     categoryPoints: zeroCategoryPoints(),
     rerollCharges: 0,
     pendingDraftRounds: 1,
+    skillPoints: 0,
+    statAllocations: { hp: 0, str: 0, def: 0, int: 0, ref: 0, agi: 0 },
+    statPoints: 0,
     seenIds: new Set(),
     ui: { statusPanelMode: 'effective', showBuffDiff: true, statusPanelCollapsed: false, skillListCollapsed: false },
     playScore: 0,
@@ -404,27 +412,32 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     if (r.status !== 'drafting' || !r.draftOptions) return
     const option = r.draftOptions[index]
     if (!option) return
-    const result = applyDraftChoice(r, option)
-    if (result.needsSwapSelection) {
-      state.status = 'swapping'
-    } else {
-      state.draftOptions = null
-      proceedAfterDraftRound()
-    }
-  }
-
-  function confirmSwap(targetSlotIndex: number): void {
-    const r = raw()
-    if (r.status !== 'swapping' || !r.pendingSwapSkillId) return
-    confirmSwapSkill(r.player, r.pendingSwapSkillId, targetSlotIndex)
-    state.pendingSwapSkillId = null
+    applyDraftChoice(r, option)
     state.draftOptions = null
     proceedAfterDraftRound()
   }
 
   /**
-   * 1回分のドラフト（＋必要なら入れ替え）が終わった直後に呼ぶ。
-   * 残りドラフト回数（ボス撃破時の3連続等）があれば次のドラフトへ、無ければ次の戦闘へ進む
+   * 入れ替え先の枠を確定する。第7フェーズ以降、'swapping' は必ずスキルパネル
+   * （selectStoredActiveToEquip）から入るため、確定後はパネルへ戻る。
+   */
+  function confirmSwap(targetSlotIndex: number): void {
+    const r = raw()
+    if (r.status !== 'swapping' || !r.pendingSwapSkillId) return
+    confirmSwapSkill(r.player, r.pendingSwapSkillId, targetSlotIndex)
+    state.pendingSwapSkillId = null
+    state.status = 'skillPanel'
+  }
+
+  function cancelSwap(): void {
+    state.pendingSwapSkillId = null
+    state.status = 'skillPanel'
+  }
+
+  /**
+   * 1回分のドラフトが終わった直後に呼ぶ。残りドラフト回数（ボス撃破時の3連続等）が
+   * あれば次のドラフトへ。無ければ、panelIntervalBattles 戦ごとにスキルパネルを挟んでから
+   * 次の戦闘へ進む（真のクリア済みならこの関数自体が呼ばれない点に注意 = handleOutcome 側で完結）
    */
   function proceedAfterDraftRound(): void {
     const r = raw()
@@ -435,12 +448,49 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
       return
     }
     state.pendingDraftRounds = 1
+    if (r.battlesWon > 0 && r.battlesWon % SKILL_POINTS.panelIntervalBattles === 0) {
+      state.skillPoints += SKILL_POINTS.panelSkillPoints
+      state.statPoints += SKILL_POINTS.panelStatPoints
+      state.status = 'skillPanel'
+      return
+    }
     startBattle()
   }
 
-  function cancelSwap(): void {
-    state.pendingSwapSkillId = null
-    state.status = 'drafting'
+  // ── スキルパネル（5戦ごとのポイント配分） ───────────────────────
+  /** 倉庫中のアクティブを装備する。空き枠があれば即座に、無ければ入れ替え画面へ */
+  function selectStoredActiveToEquip(activeId: string): void {
+    const r = raw()
+    if (r.status !== 'skillPanel') return
+    if (equipToFreeSlot(r.player, activeId)) return
+    state.pendingSwapSkillId = activeId
+    state.status = 'swapping'
+  }
+
+  function unequipActive(activeId: string): void {
+    if (state.status !== 'skillPanel') return
+    unequipActiveSkill(raw(), activeId)
+  }
+
+  function allocateSkillPoint(activeId: string, amount = 1): void {
+    if (state.status !== 'skillPanel') return
+    allocateSkillPointOn(raw(), activeId, amount)
+  }
+
+  function setStatAllocation(stat: GrowthStatKey, amount: number): void {
+    if (state.status !== 'skillPanel') return
+    setStatAllocationOn(raw(), stat, amount)
+  }
+
+  function resetStatAllocations(): void {
+    if (state.status !== 'skillPanel') return
+    resetStatAllocationsOn(raw())
+  }
+
+  /** パネルを閉じて次の戦闘へ進む */
+  function closeSkillPanel(): void {
+    if (state.status !== 'skillPanel') return
+    startBattle()
   }
 
   /** ドラフトの3択を引き直す。リロール回数を1消費する */
@@ -551,6 +601,12 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     confirmSwap,
     cancelSwap,
     rerollDraft,
+    selectStoredActiveToEquip,
+    unequipActive,
+    allocateSkillPoint,
+    setStatAllocation,
+    resetStatAllocations,
+    closeSkillPanel,
     giveUp,
 
     toggleStatusMode,

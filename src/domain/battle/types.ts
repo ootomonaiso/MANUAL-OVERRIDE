@@ -22,6 +22,10 @@ export interface BattleStats {
 
 export type StatKey = keyof BattleStats
 
+/** ドラフトのフォールバック・スキルパネルのステータスポイントで配分できる6つの成長ステータス */
+export const GROWTH_STAT_KEYS = ['hp', 'str', 'def', 'int', 'ref', 'agi'] as const
+export type GrowthStatKey = (typeof GROWTH_STAT_KEYS)[number]
+
 export const STAT_KEYS: readonly StatKey[] = [
   'hp', 'str', 'def', 'int', 'ref', 'agi',
   'hitRate', 'evadeRate', 'critRate', 'critDamageMultiplier',
@@ -233,17 +237,31 @@ export interface BattleEffectDef {
 // ─────────────────────────────────────────────────────────────
 export interface OwnedActive {
   id: string
+  /**
+   * 投資済みポイント（第7フェーズ・スキルポイント制度）。プレイヤーはドラフトの重複取得
+   * （+1）とスキルパネルでの配分によって増える。敵は常に 0（未使用、levelを直接指定する）。
+   */
+  points: number
+  /**
+   * 実効レベル。プレイヤーは points から都度導出する（skillDraft.ts::levelForPoints）が、
+   * effectOps 側の levelMultiplier 参照を変えずに済むよう、フィールドとしても保持する。
+   * 敵はEnemyDef.activeSkillsで指定されたレベルのまま固定（pointsとは無関係）。
+   */
   level: number
-  stacks: number
   cooldown: number
   /** 0〜3。null = 枠から外して保管中 */
   slotIndex: number | null
 }
 
+/**
+ * 第7フェーズでレベル/スタックの概念を廃止。所持しているか否かの二値のみになった
+ * （ドラフトで一度所持すると以後候補から除外され、重複取得は発生しない）。
+ * level は敵の所持パッシブ（EnemyDef.passiveSkills）の強さ調整用に残しており、
+ * プレイヤーが取得したパッシブは常に 1（＝levelMultiplierが等倍）で固定する。
+ */
 export interface OwnedPassive {
   id: string
   level: number
-  stacks: number
 }
 
 export interface OwnedTrait {
@@ -376,19 +394,20 @@ export type PlayerAction = PlayerActionActive | PlayerActionBuiltin
 export interface DraftOption {
   kind: SkillKind
   id: string
+  /** アクティブの重複候補（isDuplicate）時のみ。選択前の現在レベル・累計ポイント */
   currentLevel?: number
-  currentStacks?: number
+  currentPoints?: number
+  /** セット中アクティブの重複候補か（選ぶと+1ポイント。新規所持とは表示を分ける） */
+  isDuplicate?: boolean
   isUnlocked?: boolean
   isFallback?: boolean
   fallbackStat?: StatKey
-  /** 既にアクティブ4枠が埋まっており、選択すると入れ替えが必要か */
-  requiresSwap?: boolean
 }
 
 // ─────────────────────────────────────────────────────────────
 // 戦闘全体の状態
 // ─────────────────────────────────────────────────────────────
-export type BattleStatus = 'battle' | 'drafting' | 'swapping' | 'finished'
+export type BattleStatus = 'battle' | 'drafting' | 'swapping' | 'skillPanel' | 'finished'
 
 export interface BattleState {
   battleIndex: number
@@ -426,6 +445,15 @@ export interface BattleState {
    * ドラフトを繰り返す（status は 'drafting' のまま）
    */
   pendingDraftRounds: number
+
+  /**
+   * スキルポイント制度（第7フェーズ）。panelIntervalBattles 戦ごとに、通常のドラフト
+   * （ボス撃破時は3連続ドラフト）がすべて終わった後 'skillPanel' へ遷移し、まとめて付与する。
+   */
+  skillPoints: number
+  /** 6成長ステータスへの配分状況。いつでも自由に組み替え・リセットできる（player.temporary へ反映） */
+  statAllocations: Record<GrowthStatKey, number>
+  statPoints: number
 
   seenIds: Set<string>
 

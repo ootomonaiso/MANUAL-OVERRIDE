@@ -3,34 +3,37 @@
  * ドラフト抽選・入れ替え・レベルアップ・カテゴリポイント（docs/genre/rpg/06-draft.md）。
  */
 
-import { BATTLE } from '../../data/tunables'
+import { BATTLE, SKILL_POINTS } from '../../data/tunables'
 import type {
   BattleState, BattleContent, Combatant, DraftOption, CategoryId, StatKey,
-  ActiveSkillDef, PassiveSkillDef,
+  ActiveSkillDef, PassiveSkillDef, OwnedActive,
 } from './types'
 import { CATEGORY_IDS } from './types'
 
 // ─────────────────────────────────────────────────────────────
-// スキルレベルアップ
+// スキルポイント制度（第7フェーズ）
 // ─────────────────────────────────────────────────────────────
 
-/**
- * index = 現在レベル、値 = 次のレベルに必要な重複取得数。
- * 当初は [0, 1, 3, 5] だったが、Lv1→Lv2 の1個で levelMultiplier が ×1→×3 に跳ね上がり
- * 「もう1回引いただけで3倍」になって強すぎたため、初手のジャンプを緩めて [0, 2, 3, 4] にした。
- * Lv4到達までの合計必要数は9個のままで変えていない（levelMultiplier のバランス根拠を崩さないため）。
- */
-export const STACKS_REQUIRED = [0, 2, 3, 4] as const
+/** アクティブの最大レベル（levelMultiplier が頭打ちになる Lv） */
+export const MAX_ACTIVE_LEVEL = SKILL_POINTS.pointsForLevel.length
+/** Lv4到達に必要な累計ポイント（配分・重複取得の上限） */
+export const MAX_ACTIVE_POINTS = SKILL_POINTS.pointsForLevel[MAX_ACTIVE_LEVEL - 1]
 
-/** 重複取得によりスタックを1つ加算し、必要数に達したらレベルアップさせる（Lv4で頭打ち） */
-export function addStack(owned: { level: number; stacks: number }): void {
-  if (owned.level >= 4) return
-  owned.stacks++
-  const required = STACKS_REQUIRED[owned.level]
-  if (owned.stacks >= required) {
-    owned.level++
-    owned.stacks -= required
+/** 累計投資ポイントから実効レベルを導出する（pointsForLevel: index=レベル-1、値=そのレベルへの必要累計値） */
+export function levelForPoints(points: number): number {
+  let level = 1
+  for (let l = 2; l <= MAX_ACTIVE_LEVEL; l++) {
+    if (points >= SKILL_POINTS.pointsForLevel[l - 1]) level = l
   }
+  return level
+}
+
+/** アクティブへポイントを加算し、level を同期させる（上限 MAX_ACTIVE_POINTS で頭打ち）。実際に加算できた量を返す */
+export function addActivePoints(owned: OwnedActive, amount: number): number {
+  const before = owned.points
+  owned.points = Math.min(MAX_ACTIVE_POINTS, owned.points + amount)
+  owned.level = levelForPoints(owned.points)
+  return owned.points - before
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -121,15 +124,20 @@ export function nextCategoryThreshold(current: number): number {
 // ドラフト候補の構築・抽選
 // ─────────────────────────────────────────────────────────────
 
-function isSlotsFull(player: Combatant): boolean {
-  return player.actives.filter(a => a.slotIndex !== null).length >= 4
-}
-
-function buildCandidatePool(
+/**
+ * ドラフト候補を構築する（第7フェーズで大きく方針転換）。
+ * - アクティブ: 未所持は通常候補として1件。セット中（装備済み）は重複候補として
+ *   duplicateDraftWeight 倍の重みで出現し、選ぶと+1ポイントが即座に入る。
+ *   倉庫保管中（slotIndex===null）は候補に一切出さない（＝重複が二度と出ない）。
+ * - パッシブ: 一度でも所持したら以後永久に候補から除外する（重複取得が発生しない）。
+ * - 特性: 既存どおり（所持済みを除外するだけ）。
+ */
+export function buildCandidatePool(
   player: Combatant, content: BattleContent, points: Record<CategoryId, number>,
 ): DraftOption[] {
   const pool: DraftOption[] = []
   const ownedTraitIds = new Set(player.traits.map(t => t.id))
+  const ownedPassiveIds = new Set(player.passives.map(p => p.id))
 
   for (const def of content.skills.values()) {
     if (def.draftable === false) continue
@@ -137,21 +145,20 @@ function buildCandidatePool(
 
     if (def.kind === 'active') {
       const owned = player.actives.find(a => a.id === def.id)
-      if (owned && owned.level >= 4) continue
-      pool.push({
-        kind: 'active', id: def.id,
-        currentLevel: owned?.level, currentStacks: owned?.stacks,
+      if (!owned) {
+        pool.push({ kind: 'active', id: def.id, isUnlocked: !!def.unlockCondition })
+        continue
+      }
+      if (owned.slotIndex === null) continue   // 倉庫保管中は候補に出さない
+      if (owned.level >= MAX_ACTIVE_LEVEL) continue
+      const dup: DraftOption = {
+        kind: 'active', id: def.id, currentLevel: owned.level, currentPoints: owned.points, isDuplicate: true,
         isUnlocked: !!def.unlockCondition,
-        requiresSwap: !owned && isSlotsFull(player),
-      })
+      }
+      for (let i = 0; i < SKILL_POINTS.duplicateDraftWeight; i++) pool.push(dup)
     } else {
-      const owned = player.passives.find(p => p.id === def.id)
-      if (owned && owned.level >= 4) continue
-      pool.push({
-        kind: 'passive', id: def.id,
-        currentLevel: owned?.level, currentStacks: owned?.stacks,
-        isUnlocked: !!def.unlockCondition,
-      })
+      if (ownedPassiveIds.has(def.id)) continue   // 一度所持したら二度と候補に出ない
+      pool.push({ kind: 'passive', id: def.id, isUnlocked: !!def.unlockCondition })
     }
   }
   for (const def of content.traits.values()) {
@@ -181,27 +188,13 @@ function shuffle<T>(arr: readonly T[], rng: () => number): T[] {
   return a
 }
 
-/** アクティブ枠が全て埋まっていて、なおかつ入れ替え不要な候補（パッシブ・特性・所持スキルの重複取得） */
-function requiresSwap(opt: DraftOption): boolean {
-  return opt.kind === 'active' && opt.requiresSwap === true
-}
-
-/** 撃破後の3択を抽選する。重複しない3件。候補が足りなければステータス微増で埋める */
+/** 撃破後の3択を抽選する。重複しない3件（同じ重複候補が複数回入っていても1件扱い）。候補が足りなければステータス微増で埋める */
 export function rollDraft(player: Combatant, content: BattleContent, rng: () => number): DraftOption[] {
   const points = accumulateCategoryPoints(player, content)
   const pool = shuffle(buildCandidatePool(player, content, points), rng)
 
   const picked: DraftOption[] = []
   const usedIds = new Set<string>()
-
-  // アクティブ枠が全て埋まっている時、3択が「入れ替えないと選べないアクティブ」だけに
-  // なると、変えたくない編成でも強制的に入れ替えを迫られてしまう。入れ替え不要な候補が
-  // プールに1つでもあれば、それを最初の1枠として確保しておく。
-  if (isSlotsFull(player)) {
-    const safe = pool.find(opt => !requiresSwap(opt))
-    if (safe) { picked.push(safe); usedIds.add(safe.id) }
-  }
-
   for (const opt of pool) {
     if (picked.length >= 3) break
     if (usedIds.has(opt.id)) continue
@@ -221,58 +214,44 @@ export function rollDraft(player: Combatant, content: BattleContent, rng: () => 
 // ドラフト選択の適用
 // ─────────────────────────────────────────────────────────────
 
-export interface DraftApplyResult {
-  needsSwapSelection: boolean
-}
-
-/** ドラフトで選んだ1件をプレイヤーへ適用する */
-export function applyDraftChoice(
-  state: BattleState, option: DraftOption,
-): DraftApplyResult {
+/**
+ * ドラフトで選んだ1件をプレイヤーへ適用する。
+ * 第7フェーズ以降、新規アクティブは空き枠へ自動セットされるか、空きが無ければ黙って
+ * 倉庫（slotIndex: null）へ保管される。ドラフト起因で入れ替え画面（'swapping'）に
+ * 割り込むことは無くなった（入れ替えは5戦ごとのスキルパネルでのみ行う）。
+ */
+export function applyDraftChoice(state: BattleState, option: DraftOption): void {
   const player = state.player
 
   if (option.isFallback && option.fallbackStat) {
     const amount = option.fallbackStat === 'hp' ? BATTLE.fallbackStatBoost.hp : BATTLE.fallbackStatBoost.other
     player.temporary.push({ stat: option.fallbackStat, flat: amount, scope: 'permanent', sourceId: 'fallback' })
-    return { needsSwapSelection: false }
+    return
   }
 
   if (option.kind === 'trait') {
     player.traits.push({ id: option.id })
-    return { needsSwapSelection: false }
+    return
   }
 
   if (option.kind === 'passive') {
-    const existing = player.passives.find(p => p.id === option.id)
-    if (existing) addStack(existing)
-    else player.passives.push({ id: option.id, level: 1, stacks: 0 })
-    return { needsSwapSelection: false }
+    if (!player.passives.some(p => p.id === option.id)) {
+      player.passives.push({ id: option.id, level: 1 })
+    }
+    return
   }
 
   // active
   const existing = player.actives.find(a => a.id === option.id)
   if (existing) {
-    addStack(existing)
-    return { needsSwapSelection: false }
+    addActivePoints(existing, 1)
+    return
   }
-  const freeSlot = findFreeSlotIndex(player)
-  if (freeSlot !== null) {
-    player.actives.push({ id: option.id, level: 1, stacks: 0, cooldown: 0, slotIndex: freeSlot })
-    return { needsSwapSelection: false }
-  }
-  state.pendingSwapSkillId = option.id
-  return { needsSwapSelection: true }
+  player.actives.push({ id: option.id, points: 0, level: 1, cooldown: 0, slotIndex: findFreeSlotIndex(player) })
 }
 
-function findFreeSlotIndex(player: Combatant): number | null {
+export function findFreeSlotIndex(player: Combatant): number | null {
   const used = new Set(player.actives.filter(a => a.slotIndex !== null).map(a => a.slotIndex))
   for (let i = 0; i < 4; i++) if (!used.has(i)) return i
   return null
-}
-
-/** 入れ替え先の枠を確定する。外れたスキルはレベル・スタックを保持したまま保管中になる */
-export function confirmSwap(player: Combatant, pendingSkillId: string, targetSlotIndex: number): void {
-  const outgoing = player.actives.find(a => a.slotIndex === targetSlotIndex)
-  if (outgoing) outgoing.slotIndex = null
-  player.actives.push({ id: pendingSkillId, level: 1, stacks: 0, cooldown: 0, slotIndex: targetSlotIndex })
 }

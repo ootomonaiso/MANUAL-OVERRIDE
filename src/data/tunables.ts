@@ -149,3 +149,8 @@ export const BATTLE = _c.battle
 // ENCOUNTER_GROUPS — 敵グループ/難易度スケーリング（rpg）
 // ─────────────────────────────────────────────────────────────
 export const ENCOUNTER_GROUPS = _c.encounterGroups
+
+// ─────────────────────────────────────────────────────────────
+// SKILL_POINTS — スキルポイント制度（rpg）
+// ─────────────────────────────────────────────────────────────
+export const SKILL_POINTS = _c.skillPoints

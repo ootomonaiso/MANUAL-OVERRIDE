@@ -220,6 +220,26 @@ export function validateGameConfig(config: GameConfigMap): ConfigValidationResul
     }
   }
 
+  // skillPoints: レベル閾値・パネル周期の妥当性
+  if (config.skillPoints) {
+    const sp = config.skillPoints
+    if (sp.panelIntervalBattles < 1) errors.push('config.skillPoints.panelIntervalBattles は1以上が必要です')
+    if (sp.panelSkillPoints < 0) errors.push('config.skillPoints.panelSkillPoints は0以上が必要です')
+    if (sp.panelStatPoints < 0) errors.push('config.skillPoints.panelStatPoints は0以上が必要です')
+    if (sp.duplicateDraftWeight < 1) errors.push('config.skillPoints.duplicateDraftWeight は1以上が必要です')
+    if (!Array.isArray(sp.pointsForLevel) || sp.pointsForLevel.length === 0) {
+      errors.push('config.skillPoints.pointsForLevel は1件以上の配列が必要です')
+    } else {
+      if (sp.pointsForLevel[0] !== 0) errors.push('config.skillPoints.pointsForLevel[0]（Lv1）は0が必要です')
+      for (let i = 1; i < sp.pointsForLevel.length; i++) {
+        if (sp.pointsForLevel[i] <= sp.pointsForLevel[i - 1]) {
+          errors.push('config.skillPoints.pointsForLevel は単調増加である必要があります')
+          break
+        }
+      }
+    }
+  }
+
   // genres: 必須フィールド
   if (config.genres?.genres) {
     for (const g of config.genres.genres) {
