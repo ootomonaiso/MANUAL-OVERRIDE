@@ -39,14 +39,19 @@ export class StgPlugin extends GenrePluginBase {
 
   // 上下左右に動ける宇宙戦の敵配置。地面を持たず空中・浮遊で構成し、
   // 距離後半ほど密度が増す（weightStart 低め → weightEnd 高め）。
+  // hpOverride: enemy_hp 有効時の敵HPを2に固定（1800→1100 の高密度と合わせて調整）。
+  // safeChance: 0 で安全敵（青）を完全排除（STG では敵はすべて危険）。
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'diamond', placement: 'float', weightStart: 3, weightEnd: 6, wRange: [26, 40], hRange: [26, 40], floatAmpRange: [60, 130] },
-    { shape: 'rect',    placement: 'air',   weightStart: 2, weightEnd: 5, wRange: [24, 42], hRange: [24, 40] },
-    { shape: 'diamond', placement: 'float', weightStart: 1, weightEnd: 5, wRange: [20, 30], hRange: [20, 30], floatAmpRange: [90, 170], pulseSpeed: 3.0 },
-    { shape: 'rect',    placement: 'float', weightStart: 0, weightEnd: 4, wRange: [18, 30], hRange: [18, 30], floatAmpRange: [40, 110] },
+    { shape: 'diamond', placement: 'float', weightStart: 3, weightEnd: 6, wRange: [26, 40], hRange: [26, 40], floatAmpRange: [60, 130], hpOverride: 2, safeChance: 0 },
+    { shape: 'rect',    placement: 'air',   weightStart: 2, weightEnd: 5, wRange: [24, 42], hRange: [24, 40], hpOverride: 2, safeChance: 0 },
+    { shape: 'diamond', placement: 'float', weightStart: 1, weightEnd: 5, wRange: [20, 30], hRange: [20, 30], floatAmpRange: [90, 170], pulseSpeed: 3.0, hpOverride: 2, safeChance: 0 },
+    { shape: 'rect',    placement: 'float', weightStart: 0, weightEnd: 4, wRange: [18, 30], hRange: [18, 30], floatAmpRange: [40, 110], hpOverride: 2, safeChance: 0 },
   ]
 
   // spawnDensity is sourced from JSON config (stg.json) — see genres/index.ts merge
+  // scrollSpeedBonus: STG は敵を撃てる時間を稼ぐため、スクロールを軽く減速する。
+  // -80 は BASE_SCROLL_SPEED(300) + tempo bonus に対して相対的に -27% の補正。
+  readonly scrollSpeedBonus = -80
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
     const px = new PixelCanvas(ctx)
@@ -238,10 +243,6 @@ export class StgPlugin extends GenrePluginBase {
       }
     }
 
-    // 走査線（CRT 風の薄い横縞）。既にドット絵と親和的なため座標のスナップのみ
-    for (let yy = 0; yy < H; yy += 3) {
-      px.rect(0, yy, W, 1, 'rgba(0,0,0,0.05)')
-    }
 
     // ビネット（画面四隅を暗く落とす）
     px.bandRadial(W / 2, H / 2, H * 0.38, W * 0.72, [

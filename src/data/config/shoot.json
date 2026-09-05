@@ -8,6 +8,6 @@
   "shotCooldown": 0.18,
   "comboResetTime": 3.0,
   "baseScorePerKill": 200,
-  "threeWaySpeedRatio": 0.8,
-  "threeWayYRatio": 0.6
+  "threeWaySpeedRatio": 0.95,
+  "threeWayYRatio": 0.28
 }

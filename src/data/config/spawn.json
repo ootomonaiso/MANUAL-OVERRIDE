@@ -14,6 +14,7 @@
   "spawnWeightMaxDist": 3000,
   "itemDropChance": 0.50,
   "itemExpChance": 0.70,
+  "powerDropChance": 0.15,
   "itemOffsetX": 70,
   "itemGroundOffsetY": 50,
   "expItemScore": 20,

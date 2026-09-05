@@ -22,6 +22,9 @@ export class AerialStgPlugin extends GenrePluginBase {
   // 機体を機首=上で描くため、縦スクロール時の engine 側 -90° 回転を無効化する（#102 の二重回転回避）
   readonly spriteFacesUp = true
 
+  // STG バランス修正: 敵の速度を緩やかに（ユーザー指摘: 敵速すぎ）
+  readonly scrollSpeedBonus = -80
+
   readonly skyColors    = ['#050a18', '#0d1f3c'] as const
   readonly groundColors = ['#091520', '#091520'] as const
   readonly farLayerColor  = '#0a1830'
@@ -110,9 +113,9 @@ export class AerialStgPlugin extends GenrePluginBase {
 
   // 縦モード: 全ハザードが画面上端からスポーン。placement は無視される。
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'diamond', placement: 'air', weightStart: 2, weightEnd: 6, wRange: [24, 34], hRange: [26, 38], safeChance: 0 },
-    { shape: 'rect',    placement: 'air', weightStart: 1, weightEnd: 4, wRange: [40, 60], hRange: [24, 36], safeChance: 0 },
-    { shape: 'pillar',  placement: 'air', weightStart: 1, weightEnd: 5, wRange: [12, 18], hRange: [40, 64], safeChance: 0 },
+    { shape: 'diamond', placement: 'air', weightStart: 2, weightEnd: 6, wRange: [24, 34], hRange: [26, 38], safeChance: 0, hpOverride: 2 },
+    { shape: 'rect',    placement: 'air', weightStart: 1, weightEnd: 4, wRange: [40, 60], hRange: [24, 36], safeChance: 0, hpOverride: 2 },
+    { shape: 'pillar',  placement: 'air', weightStart: 1, weightEnd: 5, wRange: [12, 18], hRange: [40, 64], safeChance: 0, hpOverride: 2 },
   ]
 
   // ════════════════════════════════════════════════════════════════

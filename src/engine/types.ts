@@ -116,6 +116,10 @@ export interface MutableWorld {
   addScoreVarsStealthBonus(amount: number): void
   /** 安全色タッチ回数をインクリメント（color_touch Feature が使用） */
   addScoreVarsColorTouch(): void
+
+  // ─ power_up フィーチャー用 ──────────────────────────────────────
+  /** 射撃ブースト残り時間（秒）。power_up 有効時のみ使用。ShootFeature が参照 */
+  powerBoostTimer: number
 }
 
 // ──────────────────────────────────────────────────────────────────────
