@@ -39,7 +39,6 @@ export interface InfoCharacterView {
   spriteId: string
   hp: number
   maxHp: number
-  isBoss?: boolean
   stats: InfoStatRow[]
   /** 敵のみ持つ。プレイヤーのアクティブ/パッシブ/特性は別グループで表示するため省略する */
   skills?: {

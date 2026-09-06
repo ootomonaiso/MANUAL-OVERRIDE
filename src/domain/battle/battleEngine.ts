@@ -8,8 +8,8 @@
 import { BATTLE, ENCOUNTER_GROUPS } from '../../data/tunables'
 import type { EncounterGroupsConfig } from '../../framework/config-types'
 import type {
-  BattleState, Combatant, BattleContent, EffectRequest,
-  FocusSpec, ActiveSkillDef, SkillDef, StatKey, CategoryId, ScoreVarsBattle,
+  BattleState, Combatant, BattleContent, EffectRequest, EffectiveStats,
+  FocusSpec, ActiveSkillDef, StatKey, ScoreVarsBattle,
   BattleStats, EnemyDef, EnemySet,
 } from './types'
 import { STAT_KEYS } from './types'
@@ -17,9 +17,8 @@ import {
   newAccumulator, addFlat, addRate, toModifiers, accumulatePassiveStatBoosts,
   computeEffectiveStats, clampHpToMax,
 } from './stats'
-import { resolveAdjacent3, buildEnemyActivesFromPattern, previewEnemyNextSkill, pickEnemySkill } from './turnQueue'
+import { resolveAdjacent3, buildEnemyActivesFromPattern, pickEnemySkill } from './turnQueue'
 import { runEffects, clearThisTurnModifiers, clearThisBattleModifiers, downgradeNextRoundModifiers } from './effectOps'
-import { CATEGORY_IDS } from './types'
 
 type Emit = (req: EffectRequest) => void
 
@@ -225,7 +224,7 @@ export function pickEnemyDefs(
 // 実効値の解決
 // ─────────────────────────────────────────────────────────────
 
-export function resolveEffectiveStats(c: Combatant, content: BattleContent): import('./types').EffectiveStats {
+export function resolveEffectiveStats(c: Combatant, content: BattleContent): EffectiveStats {
   const acc = newAccumulator()
   for (const p of c.passives) {
     const def = content.skills.get(p.id)
@@ -428,8 +427,6 @@ export function enemyTakeTurn(params: {
   owned.cooldown = usedDef && usedDef.kind === 'active' ? usedDef.cooldown : 0
 }
 
-export { previewEnemyNextSkill }
-
 // ─────────────────────────────────────────────────────────────
 // ラウンド終了処理
 // ─────────────────────────────────────────────────────────────
@@ -550,15 +547,3 @@ export function buildBattleScoreVars(state: BattleState): ScoreVarsBattle {
     traitsAcquired: state.player.traits.length,
   }
 }
-
-// ─────────────────────────────────────────────────────────────
-// カテゴリポイント（skillDraft.ts と共有する集計。エンジンからも参照するためここに置く）
-// ─────────────────────────────────────────────────────────────
-
-export function zeroCategoryPoints(): Record<CategoryId, number> {
-  const out = {} as Record<CategoryId, number>
-  for (const id of CATEGORY_IDS) out[id] = 0
-  return out
-}
-
-export type { SkillDef, ActiveSkillDef }

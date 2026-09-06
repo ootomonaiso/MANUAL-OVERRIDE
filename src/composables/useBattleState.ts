@@ -93,10 +93,10 @@ function zeroCategoryPoints(): Record<CategoryId, number> {
   return out
 }
 
-function freshState(): BattleState {
+function freshState(rng: () => number = Math.random): BattleState {
   return {
     battleIndex: 0, battlesWon: 0, bossDefeated: false, bossesDefeatedCount: 0, runOutcome: null,
-    player: initPlayer(Math.random),
+    player: initPlayer(rng),
     enemies: [],
     turnQueue: [], turnIndex: 0, roundCount: 0,
     status: 'battle',
@@ -122,6 +122,22 @@ const BUILTIN_LABEL: Record<'guard' | 'dodge' | 'pass', string> = {
 
 export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   const scheduler = options.scheduler ?? IMMEDIATE_SCHEDULER
+  /**
+   * 戦闘の全状態。ドメイン層(battleEngine/skillDraft)へはこの reactive オブジェクトを
+   * そのまま渡す。
+   *
+   * 【実装時に発見した不具合】当初 toRaw(state) を渡していたが、これは誤りだった。
+   * toRaw() は state から生の(非プロキシ)オブジェクトを取り出すため、ドメイン層が
+   * それに対して行う push/プロパティ代入（player.actives.push(...) 等）は Vue の
+   * リアクティブ Proxy の trap を一切経由せず、trigger() が呼ばれないため画面が
+   * 更新されない（実機確認: ドラフトでスキルを選んでも一覧・スロットに反映されず、
+   * 次の描画更新のたびに"たまたま"最新値を読むまで古い表示のまま残る不具合が発生した）。
+   *
+   * 10-state.md の「readonly プロキシへの書き込みが no-op になる」という注意は、
+   * gameState.rules のような readonly() でラップされたプロキシに書き込もうとする
+   * ケースを指しており、本コンポーザブルの state は readonly ではなく通常の
+   * reactive() なので、toRaw() を通さずそのまま渡すのが正しい。
+   */
   const state = reactive<BattleState>(freshState())
   const effectQueue = ref<EffectRequest[]>([])
   const presentation = reactive<BattlePresentation>(idlePresentation())
@@ -135,25 +151,6 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
 
   const content = BATTLE_CONTENT
   const timing = BATTLE.presentation
-
-  /**
-   * ドメイン層(battleEngine/skillDraft)へ渡す BattleState を返す。
-   *
-   * 【実装時に発見した不具合】当初 toRaw(state) を返していたが、これは誤りだった。
-   * toRaw() は state から生の(非プロキシ)オブジェクトを取り出すため、ドメイン層が
-   * それに対して行う push/プロパティ代入（player.actives.push(...) 等）は Vue の
-   * リアクティブ Proxy の trap を一切経由せず、trigger() が呼ばれないため画面が
-   * 更新されない（実機確認: ドラフトでスキルを選んでも一覧・スロットに反映されず、
-   * 次の描画更新のたびに"たまたま"最新値を読むまで古い表示のまま残る不具合が発生した）。
-   *
-   * 10-state.md の「readonly プロキシへの書き込みが no-op になる」という注意は、
-   * gameState.rules のような readonly() でラップされたプロキシに書き込もうとする
-   * ケースを指しており、本コンポーザブルの state は readonly ではなく通常の
-   * reactive() なので、toRaw() を通さずそのまま渡すのが正しい。
-   */
-  function raw(): BattleState {
-    return state
-  }
 
   function emit(req: EffectRequest): void {
     effectQueue.value.push(req)
@@ -199,11 +196,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     generation++
     cancelPending()
     rng = customRng
-    const fresh = freshState()
-    fresh.player = initPlayer(rng)
-    Object.assign(state, fresh)
-    state.categoryPoints = zeroCategoryPoints()
-    state.seenIds = new Set()
+    Object.assign(state, freshState(rng))
     effectQueue.value = []
     Object.assign(presentation, idlePresentation())
     startBattle()
@@ -220,8 +213,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
 
   // ── 戦闘開始 ──────────────────────────────────────────────────
   function startBattle(): void {
-    const r = raw()
-    const picks = pickEnemyDefs(content, r.battleIndex, rng)
+    const picks = pickEnemyDefs(content, state.battleIndex, rng)
     state.enemies = picks.map((p, i) => spawnEnemyFromDef(p.def, i, p.statsOverride))
     state.backgroundId = pickBackgroundId(
       BATTLE_BACKGROUNDS, picks.some(p => p.def.isBoss), state.backgroundId, rng,
@@ -235,8 +227,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   }
 
   function startNewRound(): void {
-    const r = raw()
-    const queue = buildTurnQueue([r.player, ...r.enemies], c => resolveEffectiveStats(c, content).agi)
+    const queue = buildTurnQueue([state.player, ...state.enemies], c => resolveEffectiveStats(c, content).agi)
     state.turnQueue = queue
     state.turnIndex = 0
     processTurns()
@@ -244,9 +235,8 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
 
   // ── ターン進行 ────────────────────────────────────────────────
   function findCombatant(id: string): Combatant | undefined {
-    const r = raw()
-    if (r.player.id === id) return r.player
-    return r.enemies.find(e => e.id === id)
+    if (state.player.id === id) return state.player
+    return state.enemies.find(e => e.id === id)
   }
 
   /** 次に動く参加者を探す。プレイヤーなら入力待ちで抜け、敵なら演出付きで行動させる */
@@ -263,8 +253,8 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   }
 
   function finishRound(): void {
-    endOfRound(raw(), content, emit)
-    const outcome = checkBattleOutcome(raw())
+    endOfRound(state, content, emit)
+    const outcome = checkBattleOutcome(state)
     if (outcome !== 'ongoing') { handleOutcome(outcome); return }
     startNewRound()
   }
@@ -287,11 +277,11 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   }
 
   function runEnemyTurn(enemy: Combatant): void {
-    const skillId = previewEnemyNextSkill(enemy, content, raw().roundCount)
+    const skillId = previewEnemyNextSkill(enemy, content, state.roundCount)
     announce(enemy, skillId, '様子を見ている')
     after(timing.announceMs, () => {
       presentation.phase = 'impact'
-      enemyTakeTurn({ state: raw(), content, enemy, player: raw().player, rng, emit })
+      enemyTakeTurn({ state, content, enemy, player: state.player, rng, emit })
       // 敵から見た対象は常にプレイヤー1体（味方は存在しない）なので targetCount は常に1
       const skillDef = skillId ? content.skills.get(skillId) : undefined
       const waitMs = skillDef && skillDef.kind === 'active' ? impactWaitMs(skillDef, 1) : timing.impactMs
@@ -303,7 +293,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   function afterAction(): void {
     presentation.posingId = null
     state.turnIndex++
-    const outcome = checkBattleOutcome(raw())
+    const outcome = checkBattleOutcome(state)
     if (outcome !== 'ongoing') {
       clearPresentation()
       after(timing.battleEndMs, () => { handleOutcome(outcome) })
@@ -313,14 +303,13 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   }
 
   function handleOutcome(outcome: 'won' | 'lost'): void {
-    const r = raw()
     clearPresentation()
     if (outcome === 'won') {
       // finishBattleOnVictory が battleIndex を内部でインクリメントするため、
       // 「今終わった戦闘が何戦目だったか」は真のクリア判定に使うので先に控えておく
-      const finishedBattleIndex = r.battleIndex
-      finishBattleOnVictory(r, content)
-      const trueClear = r.bossDefeated && isTrueClearBattleIndex(finishedBattleIndex, ENCOUNTER_GROUPS)
+      const finishedBattleIndex = state.battleIndex
+      finishBattleOnVictory(state, content)
+      const trueClear = state.bossDefeated && isTrueClearBattleIndex(finishedBattleIndex, ENCOUNTER_GROUPS)
       if (trueClear) {
         state.runOutcome = 'won'
         state.status = 'finished'
@@ -328,9 +317,9 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
         return
       }
       // ボス撃破の見返り: 通常1回のところ、ボス撃破時はドラフトを bossDraftRounds 回連続で行う
-      state.pendingDraftRounds = r.bossDefeated ? ENCOUNTER_GROUPS.bossDraftRounds : 1
+      state.pendingDraftRounds = state.bossDefeated ? ENCOUNTER_GROUPS.bossDraftRounds : 1
       state.status = 'drafting'
-      state.draftOptions = rollDraft(r.player, content, rng)
+      state.draftOptions = rollDraft(state.player, content, rng)
     } else {
       state.runOutcome = 'lost'
       state.status = 'finished'
@@ -339,8 +328,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   }
 
   function finalizeScore(): void {
-    const r = raw()
-    const battleVars = buildBattleScoreVars(r)
+    const battleVars = buildBattleScoreVars(state)
     const formula = GENRES.find(g => g.id === 'rpg')?.scoreFormula ?? RPG_SCORE_FORMULA_FALLBACK
     const vars: ScoreVars = {
       distance: 0, kills: 0, combo: 0, exp: 0, beatHits: 0, survivedSec: 0,
@@ -362,13 +350,12 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   const isPresenting = computed(() => presentation.phase !== 'idle')
 
   const guardOrDodge = computed<'guard' | 'dodge'>(() =>
-    hasReplaceGuard(raw().player, content) ? 'dodge' : 'guard',
+    hasReplaceGuard(state.player, content) ? 'dodge' : 'guard',
   )
 
   function selectAction(action: PlayerAction, centerEnemyIndex: number | null = null): void {
     if (!isPlayerTurn.value) return
-    const r = raw()
-    const player = r.player
+    const player = state.player
 
     if (action.kind === 'builtin') {
       announce(player, null, BUILTIN_LABEL[action.action])
@@ -390,15 +377,15 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     if (!owned || owned.cooldown > 0) return
     const def = content.skills.get(owned.id)
     if (!def || def.kind !== 'active') return
-    if (def.minRound !== undefined && r.roundCount < def.minRound) return
+    if (def.minRound !== undefined && state.roundCount < def.minRound) return
 
     announce(player, owned.id)
     after(timing.announceMs, () => {
       presentation.phase = 'impact'
       const targets = resolvePlayerFocus(
-        { side: def.defaultFocus, range: def.focusRange }, player, r.enemies, centerEnemyIndex, rng,
+        { side: def.defaultFocus, range: def.focusRange }, player, state.enemies, centerEnemyIndex, rng,
       )
-      useActiveSkill({ state: r, content, source: player, skillId: owned.id, level: owned.level, targets, rng, emit })
+      useActiveSkill({ state, content, source: player, skillId: owned.id, level: owned.level, targets, rng, emit })
       // transformsInto で owned.id が変化している場合があるため、クールダウンは使用後の id で改めて引く
       const usedDef = content.skills.get(owned.id)
       owned.cooldown = usedDef && usedDef.kind === 'active' ? usedDef.cooldown : 0
@@ -408,11 +395,10 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
 
   // ── ドラフト ──────────────────────────────────────────────────
   function selectDraft(index: number): void {
-    const r = raw()
-    if (r.status !== 'drafting' || !r.draftOptions) return
-    const option = r.draftOptions[index]
+    if (state.status !== 'drafting' || !state.draftOptions) return
+    const option = state.draftOptions[index]
     if (!option) return
-    applyDraftChoice(r, option)
+    applyDraftChoice(state, option)
     state.draftOptions = null
     proceedAfterDraftRound()
   }
@@ -422,9 +408,8 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
    * （selectStoredActiveToEquip）から入るため、確定後はパネルへ戻る。
    */
   function confirmSwap(targetSlotIndex: number): void {
-    const r = raw()
-    if (r.status !== 'swapping' || !r.pendingSwapSkillId) return
-    confirmSwapSkill(r.player, r.pendingSwapSkillId, targetSlotIndex)
+    if (state.status !== 'swapping' || !state.pendingSwapSkillId) return
+    confirmSwapSkill(state.player, state.pendingSwapSkillId, targetSlotIndex)
     state.pendingSwapSkillId = null
     state.status = 'skillPanel'
   }
@@ -440,15 +425,14 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
    * 次の戦闘へ進む（真のクリア済みならこの関数自体が呼ばれない点に注意 = handleOutcome 側で完結）
    */
   function proceedAfterDraftRound(): void {
-    const r = raw()
-    if (r.pendingDraftRounds > 1) {
+    if (state.pendingDraftRounds > 1) {
       state.pendingDraftRounds--
       state.status = 'drafting'
-      state.draftOptions = rollDraft(r.player, content, rng)
+      state.draftOptions = rollDraft(state.player, content, rng)
       return
     }
     state.pendingDraftRounds = 1
-    if (r.battlesWon > 0 && r.battlesWon % SKILL_POINTS.panelIntervalBattles === 0) {
+    if (state.battlesWon > 0 && state.battlesWon % SKILL_POINTS.panelIntervalBattles === 0) {
       state.skillPoints += SKILL_POINTS.panelSkillPoints
       state.statPoints += SKILL_POINTS.panelStatPoints
       state.status = 'skillPanel'
@@ -460,31 +444,30 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   // ── スキルパネル（5戦ごとのポイント配分） ───────────────────────
   /** 倉庫中のアクティブを装備する。空き枠があれば即座に、無ければ入れ替え画面へ */
   function selectStoredActiveToEquip(activeId: string): void {
-    const r = raw()
-    if (r.status !== 'skillPanel') return
-    if (equipToFreeSlot(r.player, activeId)) return
+    if (state.status !== 'skillPanel') return
+    if (equipToFreeSlot(state.player, activeId)) return
     state.pendingSwapSkillId = activeId
     state.status = 'swapping'
   }
 
   function unequipActive(activeId: string): void {
     if (state.status !== 'skillPanel') return
-    unequipActiveSkill(raw(), activeId)
+    unequipActiveSkill(state, activeId)
   }
 
   function allocateSkillPoint(activeId: string, amount = 1): void {
     if (state.status !== 'skillPanel') return
-    allocateSkillPointOn(raw(), activeId, amount)
+    allocateSkillPointOn(state, activeId, amount)
   }
 
   function setStatAllocation(stat: GrowthStatKey, amount: number): void {
     if (state.status !== 'skillPanel') return
-    setStatAllocationOn(raw(), stat, amount)
+    setStatAllocationOn(state, stat, amount)
   }
 
   function resetStatAllocations(): void {
     if (state.status !== 'skillPanel') return
-    resetStatAllocationsOn(raw())
+    resetStatAllocationsOn(state)
   }
 
   /** パネルを閉じて次の戦闘へ進む */
@@ -495,10 +478,9 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
 
   /** ドラフトの3択を引き直す。リロール回数を1消費する */
   function rerollDraft(): void {
-    const r = raw()
-    if (r.status !== 'drafting' || r.rerollCharges <= 0) return
+    if (state.status !== 'drafting' || state.rerollCharges <= 0) return
     state.rerollCharges--
-    state.draftOptions = rollDraft(r.player, content, rng)
+    state.draftOptions = rollDraft(state.player, content, rng)
   }
 
   // ── 終了 ──────────────────────────────────────────────────────
@@ -549,7 +531,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     return resolveEffectiveStats(c as unknown as Combatant, content)
   }
   function nextEnemySkillPreview(e: CombatantView): string | null {
-    return previewEnemyNextSkill(e as unknown as Combatant, content, raw().roundCount)
+    return previewEnemyNextSkill(e as unknown as Combatant, content, state.roundCount)
   }
   /** 敵がそのスキルを使ったとき、プレイヤーがどれくらい削られるかの見積り */
   function estimateDamageToPlayer(e: CombatantView, skillId: string, level: number): number {

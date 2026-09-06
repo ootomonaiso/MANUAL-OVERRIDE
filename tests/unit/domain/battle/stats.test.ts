@@ -1,11 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
-  clamp, computeEffective, stackMultipliers, collectModifier, levelMultiplier,
+  clamp, computeEffective, stackMultipliers, levelMultiplier,
   computeEffectiveStats, deriveEvadeBase, newAccumulator, addFlat, addRate, toModifiers,
   accumulatePassiveStatBoosts, collectEffectMultiplier, clampHpToMax,
 } from '../../../../src/domain/battle/stats'
 import { BATTLE } from '../../../../src/data/tunables'
-import type { TemporaryModifier } from '../../../../src/domain/battle/types'
 import { makeStats, makeCombatant, makePassive, makeTrait, makeContent } from './_helpers'
 
 describe('stats: 基本の算術', () => {
@@ -31,26 +30,6 @@ describe('stats: 基本の算術', () => {
 
   it('レベル倍率は 1 + (Lv-1)×0.25（Lv1〜4 で ×1 / ×1.25 / ×1.5 / ×1.75）', () => {
     expect([1, 2, 3, 4].map(levelMultiplier)).toEqual([1, 1.25, 1.5, 1.75])
-  })
-})
-
-describe('stats: collectModifier', () => {
-  const temp: TemporaryModifier[] = [
-    { stat: 'str', flat: 100, scope: 'thisTurn', sourceId: 'a' },
-    { stat: 'str', rate: 0.2, scope: 'thisTurn', sourceId: 'b' },
-    { stat: 'def', flat: 999, scope: 'thisTurn', sourceId: 'c' },
-  ]
-
-  it('対象ステータス以外の一時効果は無視される', () => {
-    const mod = collectModifier('str', temp, [], [])
-    expect(mod.flat).toBe(100)
-    expect(mod.mult).toBeCloseTo(1.2, 6)
-  })
-
-  it('パッシブ由来の実数・倍率が一時効果と合算される', () => {
-    const mod = collectModifier('str', temp, [50, 50], [0.1])
-    expect(mod.flat).toBe(200)
-    expect(mod.mult).toBeCloseTo(1.3, 6)
   })
 })
 

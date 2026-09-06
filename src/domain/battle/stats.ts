@@ -6,7 +6,7 @@
 import { BATTLE, SKILL_POINTS } from '../../data/tunables'
 import type {
   BattleStats, EffectiveStats, StatKey, StatModifier,
-  Combatant, TemporaryModifier, SkillDef, EffectNode, Element, BattleContent,
+  Combatant, SkillDef, EffectNode, Element, BattleContent,
 } from './types'
 import { isPercentStat } from './types'
 
@@ -22,26 +22,6 @@ export function computeEffective(base: number, mod: StatModifier): number {
 /** 倍率バフは加算スタック: 1 + Σ(各倍率分) */
 export function stackMultipliers(rates: readonly number[]): number {
   return 1 + rates.reduce((sum, r) => sum + r, 0)
-}
-
-/**
- * ある対象・あるステータスに現在有効な補正を、所持特性・パッシブ・一時効果から集める。
- * 効果量にはスキルレベルの倍率（2^Lv - 1）が既に反映された amount/rate を渡すこと。
- */
-export function collectModifier(
-  statKey: StatKey,
-  temporary: readonly TemporaryModifier[],
-  passiveFlats: readonly number[],
-  passiveRates: readonly number[],
-): StatModifier {
-  let flat = passiveFlats.reduce((a, b) => a + b, 0)
-  const rates = [...passiveRates]
-  for (const t of temporary) {
-    if (t.stat !== statKey) continue
-    if (t.flat) flat += t.flat
-    if (t.rate) rates.push(t.rate)
-  }
-  return { flat, mult: stackMultipliers(rates) }
 }
 
 /**
@@ -169,19 +149,6 @@ export function collectEffectMultiplier(
     if (def && def.kind === 'passive') scan(def.effect, levelMultiplier(p.level))
   }
   return stackMultipliers(rates)
-}
-
-/** 一時効果（守る/避ける等）を temporary リストへ変換するヘルパー */
-export function buildTemporaryFromBuiltin(
-  stat: 'cutRate' | 'evadeRate',
-  amount: number,
-  sourceId: string,
-): TemporaryModifier {
-  return { stat: stat as never, flat: amount, scope: 'thisTurn', sourceId }
-}
-
-export function currentMaxHp(c: Combatant, effective: EffectiveStats): number {
-  return effective.hp > 0 ? effective.hp : 1
 }
 
 /** 最大HPが変化した際、現在HPを新しい最大HPでクランプする */

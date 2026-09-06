@@ -5,6 +5,11 @@
  * DOM操作は一切含まない（contentEditor.ts 側が担当）。単体テスト対象。
  */
 
+/**
+ * schemas/battle-*.schema.json を `as JsonSchema` で受けるための型。
+ * 外部フォーマット（JSON Schema）の写しなので、フォーム生成が読まないキーも宣言してある
+ * （additionalProperties / minItems / maxItems / description は実ファイルに存在するが未使用）。
+ */
 export interface JsonSchema {
   type?: string | string[]
   enum?: readonly unknown[]
@@ -35,7 +40,7 @@ export function resolveRef(schema: JsonSchema, root: JsonSchema): JsonSchema {
 }
 
 export type WidgetKind =
-  | 'const' | 'text' | 'textarea' | 'number' | 'checkbox' | 'select' | 'color'
+  | 'const' | 'text' | 'number' | 'checkbox' | 'select' | 'color'
   | 'array-primitive' | 'array-checkbox' | 'array-object' | 'object' | 'json'
 
 /** ある property の schema から、どのウィジェットで表示すべきかを判定する */
@@ -143,8 +148,11 @@ export const EFFECT_OP_LABEL: Readonly<Record<string, string>> = {
   periodicSelfDamage: '継続ダメージ（毎ラウンド最大HPの割合を直接減算、防げない）',
 }
 
+/** content-editor のタブが扱う編集カテゴリ。switch の網羅性を型で保証するために union で持つ */
+export type CategoryKey = 'skills' | 'traits' | 'enemies' | 'battleEffects' | 'battleBackgrounds' | 'enemySets'
+
 /** カテゴリ別の、新規作成時の最小スケルトン（required を満たすだけの空de値） */
-export function blankEntrySkeleton(category: string, id: string, opts?: { kind?: 'active' | 'passive' }): Record<string, unknown> {
+export function blankEntrySkeleton(category: CategoryKey, id: string, opts?: { kind?: 'active' | 'passive' }): Record<string, unknown> {
   switch (category) {
     case 'skills': {
       const kind = opts?.kind ?? 'active'
@@ -183,8 +191,6 @@ export function blankEntrySkeleton(category: string, id: string, opts?: { kind?:
       }
     case 'enemySets':
       return { id, label: '', members: [{ enemyId: '' }] }
-    default:
-      return { id }
   }
 }
 

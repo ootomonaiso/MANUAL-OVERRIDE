@@ -173,7 +173,7 @@
 | 7-1 | low | `useBattleState.ts:205-206` | 直前の `Object.assign(state, fresh)`(`:204`) で済んでおり無意味 |
 | 7-2 | low | `useBattleState.ts:199` | `initPlayer` の二重生成（§4-4） |
 | 7-3 | low | `useBattleState.ts:154-156 raw()` | 恒等関数（§4-7） |
-| 7-4 | low | `data/rpg/battleContent.ts:129 ENEMY_SETS` | **src / tests 全体で参照ゼロ**（利用は `BATTLE_CONTENT.enemySets` 経由のみ）。`SKILLS`/`TRAITS`/`ENEMIES`/`BATTLE_EFFECTS` はテストが直接使うので残す |
+| 7-4 | low | `data/rpg/battleContent.ts:129 ENEMY_SETS` | 外部からの参照はゼロだが、**同ファイル `:133` の `BATTLE_CONTENT` 組み立てで使われている**。未使用なのは `export` だけ。<br>**Phase 1 での判断: 残す。** `SKILLS`/`TRAITS`/`ENEMIES`/`BATTLE_EFFECTS` と並ぶ5定数の対称な公開面の一部であり、1つだけ `export` を外すと読み手が「なぜこれだけ違うのか」を考える羽目になる。実行時コストもゼロ |
 | 7-5 | low | `battle.json:presentation.attackPoseMs` + `config-types.ts:392` | 未参照（§5-2） |
 | 7-6 | med | `domain/battle/types.ts:229,231` | `BattleEffectDef.durationMs` / `visual.kind` / `target` / `label` が23個の JSON にあるのに runtime 未参照（§5-2） |
 | 7-7 | low | `useBattleState.ts:132,507 generation` | `after()` 内で `done` フラグと二重に安全策を張っており(`:179-187`)読み解きに時間がかかる |

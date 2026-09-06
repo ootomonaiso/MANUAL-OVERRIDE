@@ -307,14 +307,6 @@ export function contentEditorPlugin() {
             return
           }
 
-          if (path === '/validate' && req.method === 'POST') {
-            const body = await readBody(req)
-            const { category, data } = body
-            if (!CATEGORIES[category] || !data) { sendJson(res, 400, { valid: false, errors: ['category/data が必要です'] }); return }
-            sendJson(res, 200, validateEntry(category, data))
-            return
-          }
-
           sendJson(res, 404, { error: 'not found' })
         } catch (e) {
           sendJson(res, 500, { ok: false, errors: [String(e?.message ?? e)] })

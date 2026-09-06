@@ -25,7 +25,7 @@ export interface PanelActiveView {
   effectTokens: SkillTextToken[]
 }
 
-export interface StatRowView {
+export interface StatAllocationRowView {
   key: GrowthStatKey
   label: string
   base: number
@@ -36,7 +36,7 @@ const props = defineProps<{
   equippedActives: PanelActiveView[]
   storedActives: PanelActiveView[]
   skillPoints: number
-  statRows: StatRowView[]
+  statRows: StatAllocationRowView[]
   statPoints: number
 }>()
 

@@ -3,6 +3,7 @@
 export interface CommandEntry {
   id: string
   label: string
+  /** 現状どのコマンドも無効化していないが、条件付きコマンドの追加に備えて残している */
   disabled?: boolean
 }
 

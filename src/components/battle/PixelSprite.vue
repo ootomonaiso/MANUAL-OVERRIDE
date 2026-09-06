@@ -21,8 +21,7 @@ const props = withDefaults(defineProps<{
   tint?: string | null
   /** 描きたいおおよその高さ(px)。ここから1ドットあたりの倍率を整数で決める */
   targetHeight?: number
-  flipX?: boolean
-}>(), { frame: 'idle', tint: null, targetHeight: 96, flipX: false })
+}>(), { frame: 'idle', tint: null, targetHeight: 96 })
 
 interface Run { x: number; y: number; w: number; color: string }
 
@@ -84,7 +83,7 @@ const runs = computed<Run[]>(() => {
     class="pixel-sprite"
     :class="{ tinted: tint !== null }"
     :viewBox="`0 0 ${def.w} ${def.h}`"
-    :style="{ ...boxStyle, transform: flipX ? 'scaleX(-1)' : undefined }"
+    :style="boxStyle"
     preserveAspectRatio="xMidYMax meet"
     shape-rendering="crispEdges"
     aria-hidden="true"

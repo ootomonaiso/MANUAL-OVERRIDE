@@ -26,7 +26,6 @@ export interface SkillCommandEntry {
   disabled: boolean
   /** 右端に出す補足（Lv など） */
   note?: string
-  description?: string
   effectTokens?: SkillTextToken[]
 }
 
@@ -83,7 +82,6 @@ function onSlotClick(entry: SkillCommandEntry): void {
       </div>
       <div class="tip-body">
         <SkillText v-if="focused.effectTokens" :tokens="focused.effectTokens" />
-        <span v-else>{{ focused.description }}</span>
       </div>
     </div>
 

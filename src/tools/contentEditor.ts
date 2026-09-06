@@ -33,12 +33,11 @@ import { CATEGORY_IDS, STAT_KEYS, isPercentStat, type CategoryId, type Element, 
 import {
   type JsonSchema, resolveRef, widgetKindOf, getAtPath, setAtPath, deleteAtPath,
   EFFECT_OP_SKELETONS, EFFECT_OP_FIELDS, EFFECT_OP_LABEL, ALLOWED_EFFECT_OPS, blankEntrySkeleton, isValidIdShape,
-  buildSpriteRuns, resolvePreviewColor, toPercentInputValue, fromPercentInputValue, type EffectFieldSpec,
+  buildSpriteRuns, resolvePreviewColor, toPercentInputValue, fromPercentInputValue,
+  type EffectFieldSpec, type CategoryKey,
 } from './contentEditorForm'
 
 const API = '/__content-editor/api'
-
-type CategoryKey = 'skills' | 'traits' | 'enemies' | 'battleEffects' | 'battleBackgrounds' | 'enemySets'
 
 interface TabDef {
   key: string
@@ -609,8 +608,8 @@ function renderField(
 ): void {
   // 特別対応が必要なフィールドを先に判定する
   if (currentCategory === 'enemies' && path === 'sprite') { renderSpriteField(rootValue, path, container); return }
-  if (currentCategory === 'enemies' && path === 'activeSkills') { renderSkillRefList(rootValue, path, container, refs.activeSkillIds, true); return }
-  if (currentCategory === 'enemies' && path === 'passiveSkills') { renderSkillRefList(rootValue, path, container, refs.passiveSkillIds, true); return }
+  if (currentCategory === 'enemies' && path === 'activeSkills') { renderSkillRefList(rootValue, path, container, refs.activeSkillIds); return }
+  if (currentCategory === 'enemies' && path === 'passiveSkills') { renderSkillRefList(rootValue, path, container, refs.passiveSkillIds); return }
   if (currentCategory === 'enemies' && path === 'actionPattern') { renderActionPattern(rootValue, path, container); return }
   if ((currentCategory === 'skills' || currentCategory === 'traits') && path === 'effect') { renderEffectNodeList(rootValue, path, container); return }
   if (currentCategory === 'battleEffects' && path === 'visual') { renderVisualField(schemaRaw, root, rootValue, path, container); return }
@@ -867,7 +866,7 @@ function renderJsonSubEditor(rootValue: Record<string, unknown>, path: string, c
 }
 
 /** enemies.activeSkills / passiveSkills: oneOf(string|{id,level}) は常に {id,level} で表示・保存する */
-function renderSkillRefList(rootValue: Record<string, unknown>, path: string, container: HTMLElement, options: RefOption[], withLevel: boolean): void {
+function renderSkillRefList(rootValue: Record<string, unknown>, path: string, container: HTMLElement, options: RefOption[]): void {
   const raw = (getAtPath(rootValue, path) as unknown[] | undefined) ?? []
   const list = raw.map(ref => typeof ref === 'string' ? { id: ref, level: 1 } : ref as { id: string; level: number })
   const box = h('div', 'skill-ref-list')
@@ -890,15 +889,13 @@ function renderSkillRefList(rootValue: Record<string, unknown>, path: string, co
       select.value = row.id
       select.addEventListener('change', () => { row.id = select.value; commit() })
       rowEl.appendChild(select)
-      if (withLevel) {
-        const levelInput = document.createElement('input')
-        levelInput.type = 'number'
-        levelInput.min = '1'; levelInput.max = '4'
-        levelInput.value = String(row.level ?? 1)
-        levelInput.className = 'level-input'
-        levelInput.addEventListener('change', () => { row.level = Number(levelInput.value); commit() })
-        rowEl.appendChild(levelInput)
-      }
+      const levelInput = document.createElement('input')
+      levelInput.type = 'number'
+      levelInput.min = '1'; levelInput.max = '4'
+      levelInput.value = String(row.level ?? 1)
+      levelInput.className = 'level-input'
+      levelInput.addEventListener('change', () => { row.level = Number(levelInput.value); commit() })
+      rowEl.appendChild(levelInput)
       const removeBtn = h('button', 'small', '×')
       removeBtn.addEventListener('click', () => { list.splice(i, 1); commit(); redraw() })
       rowEl.appendChild(removeBtn)

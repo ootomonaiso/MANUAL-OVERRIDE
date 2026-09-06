@@ -5,7 +5,6 @@ import type { SkillTextToken } from '../../domain/battle/skillText'
 
 export interface SkillListItemView {
   id: string
-  kind: 'active' | 'passive' | 'trait'
   label: string
   visibility: 'unseen' | 'seen' | 'owned'
   level?: number

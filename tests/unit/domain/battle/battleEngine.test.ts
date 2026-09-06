@@ -3,8 +3,9 @@ import {
   initPlayer, spawnEnemyFromDef, pickEnemyDefs, resolveEffectiveStats,
   resolvePlayerFocus, resolveEnemyFocus, useActiveSkill, useBuiltinAction,
   hasReplaceGuard, enemyTakeTurn, endOfRound, checkBattleOutcome,
-  finishBattleOnVictory, buildBattleScoreVars, zeroCategoryPoints,
+  finishBattleOnVictory, buildBattleScoreVars,
 } from '../../../../src/domain/battle/battleEngine'
+import { zeroCategoryPoints } from '../../../../src/domain/battle/skillDraft'
 import { BATTLE } from '../../../../src/data/tunables'
 import type { EncounterGroupsConfig } from '../../../../src/framework/config-types'
 import { CATEGORY_IDS } from '../../../../src/domain/battle/types'
@@ -775,7 +776,7 @@ describe('battleEngine: スコア変数', () => {
   })
 })
 
-describe('battleEngine: カテゴリポイントの初期化', () => {
+describe('skillDraft: カテゴリポイントの初期化', () => {
   it('11カテゴリすべてが 0 で初期化される', () => {
     const points = zeroCategoryPoints()
     expect(Object.keys(points).sort()).toEqual([...CATEGORY_IDS].sort())

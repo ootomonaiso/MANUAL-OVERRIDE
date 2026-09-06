@@ -86,7 +86,7 @@ function validatePixelart() {
       problems.push(`${key} = ${v} は整数である必要があります`)
     }
   }
-  if (problems.length > 0) fail(rel, problems.join('\n       '))
+  if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
   else ok(rel)
 }
 
@@ -113,7 +113,7 @@ function validateSprites() {
     for (const key of SPRITE_REQUIRED) {
       if (!(key in data)) problems.push(`必須キー "${key}" がありません`)
     }
-    if (problems.length > 0) { fail(rel, problems.join('\n       ')); continue }
+    if (problems.length > 0) { fail(rel, problems.join(PROBLEM_SEPARATOR)); continue }
 
     if (!SPRITE_ID_PATTERN.test(data.id)) {
       problems.push(`id "${data.id}" が不正です（英小文字で始まり、英小文字・数字・_のみ）`)
@@ -162,7 +162,7 @@ function validateSprites() {
 
     spriteFrames.set(data.id, new Set(Object.keys(data.frames ?? {})))
 
-    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
     else ok(rel)
   }
   return spriteFrames
@@ -305,7 +305,7 @@ function validateGenres() {
       }
     }
 
-    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
     else ok(rel)
   }
 
@@ -362,7 +362,7 @@ function validateCards(genreIds) {
       }
     }
 
-    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
     else ok(rel)
   }
 }
@@ -394,7 +394,7 @@ function validateContentChoices(genreIds) {
       }
     }
 
-    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
     else ok(rel)
   }
 }
@@ -453,7 +453,7 @@ function validateSfx() {
       }
       if (t.delaySec !== undefined && (typeof t.delaySec !== 'number' || t.delaySec < 0)) problems.push(`tracks[${i}]: delaySec は 0 以上ではありません`)
     }
-    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
     else ok(rel)
   }
   return seenIds
@@ -552,7 +552,7 @@ function validateBattleSkills() {
     }
     if (Array.isArray(data.effect)) walkEffectNodes(data.effect, problems)
 
-    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
     else ok(rel)
   }
   return { activeIds, passiveIds, referencedEffectIds, referencedSfxIds, transformsIntoRefs }
@@ -578,17 +578,16 @@ function validateBattleTraits() {
     seen.add(data.id)
     if (Array.isArray(data.effect)) walkEffectNodes(data.effect, problems)
 
-    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
     else ok(rel)
     traitIds.add(data.id)
   }
   return traitIds
 }
 
-/** src/data/rpg/enemies/*.json を検証する（skill/trait の参照整合性を含む）。戻り値: { enemyIds, bossEnemyIds } */
+/** src/data/rpg/enemies/*.json を検証する（skill/trait の参照整合性を含む）。戻り値: { enemyIds } */
 function validateBattleEnemies(activeIds, passiveIds, traitIds, spriteFrames) {
   const seen = new Set()
-  const bossEnemyIds = new Set()
   let bossCount = 0
 
   for (const file of walkJson('src/data/rpg/enemies')) {
@@ -604,7 +603,7 @@ function validateBattleEnemies(activeIds, passiveIds, traitIds, spriteFrames) {
     if (data.id !== basename(file, '.json')) problems.push(`id "${data.id}" とファイル名が一致していません`)
     if (seen.has(data.id)) problems.push(`id "${data.id}" が他の敵と重複しています`)
     seen.add(data.id)
-    if (data.isBoss) { bossCount++; bossEnemyIds.add(data.id) }
+    if (data.isBoss) bossCount++
 
     const frames = spriteFrames.get(data.sprite)
     if (!frames) {
@@ -633,20 +632,19 @@ function validateBattleEnemies(activeIds, passiveIds, traitIds, spriteFrames) {
       if (!activeRefIds.has(id)) problems.push(`actionPattern: "${id}" は activeSkills に含まれていません`)
     }
 
-    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
     else ok(rel)
   }
 
   if (bossCount === 0) {
     fail('src/data/rpg/enemies/*.json', 'isBoss:true の敵が1体もありません（ランがクリアできません）')
   }
-  return { enemyIds: seen, bossEnemyIds }
+  return { enemyIds: seen }
 }
 
-/** src/data/rpg/enemy-sets/*.json を検証する（敵IDの参照整合性を含む）。戻り値: { setIds, bossSetIds } */
-function validateEnemySets(enemyIds, bossEnemyIds) {
+/** src/data/rpg/enemy-sets/*.json を検証する（敵IDの参照整合性を含む）。戻り値: { setIds } */
+function validateEnemySets(enemyIds) {
   const seen = new Set()
-  const bossSetIds = new Set()
 
   for (const file of walkJson('src/data/rpg/enemy-sets')) {
     const rel = relPath(file)
@@ -665,15 +663,13 @@ function validateEnemySets(enemyIds, bossEnemyIds) {
     for (const member of data.members ?? []) {
       if (!enemyIds.has(member.enemyId)) {
         problems.push(`members: 存在しない敵 "${member.enemyId}" を参照しています`)
-      } else if (bossEnemyIds.has(member.enemyId)) {
-        bossSetIds.add(data.id)
       }
     }
 
     if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
     else ok(rel)
   }
-  return { setIds: seen, bossSetIds }
+  return { setIds: seen }
 }
 
 /** encounter_groups.json の groups/spawnWeightTiers が実在するセット/グループを参照しているか検証する */
@@ -719,7 +715,7 @@ function validateBattleEffects() {
     if (seen.has(data.id)) problems.push(`id "${data.id}" が他のエフェクトと重複しています`)
     seen.add(data.id)
 
-    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
     else ok(rel)
     if (data.sfx) referencedSfxIds.add(data.sfx)
     effectIds.add(data.id)
@@ -831,9 +827,9 @@ const {
 } = validateBattleSkills()
 validateBattleTransformsIntoReferences(battleTransformsIntoRefs, battleActiveIds)
 const battleTraitIds = validateBattleTraits()
-const { enemyIds: battleEnemyIds, bossEnemyIds: battleBossEnemyIds } =
+const { enemyIds: battleEnemyIds } =
   validateBattleEnemies(battleActiveIds, battlePassiveIds, battleTraitIds, spriteFrames)
-const { setIds: battleEnemySetIds } = validateEnemySets(battleEnemyIds, battleBossEnemyIds)
+const { setIds: battleEnemySetIds } = validateEnemySets(battleEnemyIds)
 validateEncounterGroups(battleEnemySetIds)
 const {
   effectIds: battleEffectIds,

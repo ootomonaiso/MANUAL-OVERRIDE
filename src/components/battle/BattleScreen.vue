@@ -30,7 +30,7 @@ import type { InfoSkillRow, InfoCharacterView } from './InfoPanel.vue'
 import SkillDraftPanel from './SkillDraftPanel.vue'
 import type { DraftCardView, SwapSlotView } from './SkillDraftPanel.vue'
 import SkillPanel from './SkillPanel.vue'
-import type { PanelActiveView, StatRowView as PanelStatRowView } from './SkillPanel.vue'
+import type { PanelActiveView, StatAllocationRowView } from './SkillPanel.vue'
 import BattleBackdrop from './BattleBackdrop.vue'
 import SkillCastBanner from './SkillCastBanner.vue'
 import HelpGuide from './HelpGuide.vue'
@@ -318,7 +318,7 @@ function characterViewOf(c: CombatantView): InfoCharacterView {
   const isEnemyC = c.id !== battle.state.player.id
   return {
     id: c.id, label: c.label, spriteId: c.spriteId,
-    hp: c.hp, maxHp: battle.effectiveOf(c).hp, isBoss: c.isBoss,
+    hp: c.hp, maxHp: battle.effectiveOf(c).hp,
     stats: statRows(c),
     skills: isEnemyC ? {
       actives: skillRowsFrom(c.actives.filter(a => a.slotIndex !== null), id => content.skills.get(id)),
@@ -364,7 +364,7 @@ const skillListView = computed(() => {
   const ownedActives: SkillListItemView[] = player.actives.map(a => {
     const def = content.skills.get(a.id)
     return {
-      id: a.id, kind: 'active', label: def?.label ?? a.id, visibility: 'owned',
+      id: a.id, label: def?.label ?? a.id, visibility: 'owned',
       level: a.level, points: a.points,
       pointsRequired: a.level < MAX_ACTIVE_LEVEL ? SKILL_POINTS.pointsForLevel[a.level] : undefined,
       stored: a.slotIndex === null, cooldown: a.cooldown,
@@ -377,7 +377,7 @@ const skillListView = computed(() => {
   const ownedPassives: SkillListItemView[] = player.passives.map(p => {
     const def = content.skills.get(p.id)
     return {
-      id: p.id, kind: 'passive', label: def?.label ?? p.id, visibility: 'owned',
+      id: p.id, label: def?.label ?? p.id, visibility: 'owned',
       categoryLabel: def ? CATEGORY_LABEL[def.mainCategory] : undefined,
       categoryColor: def ? CATEGORY_COLOR[def.mainCategory] : undefined,
       flavorText: def?.flavorText, effectTokens: def ? buildSkillText(def, 1) : undefined,
@@ -386,7 +386,7 @@ const skillListView = computed(() => {
   const ownedTraits: SkillListItemView[] = player.traits.map(t => {
     const def = content.traits.get(t.id)
     return {
-      id: t.id, kind: 'trait', label: def?.label ?? t.id, visibility: 'owned',
+      id: t.id, label: def?.label ?? t.id, visibility: 'owned',
       flavorText: def?.flavorText, effectTokens: def ? buildSkillText(def, 1) : undefined,
     }
   })
@@ -399,7 +399,7 @@ const skillListView = computed(() => {
     if (isOwned) continue
     const vis = visibilityOf(def.id, false)
     const item: SkillListItemView = {
-      id: def.id, kind: def.kind, label: def.label, visibility: vis,
+      id: def.id, label: def.label, visibility: vis,
       categoryLabel: vis !== 'unseen' ? CATEGORY_LABEL[def.mainCategory] : undefined,
       categoryColor: vis !== 'unseen' ? CATEGORY_COLOR[def.mainCategory] : undefined,
       flavorText: vis !== 'unseen' ? def.flavorText : undefined,
@@ -413,7 +413,7 @@ const skillListView = computed(() => {
     if (def.draftable === false) continue
     const vis = visibilityOf(def.id, false)
     unownedTraits.push({
-      id: def.id, kind: 'trait', label: def.label, visibility: vis,
+      id: def.id, label: def.label, visibility: vis,
       flavorText: vis !== 'unseen' ? def.flavorText : undefined,
       effectTokens: vis !== 'unseen' ? buildSkillText(def, 1) : undefined,
     })
@@ -536,7 +536,7 @@ const panelEquippedActives = computed<PanelActiveView[]>(() =>
   battle.state.player.actives.filter(a => a.slotIndex !== null).map(panelActiveView))
 const panelStoredActives = computed<PanelActiveView[]>(() =>
   battle.state.player.actives.filter(a => a.slotIndex === null).map(panelActiveView))
-const panelStatRows = computed<PanelStatRowView[]>(() => GROWTH_STAT_KEYS.map(key => ({
+const panelStatRows = computed<StatAllocationRowView[]>(() => GROWTH_STAT_KEYS.map(key => ({
   key, label: STAT_LABEL[key],
   base: battle.state.player.baseStats[key],
   allocated: battle.state.statAllocations[key],
