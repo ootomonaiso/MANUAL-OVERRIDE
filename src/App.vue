@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, watch, computed, toRaw } from 'vue'
 import { useGameState } from './composables/useGameState'
 import { useManual } from './composables/useManual'
 import { useBattleState, TIMED_SCHEDULER } from './composables/useBattleState'
+import { resetGlossaryPanel } from './composables/useGlossaryPanel'
 import BattleScreen from './components/battle/BattleScreen.vue'
 import { SideScroller } from './game/sideScroller'
 import type { GameSnapshot } from './game/sideScroller'
@@ -316,6 +317,7 @@ function restart() {
   scroller = null
   revealActive.value = false
   soundManager.stopBgm(600)
+  resetGlossaryPanel()
   gameState.restart()
   // タイトルへ戻る際にデバッグ設定をクリア（DebugPanel 再マウント時の表示と一致させる）
   debugCtl.resetDebug()

@@ -11,6 +11,7 @@ import { computed, ref, watch } from 'vue'
 import PixelSprite from './PixelSprite.vue'
 import GlossaryTerm from './GlossaryTerm.vue'
 import type { DamagePopup, FlashKind } from '../../composables/useBattlePresentation'
+import { BATTLE } from '../../data/tunables'
 
 export interface AffinityPreview {
   /** 特性由来の弱点・耐性（computeAffinityStage） */
@@ -31,8 +32,13 @@ const props = withDefaults(defineProps<{
   spriteHeight: number
   attacking?: boolean
   flash?: FlashKind | null
+  /** flash が立っている間の消灯までの尺（ms）。useBattlePresentation側の実際の消灯タイミングと
+   *  CSS アニメーション時間を一致させるために渡す。null のときは CSS 側のフォールバック値を使う */
+  flashDurationMs?: number | null
   /** クリティカル（スーパークリティカル含む）で被弾した瞬間だけ true。演出を派手にする */
   critical?: boolean
+  /** critical が立っている間の消灯までの尺（ms）。flashDurationMs と同じ理由で渡す */
+  criticalDurationMs?: number | null
   popups?: DamagePopup[]
   isBoss?: boolean
   /** 敵のみ: 次に使う技と、その被害の見込み */
@@ -48,7 +54,8 @@ const props = withDefaults(defineProps<{
   /** 待機モーションの位相をずらすための種。並んだ敵が同じ動きで揺れて見えないようにする */
   idleSeed?: number
 }>(), {
-  attacking: false, flash: null, critical: false, popups: () => [], isBoss: false,
+  attacking: false, flash: null, flashDurationMs: null, critical: false, criticalDurationMs: null,
+  popups: () => [], isBoss: false,
   nextSkillLabel: null, nextDamageLabel: null, nextMarkColor: 'var(--battle-element-physical)',
   affinityPreview: null, statusEffects: () => [], targetable: false, idleSeed: 0,
 })
@@ -70,6 +77,20 @@ const tint = computed(() => props.flash ? TINT[props.flash] : null)
 const frame = computed(() => props.attacking ? 'attack' : 'idle')
 
 const idleStyle = computed(() => ({ '--idle-delay': `${-(props.idleSeed * 0.55)}s` }))
+
+// 攻撃モーションの尺は演出上ずっと固定（アニメーション不変・§07-deferred B-2/C-1参照）。
+// 実行中しか変わらない flashDurationMs 等とは違い、config値をそのままCSS変数へ流すだけでよい。
+const LUNGE_DUR_MS = BATTLE.presentation.attackPoseMs
+/** .sprite-box.flashing（hit-shake/impact-flicker）と lunge-down/up の尺をCSSへ渡す */
+const spriteBoxStyle = computed(() => ({
+  ...idleStyle.value,
+  '--lunge-dur': `${LUNGE_DUR_MS}ms`,
+  ...(props.flashDurationMs != null ? { '--fx-dur': `${props.flashDurationMs}ms` } : {}),
+}))
+/** .crit-ring の尺をCSSへ渡す。フォールバックはCSS側の crit-ring-expand 520ms のまま */
+const critRingStyle = computed(() => (
+  props.criticalDurationMs != null ? { '--fx-dur': `${props.criticalDurationMs}ms` } : undefined
+))
 
 /**
  * 着弾の飛散とリング。フラッシュが立つたびに撒き直す。
@@ -137,7 +158,7 @@ watch(() => props.flash, (kind) => {
 
     <div class="sprite-stage">
       <div class="idle-aura" aria-hidden="true" />
-      <div class="sprite-box" :class="{ attacking, flashing: flash !== null }" :style="idleStyle">
+      <div class="sprite-box" :class="{ attacking, flashing: flash !== null }" :style="spriteBoxStyle">
         <PixelSprite :sprite-id="spriteId" :frame="frame" :tint="tint" :target-height="spriteHeight" />
         <template v-if="flash">
           <div
@@ -146,7 +167,7 @@ watch(() => props.flash, (kind) => {
             :class="{ critical }"
             :style="{ '--ring-color': burstColor }"
           />
-          <div v-if="critical" :key="`crit-ring-${burstKey}`" class="crit-ring" />
+          <div v-if="critical" :key="`crit-ring-${burstKey}`" class="crit-ring" :style="critRingStyle" />
           <div :key="`burst-${burstKey}`" class="hit-burst" :class="{ critical }">
             <span
               v-for="(d, i) in BURST_DIRECTIONS"
@@ -290,10 +311,10 @@ watch(() => props.flash, (kind) => {
 
 /* 攻撃時は相手側へ踏み込む。敵は手前（下）へ、プレイヤーは奥（上）へ */
 .char-unit.enemy .sprite-box.attacking {
-  animation: lunge-down 420ms ease-out;
+  animation: lunge-down var(--lunge-dur, 420ms) ease-out;
 }
 .char-unit.player .sprite-box.attacking {
-  animation: lunge-up 420ms ease-out;
+  animation: lunge-up var(--lunge-dur, 420ms) ease-out;
 }
 @keyframes lunge-down {
   0% { transform: translateY(0) scale(1); }
@@ -306,7 +327,7 @@ watch(() => props.flash, (kind) => {
   100% { transform: translateY(-8px) scale(1.04); }
 }
 .sprite-box.flashing {
-  animation: hit-shake 220ms steps(5, end);
+  animation: hit-shake var(--fx-dur, 220ms) steps(5, end);
 }
 @keyframes hit-shake {
   0% { margin-left: 0; }
@@ -317,7 +338,7 @@ watch(() => props.flash, (kind) => {
   100% { margin-left: 0; }
 }
 .sprite-box.flashing :deep(.pixel-sprite) {
-  animation: impact-flicker 220ms steps(2, end);
+  animation: impact-flicker var(--fx-dur, 220ms) steps(2, end);
 }
 @keyframes impact-flicker {
   0% { filter: brightness(1); }
@@ -366,7 +387,7 @@ watch(() => props.flash, (kind) => {
   border: 3px solid #ffd23a;
   z-index: 2;
   pointer-events: none;
-  animation: crit-ring-expand 520ms ease-out forwards;
+  animation: crit-ring-expand var(--fx-dur, 520ms) ease-out forwards;
 }
 @keyframes crit-ring-expand {
   0% { transform: scale(0.2); opacity: 1; }

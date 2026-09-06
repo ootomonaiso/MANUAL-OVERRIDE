@@ -25,12 +25,13 @@
   "multiHitIntervalMs": 180,
   "playerSprite": "battle_heroine",
   "presentation": {
-    "$comment": "1手番の演出尺。announce=スキル名の提示 / impact=効果の解決から次の手番まで",
+    "$comment": "1手番の演出尺。announce=スキル名の提示 / impact=効果の解決から次の手番まで。attackPoseMs/screenCriticalFlashMsはCSS側のアニメーション時間と一致させること（CharacterFrame.vue/BattleScreen.vueのvar(--lunge-dur)/var(--flash-dur)のフォールバック値も同じ値にする）",
     "announceMs": 620,
     "impactMs": 760,
     "popupMs": 900,
     "flashMs": 220,
-    "attackPoseMs": 520,
+    "attackPoseMs": 420,
+    "screenCriticalFlashMs": 380,
     "battleEndMs": 700
   },
   "enemyScaleByCount": {

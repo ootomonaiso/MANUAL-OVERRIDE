@@ -14,10 +14,12 @@ import { levelMultiplier, collectEffectMultiplier } from '../stats'
 import { BATTLE } from '../../../data/tunables'
 import { emitCriticalEffect } from './criticalFx'
 
+/** stat（単一ステータス参照）と statOptions（複数のうち実効値が最も高いものを参照。自摸＝STR/INTの高い方 想定）は排他 */
+export interface DamageScale { stat?: StatKey; statOptions?: StatKey[]; rate: number }
+
 interface DamageParams {
   element: Element
-  /** stat（単一ステータス参照）と statOptions（複数のうち実効値が最も高いものを参照。自摸＝STR/INTの高い方 想定）は排他 */
-  scale: { stat?: StatKey; statOptions?: StatKey[]; rate: number }
+  scale: DamageScale
 }
 
 function readParams(node: EffectNode): DamageParams {
@@ -32,8 +34,11 @@ function readParams(node: EffectNode): DamageParams {
   }
 }
 
-/** scale.stat（単一） / scale.statOptions（複数のうち実効値が最も高いもの。自摸＝STR/INTの高い方 想定）のどちらでも参照値を取り出す */
-function resolveReferenceValue(sourceStats: EffectiveStats, scale: DamageParams['scale']): number {
+/**
+ * scale.stat（単一） / scale.statOptions（複数のうち実効値が最も高いもの。自摸＝STR/INTの高い方 想定）のどちらでも参照値を取り出す。
+ * damagePreview.ts（敵スキル予告）も同じ規則で見積る必要があるため export する（実行経路と予告経路の乖離を防ぐ）。
+ */
+export function resolveReferenceValue(sourceStats: EffectiveStats, scale: DamageScale): number {
   if (scale.statOptions && scale.statOptions.length > 0) {
     return Math.max(...scale.statOptions.map(s => sourceStats[s]))
   }

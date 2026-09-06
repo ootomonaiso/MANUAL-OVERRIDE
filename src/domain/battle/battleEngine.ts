@@ -141,14 +141,19 @@ function weightsForBattleIndex(
   return chosen
 }
 
-/** 重み付き抽選で1つキーを選ぶ。重みの合計が0以下なら null */
+/**
+ * 重み付き抽選で1つキーを選ぶ。重みの合計が0以下なら null。
+ * 重みが 0 以下の entry は roll を消費せず読み飛ばす
+ * （roll がちょうど 0 の瞬間に、抽選対象外のはずの entry が先頭にいるだけで選ばれてしまうのを防ぐため）。
+ */
 function weightedPick<T extends string>(weights: Record<T, number>, rng: () => number): T | null {
   const entries = Object.entries(weights) as [T, number][]
   const total = entries.reduce((sum, [, w]) => sum + Math.max(0, w), 0)
   if (total <= 0) return null
   let roll = rng() * total
   for (const [key, w] of entries) {
-    roll -= Math.max(0, w)
+    if (w <= 0) continue
+    roll -= w
     if (roll <= 0) return key
   }
   return entries[entries.length - 1]?.[0] ?? null

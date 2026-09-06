@@ -605,9 +605,13 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
     <div
       class="battle-field"
       :class="{ shaking: fx.screenShake.value > 0 }"
-      :style="{ '--shake-mag': fx.screenShake.value || 1 }"
+      :style="{ '--shake-mag': fx.screenShake.value || 1, '--shake-dur': `${fx.screenShakeDurationMs.value}ms` }"
     >
-      <div v-if="fx.screenCriticalFlash.value" class="critical-screen-flash" />
+      <div
+        v-if="fx.screenCriticalFlash.value"
+        class="critical-screen-flash"
+        :style="{ '--flash-dur': `${BATTLE.presentation.screenCriticalFlashMs}ms` }"
+      />
       <div class="enemy-line" :style="{ bottom: `${(1 - FLOOR_TOP) * 100}%`, gap: `${enemyLineGapPx}px` }">
         <CharacterFrame
           v-for="(e, i) in battle.state.enemies"
@@ -623,7 +627,9 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
           :sprite-height="enemySpriteHeight(e.isBoss)"
           :attacking="battle.presentation.posingId === e.id"
           :flash="fx.flashOf(e.id)"
+          :flash-duration-ms="fx.flashDurationMsOf(e.id)"
           :critical="fx.criticalOf(e.id)"
+          :critical-duration-ms="fx.criticalDurationMsOf(e.id)"
           :popups="fx.popupsOf(e.id)"
           :next-skill-label="enemyPreviews[e.id]?.label ?? null"
           :next-damage-label="enemyPreviews[e.id]?.damage ?? null"
@@ -648,7 +654,9 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
           :sprite-height="playerSpriteHeight"
           :attacking="battle.presentation.posingId === battle.state.player.id"
           :flash="fx.flashOf(battle.state.player.id)"
+          :flash-duration-ms="fx.flashDurationMsOf(battle.state.player.id)"
           :critical="fx.criticalOf(battle.state.player.id)"
+          :critical-duration-ms="fx.criticalDurationMsOf(battle.state.player.id)"
           :popups="fx.popupsOf(battle.state.player.id)"
           @open-detail="onUnitSelect(battle.state.player, null)"
         />
@@ -811,7 +819,9 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
   inset: 0;
   z-index: 2;
 }
-/* クリティカル演出をキャラクター単体に留めず戦場全体で一瞬光らせる（派手さの要望対応） */
+/* クリティカル演出をキャラクター単体に留めず戦場全体で一瞬光らせる（派手さの要望対応）。
+   --flash-dur は battle.json:presentation.screenCriticalFlashMs と同じ値（JS側の消灯タイミングも
+   同じ値を参照する。useBattlePresentation.ts参照）。フォールバックの380msはその既定値と一致させてある */
 .critical-screen-flash {
   position: absolute;
   inset: 0;
@@ -823,17 +833,18 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
     color-mix(in srgb, #ffd23a 45%, transparent) 45%,
     transparent 78%
   );
-  animation: critical-flash-fade 380ms ease-out forwards;
+  animation: critical-flash-fade var(--flash-dur, 380ms) ease-out forwards;
 }
 @keyframes critical-flash-fade {
   0% { opacity: 0.95; }
   100% { opacity: 0; }
 }
 .battle-field.shaking {
-  animation: field-shake 280ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  animation: field-shake var(--shake-dur, 280ms) cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
 /* 揺れ幅は emit された shake の強さ（--shake-mag）に比例させる。物理ヒットより
-   クリティカルの方が大きく揺れる、といった差を出すため */
+   クリティカルの方が大きく揺れる、といった差を出すため。--shake-dur は
+   useBattlePresentation.ts の screenShakeDurationMs（消灯タイミングの実測値）をそのまま渡す */
 @keyframes field-shake {
   0% { transform: translate(0, 0) scale(1); }
   16% { transform: translate(calc(var(--shake-mag, 1) * -16px), calc(var(--shake-mag, 1) * 7px)) scale(1.018); }

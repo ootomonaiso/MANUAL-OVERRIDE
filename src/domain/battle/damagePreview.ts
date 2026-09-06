@@ -8,12 +8,13 @@
  */
 
 import type {
-  BattleContent, Combatant, EffectNode, EffectiveStats, Element, SkillDef, StatKey,
+  BattleContent, Combatant, EffectNode, EffectiveStats, Element, SkillDef,
 } from './types'
 import {
   computeFinalCutRate, computeAffinityStage, computeOutgoingDamage, computeFinalDamage,
 } from './damageCalc'
 import { levelMultiplier, collectEffectMultiplier } from './stats'
+import { resolveReferenceValue, type DamageScale } from './effectOps/damage'
 import { BATTLE } from '../../data/tunables'
 
 export type DamageMagnitude = 'none' | 'small' | 'medium' | 'large' | 'lethal'
@@ -57,14 +58,14 @@ function readTemporaryCutRate(c: Combatant): number {
 /** damage オペレーションを再帰的に拾い、repeat の回数ぶんだけ足し合わせる */
 function sumDamageNodes(
   nodes: readonly EffectNode[],
-  onDamage: (element: Element, stat: StatKey, rate: number) => number,
+  onDamage: (element: Element, scale: DamageScale) => number,
 ): number {
   let total = 0
   for (const node of nodes) {
     if (node.op === 'damage') {
-      const scale = node.scale as { stat: StatKey; rate: number } | undefined
+      const scale = node.scale as DamageScale | undefined
       if (!scale) continue
-      total += onDamage(node.element as Element, scale.stat, scale.rate)
+      total += onDamage(node.element as Element, scale)
       continue
     }
     if (node.op === 'repeat') {
@@ -99,11 +100,11 @@ export function estimateSkillDamage(params: {
   const traitCutRates = collectTraitCutRates(target, content)
   const guardCutRate = readTemporaryCutRate(target)
 
-  return sumDamageNodes(skill.effect, (element, stat, rate) => {
+  return sumDamageNodes(skill.effect, (element, scale) => {
     const effectMultiplier = collectEffectMultiplier(source, element, content)
     const outgoing = computeOutgoingDamage({
-      referenceValue: sourceStats[stat],
-      scaleRate: rate * mult,
+      referenceValue: resolveReferenceValue(sourceStats, scale),
+      scaleRate: scale.rate * mult,
       critMultiplier: 1,
       effectMultiplier,
     })

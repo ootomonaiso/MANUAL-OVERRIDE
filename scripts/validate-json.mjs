@@ -694,6 +694,50 @@ function validateEncounterGroups(setIds) {
   else ok(rel)
 }
 
+/**
+ * 常設行動（守る/避ける）の数値が2箇所で二重管理されているのを、食い違ったまま放置しないための検査。
+ *
+ * 実行時に効いているのは battle.json 側だけで、skill_stance_*.json の effect[] は
+ * 表示用のスキル定義として存在するだけで実行されない（docs/refactoring/07-deferred.md §C-2）。
+ * そのため片方を調整してももう片方が古いまま残り、「スキル説明の数値と実際の効果が違う」という
+ * プレイヤーから見える食い違いになりうる。実行経路の一本化は別タスクなので、
+ * ここでは少なくとも黙ってドリフトしないようにする。
+ */
+function validateBuiltinStanceConsistency() {
+  const rel = 'src/data/config/battle.json ↔ src/data/rpg/skills/skill_stance_*.json'
+  const { data: battle, error } = parseJson('src/data/config/battle.json')
+  if (battle === null) { fail(rel, `JSON parse error: ${error}`); return }
+
+  // [config のセクション, 効果量のキー, スキルファイル, effect[].stat]
+  const pairs = [
+    ['guard', 'cutRate', 'skill_stance_guard', 'cutRate'],
+    ['dodge', 'evadeBonus', 'skill_stance_watch', 'evadeRate'],
+  ]
+  const problems = []
+  for (const [section, amountKey, skillId, stat] of pairs) {
+    const { data: skill } = parseJson(`src/data/rpg/skills/${skillId}.json`)
+    if (skill === null) { problems.push(`${skillId}.json を読めません`); continue }
+
+    const node = (skill.effect ?? []).find(n => n.op === 'modifier' && n.stat === stat)
+    if (!node) {
+      problems.push(`${skillId}.json に stat="${stat}" の modifier がありません（battle.json の ${section} と対応が取れません）`)
+      continue
+    }
+    if (node.amount !== battle[section]?.[amountKey]) {
+      problems.push(
+        `${skillId}.json の ${stat} = ${node.amount} が battle.json の ${section}.${amountKey} = ${battle[section]?.[amountKey]} と一致しません`,
+      )
+    }
+    if (skill.cooldown !== battle[section]?.cooldown) {
+      problems.push(
+        `${skillId}.json の cooldown = ${skill.cooldown} が battle.json の ${section}.cooldown = ${battle[section]?.cooldown} と一致しません`,
+      )
+    }
+  }
+  if (problems.length > 0) fail(rel, problems.join(PROBLEM_SEPARATOR))
+  else ok(rel)
+}
+
 /** src/data/rpg/battle-effects/*.json を検証する。戻り値: エフェクトIDの集合 */
 function validateBattleEffects() {
   const effectIds = new Set()
@@ -839,6 +883,7 @@ const {
 validateBattleEffectReferences(battleReferencedEffectIds, battleEffectIds, battleEffectTimings)
 validateBattleSfxReferences([...effectReferencedSfxIds, ...skillReferencedSfxIds], sfxIds)
 validateBattleBackgrounds()
+validateBuiltinStanceConsistency()
 
 // 説明書ツリー（後方互換データ）の参照整合性: すべての choices[].next が
 // マージ後デッキ内の実在キーを指すか検証する。1.0 からの到達性は検査しない

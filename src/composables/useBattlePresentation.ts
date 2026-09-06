@@ -38,14 +38,21 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
   const popups = reactive(new Map<string, DamagePopup[]>())
   const flashes = reactive(new Map<string, FlashKind>())
   const criticals = reactive(new Map<string, boolean>())
+  // flashes/criticals の消灯タイミング（play() が個々のリクエストごとに決める clearMs）を
+  // 状態と並べて持つ。CSS 側のアニメーション時間をこれと同じ値に揃えるための値渡し
+  // （BattleScreen.vue → CharacterFrame.vue → 該当要素の inline custom property）。
+  const flashDurations = reactive(new Map<string, number>())
+  const criticalDurations = reactive(new Map<string, number>())
   /** クリティカル時、キャラクター単体の演出だけでなく戦場全体を一瞬光らせる（派手さの要望対応） */
   const screenCriticalFlash = ref(false)
   const screenShake = ref(0)
+  /** screenShake と対になる消灯までの尺（複数の shake が重なった場合は直近にトリガーされた値） */
+  const screenShakeDurationMs = ref(0)
   const timing = BATTLE.presentation
 
   function triggerScreenCriticalFlash(): void {
     screenCriticalFlash.value = true
-    later(timing.flashMs + 80, () => { screenCriticalFlash.value = false })
+    later(timing.screenCriticalFlashMs, () => { screenCriticalFlash.value = false })
   }
 
   // ── 表示用HP・生死（多段ヒットを段階的に見せる） ──────────────
@@ -75,6 +82,35 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
   function trueAliveOf(id: string): boolean {
     if (battle.state.player.id === id) return battle.state.player.alive
     return battle.state.enemies.find(e => e.id === id)?.alive ?? true
+  }
+
+  /**
+   * ある対象に「まだ画面へ出し切っていない演出」が残っているかどうか。
+   * announce のベースライン確保（下の sync watch）は、この対象については
+   * 真値への上書きを見送る必要がある（バグ修正: 前バッチの再生途中に次の
+   * announce が割り込むと段階表示が消える。詳細はそちらのコメント参照）。
+   *
+   * 2種類のケースを両方見る必要がある:
+   *  - drain() 済みで多段ヒットの途中（hpStepRemaining が残っている）
+   *  - まだ drain() すら走っていない（`battle.effectQueue` に残っている）
+   * 既定の同期スケジューラ（IMMEDIATE_SCHEDULER）では、1手番分の解決から
+   * 次の手番の announce までが同一コールスタック内で完結するため、
+   * `effectQueue.length` を監視する drain() 側の watch（sync でない）が
+   * 一度も走らないうちに次の announce が来ることがある。hpStepRemaining
+   * だけを見ていると、その「まだ引き取られてすらいない」区間を見逃す。
+   *
+   * ただしキュー側は「表示HPを動かすエフェクト」だけを見る。play() が
+   * displayedHp/displayedAlive を書き換えるのはその3種だけで、それ以外
+   * （継続ダメージの通知 fx_debuff など）は表示HPに触れないため、
+   * ベースライン確保を見送るとHPバーが更新されないまま取り残される。
+   */
+  function movesDisplayedHp(effectId: string): boolean {
+    return effectId.startsWith('fx_hit_') || effectId === 'fx_heal' || effectId === 'fx_defeat'
+  }
+
+  function hasPendingPlayback(id: string): boolean {
+    if (hpStepRemaining.has(id)) return true
+    return battle.effectQueue.value.some(r => r.combatantId === id && movesDisplayedHp(r.effectId))
   }
 
   let seq = 0
@@ -130,10 +166,14 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
     const timingOfEffect: EffectTiming = def?.timing ?? 'onSystem'
     const sfxId = resolveSfxId(req, timingOfEffect, def?.sfx)
     if (sfxId) soundManager.playSfx(sfxId)
+    // エフェクトごとの見た目の尺。定義が無い（req.effectId が BATTLE_EFFECTS に
+    // 存在しない）場合のみ、一律の flashMs へフォールバックする。
+    const clearMs = def?.durationMs ?? timing.flashMs
 
     if (def?.visual.shake) {
       screenShake.value = Math.max(screenShake.value, def.visual.shake)
-      later(timing.flashMs, () => { screenShake.value = 0 })
+      screenShakeDurationMs.value = clearMs
+      later(clearMs, () => { screenShake.value = 0 })
     }
 
     const who = req.combatantId
@@ -141,7 +181,8 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
       if (req.effectId.startsWith('fx_hit_')) {
         if (criticalHitReqs.has(req)) {
           criticals.set(who, true)
-          later(timing.flashMs, () => { criticals.delete(who) })
+          criticalDurations.set(who, clearMs)
+          later(clearMs, () => { criticals.delete(who) })
           triggerScreenCriticalFlash()
         }
         const remaining = hpStepRemaining.get(who) ?? 0
@@ -163,7 +204,8 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
     const kind = flashKindOf(req)
     if (kind) {
       flashes.set(who, kind)
-      later(timing.flashMs, () => {
+      flashDurations.set(who, clearMs)
+      later(clearMs, () => {
         if (flashes.get(who) === kind) flashes.delete(who)
       })
     }
@@ -177,7 +219,8 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
     }
     if (req.effectId === 'fx_critical' || req.effectId === 'fx_super_critical') {
       criticals.set(who, true)
-      later(timing.flashMs, () => { criticals.delete(who) })
+      criticalDurations.set(who, clearMs)
+      later(clearMs, () => { criticals.delete(who) })
       triggerScreenCriticalFlash()
     }
     if (req.effectId === 'fx_critical') {
@@ -250,12 +293,25 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
   // 不具合があった（弾幕で実際には数発で倒したのに即死判定に見える、として報告された）。
   // ここで解決前の hp/alive を displayedHp/displayedAlive へ確保しておくことで、
   // drain() 側は必ず「このバッチが始まる前の値」を起点に段階的な演出を組み立てられる。
+  //
+  // 【バグ修正: 再生中の対象は上書きしない】上のベースライン確保は「player・敵の
+  // 全員」を無条件に対象へ真値で上書きしていたため、前バッチ（例: 1体目を倒した
+  // 攻撃）の演出がまだ1コマも再生し切っていないうちに次の announce（例: 2体目の
+  // 手番）が来ると、1体目の displayedHp/displayedAlive が真値（hp=0・撃破済み）へ
+  // 即座に飛んでしまい、多段ヒットの段階表示が壊れて見えた（複数体編成で発生。
+  // 単体編成のテストでは announce が1回しか来ないため露見しない）。
+  // 対策として hasPendingPlayback() を導入し、まだ演出を出し切っていない対象
+  // （drain() 未実行で effectQueue に残っている、または drain() 済みで多段ヒット
+  // 再生の途中）はこのベースライン確保をスキップする。
   watch(() => battle.presentation.seq, () => {
     const p = battle.presentation
     if (p.phase !== 'announce') return
-    displayedHp.set(battle.state.player.id, trueHpOf(battle.state.player.id))
-    displayedAlive.set(battle.state.player.id, trueAliveOf(battle.state.player.id))
+    if (!hasPendingPlayback(battle.state.player.id)) {
+      displayedHp.set(battle.state.player.id, trueHpOf(battle.state.player.id))
+      displayedAlive.set(battle.state.player.id, trueAliveOf(battle.state.player.id))
+    }
     for (const e of battle.state.enemies) {
+      if (hasPendingPlayback(e.id)) continue
       displayedHp.set(e.id, trueHpOf(e.id))
       displayedAlive.set(e.id, trueAliveOf(e.id))
     }
@@ -284,10 +340,16 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
   return {
     popupsOf: (combatantId: string): DamagePopup[] => popups.get(combatantId) ?? [],
     flashOf: (combatantId: string): FlashKind | null => flashes.get(combatantId) ?? null,
+    // CSS のアニメーション時間を揃えるための値。flash/critical が立っていない対象では
+    // 参照されない（呼び出し側は .flashing/.crit-ring が付くときにしか使わない）ので、
+    // フォールバックは「見えない場合の安全値」程度の意味しか持たない。
+    flashDurationMsOf: (combatantId: string): number => flashDurations.get(combatantId) ?? timing.flashMs,
     criticalOf: (combatantId: string): boolean => criticals.get(combatantId) ?? false,
+    criticalDurationMsOf: (combatantId: string): number => criticalDurations.get(combatantId) ?? timing.flashMs,
     displayedHpOf: (combatantId: string): number => displayedHp.get(combatantId) ?? trueHpOf(combatantId),
     displayedAliveOf: (combatantId: string): boolean => displayedAlive.get(combatantId) ?? trueAliveOf(combatantId),
     screenShake,
+    screenShakeDurationMs,
     screenCriticalFlash,
   }
 }

@@ -65,3 +65,17 @@ export function useGlossaryPanel() {
     openTermPopup, closeTermPopup, openDetail, toggleGuide, closeGuide,
   }
 }
+
+/**
+ * ラン再開（App.vue の restart()）で呼ぶ。モジュールレベル singleton のため、
+ * 前ランで開いていたヘルプ/用語ポップアップの状態が次ランへ持ち越されるのを防ぐ。
+ * HelpGuide.vue が activeSectionId へ直接書き込む（setActive）ため、
+ * この状態は readonly() で公開できない（呼び出し側の挙動を変えずには不可）。
+ */
+export function resetGlossaryPanel(): void {
+  guideOpen.value = false
+  activeSectionId.value = null
+  popupTermId.value = null
+  popupAnchor.value = null
+  jumpToHelpSignal.value = 0
+}

@@ -130,9 +130,17 @@
 | シールドが割れた | `fx_shield_break` |
 | 対象が戦闘不能になった | `fx_defeat` |
 | 「守る」使用 | `fx_guard` |
-| スキルレベル上昇 | `fx_level_up` |
+| スキルレベル上昇 | `fx_level_up`（※未実装。下記注記を参照） |
 
 **スキル側で指定するのは、そのスキル固有の演出のみ**（発動モーション・ヒット演出）でよい。
+
+> **注記（未使用データ）**: 上表は設計時点の対応表であり、`fx_level_up` は実際には
+> どこからも発行されていない（実測確認済み。JSON/TS のいずれからも参照ゼロ）。
+> `src/data/rpg/battle-effects/fx_level_up.json` は定義自体を削除せず残しているが、
+> **実行時には一度も再生されない dead data** である。`schemas/battle-effect.schema.json`
+> は `additionalProperties: false` で `$comment` を許可していないため、JSON側に
+> 注記を焼き込めず、この文書に明記するに留めている。実装するかは別途判断が必要
+> （`docs/refactoring/07-deferred.md` §B-3）。
 
 > **設計上の理由**: ミスやクリティカルを全スキルの `effects` に書かせると記述漏れが必ず起きる。状況依存のものはエンジンが持つ。
 

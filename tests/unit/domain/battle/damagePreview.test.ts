@@ -198,32 +198,35 @@ describe('damagePreview: 攻撃側の効果倍率', () => {
   })
 })
 
-describe('damagePreview: 既知の欠陥（scale.statOptions 未対応）', () => {
-  // 【既知の欠陥・意図的に現状を固定】
-  // damagePreview.ts:65 は node.scale を { stat, rate } としか読まないため、
-  // effectOps/damage.ts:36-41 が対応している scale.statOptions（実データ: skill_tsumo.json）では
-  // sourceStats[undefined] → NaN になる。プレビュー専用の経路であり実ダメージには影響しない。
-  // 修正は docs/refactoring/07-deferred.md §A-1 に分離されているため、ここでは直さず現行値を固定する。
+describe('damagePreview: scale.statOptions（実データ: skill_tsumo.json）', () => {
+  // effectOps/damage.ts の resolveReferenceValue を damagePreview 側でも共有し、
+  // 「複数候補のうち実効値が最も高いものを参照する」規則を実行経路と予告経路で一致させている
+  // （07-deferred.md §A-1 対応。以前は未対応で sourceStats[undefined] → NaN になっていた）
   const tsumoLike = makeActive({
     id: 'skill_tsumo_like',
     effect: [node('damage', { element: 'none', scale: { statOptions: ['str', 'int'], rate: 2 } })],
   })
 
-  it('statOptions を使うノードの見積りは NaN になる（07-deferred.md §A-1）', () => {
-    expect(estimate({ skill: tsumoLike })).toBeNaN()
+  it('statOptions の候補のうち実効値が最も高いものを参照する', () => {
+    const source = makePlayer({ baseStats: makeStats({ str: 1500, int: 1000 }) })
+    expect(estimate({ skill: tsumoLike, source })).toBe(1500 * 2)
   })
 
-  it('NaN の見積りは段階判定を素通りして「致命傷」になる（07-deferred.md §A-1）', () => {
-    const dmg = estimate({ skill: tsumoLike })
-    expect(damageMagnitude(dmg, makeStats().hp)).toBe('lethal')
+  it('候補が同値なら通常の damage ノードと同じ結果になる', () => {
+    expect(estimate({ skill: tsumoLike })).toBe(REF_STAT * 2)
   })
 
-  it('statOptions ノードが1つでも混ざると合計全体が NaN に汚染される（07-deferred.md §A-1）', () => {
+  it('通常ノードと statOptions ノードが混在しても合計は正しく足し合わされる', () => {
     const mixed = makeActive({
       id: 'mixed',
       effect: [damageNode({ rate: 1 }), ...tsumoLike.effect],
     })
-    expect(estimate({ skill: mixed })).toBeNaN()
+    expect(estimate({ skill: mixed })).toBeCloseTo(REF_STAT * 1 + REF_STAT * 2, 6)
+  })
+
+  it('見積りが正しい数値になったことで段階判定も機能する（以前は NaN が全閾値を素通りして「致命傷」になっていた）', () => {
+    const dmg = estimate({ skill: tsumoLike })
+    expect(damageMagnitude(dmg, makeStats().hp)).toBe('large')
   })
 })
 

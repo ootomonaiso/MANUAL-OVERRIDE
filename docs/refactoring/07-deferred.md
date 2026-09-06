@@ -4,103 +4,126 @@
 
 **本リファクタリングの絶対条件は「可視挙動を変えないこと」。**
 監査で見つかったが、その条件に反する／規模が過大／ユーザー判断が要る項目をここに隔離する。
-**着手する場合は必ず別タスク・別ブランチとし、それぞれ独立に判断すること。**
+
+> **2026-09-06 更新:** ユーザーの指示により、A〜C に挙げていた**既知の不具合はすべて対応済み**
+> （コミットは [README.md](README.md) の進捗表を参照）。以下は「何をどう直したか」と「まだ残っているもの」の記録。
+> D（規模が過大）と E（ユーザー判断）は未着手のまま。
 
 ---
 
-## A. 挙動が変わる — バグ修正（別タスクとして起票を推奨）
+## A. バグ修正 — 対応済み
 
-### A-1.【high】`damagePreview.ts` の `statOptions` 未対応で `NaN` が返る
+### A-1.【対応済み】`damagePreview.ts` の `statOptions` 未対応で `NaN` が返っていた
 
-- `src/domain/battle/damagePreview.ts:65` が `node.scale` を `{ stat; rate }` としか読まないため、
-  `scale.statOptions`（`effectOps/damage.ts:36-41` が対応、実データは `src/data/rpg/skills/skill_tsumo.json`）を無視する。
-  結果 `sourceStats[undefined]` → **`NaN`**。
-- **現在は露見していない。** `estimateSkillDamage` は `useBattleState.ts:557-566` の敵スキルプレビューにしか使われず、
-  敵定義に `statOptions` を使うものが無いため。
-- 修正すると preview の表示が `NaN` → 正しい数値に変わる＝**可視挙動の変更**。
-- 詳細: [02-domain.md](02-domain.md) §1-3。
+- 症状: `src/domain/battle/damagePreview.ts` が `node.scale` を `{ stat; rate }` としか読まず、
+  `scale.statOptions`（実データ: `src/data/rpg/skills/skill_tsumo.json`）で `sourceStats[undefined]` → `NaN`。
+  1ノードでスキル全体の合計が `NaN` になり、`damageMagnitude(NaN, maxHp)` が全閾値を素通りして `'lethal'` を返すため、
+  **敵がそのスキルを持った瞬間、敵の次手予告が常に「致命傷」になる**状態だった。
+- 修正: 実行側 `effectOps/damage.ts` の `resolveReferenceValue()` と `DamageScale` 型を export し、
+  プレビュー側がそれを**共有**するようにした（再実装せず1本化したので、今後ズレようがない）。
+  規則は「`statOptions` があればその中の実効値の最大、無ければ `stat`」。
+- 当時のプレイヤーへの影響: なし。`skill_tsumo` は `draftable:false` で `skill_riichi` からの変身でしか到達できず、
+  どの敵定義もそれを持っていなかったため、実際には発火していなかった。
+- 副次効果: [02-domain.md](02-domain.md) §1-3 が指摘していた「preview が damage のパイプラインを再実装している」問題の
+  一部（参照値の解決）が解消した。残りの重複（カット率・相性の組み立て）は Phase 5 で扱う。
 
-**Phase 0 の特性テストで判明した追加事実**（`tests/unit/domain/battle/damagePreview.test.ts` に固定済み）:
+### A-2.【対応済み】announce のたびに再生中の表示HPが真値へ上書きされていた
 
-1. **`NaN` は1ノードでスキル全体を汚染する。** 通常ノードと `statOptions` ノードを混ぜたスキルは合計が `NaN` になる。
-2. **UIには空欄ではなく「致命傷」が出る。** `damageMagnitude(NaN, maxHp)` は全閾値の比較を素通りして `'lethal'` を返すため、
-   敵が `statOptions` スキルを持った瞬間、プレイヤーには**常に最大級の危険予告が表示される**。
-   当初の想定より影響が大きいので、敵に `statOptions` スキルを持たせる前に必ず修正すること。
+- 症状: `useBattlePresentation` の sync watch が、前バッチの再生が終わっていなくても
+  `displayedHp` / `displayedAlive` を真値へ上書きし、多段ヒットの段階表示が消える。
+- 修正: `hasPendingPlayback(id)` を導入し、再生が残っている対象はベースライン確保を見送るようにした。
+  判定は2条件:
+  - `hpStepRemaining` が残っている（drain 済みで多段ヒットの途中）
+  - `effectQueue` に**表示HPを動かすエフェクト**（`fx_hit_*` / `fx_heal` / `fx_defeat`）が残っている
+    （drain がまだ走っていない区間。同期スケジューラでは1手番が同一コールスタックで完結するため実際に起きる）
+- **キューを無条件に見るのは誤り**だった点に注意。`fx_debuff`（継続ダメージの通知）は `play()` が
+  `displayedHp` を書き換えないため、それを理由にベースライン確保を見送るとHPバーが取り残される。
+  `tests/unit/composables/useBattlePresentation.test.ts` にこの条件を固定するテストがある。
 
-### A-2.【high】announce のたびに再生中の表示HPが真値へ上書きされる
-
-- `src/composables/useBattlePresentation.ts:253-265` の sync watch が、
-  前バッチの `later()` 再生が終わっていなくても displayedHp/displayedAlive を無条件に真値へ上書きする。
-- 実機（`TIMED_SCHEDULER`）では次の announce まで `impactWaitMs` 待つため通常は追い越されないが、
-  **見積り（`estimateHitCount`）と実際のキュー長がずれた瞬間に実機でも再現する**（[03-composables.md](03-composables.md) §6-2）。
-- 修正案: バッチ世代番号 `fxGeneration` を導入し「再生中の id はベースラインを上書きしない」ガードを入れる。
-  もしくはベースライン確保を `emit()` 側（効果解決の直前）へ移す。
-- **Phase 0 ではテスト側だけを直す**（敵を1体に固定して単体エンカウントを保証する）。
-  プロダクト側のガードはこの項目として別途扱う。詳細: [03-composables.md](03-composables.md) §4-1 / §12-2。
-
----
-
-## B. 挙動が変わる — 死にデータを実際に効かせる
-
-### B-1.【med】`BattleEffectDef.durationMs` / `visual.kind` / `target` / `label` が runtime 未参照
-
-- `src/domain/battle/types.ts:229,231`。**23個の `battle-effects/*.json` すべてに書かれ、content-editor でも編集できる**
-  （`contentEditorForm.ts:175`）のに、**runtime で一度も読まれない**。
-  実際には全エフェクトが `timing.flashMs`（220ms 一律）で消える。
-- `later(def.durationMs ?? timing.flashMs, …)` にすれば JSON が効くようになるが、**演出の尺が変わる**。
-- **本計画では「死にデータである」ことを docs とコード上のコメントに明記するに留める。**
-- 詳細: [03-composables.md](03-composables.md) §5-2 / §7-6。
-
-### B-2.【low】`battle.json:presentation.attackPoseMs` が未参照
-
-`config-types.ts:392` に型もあるが、どこからも読まれていない。
-`presentation.posingId` を `afterAction()`(`useBattleState.ts:304`) で即クリアする実装に変わったときの置き去りと推測。
-**削除するか posing の解除に使うかの判断が要る**（後者は挙動変更）。
-
-### B-3.【low】`fx_level_up.json` が完全な dead data
-
-どこからも参照されていない（実測確認済み）。削除するか `$comment` で「未使用（レベルアップ演出の予約）」と明示するか。
-**削除はコンテンツの削除なのでユーザー判断。**
+> **ここで判明した別件（未修正・軽微）:** 継続ダメージは適用直後に announce が来ないため、
+> HPバーへの反映が**次の announce まで1手番ぶん遅れる**。`play()` が `fx_debuff` で表示HPを更新しないための
+> 既存挙動であり、今回のガードとは無関係。気になるなら `play()` に `fx_debuff` の表示HP更新を足すのが素直。
 
 ---
 
-## C. 挙動が変わる — 設定値の不一致の是正
+## B. 死にデータ — 対応済み
 
-### C-1.【med】CSS のアニメーション時間と `battle.json:presentation` のズレ3件
+### B-1.【対応済み】`BattleEffectDef.durationMs` が runtime 未参照だった
 
-| CSS | config | 差 |
+- 症状: スキーマ上 `required` で、23個の `battle-effects/*.json` すべてに書かれ、content-editor でも編集できるのに、
+  runtime は一律 `timing.flashMs`（220ms）を使っていた。**編集しても何も起きない項目**だった。
+- 修正: `play()` が `def?.durationMs ?? timing.flashMs` を使うようにし、フラッシュ・クリティカル強調・画面シェイクの
+  消灯に反映した。あわせて CSS 側のアニメーション尺も同じ値で駆動するようにした（C-1 参照）。
+- **可視の変更:** エフェクトの発光・揺れの尺が一律220msから各エフェクトの値になった。
+  代表値: `fx_hit_physical` 260 / `fx_hit_none` 240 / `fx_hit_special` 280 / `fx_critical` 320 /
+  `fx_super_critical` 420 / `fx_heal` 300 / `fx_defeat` 400 ms。
+
+### B-2.【対応済み】`battle.json presentation.attackPoseMs` が未参照だった
+
+- 症状: 値は 520 だが誰も読まず、実際の踏み込みアニメーション（`lunge-down/up`）は CSS に 420ms 直書き。
+  **config が現実と食い違ったまま放置**されていた。
+- 修正: config の値を実態に合わせて **420 へ訂正**し、CSS がそこから `--lunge-dur` として受け取るようにした。
+  可視の変更なし（420ms のまま）。死んだキーと嘘の食い違いが同時に消えた。
+
+### B-3.【未対応 — ユーザー判断】`fx_level_up.json` が完全な dead data
+
+どこからも参照されていない（実測確認済み）。
+`schemas/battle-effect.schema.json` は `additionalProperties: false` で `$comment` を許さないため、
+ファイル内に注記を書けない。代わりに [docs/genre/rpg/09-effects.md](../genre/rpg/09-effects.md) に
+「未使用データ」として明記した。**実装する（レベルアップ演出を鳴らす）か削除するかはユーザー判断。**
+
+---
+
+## C. 設定値の不一致 — 対応済み（C-2 を除く）
+
+### C-1.【対応済み】CSS のアニメーション尺と実際の消灯タイミングのズレ
+
+`--shake-mag` をインラインで渡す既存の作法にならい、**尺も同じ経路で渡す**ようにして単一の出所にした。
+
+| 対象 | 修正前 | 修正後 |
 |---|---|---|
-| `CharacterFrame.vue:293,296` `lunge-down/up 420ms` | `attackPoseMs: 520` | CSSが100ms早く終わる |
-| `BattleScreen.vue:833` `field-shake 280ms` | 解除は `flashMs: 220` | アニメ280ms > 解除220ms |
-| `BattleScreen.vue:826` `critical-flash-fade 380ms` | `flashMs+80 = 300` | 80ms |
+| `.sprite-box.flashing` の `hit-shake` / `impact-flicker` | 220ms 固定 | `var(--fx-dur, 220ms)`。エフェクトの `durationMs` が駆動 |
+| `.crit-ring` の `crit-ring-expand` | 520ms 固定 | `var(--fx-dur, 520ms)` |
+| `.battle-field.shaking` の `field-shake` | 280ms 固定 | `var(--shake-dur, 280ms)` |
+| `.critical-screen-flash` の `critical-flash-fade` | 380ms 固定 / JS側は `flashMs + 80` = 300ms | 両方 `battle.json presentation.screenCriticalFlashMs`（380）から |
+| `lunge-down` / `lunge-up` | 420ms 固定 | `var(--lunge-dur, 420ms)`（B-2） |
 
-**是正すると見た目が変わる。** [04-components.md](04-components.md) §8-3 の変数化は行うが、
-**変数の初期値は現在の値のまま**にすること。是正は目視確認を伴う別タスク。
+- **可視の変更はクリティカル時の画面フラッシュ1点のみ。** 300ms で切られていたフェードが 380ms 最後まで再生される。
+- フォールバック値はすべて修正前と同じなので、変数が届かない経路があっても見た目は変わらない。
+- `timing.flashMs + 80` というマジックナンバーは消えた。
 
-### C-2.【med】`skill_stance_guard.json` の `effect[]` が実行されていない
+### C-2.【未対応 — ただしドリフトは防止済み】`skill_stance_*.json` の `effect[]` が実行されていない
 
-`skill_stance_*.json` は `kind:"active"` の完全なスキル定義（`effect[]` に `modifier` op、`cooldown:3`）として存在するのに、
-`useBattleState.selectAction` は `kind==='builtin'` を別経路で処理し、
-`useBuiltinAction()`（`battleEngine.ts:383-392`）が `BATTLE.guard.cutRate` をハードコードで適用する。
-**JSON の `effect[]` は実行されていない飾り。** 値も `battle.json:guard.cutRate`=0.5 と
-`skill_stance_guard.json` の `amount`=0.5 で二重管理。
+`skill_stance_guard` / `skill_stance_watch` は `kind:"active"` の完全なスキル定義として存在するのに、
+`useBattleState.selectAction` は `kind==='builtin'` を別経路で処理し、`useBuiltinAction()` が
+`BATTLE.guard.cutRate` を使う。**JSON の `effect[]` は実行されない飾りのまま。**
 
-builtin を通常アクティブへ統合（`PlayerAction` を `{kind:'active', skillId}` に一本化）すれば
-[03-composables.md](03-composables.md) §8-ケースB の7箇所が丸ごと消えるが、**戦闘の実行経路が変わるため挙動保証ができない。**
-本計画では「JSON側の `effect[]` が実行されない」ことをコメントで明示するに留める。
+実行経路の一本化（`PlayerAction` を `{kind:'active', skillId}` へ寄せる）は
+[03-composables.md](03-composables.md) §3-4 / §8-ケースB のとおり戦闘の実行経路そのものを差し替える構造変更なので、
+今回は行っていない。
+代わりに `scripts/validate-json.mjs` に **`battle.json` と `skill_stance_*.json` の数値が一致することを検査**する
+`validateBuiltinStanceConsistency()` を追加した。片方だけ調整すると `npm run validate` が落ちるので、
+「スキル説明の数値と実際の効果が食い違う」形で黙って壊れることはなくなった。
 
-### C-3.【low】ローダの不正データを dev で throw する
+### C-3.【対応済み】コンテンツローダが不正ファイルを黙って落としていた
 
-`battleContent.ts` / `battleBackgrounds.ts` は不正ファイルを `console.error` + `continue` で黙って捨てる。
-dev ビルドで throw に変えると**開発時の挙動が変わる**（黙って消える → 落ちる）。
-本計画では「スキップ件数の集約ログ」に留める。詳細: [06-data-config.md](06-data-config.md) §5-2。
+- 症状: `battleContent.ts` / `battleBackgrounds.ts` は不正なファイルを `console.error` + `continue` で捨てる。
+  スキルの `kind` をタイポするとドラフト候補から静かに消え、敵の `stats` を消すと編成が1体欠けて始まる。
+- 修正: **本番の挙動は一切変えず**（壊れたデプロイで白画面にしない）、dev のみ、
+  スキップしたファイルを集約して1回のエラーとしてまとめて出すようにした（`import.meta.env?.PROD` ガードは
+  `ConfigValidator.ts` の既存パターンに合わせている）。
+  `battleGuide.ts` にも他のローダと同等の形状チェックを追加した（従来は無検証キャストだった）。
+- dev で throw する案は採らなかった。このローダは `App.vue` から無条件に読まれるため、
+  rpg の JSON 1つのタイポで**全ジャンルの dev アプリが落ちる**ことになり、影響が釣り合わない。
 
-### C-4.【low】`useGlossaryPanel` の状態がラン再開時に持ち越される
+### C-4.【対応済み】ヘルプ／用語パネルの状態がラン再開後も残っていた
 
-`useGlossaryPanel.ts` のモジュールレベル singleton がラン再開（`App.vue:313 restart()`）でリセットされないため、
-前ランで開いたヘルプ/用語ポップアップの状態が次ランへ持ち越される。
-**現状の可視挙動が「持ち越し」なので、リセットの追加は挙動変更。**
-`readonly()` での公開だけは挙動不変なので本計画で行う。詳細: [03-composables.md](03-composables.md) §4-11。
+`useGlossaryPanel` はモジュールレベルの singleton で、`App.vue` の `restart()` が触っていなかった。
+ヘルプや用語ポップアップを開いたままギブアップすると、次のランがそれを開いた状態で始まっていた。
+`resetGlossaryPanel()` を追加し `restart()` から呼ぶようにした。**可視の変更: 次のランは閉じた状態で始まる。**
+
+> `readonly()` での公開は見送った。`HelpGuide.vue:39` が `activeSectionId.value` へ直接書き込んでおり、
+> そこまで書き換えると「バグ修正」の範囲を越えるため。Phase 4 の分割時に併せて整理する。
 
 ---
 

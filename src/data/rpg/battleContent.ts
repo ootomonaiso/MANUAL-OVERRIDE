@@ -23,13 +23,33 @@ function normalizeSkillRef(ref: unknown): EnemySkillRefResolved {
   return { id: r.id, level: r.level ?? 1 }
 }
 
+/**
+ * 不正ファイルは本番同様スキップし続けるが（白画面化を避けるため）、
+ * dev では個別の console.error が他のログに埋もれて気づかれない実害があった
+ * （docs/refactoring/06-data-config.md §5-2）。dev ビルドに限り、全ローダーの
+ * スキップを1箇所に集約し、最後にまとめて1本の error として出す。
+ */
+const _skippedEntries: string[] = []
+function _recordSkip(path: string, reason: string): void {
+  console.error(`[battleContent] ${path}: ${reason}`)
+  _skippedEntries.push(`${path}: ${reason}`)
+}
+function _reportSkippedIfDev(): void {
+  if (import.meta.env?.PROD) return
+  if (_skippedEntries.length === 0) return
+  console.error(
+    `[battleContent] dev: ${_skippedEntries.length} 件のコンテンツがスキップされました（本番では黙って除外されるため見落としに注意）\n` +
+    _skippedEntries.map(s => `  - ${s}`).join('\n'),
+  )
+}
+
 // ── スキル（アクティブ/パッシブ） ─────────────────────────────────
 const _skillModules = import.meta.glob('./skills/*.json', { eager: true })
 const _skills = new Map<string, ActiveSkillDef | PassiveSkillDef>()
 for (const [path, mod] of Object.entries(_skillModules)) {
   const raw = ((mod as { default?: unknown }).default ?? mod) as SkillJson
   if (typeof raw.id !== 'string' || (raw.kind !== 'active' && raw.kind !== 'passive')) {
-    console.error(`[battleContent] ${path}: id/kind が不正です。このスキルはスキップされます。`)
+    _recordSkip(path, 'id/kind が不正です。このスキルはスキップされます。')
     continue
   }
   if (_skills.has(raw.id)) {
@@ -44,7 +64,7 @@ const _traits = new Map<string, TraitDef>()
 for (const [path, mod] of Object.entries(_traitModules)) {
   const raw = ((mod as { default?: unknown }).default ?? mod) as Partial<TraitDef> & { id?: string }
   if (typeof raw.id !== 'string' || raw.kind !== 'trait') {
-    console.error(`[battleContent] ${path}: id/kind が不正です。この特性はスキップされます。`)
+    _recordSkip(path, 'id/kind が不正です。この特性はスキップされます。')
     continue
   }
   if (_traits.has(raw.id)) {
@@ -73,7 +93,7 @@ const _enemies = new Map<string, EnemyDef>()
 for (const [path, mod] of Object.entries(_enemyModules)) {
   const raw = ((mod as { default?: unknown }).default ?? mod) as EnemyJson
   if (typeof raw.id !== 'string' || !raw.stats) {
-    console.error(`[battleContent] ${path}: id/stats が不正です。この敵はスキップされます。`)
+    _recordSkip(path, 'id/stats が不正です。この敵はスキップされます。')
     continue
   }
   if (_enemies.has(raw.id)) {
@@ -99,7 +119,7 @@ const _enemySets = new Map<string, EnemySet>()
 for (const [path, mod] of Object.entries(_enemySetModules)) {
   const raw = ((mod as { default?: unknown }).default ?? mod) as Partial<EnemySet> & { id?: string }
   if (typeof raw.id !== 'string' || !Array.isArray(raw.members) || raw.members.length === 0) {
-    console.error(`[battleContent] ${path}: id/members が不正です。この敵セットはスキップされます。`)
+    _recordSkip(path, 'id/members が不正です。この敵セットはスキップされます。')
     continue
   }
   if (_enemySets.has(raw.id)) {
@@ -114,7 +134,7 @@ const _effects = new Map<string, BattleEffectDef>()
 for (const [path, mod] of Object.entries(_effectModules)) {
   const raw = ((mod as { default?: unknown }).default ?? mod) as Partial<BattleEffectDef> & { id?: string }
   if (typeof raw.id !== 'string') {
-    console.error(`[battleContent] ${path}: id が見つかりません。このエフェクトはスキップされます。`)
+    _recordSkip(path, 'id が見つかりません。このエフェクトはスキップされます。')
     continue
   }
   if (_effects.has(raw.id)) {
@@ -122,6 +142,8 @@ for (const [path, mod] of Object.entries(_effectModules)) {
   }
   _effects.set(raw.id, raw as BattleEffectDef)
 }
+
+_reportSkippedIfDev()
 
 export const SKILLS: ReadonlyMap<string, ActiveSkillDef | PassiveSkillDef> = _skills
 export const TRAITS: ReadonlyMap<string, TraitDef> = _traits

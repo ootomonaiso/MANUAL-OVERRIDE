@@ -390,6 +390,7 @@ export interface BattleConfig {
     popupMs: number
     flashMs: number
     attackPoseMs: number
+    screenCriticalFlashMs: number
     battleEndMs: number
   }
   /** 同時出現する敵の体数に応じたスプライト縮小率・敵同士の間隔（画面外へのはみ出し防止） */

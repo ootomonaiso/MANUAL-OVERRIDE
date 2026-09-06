@@ -225,10 +225,10 @@ describe('encounter: 重みが引けないときのフォールバック', () =>
     expect(picked[0].def.id).toBe(`mob_${GROUP_ORDER[1]}`)
   })
 
-  it('roll がちょうど 0 のときだけは重み 0 のグループが先頭で当たる', () => {
-    // weightedPick は `roll -= w` の後に `roll <= 0` を見るため、重み0の先頭 entry でも
-    // roll=0 なら成立してしまう。実運用では rng が厳密に 0 を返す確率が無視できるだけで、
-    // 式としては「重み0でも選ばれうる」ことを現状として固定しておく
+  it('roll がちょうど 0 でも、重み 0 の先頭グループは抽選対象から外れる', () => {
+    // weightedPick は重み > 0 の entry だけを対象に roll を消費する。
+    // 重み0のグループは roll を一切減らさずスキップされるため、
+    // roll=0 でも次の正の重みを持つグループ（ここでは GROUP_ORDER[1]）が選ばれる。
     const egZeroFirst: EncounterGroupsConfig = {
       ...eg,
       spawnWeightTiers: [{
@@ -237,6 +237,6 @@ describe('encounter: 重みが引けないときのフォールバック', () =>
       }],
     }
     const picked = pickEnemyDefs(content, 0, constRng(0), egZeroFirst)
-    expect(picked[0].def.id).toBe(`mob_${GROUP_ORDER[0]}`)
+    expect(picked[0].def.id).toBe(`mob_${GROUP_ORDER[1]}`)
   })
 })
