@@ -1,7 +1,7 @@
 # RPG ジャンル 仕様書（メイン）
 
 設計文書: [rpg-genre.md](rpg-genre.md)
-指示元: [CLAUDE_OWNER.md](../../../CLAUDE_OWNER.md)
+指示元: `CLAUDE_OWNER.md`（リポジトリ管理外のローカル文書。`.gitignore` 済みのため clone した環境には存在しない）
 
 ---
 

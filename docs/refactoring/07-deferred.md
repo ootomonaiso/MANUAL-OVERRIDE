@@ -18,7 +18,14 @@
 - **現在は露見していない。** `estimateSkillDamage` は `useBattleState.ts:557-566` の敵スキルプレビューにしか使われず、
   敵定義に `statOptions` を使うものが無いため。
 - 修正すると preview の表示が `NaN` → 正しい数値に変わる＝**可視挙動の変更**。
-- 詳細: [02-domain.md](02-domain.md) §1-3。**修正前に `damagePreview.ts` の特性テストを書くこと。**
+- 詳細: [02-domain.md](02-domain.md) §1-3。
+
+**Phase 0 の特性テストで判明した追加事実**（`tests/unit/domain/battle/damagePreview.test.ts` に固定済み）:
+
+1. **`NaN` は1ノードでスキル全体を汚染する。** 通常ノードと `statOptions` ノードを混ぜたスキルは合計が `NaN` になる。
+2. **UIには空欄ではなく「致命傷」が出る。** `damageMagnitude(NaN, maxHp)` は全閾値の比較を素通りして `'lethal'` を返すため、
+   敵が `statOptions` スキルを持った瞬間、プレイヤーには**常に最大級の危険予告が表示される**。
+   当初の想定より影響が大きいので、敵に `statOptions` スキルを持たせる前に必ず修正すること。
 
 ### A-2.【high】announce のたびに再生中の表示HPが真値へ上書きされる
 
@@ -169,14 +176,27 @@ CLAUDE.md「ファイル内プライベート関数は `_` プレフィックス
 
 ESLint の `naming-convention` は現状これを検査していない。詳細: [01-cross-cutting.md](01-cross-cutting.md) §4-1。
 
-### E-2. `CLAUDE_OWNER.md` / `CLAUDE_TASKS.md` の扱い
+### E-2. `CLAUDE_OWNER.md` / `CLAUDE_TASKS.md` をリポジトリに入れるか
+
+この2ファイルは **`.gitignore` に登録されており git 管理下にない**（`.gitignore:47-48`）。
+つまり clone した人の手元には存在しない。
 
 - `CLAUDE_OWNER.md`（182行）— 「`CLAUDE.md` より優先。適用範囲は本ブランチ限定」を宣言するタスク定義書。
   後付けの追加要件2件が追記されている。**実装が完了した今は履歴的文書。**
-- `CLAUDE_TASKS.md`（1024行）— 7フェーズ分の作業ログが1ファイルに連結。リポジトリ直下。
+- `CLAUDE_TASKS.md`（1024行）— 7フェーズ分の作業ログが1ファイルに連結。
 
-リポジトリ直下の一級ファイルとして残すか、`docs/genre/rpg/` 配下の履歴文書へ移すか。
-**削除ではなく移設・分割の判断であり、ユーザー確認が必要。** 詳細: [01-cross-cutting.md](01-cross-cutting.md) §2-2。
+**問題は「置き場所」ではなく「コミット済み文書が、リポジトリに無いファイルを設計判断の出典として参照していること」。**
+その解消（リンクの是正と、必要な判断根拠の `docs/genre/rpg/` への移設）は
+[01-cross-cutting.md](01-cross-cutting.md) §2-2 のとおり **Phase 1 / Phase 9 で判断を待たずに実施する。**
+
+ここに残るユーザー判断は1点のみ:
+
+| 選択肢 | 内容 |
+|---|---|
+| A | 現状維持（ローカル文書のまま）。§2-2 の移設で必要な根拠だけリポジトリに残す |
+| B | `.gitignore` から外してリポジトリに入れる。履歴がすべて残るが、1024行の作業ログが恒久的にリポジトリに入る |
+
+**判断が出るまでは A を前提に進める**（＝ファイル自体には触れない）。
 
 ### E-3. `FocusSide` の `'ally'` を削除するか
 

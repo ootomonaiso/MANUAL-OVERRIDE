@@ -68,6 +68,20 @@ npm run typecheck && npm run lint && npm run validate && npm run test:unit && np
 
 **テスト失敗数は「3件」を上限とし、Phase 0 完了後は「0件」を上限とする。** 増やしてはならない。
 
+### CSS の同一性検証（`src/components/**` に触れたら必須）
+
+```bash
+npm run build && npm run css-snapshot tmp/css-before.txt
+# （作業）
+npm run build && npm run css-snapshot tmp/css-after.txt
+node scripts/css-snapshot.mjs --diff tmp/css-before.txt tmp/css-after.txt
+```
+
+[scripts/css-snapshot.mjs](../../scripts/css-snapshot.mjs) は postcss でビルド後CSSを解析し、
+Vue の scoped ハッシュ（`data-v-*`）とルールの出現順を正規化して「セレクタと宣言の集合」として比較する。
+差分ゼロなら描画は変わっていない。
+**限界: カスケード順序だけが変わったケースは検知できない。** 順序に関わる変更では実画面の目視確認も併せて行うこと。
+
 ---
 
 ## 3. 問題の要約（詳細は各ファイル）
@@ -180,7 +194,7 @@ CLAUDE.md は `src/game/systems/TetrisFeature.ts`（716行）を「悪い前例�
 
 | Phase | 状態 | コミット |
 |---|---|---|
-| 0 安全網 | 未着手 | |
+| 0 安全網 | **完了**（失敗3件→0件、テスト 962 → **1154**、`npm run css-snapshot` 追加） | |
 | 1 削除 | 未着手 | |
 | 2 一元化 | 未着手 | |
 | 3 層の是正 | 未着手 | |

@@ -671,10 +671,14 @@ describe('useBattleState: 1手番の演出', () => {
     battle.selectAction({ kind: 'builtin', action: 'pass' })
     sched.step()   // 提示 → 解決
     sched.step()   // 解決 → 次の手番（敵の提示）
-    // 敵の方がAGIで劣る初期値なので、プレイヤーの次に敵の手番が来る
+    // 手番順は AGI 降順（buildTurnQueue）で、編成も実データ（enemy-sets）依存で変わりうる。
+    // 「enemies 配列の先頭が次に動く」と決め打つとコンテンツ追加のたびに壊れるため、
+    // 手番キューが指している参加者そのものと突き合わせる。
+    const actingId = battle.state.turnQueue[battle.state.turnIndex]?.combatantId
+    expect(battle.state.enemies.some(e => e.id === actingId)).toBe(true)
     expect(battle.presentation.phase).toBe('announce')
     expect(battle.presentation.actorIsPlayer).toBe(false)
-    expect(battle.presentation.actorId).toBe(battle.state.enemies[0].id)
+    expect(battle.presentation.actorId).toBe(actingId)
   })
 
   it('攻撃者は解決が終わるまで攻撃モーションのままになる', () => {

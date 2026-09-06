@@ -52,6 +52,14 @@
 | O | 出現グループ専用エディタ（`encounter_groups.json`） | 1232-1376 | 145 |
 | P | 起動（main） | 1378-1389 | 12 |
 
+> **Phase 0 で判明した追加事実:** `contentEditor.ts` は **export を1つも持たず、末尾（`:1396`）で `void main()` を実行する**
+> 純粋なトップレベルスクリプトである。つまり素の `import` では何も取り出せず、import しただけで fetch と DOM 構築が走る。
+> Phase 0 の characterization test（`tests/unit/tools/contentEditor.test.ts`）は、
+> **元ソースを読んで `void main()` を無効化し export を追加した派生モジュールを `tmp/`（gitignore 済み）へ生成する**
+> というハーネス経由でしか書けなかった。
+> **§1-2 の分割では `state.ts` の導入と実 export を最初のステップに置くこと。** それが済めばハーネスは捨てられ、
+> テストのアサーションはそのまま新モジュールへの直接 import に載せ替えられる。
+
 **【high】A〜P が単一モジュールスコープの可変グローバル（G）で結合しているため、どの関数も単体では呼べない。**
 `renderField`(`:606`) は引数に `currentCategory` を取らず、グローバル(`:230`)を読む(`:554/565/603/611-616`)。結果:
 

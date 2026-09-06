@@ -399,6 +399,15 @@
 **修正案（Phase 2）:** `index.ts` に `const OPS = [...] as const` を1本置き、`OPS.forEach(registerOp)` と
 `KNOWN_OP_IDS = OPS.map(o => o.id)` を導出する。同期テストはトートロジーになるので削除できる。挙動不変。
 
+### 6-3-a.【low】Phase 0 で判明した細部
+
+- **`weightedPick`（`battleEngine.ts:146`）は重み0のグループを選びうる。** `roll -= w` のあと `roll <= 0` で判定するため、
+  `rng()` がちょうど `0` を返すと重み0（さらには負の重み）の先頭エントリが選ばれる。実害は無視できるが、
+  `<=` を `<` に変えると挙動が変わる。`tests/unit/domain/battle/encounter.test.ts` に固定済み。
+- **`effectOps/criticalFx.ts` は op ではない。** クリティカル演出を発火する共有ヘルパ（`emitCriticalEffect`）であり、
+  `KNOWN_OP_IDS` に無いのは正しい。`effectOps/` に op でないファイルが同居しているだけなので、
+  §2-4 の分割時に置き場所を見直すとよい（**バグではない**）。
+
 ### 6-4/6-5/6-6.【low】その他
 
 - `periodicSelfDamage.ts:13` だけ `execute` に型注釈があり、`statBoost.ts:14` 等は引数ゼロ → §6-1 の `kind` 導入で解消。

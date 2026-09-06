@@ -3,8 +3,10 @@ import {
   resolveRef, widgetKindOf, getAtPath, setAtPath, deleteAtPath,
   EFFECT_OP_SKELETONS, EFFECT_OP_FIELDS, EFFECT_OP_LABEL, ALLOWED_EFFECT_OPS, blankEntrySkeleton, isValidIdShape,
   resolvePreviewColor, toPercentInputValue, fromPercentInputValue,
-  type JsonSchema,
+  buildSpriteRuns,
+  type JsonSchema, type SpriteDefLike,
 } from '../../../src/tools/contentEditorForm'
+import { KNOWN_OP_IDS } from '../../../src/domain/battle/effectOps'
 
 describe('contentEditorForm: resolveRef', () => {
   const root: JsonSchema = {
@@ -110,6 +112,15 @@ describe('contentEditorForm: effectノードのひな形', () => {
   it('noop / replaceGuard のひな形は空オブジェクト', () => {
     expect(EFFECT_OP_SKELETONS.noop).toEqual({})
     expect(EFFECT_OP_SKELETONS.replaceGuard).toEqual({})
+  })
+  // ALLOWED_EFFECT_OPS は contentEditorForm.ts:125 で Object.keys(EFFECT_OP_SKELETONS) として
+  // 自分自身から導出されている（自己参照）。そのため上の2つの網羅テストは、新しい effect op を
+  // エディタ側（EFFECT_OP_SKELETONS / EFFECT_OP_LABEL / EFFECT_OP_FIELDS）に登録し忘れても
+  // グリーンのまま通ってしまい、「エディタの op ドロップダウンに新 op が出ない」という
+  // 無言の欠落になる。実装側の正である KNOWN_OP_IDS と突き合わせてこの穴を塞ぐ。
+  // 参照: docs/refactoring/05-tools.md §4-1-a
+  it('ALLOWED_EFFECT_OPS が実装側の KNOWN_OP_IDS と一致する', () => {
+    expect([...ALLOWED_EFFECT_OPS].sort()).toEqual([...KNOWN_OP_IDS].sort())
   })
   it('ALLOWED_EFFECT_OPS の全opに日本語ラベルがある', () => {
     for (const op of ALLOWED_EFFECT_OPS) {
@@ -282,5 +293,44 @@ describe('contentEditorForm: resolvePreviewColor（battle-effectsのvisual.color
   })
   it('undefined は null', () => {
     expect(resolvePreviewColor(undefined)).toBeNull()
+  })
+})
+
+describe('contentEditorForm: buildSpriteRuns（ドット絵の横方向ランレングス化）', () => {
+  const def = (frames: Record<string, readonly string[]>, palette: Record<string, string>): SpriteDefLike =>
+    ({ w: 3, h: 3, palette, frames })
+
+  it('横に連続する同色セルを1本の run にまとめ、色が変わると分割する', () => {
+    const d = def({ idle: ['aab', '...', 'bba'] }, { a: '#ff0000', b: '#00ff00' })
+    expect(buildSpriteRuns(d, 'idle')).toEqual([
+      { x: 0, y: 0, w: 2, color: '#ff0000' },
+      { x: 2, y: 0, w: 1, color: '#00ff00' },
+      { x: 0, y: 2, w: 2, color: '#00ff00' },
+      { x: 2, y: 2, w: 1, color: '#ff0000' },
+    ])
+  })
+
+  it("'.' は透明セルとして run を作らず、run を分断する", () => {
+    const d = def({ idle: ['a.a'] }, { a: '#ff0000' })
+    expect(buildSpriteRuns(d, 'idle')).toEqual([
+      { x: 0, y: 0, w: 1, color: '#ff0000' },
+      { x: 2, y: 0, w: 1, color: '#ff0000' },
+    ])
+  })
+
+  it("パレット値が '@' で始まる動的色スロット、およびパレット未定義の文字は透明として飛ばす", () => {
+    const d = def({ idle: ['a@@', 'zza'] }, { a: '#ff0000', '@': '@dynamic' })
+    // '@' は palette['@'] = '@dynamic' で解決できるが raw.startsWith('@') によりスキップされる。
+    // 'z' は palette 未定義なので raw が undefined でスキップされる。
+    expect(buildSpriteRuns(d, 'idle')).toEqual([
+      { x: 0, y: 0, w: 1, color: '#ff0000' },
+      { x: 2, y: 1, w: 1, color: '#ff0000' },
+    ])
+  })
+
+  it('指定フレームが無ければ idle にフォールバックし、idle も無ければ空配列', () => {
+    const d = def({ idle: ['a'] }, { a: '#ff0000' })
+    expect(buildSpriteRuns(d, 'attack')).toEqual([{ x: 0, y: 0, w: 1, color: '#ff0000' }])
+    expect(buildSpriteRuns(def({ attack: ['a'] }, { a: '#ff0000' }), 'idle')).toEqual([])
   })
 })

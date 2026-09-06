@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { buildBackdropScene, pickBackgroundId, SCENE_W, SCENE_H, type BattleBackgroundDef } from '../../../../src/domain/battle/backdrop'
+import {
+  buildBackdropScene, pickBackgroundId, skyBands, glowRings, mixHex,
+  SCENE_W, SCENE_H, type BattleBackgroundDef, type BackdropScene,
+} from '../../../../src/domain/battle/backdrop'
 import { BATTLE_BACKGROUNDS, findBattleBackground } from '../../../../src/data/rpg/battleBackgrounds'
 
 function defOf(id: string): BattleBackgroundDef {
@@ -118,5 +121,142 @@ describe('pickBackgroundId', () => {
 
   it('候補が空なら null', () => {
     expect(pickBackgroundId([], false, null, () => 0.5)).toBeNull()
+  })
+})
+
+// ─────────────────────────────────────────────────────────────
+// 描画プリミティブ（skyBands / glowRings / mixHex）
+// docs/refactoring/02-domain.md §2-3 で components 層へ移設予定のため、
+// 移設で壊れても気づけるように現行の出力を固定しておく特性テスト。
+// ─────────────────────────────────────────────────────────────
+
+/** backdrop.ts のモジュール private 定数。JSON 化対象外（§4 low）なのでここに写して固定する */
+const SKY_BANDS = 12
+const GLOW_RINGS = 5
+/** glowRings の不透明度の下限（外周ほど薄くなるが 0 にはしない） */
+const GLOW_MIN_OPACITY = 0.06
+
+function sceneWith(over: Partial<BattleBackgroundDef> = {}): BackdropScene {
+  return buildBackdropScene({
+    id: 'bg_unit_test',
+    label: 'テスト背景',
+    sky: { top: '#000000', bottom: '#ffffff' },
+    ground: { top: '#333333', bottom: '#111111', baseline: 0.6 },
+    layers: [],
+    floor: { top: '#444444', bottom: '#222222', line: '#666666' },
+    accent: '#ff0000',
+    ...over,
+  })
+}
+
+describe('skyBands', () => {
+  const scene = sceneWith()
+  const GROUND_Y = SKY_BANDS * 10
+
+  it('groundY を SKY_BANDS 段の帯に割る', () => {
+    const bands = skyBands(scene, GROUND_Y)
+    expect(bands).toHaveLength(SKY_BANDS)
+    for (const b of bands) {
+      expect(b.x).toBe(0)
+      expect(b.w).toBe(SCENE_W)
+    }
+  })
+
+  it('帯は隙間も重なりもなく groundY までを覆う', () => {
+    const bands = skyBands(scene, GROUND_Y)
+    let y = 0
+    for (const b of bands) {
+      expect(b.y).toBe(y)
+      y += b.h
+    }
+    expect(y).toBe(GROUND_Y)
+  })
+
+  it('先頭の帯は sky.top、末尾の帯は sky.bottom の色になる', () => {
+    const bands = skyBands(scene, GROUND_Y)
+    expect(bands[0].color).toBe(scene.sky.top)
+    expect(bands[bands.length - 1].color).toBe(scene.sky.bottom)
+  })
+
+  it('段数より groundY が小さいときは高さ1の帯が groundY ぶんだけ並ぶ', () => {
+    const shallow = 5
+    const bands = skyBands(scene, shallow)
+    expect(bands).toHaveLength(shallow)
+    expect(bands.every(b => b.h === 1)).toBe(true)
+  })
+
+  it('groundY が 0 なら帯は1つも出ない', () => {
+    expect(skyBands(scene, 0)).toEqual([])
+  })
+
+  it('端数が出る groundY でも最後の帯が groundY を越えない', () => {
+    const odd = SKY_BANDS * 3 + 1
+    const bands = skyBands(scene, odd)
+    const last = bands[bands.length - 1]
+    expect(last.y + last.h).toBeLessThanOrEqual(odd)
+  })
+})
+
+describe('glowRings', () => {
+  const glowScene = sceneWith({ glow: { color: '#ffddaa', x: 0.3, y: 0.2, r: 0.15 } })
+
+  it('glow が無い背景では空配列', () => {
+    expect(glowRings(sceneWith())).toEqual([])
+  })
+
+  it('GLOW_RINGS 枚を外側から内側の順に返す', () => {
+    const rings = glowRings(glowScene)
+    expect(rings).toHaveLength(GLOW_RINGS)
+    for (let i = 1; i < rings.length; i++) {
+      expect(rings[i].r).toBeLessThan(rings[i - 1].r)
+      expect(rings[i].opacity).toBeGreaterThan(rings[i - 1].opacity)
+    }
+  })
+
+  it('中心と色は scene.glow をそのまま使う', () => {
+    for (const ring of glowRings(glowScene)) {
+      expect(ring.cx).toBe(glowScene.glow?.cx)
+      expect(ring.cy).toBe(glowScene.glow?.cy)
+      expect(ring.color).toBe('#ffddaa')
+    }
+  })
+
+  it('最外周の不透明度は下限に張り付き、内側ほど濃くなる', () => {
+    const rings = glowRings(glowScene)
+    expect(rings[0].opacity).toBeCloseTo(GLOW_MIN_OPACITY, 6)
+    expect(rings[rings.length - 1].opacity).toBeGreaterThan(GLOW_MIN_OPACITY)
+    expect(rings[rings.length - 1].opacity).toBeLessThan(1)
+  })
+
+  it('半径は整数へ丸められている（ドットの境界がぼけないように）', () => {
+    for (const ring of glowRings(glowScene)) expect(Number.isInteger(ring.r)).toBe(true)
+  })
+})
+
+describe('mixHex', () => {
+  it('t=0 は左、t=1 は右の色をそのまま返す', () => {
+    expect(mixHex('#123456', '#abcdef', 0)).toBe('#123456')
+    expect(mixHex('#123456', '#abcdef', 1)).toBe('#abcdef')
+  })
+
+  it('中間は各チャンネルを線形補間して四捨五入する', () => {
+    // 127.5 は Math.round で 128（0x80）へ上がる
+    expect(mixHex('#000000', '#ffffff', 0.5)).toBe('#808080')
+    expect(mixHex('#ff0000', '#0000ff', 0.5)).toBe('#800080')
+  })
+
+  it('上位チャンネルが 0 でも6桁に0埋めされる（padStart）', () => {
+    expect(mixHex('#000000', '#000000', 0.5)).toBe('#000000')
+    expect(mixHex('#000000', '#000010', 1)).toBe('#000010')
+    expect(mixHex('#000000', '#0000ff', 0.5)).toBe('#000080')
+  })
+
+  it('範囲外の t は 0〜255 にクランプされる', () => {
+    expect(mixHex('#000000', '#ffffff', 2)).toBe('#ffffff')
+    expect(mixHex('#000000', '#ffffff', -1)).toBe('#000000')
+  })
+
+  it('大文字の16進も解釈し、出力は常に小文字', () => {
+    expect(mixHex('#FF00AA', '#FF00AA', 0.5)).toBe('#ff00aa')
   })
 })

@@ -21,13 +21,28 @@ function setup(): { battle: Battle } {
   const battle = useBattleState()
   battle.initRun(alwaysHitNoCrit())
   const raw = toRaw(battle.state)
+  // ここから下は、検証対象（多段ヒットの段階表示）に必要な条件だけを残した固定フィクスチャ。
+  // initRun が引くエンカウントも初期プレイヤーも実データ（enemy-sets / battle.json）依存で
+  // 増減するため、実データのまま検証すると意図と無関係な理由で壊れる。
+  //
+  // 敵を1体に絞るのは特に重要: 2体編成だと1体目を倒した時点で同じコールスタック内に
+  // 2体目の announce が入り込み、表示HP・表示生死のベースラインが解決後の真値へ
+  // 上書きされて、見たい段階表示そのものが消える。
+  raw.enemies.splice(1)
   // skill_barrage をスロット0に装備し、確実に発動できる状態にする
   raw.player.actives = [{ id: 'skill_barrage', points: 0, level: 1, cooldown: 0, slotIndex: 0 }]
+  raw.player.traits = []
+  raw.player.passives = []
   raw.player.baseStats.int = 1000
   // 弾幕は magical, int参照 rate:0.08。Lv1倍率×1 → 1発 ≈ 80ダメージ。
-  // 敵のHPを250に設定し、4発目(80*4=320>250)で必ず死ぬようにする
-  raw.enemies[0].baseStats.hp = 250
-  raw.enemies[0].hp = 250
+  // 敵のHPを250に設定し、4発目(80*4=320>250)で必ず死ぬようにする。
+  // 1発あたりのダメージが敵の防御・属性相性で揺れると「何発で倒れるか」が変わるため、
+  // 減衰要素（REF/DEF・特性・パッシブ）と回避（AGI由来）をここで無効化する。
+  const enemy = raw.enemies[0]
+  enemy.baseStats = { ...enemy.baseStats, hp: 250, def: 0, ref: 0, agi: 0 }
+  enemy.hp = 250
+  enemy.traits = []
+  enemy.passives = []
   return { battle }
 }
 

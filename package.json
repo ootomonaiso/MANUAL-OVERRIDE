@@ -16,6 +16,7 @@
     "validate": "node scripts/validate-json.mjs",
     "check-doc-links": "node scripts/check-doc-links.mjs",
     "bundle-size": "node scripts/check-bundle-size.mjs",
+    "css-snapshot": "node scripts/css-snapshot.mjs",
     "new-genre": "node scripts/new-genre.mjs",
     "reach-sim": "node scripts/genre-reach-sim.mjs .",
     "test": "playwright test",

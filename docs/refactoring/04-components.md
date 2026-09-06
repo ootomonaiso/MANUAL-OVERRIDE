@@ -346,6 +346,19 @@ style ブロックから該当22行を削除。`:style` はインライン（詳
 | low | `InfoPanel.vue:20-26` vs `StatusPanel.vue:4-10` | `InfoStatRow` と `StatRowView` が**構造的に完全同一**（型の二重定義） |
 | low | `SkillPanel.vue:28-33` vs `StatusPanel.vue:4-10` | 両方が `StatRowView` という名前で**別物**を export しており、`BattleScreen.vue:33` が `PanelStatRowView` にリネームして回避している。**命名衝突** → `SkillPanel` 側を `StatAllocationRowView` に改名 |
 
+### 7-1.【low】Phase 0 で判明した潜在的な不整合
+
+- **`CharacterFrame.vue` の `.status-row` は side でゲートされていない。** `v-if` は `alive && statusEffects.length > 0` だけで、
+  prop のコメントが「プレイヤーのバフは `BuffStrip` 側」と書いているのに、`statusEffects` を渡せばプレイヤー側にもチップが出る。
+  現状 `BattleScreen` がプレイヤーフレームに `statusEffects` を渡していないため顕在化していない。
+  **§5-3 の props 再構成で `enemy?` の中へ入れると挙動が変わる**ので、この潜在仕様を意識すること
+  （`tests/unit/components/battle/CharacterFrame.test.ts` に現状を固定済み）。
+- **折りたたみは純粋にCSSで行われている。** `collapsed` でも `.panel-body` はDOMに残る（`grid-template-rows: 0fr`）。
+  §2-1 の共通殻で `v-if`/`v-show` に置き換えると**見た目は同じでもDOMが変わる**。
+  `CategoryListPanel.test.ts` がこれを固定している。
+- **`GlossaryTerm` は `<button>` として描画され `display: inline`。** そのため `CharacterFrame` の `.affinity-tag` は
+  `affinity-tag` と `glossary-term` の両クラスを持つ。props 再構成でクラスの受け渡しが落ちやすい箇所。
+
 **CSSデッドクラスの走査結果:** 実際に未使用のクラスは**検出されなかった**。
 検出候補（`.battle-field` / `.enemy-line` / `.draft-overlay` / `.command-area` / `.pixel-sprite` / `popup-*` / `banner-*` / `tok-*`）は
 すべてコメント内言及・`:deep()`・Transition 自動クラス・動的クラス生成（`SkillText.vue:14`）によるもので**生きている**。
