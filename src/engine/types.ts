@@ -40,6 +40,8 @@ export interface MutableWorld {
   readonly scrollMode: 'x' | 'y'
   /** stealth_mode 隠密中フラグ（衝突判定で被弾回避に使用。SpecialFeature が毎フレーム更新） */
   readonly stealthHidden: boolean
+  /** 現在の入力スナップショット（justPressed 等。GameMode がキー入力を取得するために使用） */
+  readonly input: InputSnapshot
 
   // ─ ステルス状態更新（SpecialFeature 専用） ────────────────────
   /** 隠密中フラグを更新（衝突判定で参照される） */
@@ -79,6 +81,18 @@ export interface MutableWorld {
    * @param durationSec この秒数後に 1.0 に戻る（省略=永続）
    */
   setTimescale(scale: number, durationSec?: number): void
+
+  /**
+   * 勝利をエンジンに通知する（Mode 由来のクリア時など）。
+   * 省略可（undefined の場合は無視される）。
+   */
+  declareWin?(): void
+
+  /**
+   * 速度倍化対象のハザードID集合を返す（GlitchCorruptFeature が使用）。
+   * 省略可（undefined の場合は倍化なしとして扱う）。
+   */
+  getDoubledHazardIds?(): ReadonlySet<number>
 
   // ─ 座標系ヘルパー（FeatureSystem が scrollMode を意識しなくてよくする）
   /**
@@ -122,9 +136,13 @@ export interface MutableWorld {
 // InputSnapshot — 1フレーム分の入力状態
 // ──────────────────────────────────────────────────────────────────────
 export interface InputSnapshot {
-  readonly keys: ReadonlySet<string>
-  readonly justPressed: ReadonlySet<string>
-  readonly justReleased: ReadonlySet<string>
+  readonly keys: Set<string>
+  readonly justPressed: Set<string>
+  readonly justReleased: Set<string>
+  /** マウス位置・状態（TowerDefMode 等のクリック操作に使用）。省略可。 */
+  readonly mouse?: { x: number; y: number; down: boolean }
+  /** タッチ位置・状態。省略可。 */
+  readonly touch?: { x: number; y: number; down: boolean }
 }
 
 // ──────────────────────────────────────────────────────────────────────

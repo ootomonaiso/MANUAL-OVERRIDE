@@ -83,7 +83,7 @@ function showToast(msg: string) {
 
 const snapshot = ref<GameSnapshot>({
   distance: 0, playScore: 0, combo: 0, kills: 0, exp: 0,
-  beatHits: 0, survivedSec: 0, hp: 3, maxHp: 3, dead: false, shouldUpdate: null,
+  beatHits: 0, survivedSec: 0, hp: 3, maxHp: 3, dead: false, won: false, shouldUpdate: null,
   statJumps: 0, statMoveLeft: 0, statMoveRight: 0, firstJumpDone: false,
   learningNotification: null, scoreFormulaError: null,
   statCollisions: 0, statItemsCollected: 0, statShots: 0, statDashes: undefined,
@@ -177,6 +177,17 @@ function beginSnapshotLoop() {
     if (snapshot.value.dead && p !== 'throwing' && p !== 'ending' && p !== 'updating'
         && deathBeatTimer === null) {
       reviewPaused.value = false  // 死亡時はレビューを解除
+      deathBeatTimer = window.setTimeout(() => {
+        deathBeatTimer = null
+        const cur = gameState.phase.value
+        if (cur !== 'throwing' && cur !== 'ending') gameState.startThrowing()
+      }, DEATH_BEAT_MS)
+    }
+
+    // 勝利（Mode 由来のクリア）→ 同様に投擲フェーズへ
+    if (snapshot.value.won && p !== 'throwing' && p !== 'ending' && p !== 'updating'
+        && deathBeatTimer === null) {
+      reviewPaused.value = false
       deathBeatTimer = window.setTimeout(() => {
         deathBeatTimer = null
         const cur = gameState.phase.value
@@ -555,7 +566,7 @@ onUnmounted(() => {
       <!-- tabindex 属性なし: キーボード操作可能。フォーカス中の Space は @keydown.space で抑制（ゲームのジャンプと競合するため） -->
       <Transition name="giveup-reveal">
         <div
-          v-if="['playing','genreLocked'].includes(gameState.phase.value) && !snapshot.dead"
+          v-if="['playing','genreLocked'].includes(gameState.phase.value) && !snapshot.dead && !snapshot.won"
           class="giveup-area"
           :style="giveupThemeStyle"
         >

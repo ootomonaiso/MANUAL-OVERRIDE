@@ -23,7 +23,8 @@ describe('JSONGenrePlugin visual property delegation (#260)', () => {
     resetRegistry()
 
     // 必要な TS プラグインを手動登録
-    const { BasePlugin, RunnerPlugin } = await import('../../../src/genres/BasePlugin')
+    const { BasePlugin } = await import('../../../src/genres/BasePlugin')
+    const { RunnerPlugin } = await import('../../../src/genres/RunnerPlugin')
     registerGenre(new BasePlugin())
     registerGenre(new RunnerPlugin())
 

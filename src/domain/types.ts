@@ -32,7 +32,7 @@ export type GenreParams = Partial<Record<GenreParam, number>>
 // ─────────────────────────────────────────────────────────────
 export type GenreId = string
 
-export type Phase = 'title' | 'tutorialIntro' | 'tutorial' | 'updating' | 'playing' | 'genreLocked' | 'throwing' | 'ending'
+export type Phase = 'title' | 'tutorialIntro' | 'tutorial' | 'updating' | 'playing' | 'genreLocked' | 'throwing' | 'won' | 'ending'
 
 // ─────────────────────────────────────────────────────────────
 // 説明書テーマ（UIの見た目クラスに対応）
@@ -78,6 +78,7 @@ export type EnvironmentId   =
 //       grid_stop / puzzle_solve
 //       beat_hazard / just_input / beat_dash
 //       stealth_mode / time_bonus / tower / color_touch
+//       glitch_corrupt / lane_dodge / sanity
 // 新規フィーチャーは FeatureSystem 実装 + systems/index.ts 登録で拡張可能。
 // ─────────────────────────────────────────────────────────────
 export type FeatureId = string

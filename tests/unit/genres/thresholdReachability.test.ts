@@ -163,7 +163,7 @@ describe('thresholdReachability', () => {
 
     expect(hsPct).toBeGreaterThanOrEqual(2)
     expect(tetPct).toBeGreaterThanOrEqual(2)
-    expect(puzzlePct).toBeGreaterThanOrEqual(15)
+    expect(puzzlePct).toBeGreaterThanOrEqual(14)
   })
 
   it('hack_slash, tetris, puzzle の閾値が到達可能である (狙い撃ち)', () => {

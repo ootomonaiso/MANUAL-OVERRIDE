@@ -14,8 +14,15 @@ interface ShootState {
   shotCooldown: number
 }
 
+/** 敵専用射撃モード: 通常の障害物（maxHp <= 1）を貫通 */
+const ENEMIES_ONLY_FEATURE = 'enemies_only'
+
+// HP バー描画定数
+const HP_BAR_HEIGHT = 3
+const HP_BAR_Y_OFFSET = -6
+
 export class ShootFeature implements FeatureSystem {
-  readonly handles = ['shoot', 'three_way', 'charge_shot', 'spread_shot', 'enemy_hp', 'bomb'] as const
+  readonly handles = ['shoot', 'three_way', 'charge_shot', 'spread_shot', 'enemy_hp', 'bomb', 'enemies_only'] as const
 
   private state: ShootState = this._fresh()
 
@@ -69,6 +76,9 @@ export class ShootFeature implements FeatureSystem {
         px.rect(x + 1, y, w - 2, h, '#ffff00')
       }
     }
+
+    // 敵 HP バー描画（enemies_only 有効時）
+    this._renderHpBars(ctx, world)
   }
 
   // ─── 内部: タイマー管理 ──────────────────────────────────────────
@@ -159,6 +169,7 @@ export class ShootFeature implements FeatureSystem {
   } {
     const s = this.state
     const hasEnemyHp = world.rules.features.has('enemy_hp')
+    const enemiesOnly = world.rules.features.has(ENEMIES_ONLY_FEATURE)
     let scoreGain = 0
 
     for (const b of s.bullets) {
@@ -167,6 +178,13 @@ export class ShootFeature implements FeatureSystem {
         // 死亡済みハザードをスキップ。同一フレームで複数弾が同一ハザードに命中する場合（three_way / spread_shot 等）、
         // hp<=0 のハザードへの追加ヒットで kills/combo/score/SE が多重発生するのを防ぐ。
         if (h.isSafe || h.hp <= 0 || !rectsOverlap(b.rect, h.rect, 0)) continue
+
+        // 敵専用射撃モード: 通常の障害物（maxHp <= 1）は貫通（ダメージなし、弾も消滅）
+        if (enemiesOnly && h.maxHp <= 1) {
+          b.alive = false
+          break
+        }
+
         b.alive = false
         if (hasEnemyHp) {
           h.hp--
@@ -244,5 +262,37 @@ export class ShootFeature implements FeatureSystem {
     // FeatureSystem が world.bullets を読む場合に同期
     ;(world.bullets as Bullet[]).length = 0
     ;(world.bullets as Bullet[]).push(...s.bullets)
+  }
+
+  // ─── 内部: 敵 HP バー描画 ──────────────────────────────────────
+  private _renderHpBars(ctx: CanvasRenderingContext2D, world: MutableWorld): void {
+    const enemiesOnly = world.rules.features.has(ENEMIES_ONLY_FEATURE)
+    if (!enemiesOnly) return
+
+    ctx.save()
+    for (const h of world.hazards) {
+      if (h.maxHp <= 1) continue // 通常の障害物は HP バー不要
+
+      const screenX = world.getHazardScreenX(h)
+      const barY = h.y + HP_BAR_Y_OFFSET
+      const barW = h.w
+      const barH = HP_BAR_HEIGHT
+
+      // 背景
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'
+      ctx.fillRect(screenX, barY, barW, barH)
+
+      // 充填（緑）
+      const ratio = h.hp / h.maxHp
+      const fillW = ratio * barW
+      ctx.fillStyle = '#44ff88'
+      ctx.fillRect(screenX, barY, fillW, barH)
+
+      // 枠線
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)'
+      ctx.lineWidth = 1
+      ctx.strokeRect(screenX, barY, barW, barH)
+    }
+    ctx.restore()
   }
 }

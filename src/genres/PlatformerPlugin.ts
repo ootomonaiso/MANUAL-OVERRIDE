@@ -11,12 +11,14 @@ import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
 import { DarkThemePlugin } from './BasePlugin'
 import { PixelCanvas } from '../game/render'
+import platformerMode from '../game/modes/PlatformerMode'
 
 // プレイヤーの走りアニメーションのフレーム数（run_a / run_b の2枚）
 const PLATFORMER_RUN_FRAME_COUNT = 2
 
 export class PlatformerPlugin extends DarkThemePlugin {
   readonly id: GenreId = 'platformer'
+  readonly gameMode = platformerMode
 
   readonly skyColors: readonly [string, string] = ['#1a88e8', '#4db8ff']
   readonly groundColors: readonly [string, string] = ['#2d7a2d', '#1a5c1a']

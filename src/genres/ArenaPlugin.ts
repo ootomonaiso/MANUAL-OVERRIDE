@@ -11,12 +11,14 @@ import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
 import { BOSS } from '../data/tunables'
 import { PixelCanvas } from '../game/render'
+import arenaMode from '../game/modes/ArenaMode'
 
 // プレイヤーの走りアニメーションのフレーム数（run_a / run_b の2枚）
 const GLADIATOR_RUN_FRAME_COUNT = 2
 
 export class ArenaPlugin extends GenrePluginBase {
   readonly id: GenreId = 'arena'
+  readonly gameMode = arenaMode
 
   readonly skyColors    = ['#0a0000', '#180000'] as const
   readonly groundColors = ['#1a0a00', '#120600'] as const

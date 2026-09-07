@@ -8,9 +8,11 @@ import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
 import { DarkThemePlugin } from './BasePlugin'
 import { PixelCanvas } from '../game/render'
+import { RhythmMode } from '../game/modes/RhythmMode'
 
 export class RhythmPlugin extends DarkThemePlugin {
   readonly id: GenreId = 'rhythm'
+  readonly gameMode = new RhythmMode()
   readonly skyColors: readonly [string, string] = ['#0a0015', '#150028']
   readonly groundColors: readonly [string, string] = ['#1a0030', '#0d0018']
   readonly farLayerColor = '#1a0040'

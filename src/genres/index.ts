@@ -15,7 +15,7 @@
  * ────────────────────────────────────────────────────────────────
  */
 
-import { registerGenre, hasGenre, mergeSpawnDensity } from '../engine/GameRegistry'
+import { registerGenre, hasGenre, mergeSpawnDensity, registerMode } from '../engine/GameRegistry'
 import type { GenrePlugin } from '../engine/GenrePlugin'
 import type { GenreId } from '../domain/types'
 import { pluginManager } from '../plugins/PluginManager'
@@ -23,7 +23,7 @@ import { JSONGenrePlugin } from '../plugins/JSONGenrePlugin'
 import { GAME_CONFIG } from '../data/config'
 
 // ── 1. src/genres/*.ts の default export を自動収集して登録 ──────────
-// 単一インスタンスまたは配列（BasePlugin.ts のように複数クラスがある場合）に対応
+// default export が単一インスタンスまたは配列のいずれでも対応
 const pluginModules = import.meta.glob<GenrePlugin | GenrePlugin[]>(
   './*.ts',
   { eager: true, import: 'default' },
@@ -39,11 +39,13 @@ for (const [path, exported] of Object.entries(pluginModules)) {
       if (plugin?.id) {
         _registeredTsPluginIds.add(plugin.id)
         registerGenre(plugin)
+        if (plugin.gameMode) registerMode(plugin.id, plugin.gameMode)
       }
     }
   } else if (exported?.id) {
     _registeredTsPluginIds.add(exported.id)
     registerGenre(exported)
+    if (exported.gameMode) registerMode(exported.id, exported.gameMode)
   }
 }
 

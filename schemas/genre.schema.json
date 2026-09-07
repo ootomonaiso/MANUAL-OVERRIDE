@@ -116,7 +116,14 @@
           "survival_hunger",
           "survival_level",
           "survival_melee",
-          "tetris_mode"
+          "tetris_mode",
+          "glitch_corrupt",
+          "lane_dodge",
+          "sanity",
+          "aquatic",
+          "enemies_only",
+          "dungeon",
+          "stealth_detect"
         ]
       }
     },
@@ -157,7 +164,14 @@
           "survival_hunger",
           "survival_level",
           "survival_melee",
-          "tetris_mode"
+          "tetris_mode",
+          "glitch_corrupt",
+          "lane_dodge",
+          "sanity",
+          "aquatic",
+          "enemies_only",
+          "dungeon",
+          "stealth_detect"
         ]
       }
     },

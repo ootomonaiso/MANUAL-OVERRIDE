@@ -22,6 +22,12 @@ import { TetrisFeature }     from './TetrisFeature'
 import { SurvivalFeature }   from './SurvivalFeature'
 import { MeleeKillFeature }  from './MeleeKillFeature'
 import { NearMissComboFeature } from './NearMissComboFeature'
+import { GlitchCorruptFeature } from './GlitchCorruptFeature'
+import { LaneDodgeFeature } from './LaneDodgeFeature'
+import { SanityFeature } from './SanityFeature'
+import { AquaticFeature } from './AquaticFeature'
+import { DungeonFeature } from './DungeonFeature'
+import { StealthFeature } from './StealthFeature'
 
 registerFeature(new ShootFeature())
 registerFeature(new RhythmFeature())
@@ -33,3 +39,9 @@ registerFeature(new TetrisFeature())
 registerFeature(new SurvivalFeature())
 registerFeature(new MeleeKillFeature())
 registerFeature(new NearMissComboFeature())
+registerFeature(new GlitchCorruptFeature())
+registerFeature(new LaneDodgeFeature())
+registerFeature(new SanityFeature())
+registerFeature(new AquaticFeature())
+registerFeature(new DungeonFeature())
+registerFeature(new StealthFeature())

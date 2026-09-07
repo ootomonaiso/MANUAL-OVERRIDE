@@ -48,5 +48,7 @@
   "invincibleBlinkRate": 12,
   "invincibleDuration": 1.8,
   "runCycleRate": 0.006,
-  "hazardPulseRate": 2.0
+  "hazardPulseRate": 2.0,
+  "idleThreshold": 20,
+  "facingDeadzone": 20
 }

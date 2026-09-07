@@ -3,7 +3,7 @@
   "id": "aquatic",
   "label": "水中アドベンチャー",
   "thresholds": { "vertical": 3, "aerial": 3, "survive": 4 },
-  "enableFeatures": ["hp", "item_pickup", "slow_precise"],
+  "enableFeatures": ["hp", "item_pickup", "slow_precise", "aquatic"],
   "disableFeatures": ["auto_run", "shoot", "boss", "beat_hazard"],
   "scoreFormula": "distance * 0.8 + itemsCollected * 100 + survivedSec * 12",
   "manualReveal": "これは水中アドベンチャーになりました。深海を探索してください。",

@@ -248,14 +248,14 @@
 
 ## `index.ts` — 登録の仕組み
 
-`index.ts` は `import.meta.glob('./*.ts')` で各プラグインの default export を自動収集して登録する（手動の登録リストは持たない）。`BasePlugin.ts` のように複数クラスを配列で default export することもできる。さらに、TSプラグインが存在しない JSON 定義ジャンルには `JSONGenrePlugin` のフォールバックが自動生成される。
+`index.ts` は `import.meta.glob('./*.ts')` で各プラグインの default export を自動収集して登録する（手動の登録リストは持たない）。default export が単一インスタンスまたは配列のいずれでも対応する。さらに、TSプラグインが存在しない JSON 定義ジャンルには `JSONGenrePlugin` のフォールバックが自動生成される。
 
-### TSプラグインで実装済みのジャンル（16 クラス）
+### TSプラグインで実装済みのジャンル（22 クラス）
 
 | クラス | ジャンルID |
 |---|---|
 | `BasePlugin` | `base` |
-| `RunnerPlugin`（BasePlugin.ts 内） | `runner` |
+| `RunnerPlugin` | `runner` |
 | `StgPlugin` | `stg` |
 | `RpgPlugin` | `rpg` |
 | `RhythmPlugin` | `rhythm` |
@@ -270,5 +270,11 @@
 | `DungeonPlugin` | `dungeon` |
 | `HackSlashPlugin` | `hack_slash` |
 | `TetrisPlugin` | `tetris` |
+| `TowerDefPlugin` | `tower_def` |
+| `IdlePlugin` | `idle` |
+| `HorrorPlugin` | `horror` |
+| `SportsPlugin` | `sports` |
+| `StealthActionPlugin` | `stealth_action` |
+| `GlitchPlugin` | `glitch` |
 
-※ `bullet_hell`, `stealth_action`, `tower_def`, `sports`, `idle`, `horror`, `glitch` は専用 TSプラグインを持たず、`JSONGenrePlugin` フォールバックで描画される。
+※ `bullet_hell` のみ専用 TSプラグインを持たず、`JSONGenrePlugin` フォールバックで描画される。

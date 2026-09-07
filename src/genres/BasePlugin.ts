@@ -1,24 +1,25 @@
 /**
  * genres/BasePlugin.ts
- * 'base' および 'runner' の視覚テーマを担当するジャンルプラグイン。
+ * 'base' ジャンルの視覚テーマを担当するジャンルプラグイン。
  *
  * DarkThemePlugin は継承可能な共通描画ロジックを持つ abstract クラス。
  * フィールドは全て abstract とし、各サブクラスが具体値を提供する。
  * これにより TypeScript のリテラル型の継承問題を回避する。
+ *
+ * 'runner' ジャンルは RunnerPlugin.ts を参照。
  */
 
 import { GenrePluginBase } from '../engine/GenrePluginBase'
 import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
+import type { PlayerAnimState } from '../engine/GenrePlugin'
 import { PixelCanvas } from '../game/render'
 import { PIXELART } from '../data/tunables'
+import { selectPlayerFrame } from './playerBaseAnim'
 
 // 山シルエット（drawFarLayer）の描画範囲マージン。スクロール時の端の途切れを防ぐ
 // （旧実装の sin サンプリング step=40 と同じ余白をセル単位で踏襲）
 const FAR_LAYER_MARGIN_CELLS = 10
-
-// プレイヤーの走りアニメーションのフレーム数（run_a / run_b の 2 枚）
-const RUN_FRAME_COUNT = 2
 
 export abstract class DarkThemePlugin extends GenrePluginBase {
   abstract readonly id: GenreId
@@ -73,17 +74,19 @@ export abstract class DarkThemePlugin extends GenrePluginBase {
     w: number, h: number,
     onGround: boolean,
     runCycle: number,
+    animState?: PlayerAnimState,
   ): void {
     const px = new PixelCanvas(ctx)
 
     // 影（スプライトには含めず、translate/scale された座標系にそのまま残す）
     px.ellipse(w / 2, h + 2, w * 0.4, 4, 'rgba(0,0,0,0.25)')
 
-    // 既存の引数（onGround / runCycle）だけでフレームを決める。新しい状態は追加しない
-    const frame = onGround
-      ? (Math.floor(runCycle * RUN_FRAME_COUNT) % 2 === 0 ? 'run_a' : 'run_b')
-      : 'jump'
-    px.sprite('player_base', 0, 0, w, h, { frame })
+    const s: PlayerAnimState = animState ?? {
+      vx: 0, vy: 0, onGround, runCycle, facing: 1,
+    }
+    const frame = selectPlayerFrame(s)
+    const flipX = s.facing === -1
+    px.sprite('player_base', 0, 0, w, h, { frame, flipX })
   }
 
   /** デフォルトのビネット・スキャンライン前景 */
@@ -120,26 +123,4 @@ export class BasePlugin extends DarkThemePlugin {
   ]
 }
 
-// ──────────────────────────────────────────────────────────────────────
-// RunnerPlugin — 'runner' ジャンル
-// ──────────────────────────────────────────────────────────────────────
-export class RunnerPlugin extends DarkThemePlugin {
-  readonly id: GenreId = 'runner'
-  readonly skyColors: readonly [string, string] = ['#0d0d1e', '#1e1e3e']
-  readonly groundColors: readonly [string, string] = ['#1a1a3a', '#0e0e22']
-  readonly farLayerColor = '#1a1a4a'
-  readonly midLayerColor = '#15153a'
-  readonly starColor: string | undefined = '#ffffff'
-  readonly palette = {
-    danger: '#e74c3c', dangerGlow: '#ff6b6b',
-    safe:   '#00cec9', safeGlow:   '#55efc4',
-  }
-  readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',    placement: 'ground', weightStart: 8,  weightEnd: 5,  wRange: [22, 40], hRange: [30, 55] },
-    { shape: 'rect',    placement: 'air',    weightStart: 2,  weightEnd: 4,  wRange: [28, 48], hRange: [25, 40] },
-    { shape: 'spike',   placement: 'ground', weightStart: 1,  weightEnd: 5,  wRange: [22, 40], hRange: [40, 65] },
-    { shape: 'pillar',  placement: 'ground', weightStart: 0,  weightEnd: 3,  wRange: [14, 18], hRange: [70, 130] },
-  ]
-}
-
-export default [new BasePlugin(), new RunnerPlugin()]
+export default new BasePlugin()

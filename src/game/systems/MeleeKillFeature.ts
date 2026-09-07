@@ -1,11 +1,15 @@
 /**
  * game/systems/MeleeKillFeature.ts
- * rpg / dungeon 固有の近接攻撃フィーチャー。
+ * rpg / dungeon / hack_slash 固有の近接攻撃フィーチャー。
  *
  * melee_kill — Zキーでプレイヤー前後の矩形範囲内のハザードを一撃破壊。
  * enemy_hp 未有効でも即破壊（rpg/dungeon は HP 概念なし）。
  *
- * 既存の SURVIVAL.melee* パラメータを流用し、同様の矩形計算・パーティクル・スイング演出を行う。
+ * コンボシステム:
+ * - 2秒以内の連続ヒットでコンボ増加
+ * - コンボ 5 の倍数でクリティカル（即破壊 + 追加スコア + シェイク）
+ * - コントラで world.setCombo() に同期
+ * - 各ヒットで 50 * combo のボーナススコア
  */
 
 import type { FeatureSystem } from '../../engine/FeatureSystem'
@@ -19,17 +23,35 @@ import { buildMeleeRect, drawMeleeSwing } from './meleeShared'
 interface MeleeKillState {
   cooldown: number
   active: number
+  combo: number
+  comboTimer: number
 }
 
 const MELEE_KILL_HAZARD_POPUP_COLOR = '#ff8844'
 
+// コンボ
+const COMBO_WINDOW = 2.0
+const CRIT_COMBO_INTERVAL = 5
+const CRIT_BONUS_SCORE = 200
+const COMBO_BASE_SCORE_MULTIPLIER = 50
+
+// HUD
+const COMBO_HUD_X = 20
+const COMBO_HUD_Y = 60
+
+// 色
+const COLOR_COMBO_LOW = '#ffffff'
+const COLOR_COMBO_MID = '#ffcc00'
+const COLOR_COMBO_HIGH = '#ff4444'
+const COLOR_CRITICAL = '#ff0000'
+
 export class MeleeKillFeature implements FeatureSystem {
   readonly handles = ['melee_kill'] as const
 
-  private state: MeleeKillState = { cooldown: 0, active: 0 }
+  private state: MeleeKillState = { cooldown: 0, active: 0, combo: 0, comboTimer: 0 }
 
   onInit(): void {
-    this.state = { cooldown: 0, active: 0 }
+    this.state = { cooldown: 0, active: 0, combo: 0, comboTimer: 0 }
   }
 
   update(world: MutableWorld, input: InputSnapshot, dt: number): void {
@@ -48,12 +70,17 @@ export class MeleeKillFeature implements FeatureSystem {
       this.state.active,
       SURVIVAL.meleeCooldown,
     )
+    this._renderComboHud(ctx, world)
   }
 
   // ─── 内部: タイマー更新 ──────────────────────────────────────────
   private _tickTimers(dt: number): void {
     this.state.cooldown -= dt
     this.state.active -= dt
+    this.state.comboTimer -= dt
+    if (this.state.comboTimer <= 0) {
+      this.state.combo = 0
+    }
   }
 
   // ─── 内部: 入力受付 ──────────────────────────────────────────────
@@ -102,16 +129,57 @@ export class MeleeKillFeature implements FeatureSystem {
         )
       }
 
+      // ─── コンボ更新 ──────────────────────────────────────────
+      this.state.combo++
+      this.state.comboTimer = COMBO_WINDOW
+      world.setCombo(this.state.combo)
+
       // kills +1
       world.setKills(world.gameStats.kills + 1)
+
+      // ─── クリティカル判定 ────────────────────────────────────
+      const isCritical = this.state.combo % CRIT_COMBO_INTERVAL === 0
+      if (isCritical) {
+        world.triggerShake(0.5)
+        world.addScorePopup(cx, cy - 24, `CRITICAL! +${CRIT_BONUS_SCORE}`, COLOR_CRITICAL)
+        world.addScore(CRIT_BONUS_SCORE)
+      }
+
+      // ─── コンボボーナススコア ────────────────────────────────
+      const comboBonus = COMBO_BASE_SCORE_MULTIPLIER * this.state.combo
+      world.addScore(comboBonus)
+      world.addScorePopup(cx, cy - 16, `+${comboBonus}`, MELEE_KILL_HAZARD_POPUP_COLOR)
 
       // ジャンルプラグインの onHazardDestroyed フック
       const plugin = getGenre(world.rules.genre)
       plugin.onHazardDestroyed?.(world, h)
 
-      // スコアポップ
-      world.addScorePopup(cx, cy - 16, 'SLASH!', MELEE_KILL_HAZARD_POPUP_COLOR)
-      world.triggerShake(VFX.hitShakeIntensity * 0.3)
+      // スコアポップ（クリティカル以外）
+      if (!isCritical) {
+        world.triggerShake(VFX.hitShakeIntensity * 0.3)
+      }
     }
+  }
+
+  // ─── 内部: コンボ HUD ────────────────────────────────────────────
+
+  private _renderComboHud(ctx: CanvasRenderingContext2D, _world: MutableWorld): void {
+    if (this.state.combo <= 1) return
+
+    let color: string
+    if (this.state.combo >= 10) {
+      color = COLOR_COMBO_HIGH
+    } else if (this.state.combo >= 5) {
+      color = COLOR_COMBO_MID
+    } else {
+      color = COLOR_COMBO_LOW
+    }
+
+    ctx.save()
+    ctx.fillStyle = color
+    ctx.font = 'bold 24px monospace'
+    ctx.textAlign = 'left'
+    ctx.fillText(`${this.state.combo} COMBO`, COMBO_HUD_X, COMBO_HUD_Y)
+    ctx.restore()
   }
 }

@@ -20,12 +20,14 @@
 import type { GenreId, FeatureId } from '../domain/types'
 import type { GenrePlugin } from './GenrePlugin'
 import type { FeatureSystem } from './FeatureSystem'
+import type { GameMode } from './GameMode'
 
 // ──────────────────────────────────────────────────────────────────────
 // 内部ストレージ
 // ──────────────────────────────────────────────────────────────────────
 const _genres   = new Map<GenreId, GenrePlugin>()
 const _features = new Map<FeatureId, FeatureSystem>()
+const _modes    = new Map<GenreId, GameMode>()
 
 // ──────────────────────────────────────────────────────────────────────
 // 登録 API
@@ -53,6 +55,26 @@ export function registerFeature(system: FeatureSystem): void {
     }
     _features.set(id, system)
   }
+}
+
+/**
+ * ジャンルに GameMode を登録する。
+ * Mode があるジャンルはデフォルトのコアループ（スクロール+障害物+衝突）の代わりに
+ * Mode の update/render を使用する。
+ */
+export function registerMode(genreId: GenreId, mode: GameMode): void {
+  if (_modes.has(genreId)) {
+    console.warn(`[GameRegistry] ジャンル "${genreId}" の GameMode を上書き登録します。`)
+  }
+  _modes.set(genreId, mode)
+}
+
+/**
+ * 指定ジャンルの GameMode を返す。
+ * 登録されていない場合は undefined を返す（デフォルトパイプラインを使用）。
+ */
+export function getMode(genreId: GenreId): GameMode | undefined {
+  return _modes.get(genreId)
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -95,6 +117,7 @@ export function hasGenre(id: GenreId): boolean {
 export function debugPrint(): void {
   console.warn('[GameRegistry] 登録状況 — Genres:', [..._genres.keys()].join(', '))
   console.warn('[GameRegistry] 登録状況 — Features:', [..._features.keys()].join(', '))
+  console.warn('[GameRegistry] 登録状況 — Modes:', [..._modes.keys()].join(', '))
 }
 
 /**
@@ -108,6 +131,7 @@ export function resetRegistry(): void {
   }
   _genres.clear()
   _features.clear()
+  _modes.clear()
 }
 
 /**
@@ -140,5 +164,11 @@ export function devValidateRegistry(allFeatureIds: FeatureId[]): void {
   }
   if (!_genres.has('base')) {
     console.error('[GameRegistry] "base" ジャンルが未登録です！')
+  }
+  // Mode のバリデーション: ゲームモードを持つジャンルは必ず登録済みであること
+  for (const [genreId, mode] of _modes) {
+    if (!genreId) {
+      console.warn(`[GameRegistry] GameMode "${mode.id}" が空のジャンルIDで登録されています。`)
+    }
   }
 }

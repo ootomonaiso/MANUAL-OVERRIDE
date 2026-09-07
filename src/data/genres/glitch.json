@@ -3,7 +3,7 @@
   "label": "壊れたゲーム",
   "thresholds": {},
   "resolvable": false,
-  "enableFeatures": ["movement", "hp"],
+  "enableFeatures": ["movement", "hp", "glitch_corrupt"],
   "disableFeatures": [],
   "scoreFormula": "distance * 0.1 + survivedSec * 2",
   "manualReveal": "説明書が壊れました。もう何をすべきか分かりません。",

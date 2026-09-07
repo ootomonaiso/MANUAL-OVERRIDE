@@ -110,7 +110,7 @@ src/
 ├── engine/          # GenrePlugin・FeatureSystem インターフェース + GameRegistry
 ├── domain/          # 純粋ロジック（ruleEngine, genreResolver, scoreCalc, LearningSystem）
 ├── framework/       # ConfigLoader・ManualBuilder・ManualValidator（JSON読み込み基盤）
-├── genres/          # ジャンルプラグイン（TS実装 16種・15ファイル。BasePlugin.ts に Base + Runner の2クラスを含む）
+├── genres/          # ジャンルプラグイン（TS実装 22種・22ファイル、1ファイル1クラス。+ hashUtil / playerBaseAnim のユーティリティ）
 ├── plugins/         # PluginManager・SoundManager・SfxSound・JSONGenrePlugin
 ├── tools/           # 開発専用ツール（本番ビルド対象外。production から import 禁止）
 ├── game/
@@ -269,7 +269,7 @@ src/
 - [x] 説明書UI（右下常時表示、テーマ切り替え対応）
 - [x] 説明書の多段階更新と2択選択
 - [x] ジャンルパラメータの蓄積と収束判定（genreParams / genrePoints / ベイズ収束 3方式）
-- [x] 22ジャンルの完全実装（JSON定義23ファイル + TSプラグイン16種 / JSONフォールバック7種）
+- [x] 22ジャンルの完全実装（JSON定義23ファイル + TSプラグイン22種 / JSONフォールバック1種: bullet_hell）
 
 ### 高度な機能
 - [x] 無限選択肢システム（100+ 選択肢、ver 9.0～15.0）

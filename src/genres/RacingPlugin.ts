@@ -10,9 +10,12 @@ import { GenrePluginBase } from '../engine/GenrePluginBase'
 import type { SpawnEntry } from '../engine/types'
 import type { GenreId } from '../domain/types'
 import { PixelCanvas } from '../game/render'
+import { RacingMode } from '../game/modes/RacingMode'
 
 export class RacingPlugin extends GenrePluginBase {
   readonly id: GenreId = 'racing'
+
+  readonly gameMode = new RacingMode()
 
   readonly skyColors    = ['#08060a', '#100c14'] as const
   readonly groundColors = ['#1a1410', '#0f0a08'] as const
