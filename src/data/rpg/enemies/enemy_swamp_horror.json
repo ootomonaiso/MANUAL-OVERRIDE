@@ -1,20 +1,42 @@
 {
   "$schema": "../../../../schemas/battle-enemy.schema.json",
   "id": "enemy_swamp_horror",
-  "label": "澱み溜まりの怪",
-  "flavorText": "読まれなかった説明書が、澱のように溜まってできた。",
+  "label": "澱み溜まりのスライム",
+  "flavorText": "流行によって生まれ、流行に滅ぼされた怨念が淀みとなった。",
   "sprite": "battle_swamp_horror",
   "stats": {
-    "hp": 26000, "str": 850, "def": 1800, "int": 700, "ref": 1000, "agi": 300,
-    "hitRate": 0.93, "evadeRate": 0, "critRate": 0.06, "critDamageMultiplier": 1.6
+    "hp": 20000,
+    "str": 1000,
+    "def": 1500,
+    "int": 480,
+    "ref": 800,
+    "agi": 210,
+    "hitRate": 0.95,
+    "evadeRate": 0,
+    "critRate": 0.06,
+    "critDamageMultiplier": 1.6
   },
-  "traits": ["trait_resist_physical"],
+  "traits": [],
   "activeSkills": [
-    { "id": "skill_dragon_scale", "level": 2 },
-    { "id": "skill_shockwave", "level": 2 },
-    "skill_strike"
+    {
+      "id": "skill_strike",
+      "level": 3
+    },
+    {
+      "id": "skill_flurry_shot",
+      "level": 2
+    },
+    {
+      "id": "skill_counter",
+      "level": 2
+    }
   ],
   "passiveSkills": [],
-  "actionPattern": ["skill_dragon_scale", "skill_shockwave", "skill_strike", "skill_strike"],
+  "actionPattern": [
+    "skill_strike",
+    "skill_counter",
+    "skill_strike",
+    "skill_flurry_shot"
+  ],
   "isBoss": true
 }

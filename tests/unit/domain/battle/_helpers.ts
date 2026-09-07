@@ -28,14 +28,17 @@ export function makeCombatant(over: Partial<Combatant> = {}): Combatant {
   const baseStats = over.baseStats ?? makeStats()
   return {
     id: 'c1', label: 'テスト', isPlayer: false,
+    spriteId: '', flavorText: '',
     baseStats,
-    hp: baseStats.hp, shield: 0, alive: true,
+    hp: baseStats.hp, shield: 0, maxShield: over.shield ?? 0, alive: true,
     traits: [], passives: [], actives: [],
     temporary: [],
     periodicSelfEffects: [],
+    periodicTargetEffects: [],
     pendingCounter: null,
     queuedCounterHits: 0,
     pendingTransformBonus: null,
+    skipNextTurn: false,
     builtinCooldowns: { guard: 0, dodge: 0 },
     actionPattern: [], patternIndex: 0, formationIndex: 0, isBoss: false,
     ...over,
@@ -168,6 +171,7 @@ export function makeCtx(parts: {
   rng?: () => number
   state?: BattleState
   emit?: (req: EffectRequest) => void
+  dealtDamage?: { total: number; missedPotential: number }
 }): EffectContext {
   const content = parts.content
   return {
@@ -180,6 +184,7 @@ export function makeCtx(parts: {
     rng: parts.rng ?? constRng(0.5),
     getEffective: c => resolveEffectiveStats(c, content),
     content,
+    dealtDamage: parts.dealtDamage ?? { total: 0, missedPotential: 0 },
   }
 }
 

@@ -63,15 +63,10 @@ function setup(enemyCount: 1 | 2 = 1): { battle: Battle } {
     second.baseStats = { ...second.baseStats, hp: 999999 }
     second.hp = 999999
     raw.enemies.push(second)
-    // turnQueue は initRun 内の startBattle（＝この2体目を追加する前）で確定済みのため、
-    // 追加した2体目を含めて明示的に組み直す（agi/priority は processTurns() が
-    // combatantId しか見ないため値そのものに意味はない）。
-    raw.turnQueue = [
-      { combatantId: raw.player.id, agi: 100, priority: 100 },
-      { combatantId: enemy.id, agi: 0, priority: 0 },
-      { combatantId: second.id, agi: 0, priority: 0 },
-    ]
-    raw.turnIndex = 0
+    // 行動速度キューは「プレイヤーが行動を決めた瞬間」に selectAction が組み立てる
+    // ようになった（CLAUDE_TASKS.md参照）ため、ここで turnQueue を手動で組み直す必要はない
+    // ——追加した2体目も含め、selectAction 呼び出し時点の state.enemies から自動的に
+    // 反映される。player.baseStats.agi はいずれの敵よりも高い前提（enemyの agi:0 参照）
     // 2体目自身の攻撃内容は検証対象外。その手番でプレイヤーが倒れて戦闘終了に
     // 分岐すると検証したい状態遷移と無関係な経路に入ってしまうため、確実に耐えられる
     // だけの体力を与えておく。

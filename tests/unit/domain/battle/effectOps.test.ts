@@ -2,13 +2,14 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   getOp, allOpIds, runEffects, KNOWN_OP_IDS,
   clearThisHitModifiers, clearThisTurnModifiers, clearThisBattleModifiers, downgradeNextRoundModifiers,
+  decrementRoundsModifiers,
 } from '../../../../src/domain/battle/effectOps'
 import { shieldCutRateFor } from '../../../../src/domain/battle/effectOps/damage'
 import { BATTLE } from '../../../../src/data/tunables'
 import type { BattleStats, Combatant, TemporaryModifier } from '../../../../src/domain/battle/types'
 import {
   makeStats, makeCombatant, makePlayer, makeActive, makePassive, makeTrait,
-  makeContent, makeCtx, captureEffects, constRng, node,
+  makeContent, makeCtx, makeState, captureEffects, constRng, node,
 } from './_helpers'
 
 afterEach(() => { vi.restoreAllMocks() })
@@ -600,6 +601,40 @@ describe('effectOps: modifier', () => {
   })
 })
 
+describe('effectOps: 自己命中率デバフを damage より前に置くと、その一撃自体の命中判定へ即座に反映される（大振り 想定）', () => {
+  const skill = makeActive({
+    id: 'skill_wild_swing',
+    effect: [
+      node('modifier', { stat: 'hitRate', rate: -0.75, scope: 'thisHit' }),
+      node('damage', { element: 'physical', scale: { stat: 'str', rate: 3.5 } }),
+    ],
+  })
+
+  it('命中率が事前に75%減った状態でその場のdamageの命中判定が行われる', () => {
+    const source = makePlayer({ baseStats: makeStats({ str: 1000, hitRate: 1, critRate: 0 }) })
+    const target = makeCombatant({ id: 'foe', baseStats: makeStats({ hp: 100000, ...NEVER_EVADES }), hp: 100000 })
+    const content = makeContent({ skills: [skill] })
+    const state = makeState({ player: source, enemies: [target] })
+    // rng=0.3: 素の命中率1.0なら命中(0.3<1.0)だが、-75%後の命中率0.25では外れる(0.3<0.25は偽)
+    const ctx = makeCtx({ source, targets: [target], skill, content, state, rng: constRng(0.3) })
+
+    runEffects(skill.effect, ctx)
+
+    expect(target.hp).toBe(100000)   // 外れてダメージが通らない
+  })
+
+  it('runEffects終了後は thisHit スコープが失効し、次の行動の命中率には影響しない', () => {
+    const source = makePlayer({ baseStats: makeStats({ str: 1000, hitRate: 1, critRate: 0 }) })
+    const target = makeCombatant({ id: 'foe', baseStats: makeStats({ hp: 100000, ...NEVER_EVADES }), hp: 100000 })
+    const content = makeContent({ skills: [skill] })
+    const state = makeState({ player: source, enemies: [target] })
+    const ctx = makeCtx({ source, targets: [target], skill, content, state, rng: constRng(0.3) })
+
+    runEffects(skill.effect, ctx)
+    expect(source.temporary).toHaveLength(0)
+  })
+})
+
 describe('effectOps: periodicSelfDamage', () => {
   it('継続ダメージを自身の periodicSelfEffects へ登録する（龍鱗 想定）', () => {
     const skill = makeActive({ id: 'skill_dragon_scale' })
@@ -626,5 +661,162 @@ describe('effectOps: counterStance', () => {
     )
     expect(source.pendingCounter).toEqual({ scaleStat: 'def', rate: 1, element: 'physical', sourceId: 'skill_counter' })
     expect(source.queuedCounterHits).toBe(0)
+  })
+})
+
+describe('effectOps: periodicTargetDamage', () => {
+  const skill = makeActive({ id: 'skill_wind_wrap' })
+  const content = makeContent({ skills: [skill] })
+
+  it('継続ダメージ（相手側向け）を自身の periodicTargetEffects へ登録する（風の剣 想定）', () => {
+    const source = makePlayer()
+    getOp('periodicTargetDamage')?.execute(
+      node('periodicTargetDamage', { element: 'none', scale: { stat: 'agi', rate: 0.5 }, duration: 3 }),
+      makeCtx({ source, targets: [source], skill, content }),
+    )
+    expect(source.periodicTargetEffects).toEqual([
+      { element: 'none', scaleStat: 'agi', rate: 0.5, roundsRemaining: 3, sourceId: 'skill_wind_wrap' },
+    ])
+  })
+
+  it('同一スキル由来の効果が重複した場合、新規に増やさず残存ラウンド数を延長する', () => {
+    const source = makePlayer()
+    const n = node('periodicTargetDamage', { element: 'none', scale: { stat: 'agi', rate: 0.5 }, duration: 3 })
+    getOp('periodicTargetDamage')?.execute(n, makeCtx({ source, targets: [source], skill, content }))
+    getOp('periodicTargetDamage')?.execute(n, makeCtx({ source, targets: [source], skill, content }))
+    expect(source.periodicTargetEffects).toHaveLength(1)
+    expect(source.periodicTargetEffects[0].roundsRemaining).toBe(6)
+  })
+
+  it('スキルレベルの倍率が rate に掛かった状態で保存される', () => {
+    const source = makePlayer()
+    getOp('periodicTargetDamage')?.execute(
+      node('periodicTargetDamage', { element: 'none', scale: { stat: 'agi', rate: 0.5 }, duration: 3 }),
+      makeCtx({ source, targets: [source], skill, content, level: 2 }),
+    )
+    expect(source.periodicTargetEffects[0].rate).toBe(0.625)   // 0.5 × 1.25（Lv2）
+  })
+})
+
+describe('effectOps: modifier の scope:"rounds"', () => {
+  it('decrementRoundsModifiers は rounds のみ1減らし、0になったら失効する。他のscopeには影響しない', () => {
+    const c = makeCombatant({
+      temporary: [
+        { stat: 'str', rate: -0.2, scope: 'rounds', roundsRemaining: 2, sourceId: 'x' },
+        { stat: 'int', flat: 1, scope: 'permanent', sourceId: 'x' },
+      ],
+    })
+    decrementRoundsModifiers(c)
+    expect(c.temporary).toEqual([
+      { stat: 'str', rate: -0.2, scope: 'rounds', roundsRemaining: 1, sourceId: 'x' },
+      { stat: 'int', flat: 1, scope: 'permanent', sourceId: 'x' },
+    ])
+    decrementRoundsModifiers(c)
+    expect(c.temporary).toEqual([
+      { stat: 'int', flat: 1, scope: 'permanent', sourceId: 'x' },
+    ])
+  })
+
+  it('modifierOp は scope:"rounds" のとき rounds を roundsRemaining として保存する（オーバーライド 想定）', () => {
+    const skill = makeActive({ id: 'skill_override' })
+    const content = makeContent({ skills: [skill] })
+    const source = makePlayer()
+    const target = makeCombatant({ id: 'foe' })
+    getOp('modifier')?.execute(
+      node('modifier', { stat: 'str', rate: -0.2, scope: 'rounds', rounds: 3, applyTo: 'target' }),
+      makeCtx({ source, targets: [target], skill, content }),
+    )
+    expect(target.temporary[0]).toMatchObject({ stat: 'str', rate: -0.2, scope: 'rounds', roundsRemaining: 3 })
+  })
+
+  it('clearThisBattleModifiers は rounds も thisBattle 等と一緒に消す', () => {
+    const c = makeCombatant({
+      temporary: [
+        { stat: 'str', rate: -0.2, scope: 'rounds', roundsRemaining: 2, sourceId: 'x' },
+        { stat: 'int', flat: 1, scope: 'permanent', sourceId: 'x' },
+      ],
+    })
+    clearThisBattleModifiers(c)
+    expect(c.temporary).toEqual([{ stat: 'int', flat: 1, scope: 'permanent', sourceId: 'x' }])
+  })
+})
+
+describe('effectOps: selfDamageFromDealt', () => {
+  const skill = makeActive({
+    id: 'skill_meteor', element: 'magical', focusRange: 'all',
+    effect: [
+      node('damage', { element: 'magical', scale: { stat: 'int', rate: 1 } }),
+      node('selfDamageFromDealt', { rate: 0.5 }),
+    ],
+  })
+
+  it('範囲攻撃で与えた合計ダメージ（複数対象の合計）の割合を自傷する（烙天 想定）', () => {
+    const source = makePlayer({ baseStats: makeStats({ int: 1000, hp: 100000, hitRate: 1, critRate: 0 }) })
+    const t1 = makeCombatant({ id: 'foe1', baseStats: makeStats({ hp: 100000, ...NEVER_EVADES }), hp: 100000 })
+    const t2 = makeCombatant({ id: 'foe2', baseStats: makeStats({ hp: 100000, ...NEVER_EVADES }), hp: 100000 })
+    const content = makeContent({ skills: [skill] })
+    const state = makeState({ player: source, enemies: [t1, t2] })
+    const ctx = makeCtx({ source, targets: [t1, t2], skill, content, state, rng: constRng(0.5) })
+
+    runEffects(skill.effect, ctx)
+
+    expect(100000 - t1.hp).toBe(1000)
+    expect(100000 - t2.hp).toBe(1000)
+    expect(100000 - source.hp).toBe(1000)   // (1000+1000) × 0.5
+  })
+
+  it('この一撃で相手側が全滅した場合は自傷ダメージを受けない', () => {
+    const source = makePlayer({ baseStats: makeStats({ int: 1000, hp: 100000, hitRate: 1, critRate: 0 }) })
+    const t1 = makeCombatant({ id: 'foe1', baseStats: makeStats({ hp: 500, ...NEVER_EVADES }), hp: 500 })
+    const content = makeContent({ skills: [skill] })
+    const state = makeState({ player: source, enemies: [t1] })
+    const ctx = makeCtx({ source, targets: [t1], skill, content, state, rng: constRng(0.5) })
+
+    runEffects(skill.effect, ctx)
+
+    expect(t1.alive).toBe(false)
+    expect(source.hp).toBe(100000)
+  })
+
+  it('生き残りが1体でもいれば自傷ダメージを受ける', () => {
+    const source = makePlayer({ baseStats: makeStats({ int: 1000, hp: 100000, hitRate: 1, critRate: 0 }) })
+    const t1 = makeCombatant({ id: 'foe1', baseStats: makeStats({ hp: 500, ...NEVER_EVADES }), hp: 500 })
+    const t2 = makeCombatant({ id: 'foe2', baseStats: makeStats({ hp: 100000, ...NEVER_EVADES }), hp: 100000 })
+    const content = makeContent({ skills: [skill] })
+    const state = makeState({ player: source, enemies: [t1, t2] })
+    const ctx = makeCtx({ source, targets: [t1, t2], skill, content, state, rng: constRng(0.5) })
+
+    runEffects(skill.effect, ctx)
+
+    expect(t1.alive).toBe(false)
+    expect(t2.alive).toBe(true)
+    expect(100000 - source.hp).toBe(1000)   // 全滅していないので自傷が発生する
+  })
+
+  it('外れた対象の分も、クリティカルなし想定のダメージとして自傷計算に加算される（内部仕様: 外して自傷を避けることはできない）', () => {
+    const source = makePlayer({ baseStats: makeStats({ int: 1000, hp: 100000, hitRate: 0, critRate: 0 }) })
+    const t1 = makeCombatant({ id: 'foe1', baseStats: makeStats({ hp: 100000, ...NEVER_EVADES }), hp: 100000 })
+    const content = makeContent({ skills: [skill] })
+    const state = makeState({ player: source, enemies: [t1] })
+    const ctx = makeCtx({ source, targets: [t1], skill, content, state, rng: constRng(0.5) })
+
+    runEffects(skill.effect, ctx)
+
+    expect(t1.hp).toBe(100000)   // 命中率0のため完全に外れる
+    expect(100000 - source.hp).toBe(500)   // 外れた分の想定ダメージ1000 × 0.5
+  })
+
+  it('rate にはスキルレベルの倍率が掛からない（既にレベル倍率込みのdealtDamageへ掛けると二重補正になるため）', () => {
+    const source = makePlayer({ baseStats: makeStats({ int: 1000, hp: 1000000, hitRate: 1, critRate: 0 }) })
+    const t1 = makeCombatant({ id: 'foe1', baseStats: makeStats({ hp: 1000000, ...NEVER_EVADES }), hp: 1000000 })
+    const content = makeContent({ skills: [skill] })
+    const state = makeState({ player: source, enemies: [t1] })
+    const ctx = makeCtx({ source, targets: [t1], skill, content, state, level: 2, rng: constRng(0.5) })
+
+    runEffects(skill.effect, ctx)
+
+    const dealt = 1000000 - t1.hp
+    const selfDamage = 1000000 - source.hp
+    expect(selfDamage).toBe(Math.floor(dealt * 0.5))   // レベル2でも比率は常にちょうど50%
   })
 })

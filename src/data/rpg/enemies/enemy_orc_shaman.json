@@ -2,15 +2,32 @@
   "$schema": "../../../../schemas/battle-enemy.schema.json",
   "id": "enemy_orc_shaman",
   "label": "呪文詠みのオーク",
-  "flavorText": "分厚い装丁を、杖代わりに掲げている。",
+  "flavorText": "聖人としての社会的地位を確立している。",
   "sprite": "battle_orc_shaman",
   "stats": {
-    "hp": 3400, "str": 300, "def": 500, "int": 700, "ref": 600, "agi": 350,
-    "hitRate": 0.92, "evadeRate": 0, "critRate": 0.05, "critDamageMultiplier": 1.5
+    "hp": 7200,
+    "str": 720,
+    "def": 1220,
+    "int": 1700,
+    "ref": 1460,
+    "agi": 840,
+    "hitRate": 0.92,
+    "evadeRate": 0,
+    "critRate": 0.05,
+    "critDamageMultiplier": 1.5
   },
-  "traits": ["trait_weak_physical"],
-  "activeSkills": ["skill_weird_wave", "skill_curse_bolt"],
+  "traits": [
+    "trait_weak_physical"
+  ],
+  "activeSkills": [
+    "skill_weird_wave",
+    "skill_curse_bolt"
+  ],
   "passiveSkills": [],
-  "actionPattern": ["skill_weird_wave", "skill_curse_bolt", "skill_curse_bolt"],
+  "actionPattern": [
+    "skill_weird_wave",
+    "skill_curse_bolt",
+    "skill_curse_bolt"
+  ],
   "isBoss": false
 }

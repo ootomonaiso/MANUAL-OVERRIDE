@@ -43,7 +43,18 @@ export function clearThisTurnModifiers(c: { temporary: TemporaryModifier[] }): v
 }
 
 export function clearThisBattleModifiers(c: { temporary: TemporaryModifier[] }): void {
-  c.temporary = c.temporary.filter(m => m.scope !== 'thisBattle' && m.scope !== 'thisTurn' && m.scope !== 'nextRound')
+  c.temporary = c.temporary.filter(m =>
+    m.scope !== 'thisBattle' && m.scope !== 'thisTurn' && m.scope !== 'nextRound' && m.scope !== 'rounds')
+}
+
+/**
+ * `rounds` スコープの残存ラウンド数を1減らし、0以下になったものを失効させる。
+ * `thisTurn`/`nextRound` とは独立した寿命管理のため、それらの失効処理と順序依存はない。
+ */
+export function decrementRoundsModifiers(c: { temporary: TemporaryModifier[] }): void {
+  c.temporary = c.temporary
+    .map(m => m.scope === 'rounds' ? { ...m, roundsRemaining: (m.roundsRemaining ?? 1) - 1 } : m)
+    .filter(m => m.scope !== 'rounds' || (m.roundsRemaining ?? 0) > 0)
 }
 
 /**
@@ -60,5 +71,6 @@ export function downgradeNextRoundModifiers(c: { temporary: TemporaryModifier[] 
 export const KNOWN_OP_IDS = [
   'damage', 'heal', 'shield', 'repeat', 'modifier',
   'statBoost', 'elementAffinity', 'cutRate', 'replaceGuard', 'healBetweenBattles',
-  'effectBoost', 'healTaken', 'noop', 'counterStance', 'periodicSelfDamage',
+  'effectBoost', 'healTaken', 'noop', 'counterStance', 'periodicSelfDamage', 'periodicTargetDamage',
+  'selfDamageFromDealt', 'cancelTargetAction',
 ] as const

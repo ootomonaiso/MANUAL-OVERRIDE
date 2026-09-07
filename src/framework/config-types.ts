@@ -374,7 +374,12 @@ export interface BattleConfig {
   affinity: { weakStage: number; resistStage: number }
   guard: { cutRate: number; cooldown: number }
   dodge: { evadeBonus: number; cooldown: number }
-  shield: { cutRate: number; cutRateVsSpecial: number }
+  /**
+   * decayPerTurn: 毎ターン終了時に最大シールド値（過去に到達した最高値。シールドが0まで
+   * 減ると次回付与時にリセットされる）からこの割合を失う。decayPerBattle: 戦闘終了後（勝利時、
+   * shieldはHPと共に次戦へ持ち越されるため）追加でこの割合を失う。第10フェーズで導入
+   */
+  shield: { cutRate: number; cutRateVsSpecial: number; decayPerTurn: number; decayPerBattle: number }
   /** カテゴリ特化の解放に必要な累計ポイント（段階配列。実装後に持ち越しの暫定値） */
   categoryUnlockThresholds: number[]
   fallbackStatBoost: { hp: number; other: number }
@@ -426,7 +431,8 @@ export interface SkillPointsConfig {
   levelMultiplierStep: number
   /** 何戦ごとにスキル/ステータスポイント配分パネルを挟むか */
   panelIntervalBattles: number
-  panelSkillPoints: number
+  /** パネル出現の何回目かに応じて取得スキルポイントを繰り返す配列（1回目=index0、以降ループ）。第9フェーズ参照 */
+  panelSkillPointsCycle: number[]
   panelStatPoints: number
   /** 装備中アクティブの重複がドラフト候補に出現する重み（通常候補の何倍か） */
   duplicateDraftWeight: number

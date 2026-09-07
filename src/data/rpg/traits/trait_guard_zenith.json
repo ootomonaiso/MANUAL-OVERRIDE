@@ -2,11 +2,22 @@
   "$schema": "../../../../schemas/battle-trait.schema.json",
   "id": "trait_guard_zenith",
   "label": "守勢の真髄",
-  "flavorText": "どこから来る一撃も、もう見切れる。",
+  "flavorText": "ATフィールド(Anti-Talk-Field)展開、相手との対話を拒絶します。",
   "kind": "trait",
-  "unlockCondition": { "category": "guard", "points": 20 },
+  "unlockCondition": {
+    "category": "guard",
+    "points": 20
+  },
   "effect": [
-    { "op": "statBoost", "stat": "def", "rate": 0.15 },
-    { "op": "statBoost", "stat": "ref", "rate": 0.15 }
+    {
+      "op": "statBoost",
+      "stat": "def",
+      "rate": 0.15
+    },
+    {
+      "op": "statBoost",
+      "stat": "ref",
+      "rate": 0.15
+    }
   ]
 }

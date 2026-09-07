@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_desperate_strike",
+  "label": "捨身の一撃",
+  "flavorText": "生き残った者だけが、振るう資格を得る。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "fatal",
+  "subCategories": [
+    "might"
+  ],
+  "cooldown": 6,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "minRound": 2,
+  "effects": [
+    "fx_slash"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "physical",
+      "scale": {
+        "stat": "str",
+        "rate": 4.2
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing",
+    "impact": "battle_hit_physical"
+  }
+}

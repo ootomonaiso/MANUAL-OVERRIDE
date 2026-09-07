@@ -1,21 +1,46 @@
 {
   "$schema": "../../../../schemas/battle-enemy.schema.json",
   "id": "enemy_arch_cultist",
-  "label": "大改訂者",
-  "flavorText": "世界そのものを、自分の解釈で書き換えようとしている。",
+  "label": "開発者",
+  "flavorText": "我々は間違った世界を正さなければならない。/肩書「Developer」",
   "sprite": "battle_arch_cultist",
   "stats": {
-    "hp": 19000, "str": 500, "def": 1400, "int": 1400, "ref": 1200, "agi": 600,
-    "hitRate": 0.95, "evadeRate": 0, "critRate": 0.1, "critDamageMultiplier": 1.8
+    "hp": 32000,
+    "str": 840,
+    "def": 2360,
+    "int": 2360,
+    "ref": 2030,
+    "agi": 1020,
+    "hitRate": 0.95,
+    "evadeRate": 0,
+    "critRate": 0.1,
+    "critDamageMultiplier": 1.8
   },
-  "traits": ["trait_weak_physical"],
+  "traits": [
+    "trait_weak_physical"
+  ],
   "activeSkills": [
-    { "id": "skill_curse_bolt", "level": 3 },
-    { "id": "skill_flame_ring", "level": 2 },
+    {
+      "id": "skill_curse_bolt",
+      "level": 3
+    },
+    {
+      "id": "skill_flame_ring",
+      "level": 2
+    },
     "skill_weird_wave",
-    { "id": "skill_arcane_bombardment", "level": 2 }
+    {
+      "id": "skill_arcane_bombardment",
+      "level": 2
+    }
   ],
   "passiveSkills": [],
-  "actionPattern": ["skill_weird_wave", "skill_curse_bolt", "skill_flame_ring", "skill_arcane_bombardment", "skill_curse_bolt"],
+  "actionPattern": [
+    "skill_weird_wave",
+    "skill_curse_bolt",
+    "skill_flame_ring",
+    "skill_arcane_bombardment",
+    "skill_curse_bolt"
+  ],
   "isBoss": true
 }

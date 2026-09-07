@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_wind_blade",
+  "label": "風刃",
+  "flavorText": "不可視の斬撃を浴びせる",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "swift",
+  "subCategories": [
+    "fatal"
+  ],
+  "cooldown": 2,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_physical"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "physical",
+      "scale": {
+        "stat": "agi",
+        "rate": 1.5
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing",
+    "impact": "battle_hit_physical"
+  }
+}

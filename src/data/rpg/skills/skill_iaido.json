@@ -6,13 +6,30 @@
   "kind": "active",
   "element": "physical",
   "mainCategory": "fatal",
-  "subCategories": ["might"],
+  "subCategories": [
+    "might"
+  ],
   "cooldown": 3,
   "defaultFocus": "enemy",
   "focusRange": "single",
-  "effects": ["fx_slash"],
+  "effects": [
+    "fx_slash"
+  ],
   "effect": [
-    { "op": "damage", "element": "physical", "scale": { "stat": "str", "rate": 1.2 } }
+    {
+      "op": "modifier",
+      "stat": "critDamageMultiplier",
+      "amount": 1,
+      "scope": "thisTurn"
+    },
+    {
+      "op": "damage",
+      "element": "physical",
+      "scale": {
+        "stat": "str",
+        "rate": 1.3
+      }
+    }
   ],
   "sfx": {
     "cast": "battle_swing",

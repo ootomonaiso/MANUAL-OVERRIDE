@@ -105,12 +105,15 @@ export function runEffects(nodes: readonly EffectNode[], ctx: EffectContext): vo
 | `noop` | 何もしない（「様子を見る」用） | ― |
 | `counterStance` | 反撃態勢に入る（次の被弾ぶんをまとめて反撃） | `scaleStat: 'def'\|'ref'` / `rate` / `element` |
 | `periodicSelfDamage` | 継続ダメージ（DOT）を自身に登録する | `ratio`（実効最大HPに対する割合） |
+| `periodicTargetDamage` | 継続ダメージ（DOT）を相手側全体に与えるバフを自身に登録する（風の剣 想定） | `element` / `scale: { stat, rate }` / `duration`（ラウンド数）。同一スキル由来で重複時は新規追加せず `duration` を残存ラウンド数へ加算する |
+| `selfDamageFromDealt` | この発動で与えた合計ダメージの割合を自傷する（烙天 想定） | `rate`。相手側が全滅していれば発動しない |
+| `cancelTargetAction` | 確率で対象のこのラウンドの行動をキャンセルする（不意打ち 想定） | `chance`。`Combatant.skipNextTurn` を立て、行動速度キューでその対象の番が来た時に1回だけ消費する |
 
 この一覧は初期セットであり、**後から増やせることが要件**である。
 
 > **実装時に判明した追加**: 当初の一覧には「送出ダメージ = ... × 効果倍率」（ダメージ計算の流れ）が参照する**効果倍率そのものを付与する手段**が含まれていなかった（`damage`/`heal`/`shield` のいずれの倍率も1固定になってしまう欠落だった）。`effectBoost`（例:「物理攻撃+50%」）と、回復側の対称にあたる `healTaken`（「被回復量+30%」）を追加した。
 >
-> **さらに実装後に追加された3op**（詳細は末尾「実装後の記録」参照）: `noop`（意図的な無効果。「様子を見る」の実体）、`counterStance`（カウンター/反射板 用の反撃態勢）、`periodicSelfDamage`（龍鱗 用の継続ダメージ）。
+> **さらに実装後に追加された6op**（詳細は末尾「実装後の記録」参照）: `noop`（意図的な無効果。「様子を見る」の実体）、`counterStance`（カウンター/反射板 用の反撃態勢）、`periodicSelfDamage`（龍鱗 用の継続ダメージ）、`periodicTargetDamage`（風の剣 用の、相手側への継続ダメージ）、`selfDamageFromDealt`（烙天 用の反動ダメージ）、`cancelTargetAction`（不意打ち 用の行動キャンセル）。
 
 ### 宣言的op（`runEffects` から実行されない op）
 
@@ -162,10 +165,13 @@ export function runEffects(nodes: readonly EffectNode[], ctx: EffectContext): vo
 | `thisBattle` | 戦闘終了まで |
 | `permanent` | ラン終了まで |
 | `nextRound` | 付与されたラウンドの残り + 次のラウンド丸ごと（実装後に追加。下記参照） |
+| `rounds` | `rounds` に指定した任意のラウンド数だけ保つ（実装後に追加。下記参照） |
 
 > **実装後に追加**: `nextRound` は「他者の行動をまたいで、自分の次の行動でも生きている」補正のために追加された。`thisTurn` は `endOfRound()` で毎ラウンド即座に失効するため「相手の行動までしか保たない」（守る/避ける向け）。それでは足りないケース——大振りの自己デバフ（次の自分の行動開始まで DEF-50%）や、立直が仕込む「自摸使用時のみ」クリティカル率バフ——のために `nextRound` を用意した。
 >
 > 実装（`effectOps/registry.ts`）: `endOfRound()` が毎ラウンド `clearThisTurnModifiers()` で `thisTurn` を失効させた**直後**に `downgradeNextRoundModifiers()` を呼び、`nextRound` を `thisTurn` へ格下げする。この順序を逆にすると、格下げした直後に同じ呼び出しで消えてしまう。付与 → 格下げ → 失効で「2ラウンド分」保つ計算になる。
+>
+> **さらに実装後に追加**: `nextRound`（固定2ラウンド）でも `thisTurn`（固定1ラウンド）でもない、「3ターンだけ低下させる」ような任意長のデバフ（オーバーライド 想定）のために `rounds` を追加した。`modifier` ノードに `rounds: 3` のように持続ラウンド数を指定すると、`TemporaryModifier.roundsRemaining` にその値が入り、`effectOps/registry.ts::decrementRoundsModifiers()` が `endOfRound()` のたびに1減らして0で失効させる（`nextRound`の格下げ処理とは独立した寿命管理）。`clearThisBattleModifiers()` も `rounds` を戦闘終了時に一緒に消す。
 
 `applyTo` は補正を誰に与えるかを指定する（省略時 `"source"`）。
 
@@ -333,11 +339,22 @@ export type BuiltinAction = 'guard' | 'pass'
 
 | 性質 | 内容 |
 |---|---|
-| 期限 | **無期限**（ターン経過・時間経過で消えない） |
+| 期限 | **毎ターン終了時に減衰する**（下記「シールドの減衰」参照。第11フェーズで無期限から変更） |
 | 消費 | ダメージを受けた際、**HPより優先して消費**する |
 | カット率（通常） | **20%** |
 | カット率（特殊属性に対して） | **40%** |
 | 上限 | これらのカット率は最終カット率に合算され、**80%上限に従う** |
+
+### シールドの減衰（第11フェーズ）
+
+シールドを温存し続ける（張ったまま消費せずに持ち越す）ことができないよう、`Combatant.maxShield`（そのシールドが0まで減らずに到達した過去最高値。`applyShield` で更新し、0になると次の付与まで0にリセットされる）を基準に、固定量が自動的に失われていく。
+
+| タイミング | 減衰量 | 設定値 |
+|---|---|---|
+| 毎ターン終了時（`endOfRound()`） | `maxShield × decayPerTurn` | `battle.json:shield.decayPerTurn`（既定 **25%**） |
+| 戦闘勝利後（`finishBattleOnVictory()`） | `maxShield × decayPerBattle` | `battle.json:shield.decayPerBattle`（既定 **50%**） |
+
+減衰の基準は**その時点の残量ではなく `maxShield`**（過去最高値）である点に注意。例えば `maxShield:100` のシールドが被弾で `40` まで減っていても、ターン終了時の減衰量は `100 × 0.25 = 25`（`40 × 0.25` ではない）。両方とも `domain/battle/damageCalc.ts::decayShield()` が担う共通ロジック。
 
 ### ダメージ適用の順序
 
@@ -448,6 +465,13 @@ export function buildSkillText(skill: SkillDef, level: number): SkillTextToken[]
 > **決定（Q8）**: レベルを上げたのに表示が変わらないと成長を実感できないため、**レベル適用後の実値**を表示する。
 
 色は CSS 変数として定義し、ハードコードしない。
+
+**第11フェーズで追加**: アクティブスキル（`kind:'active'`）は、効果の数値だけでは分からない対象範囲
+（`defaultFocus`/`focusRange`）を「対象: 敵単体。」のように末尾に必ず明記する（全体攻撃・隣接3体・
+ランダム1体を選ぶ前に把握できるようにするため）。`self`/`ally` は range に関わらず「対象: 自分」と
+表示する（`resolvePlayerFocus` の `ally` フォールバックと同じ扱い）。パッシブ・特性は `focusRange`
+自体を持たないため、この表示は付かない。`minRound`/`alwaysActsFirst` と同じ理由（ゲーム上の制約は
+flavorTextではなく効果テキスト側に明記する方針）でこちらも効果テキストへ含めている。
 
 ---
 

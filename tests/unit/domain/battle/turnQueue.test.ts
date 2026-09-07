@@ -7,6 +7,7 @@ import type { Combatant } from '../../../../src/domain/battle/types'
 import { makeCombatant, makePlayer, makeStats, makeEnemyDef, makeContent, makeActive } from './_helpers'
 
 const agiOf = (c: Combatant): number => c.baseStats.agi
+const neverFirst = (): boolean => false
 
 function enemy(id: string, agi: number, formationIndex: number, alive = true): Combatant {
   return makeCombatant({ id, formationIndex, alive, baseStats: makeStats({ agi }) })
@@ -14,34 +15,52 @@ function enemy(id: string, agi: number, formationIndex: number, alive = true): C
 
 describe('turnQueue: 行動順キューの構築', () => {
   it('AGI の高い順に並ぶ', () => {
-    const q = buildTurnQueue([enemy('slow', 100, 0), enemy('fast', 900, 1)], agiOf)
+    const q = buildTurnQueue([enemy('slow', 100, 0), enemy('fast', 900, 1)], agiOf, neverFirst)
     expect(q.map(e => e.combatantId)).toEqual(['fast', 'slow'])
   })
 
   it('AGI が同値ならプレイヤーが先に行動する', () => {
     const p = makePlayer({ baseStats: makeStats({ agi: 500 }) })
-    const q = buildTurnQueue([enemy('e0', 500, 0), p], agiOf)
+    const q = buildTurnQueue([enemy('e0', 500, 0), p], agiOf, neverFirst)
     expect(q[0].combatantId).toBe('player')
   })
 
   it('敵同士が同値なら隊列の左（formationIndex 昇順）から行動する', () => {
-    const q = buildTurnQueue([enemy('right', 500, 2), enemy('left', 500, 0), enemy('mid', 500, 1)], agiOf)
+    const q = buildTurnQueue([enemy('right', 500, 2), enemy('left', 500, 0), enemy('mid', 500, 1)], agiOf, neverFirst)
     expect(q.map(e => e.combatantId)).toEqual(['left', 'mid', 'right'])
   })
 
   it('戦闘不能の参加者はキューに含まれない', () => {
-    const q = buildTurnQueue([enemy('dead', 900, 0, false), enemy('alive', 100, 1)], agiOf)
+    const q = buildTurnQueue([enemy('dead', 900, 0, false), enemy('alive', 100, 1)], agiOf, neverFirst)
     expect(q.map(e => e.combatantId)).toEqual(['alive'])
   })
 
   it('キューには算出済みの AGI が記録される', () => {
-    const q = buildTurnQueue([enemy('e0', 777, 0)], agiOf)
+    const q = buildTurnQueue([enemy('e0', 777, 0)], agiOf, neverFirst)
     expect(q[0].agi).toBe(777)
     expect(q[0].priority).toBe(777)
   })
 
   it('全員戦闘不能なら空のキューになる', () => {
-    expect(buildTurnQueue([enemy('a', 100, 0, false)], agiOf)).toEqual([])
+    expect(buildTurnQueue([enemy('a', 100, 0, false)], agiOf, neverFirst)).toEqual([])
+  })
+
+  it('alwaysFirstOf が true の対象は、AGIが低くても必ず先手になる（守る/避ける/不意打ち 想定）', () => {
+    const q = buildTurnQueue(
+      [enemy('fast', 900, 0), enemy('slow_but_first', 50, 1)],
+      agiOf,
+      c => c.id === 'slow_but_first',
+    )
+    expect(q.map(e => e.combatantId)).toEqual(['slow_but_first', 'fast'])
+  })
+
+  it('先手同士が複数いる場合は、その中でも通常どおりAGIで順序を決める', () => {
+    const q = buildTurnQueue(
+      [enemy('a', 100, 0), enemy('b', 300, 1), enemy('c', 200, 2)],
+      agiOf,
+      () => true,
+    )
+    expect(q.map(e => e.combatantId)).toEqual(['b', 'c', 'a'])
   })
 })
 

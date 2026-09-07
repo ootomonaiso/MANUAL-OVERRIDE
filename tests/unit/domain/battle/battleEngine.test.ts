@@ -594,7 +594,9 @@ describe('battleEngine: ラウンド終了処理', () => {
     const fx = captureEffects()
     endOfRound(makeState({ player }), content, fx.emit)
     expect(player.hp).toBe(4250)   // 5000 - (5000 × 0.15) = 4250、シールドは無関係
-    expect(player.shield).toBe(9999)   // シールドは一切消費されない
+    // シールドは継続ダメージでは一切消費されないが、endOfRound自体のターン終了時減衰
+    // （BATTLE.shield.decayPerTurn=0.25、maxShield基準）は別途かかる: 9999 - floor(9999×0.25) = 7500
+    expect(player.shield).toBe(7500)
     expect(fx.ids()).toContain('fx_debuff')
   })
 
@@ -656,11 +658,11 @@ describe('battleEngine: 勝利時の後処理', () => {
     return { state: makeState({ player, enemies: [makeCombatant({ id: 'e0', alive: false })] }), player }
   }
 
-  it('現在HPとシールドは次の戦闘へ持ち越される（無条件回復ぶんは加算される）', () => {
+  it('現在HPとシールドは次の戦闘へ持ち越されるが、シールドは decayPerBattle ぶん追加で目減りする', () => {
     const { state, player } = wonState()
     finishBattleOnVictory(state, content)
     expect(player.hp).toBe(6000)   // 4000 + 無条件回復(10000 × postBattleHealRate)
-    expect(player.shield).toBe(250)
+    expect(player.shield).toBe(125)   // 250 - floor(250 × decayPerBattle:0.5) = 125
   })
 
   it('特性がなくても戦闘終了時に無条件で最大HPの一定割合を回復し、記録される', () => {

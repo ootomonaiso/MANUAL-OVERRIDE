@@ -180,6 +180,17 @@ const VALID_THEMES = _genreSchema.properties.theme.enum
 const ajv = new Ajv({ strict: false, allErrors: true })
 const validateGenreSchema = ajv.compile(_genreSchema)
 
+/**
+ * ajv のエラーが指すフィールドパスを取り出す。導入されている ajv は package.json の指定
+ * （^8.20.0）と異なり実際には v6 系が解決されており（node_modules/ajv で確認済み）、
+ * エラーオブジェクトのプロパティ名が v7以降の instancePath ではなく dataPath
+ * （例: ".element"）になる。instancePath だけを見ると常に undefined になり、
+ * どのフィールドが失敗したか分からないまま全件 "(root)" と表示されてしまう
+ */
+function ajvErrorPath(err) {
+  return err.instancePath || err.dataPath || ''
+}
+
 const GENRE_ID_PATTERN = /^[a-z][a-z0-9_]*$/
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -300,7 +311,7 @@ function validateGenres() {
     const schemaValid = validateGenreSchema(data)
     if (!schemaValid && validateGenreSchema.errors) {
       for (const err of validateGenreSchema.errors) {
-        const path = err.instancePath || '(root)'
+        const path = ajvErrorPath(err) || '(root)'
         problems.push(`schema: ${path} ${err.message}`)
       }
     }
@@ -490,7 +501,7 @@ function walkEffectNodes(nodes, problems, path = 'effect') {
       if (node.onFirstIteration) walkEffectNodes(node.onFirstIteration, problems, `${p}.onFirstIteration`)
       if (node.onLastIteration) walkEffectNodes(node.onLastIteration, problems, `${p}.onLastIteration`)
     }
-    if (['damage', 'heal', 'shield'].includes(node.op)) {
+    if (['damage', 'heal', 'shield', 'periodicTargetDamage'].includes(node.op)) {
       // heal は flat（固定値・無参照）が scale の代わりに使える（小さな薬草 等）。
       // scale は stat（単一）か statOptions（複数のうち実効値最大を参照。自摸＝STR/INTの高い方 等）のどちらか
       const hasFlatHeal = node.op === 'heal' && typeof node.flat === 'number'
@@ -500,6 +511,18 @@ function walkEffectNodes(nodes, problems, path = 'effect') {
       if (!hasFlatHeal && !hasValidScale) {
         problems.push(`${p}: scale.stat（またはscale.statOptions） / scale.rate、または heal の flat が必要です`)
       }
+    }
+    if (node.op === 'periodicTargetDamage' && !(Number.isInteger(node.duration) && node.duration > 0)) {
+      problems.push(`${p}: duration は1以上の整数である必要があります`)
+    }
+    if (node.op === 'modifier' && node.scope === 'rounds' && !(Number.isInteger(node.rounds) && node.rounds > 0)) {
+      problems.push(`${p}: scope:"rounds" の場合、rounds は1以上の整数である必要があります`)
+    }
+    if (node.op === 'selfDamageFromDealt' && typeof node.rate !== 'number') {
+      problems.push(`${p}: rate（数値）が必要です`)
+    }
+    if (node.op === 'cancelTargetAction' && typeof node.chance !== 'number') {
+      problems.push(`${p}: chance（数値）が必要です`)
     }
   })
 }
@@ -521,7 +544,7 @@ function validateBattleSkills() {
     const problems = []
     const schemaValid = validateSkillSchema(data)
     if (!schemaValid && validateSkillSchema.errors) {
-      for (const err of validateSkillSchema.errors) problems.push(`schema: ${err.instancePath || '(root)'} ${err.message}`)
+      for (const err of validateSkillSchema.errors) problems.push(`schema: ${ajvErrorPath(err) || '(root)'} ${err.message}`)
     }
     if (data.id !== basename(file, '.json')) problems.push(`id "${data.id}" とファイル名が一致していません`)
     if (seen.has(data.id)) problems.push(`id "${data.id}" が他のスキルと重複しています`)
@@ -571,7 +594,7 @@ function validateBattleTraits() {
     const problems = []
     const schemaValid = validateTraitSchema(data)
     if (!schemaValid && validateTraitSchema.errors) {
-      for (const err of validateTraitSchema.errors) problems.push(`schema: ${err.instancePath || '(root)'} ${err.message}`)
+      for (const err of validateTraitSchema.errors) problems.push(`schema: ${ajvErrorPath(err) || '(root)'} ${err.message}`)
     }
     if (data.id !== basename(file, '.json')) problems.push(`id "${data.id}" とファイル名が一致していません`)
     if (seen.has(data.id)) problems.push(`id "${data.id}" が他の特性と重複しています`)
@@ -598,7 +621,7 @@ function validateBattleEnemies(activeIds, passiveIds, traitIds, spriteFrames) {
     const problems = []
     const schemaValid = validateEnemySchema(data)
     if (!schemaValid && validateEnemySchema.errors) {
-      for (const err of validateEnemySchema.errors) problems.push(`schema: ${err.instancePath || '(root)'} ${err.message}`)
+      for (const err of validateEnemySchema.errors) problems.push(`schema: ${ajvErrorPath(err) || '(root)'} ${err.message}`)
     }
     if (data.id !== basename(file, '.json')) problems.push(`id "${data.id}" とファイル名が一致していません`)
     if (seen.has(data.id)) problems.push(`id "${data.id}" が他の敵と重複しています`)
@@ -654,7 +677,7 @@ function validateEnemySets(enemyIds) {
     const problems = []
     const schemaValid = validateEnemySetSchema(data)
     if (!schemaValid && validateEnemySetSchema.errors) {
-      for (const err of validateEnemySetSchema.errors) problems.push(`schema: ${err.instancePath || '(root)'} ${err.message}`)
+      for (const err of validateEnemySetSchema.errors) problems.push(`schema: ${ajvErrorPath(err) || '(root)'} ${err.message}`)
     }
     if (data.id !== basename(file, '.json')) problems.push(`id "${data.id}" とファイル名が一致していません`)
     if (seen.has(data.id)) problems.push(`id "${data.id}" が他の敵セットと重複しています`)
@@ -753,7 +776,7 @@ function validateBattleEffects() {
     const problems = []
     const schemaValid = validateEffectSchema(data)
     if (!schemaValid && validateEffectSchema.errors) {
-      for (const err of validateEffectSchema.errors) problems.push(`schema: ${err.instancePath || '(root)'} ${err.message}`)
+      for (const err of validateEffectSchema.errors) problems.push(`schema: ${ajvErrorPath(err) || '(root)'} ${err.message}`)
     }
     if (data.id !== basename(file, '.json')) problems.push(`id "${data.id}" とファイル名が一致していません`)
     if (seen.has(data.id)) problems.push(`id "${data.id}" が他のエフェクトと重複しています`)
@@ -810,7 +833,7 @@ function validateBattleBackgrounds() {
     const problems = []
     const schemaValid = validateBackgroundSchema(data)
     if (!schemaValid && validateBackgroundSchema.errors) {
-      for (const err of validateBackgroundSchema.errors) problems.push(`schema: ${err.instancePath || '(root)'} ${err.message}`)
+      for (const err of validateBackgroundSchema.errors) problems.push(`schema: ${ajvErrorPath(err) || '(root)'} ${err.message}`)
     }
     if (data.id !== basename(file, '.json')) problems.push(`id "${data.id}" とファイル名が一致していません`)
     if (seen.has(data.id)) problems.push(`id "${data.id}" が他の背景と重複しています`)

@@ -27,6 +27,7 @@ export interface SkillCommandEntry {
   /** 右端に出す補足（Lv など） */
   note?: string
   effectTokens?: SkillTextToken[]
+  flavorText?: string
 }
 
 const props = defineProps<{
@@ -82,6 +83,7 @@ function onSlotClick(entry: SkillCommandEntry): void {
       </div>
       <div class="tip-body">
         <SkillText v-if="focused.effectTokens" :tokens="focused.effectTokens" />
+        <div v-if="focused.flavorText" class="tip-flavor">「{{ focused.flavorText }}」</div>
       </div>
     </div>
 
@@ -162,6 +164,13 @@ function onSlotClick(entry: SkillCommandEntry): void {
 }
 .tip-icon {
   margin-right: 4px;
+}
+.tip-flavor {
+  margin-top: 6px;
+  opacity: 0.7;
+  font-style: italic;
+  font-size: 11px;
+  white-space: pre-line;
 }
 .skill-list {
   display: flex;

@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_wind_wrap",
+  "label": "風を纏う",
+  "flavorText": "身にまとった風が「風の剣」となり、三度、敵を斬り続けるだろう。",
+  "kind": "active",
+  "element": "none",
+  "mainCategory": "swift",
+  "subCategories": [
+    "fatal"
+  ],
+  "cooldown": 4,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_none"
+  ],
+  "effect": [
+    {
+      "op": "periodicTargetDamage",
+      "element": "none",
+      "scale": {
+        "stat": "agi",
+        "rate": 0.5
+      },
+      "duration": 3
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_none"
+  }
+}

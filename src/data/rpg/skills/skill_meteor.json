@@ -1,0 +1,37 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_meteor",
+  "label": "烙天",
+  "flavorText": "空が落ちたあの日、焔を纏った星が天を穿った\n\n",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "wisdom",
+  "subCategories": [
+    "fatal"
+  ],
+  "cooldown": 5,
+  "minRound": 2,
+  "defaultFocus": "enemy",
+  "focusRange": "all",
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "magical",
+      "scale": {
+        "stat": "int",
+        "rate": 4
+      }
+    },
+    {
+      "op": "selfDamageFromDealt",
+      "rate": 0.75
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_fire"
+  }
+}

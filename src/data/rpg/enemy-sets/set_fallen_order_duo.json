@@ -3,7 +3,7 @@
   "id": "set_fallen_order_duo",
   "label": "堕ちた騎士&熱狂の改訂者",
   "members": [
-    { "enemyId": "enemy_knight_fallen", "statsOverride": { "hp": 5500 } },
-    { "enemyId": "enemy_cultist_zealot", "statsOverride": { "hp": 3800 } }
+    { "enemyId": "enemy_knight_fallen", "statsOverride": { "hp": 11440 } },
+    { "enemyId": "enemy_cultist_zealot", "statsOverride": { "hp": 7800 } }
   ]
 }

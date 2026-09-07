@@ -1,16 +1,35 @@
 {
   "$schema": "../../../../schemas/battle-enemy.schema.json",
   "id": "enemy_orc_warlord",
-  "label": "分厚い装丁の将",
-  "flavorText": "この一撃だけで、章ごと吹き飛ばす。",
+  "label": "軍閥のオーク",
+  "flavorText": "社会を維持するため、ワークライフバランスを忘れ巡回している。",
   "sprite": "battle_orc_warlord",
   "stats": {
-    "hp": 8500, "str": 1050, "def": 1500, "int": 250, "ref": 500, "agi": 350,
-    "hitRate": 0.92, "evadeRate": 0, "critRate": 0.06, "critDamageMultiplier": 1.6
+    "hp": 17600,
+    "str": 3710,
+    "def": 5310,
+    "int": 880,
+    "ref": 1760,
+    "agi": 1240,
+    "hitRate": 0.92,
+    "evadeRate": 0,
+    "critRate": 0.06,
+    "critDamageMultiplier": 1.6
   },
-  "traits": ["trait_resist_physical"],
-  "activeSkills": ["skill_wild_swing", { "id": "skill_iaido", "level": 2 }],
+  "traits": [
+    "trait_resist_physical"
+  ],
+  "activeSkills": [
+    "skill_wild_swing",
+    {
+      "id": "skill_iaido",
+      "level": 2
+    }
+  ],
   "passiveSkills": [],
-  "actionPattern": ["skill_wild_swing", "skill_iaido"],
+  "actionPattern": [
+    "skill_wild_swing",
+    "skill_iaido"
+  ],
   "isBoss": false
 }

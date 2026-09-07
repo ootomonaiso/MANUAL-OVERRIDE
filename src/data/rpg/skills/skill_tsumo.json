@@ -2,19 +2,33 @@
   "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_tsumo",
   "label": "自摸",
-  "flavorText": "積み上げた流れを、自らの手で掴み取る。（読み: ツモ）",
+  "flavorText": "「ツモにゃ！！」",
   "kind": "active",
   "element": "none",
   "mainCategory": "fatal",
-  "subCategories": ["combo"],
+  "subCategories": [
+    "combo"
+  ],
   "cooldown": 0,
   "defaultFocus": "enemy",
   "focusRange": "single",
   "draftable": false,
   "transformsInto": "skill_riichi",
-  "effects": ["fx_cast_none"],
+  "effects": [
+    "fx_cast_none"
+  ],
   "effect": [
-    { "op": "damage", "element": "none", "scale": { "statOptions": ["str", "int"], "rate": 2 } }
+    {
+      "op": "damage",
+      "element": "none",
+      "scale": {
+        "statOptions": [
+          "str",
+          "int"
+        ],
+        "rate": 2
+      }
+    }
   ],
   "sfx": {
     "cast": "battle_cast_none",

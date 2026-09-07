@@ -16,6 +16,8 @@ interface ModifierParams {
   /** 発動時点の自分の実効ステータスを参照して amount を決める（例: STR参照でDEFを強化）。amount と併用時は加算される */
   scale?: { stat: StatKey; rate: number }
   scope: ModifierScope
+  /** scope: 'rounds' のときだけ使う持続ラウンド数 */
+  rounds?: number
   applyTo?: 'source' | 'target'
 }
 
@@ -27,6 +29,7 @@ function readParams(node: EffectNode): ModifierParams {
     rate: node.rate as number | undefined,
     scale: scale ? { stat: scale.stat as StatKey, rate: scale.rate } : undefined,
     scope: node.scope as ModifierScope,
+    rounds: node.rounds as number | undefined,
     applyTo: (node.applyTo as 'source' | 'target' | undefined) ?? 'source',
   }
 }
@@ -34,7 +37,7 @@ function readParams(node: EffectNode): ModifierParams {
 export const modifierOp: EffectOp = {
   id: 'modifier',
   execute(node, ctx) {
-    const { stat, amount, rate, scale, scope, applyTo } = readParams(node)
+    const { stat, amount, rate, scale, scope, rounds, applyTo } = readParams(node)
     // 割合ステータス（クリティカル率等）はレベル倍率を掛けない。掛けると
     // レベルアップのたびに「確率」や「倍率」自体が指数的に膨張し、特に
     // critRate/critDamageMultiplier はスーパークリティカルと絡んで際限なく
@@ -54,6 +57,7 @@ export const modifierOp: EffectOp = {
         flat: combinedAmount !== undefined ? combinedAmount * mult : undefined,
         rate: rate !== undefined ? rate * mult : undefined,
         scope,
+        roundsRemaining: scope === 'rounds' ? rounds : undefined,
         sourceId: ctx.skill.id,
       })
       const isBuff = (combinedAmount ?? 0) >= 0 && (rate ?? 0) >= 0

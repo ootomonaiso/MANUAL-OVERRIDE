@@ -72,6 +72,8 @@ export interface Combatant {
   hp: number
   /** シールド残量 */
   shield: number
+  /** shieldが0まで減らずに到達した過去最高値。ターン終了時/戦闘終了後の減衰の基準値になる（第11フェーズ） */
+  maxShield: number
   alive: boolean
 
   /** 所持している特性 */

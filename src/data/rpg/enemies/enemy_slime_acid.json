@@ -1,16 +1,33 @@
 {
   "$schema": "../../../../schemas/battle-enemy.schema.json",
   "id": "enemy_slime_acid",
-  "label": "腐食インクのスライム",
-  "flavorText": "触れたページの文字が、じわりと溶けていく。",
+  "label": "グリーンスライム",
+  "flavorText": "スライムの発生機序はあまり分かっていない。",
   "sprite": "battle_slime_acid",
   "stats": {
-    "hp": 3600, "str": 400, "def": 600, "int": 500, "ref": 500, "agi": 300,
-    "hitRate": 0.93, "evadeRate": 0, "critRate": 0.05, "critDamageMultiplier": 1.5
+    "hp": 7560,
+    "str": 960,
+    "def": 1460,
+    "int": 1220,
+    "ref": 1220,
+    "agi": 720,
+    "hitRate": 0.93,
+    "evadeRate": 0,
+    "critRate": 0.05,
+    "critDamageMultiplier": 1.5
   },
-  "traits": ["trait_weak_physical"],
-  "activeSkills": ["skill_weird_wave", "skill_strike"],
+  "traits": [
+    "trait_weak_physical"
+  ],
+  "activeSkills": [
+    "skill_weird_wave",
+    "skill_strike"
+  ],
   "passiveSkills": [],
-  "actionPattern": ["skill_weird_wave", "skill_strike", "skill_strike"],
+  "actionPattern": [
+    "skill_weird_wave",
+    "skill_strike",
+    "skill_strike"
+  ],
   "isBoss": false
 }

@@ -3,7 +3,7 @@
   "id": "set_slime_lab_duo",
   "label": "腐食&凍結インクのスライム",
   "members": [
-    { "enemyId": "enemy_slime_acid", "statsOverride": { "hp": 2800 } },
-    { "enemyId": "enemy_slime_frost", "statsOverride": { "hp": 3000 } }
+    { "enemyId": "enemy_slime_acid", "statsOverride": { "hp": 5880 } },
+    { "enemyId": "enemy_slime_frost", "statsOverride": { "hp": 6240 } }
   ]
 }

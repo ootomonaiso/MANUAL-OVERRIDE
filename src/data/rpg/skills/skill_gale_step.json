@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_gale_step",
+  "label": "疾風脚",
+  "flavorText": "地を蹴る音すら置き去りにする。",
+  "kind": "active",
+  "element": "none",
+  "mainCategory": "swift",
+  "subCategories": [],
+  "cooldown": 3,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_none"
+  ],
+  "effect": [
+    {
+      "op": "modifier",
+      "stat": "agi",
+      "amount": 1000,
+      "scope": "thisBattle"
+    },
+    {
+      "op": "modifier",
+      "stat": "agi",
+      "scope": "thisBattle",
+      "rate": 0.1
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_none"
+  }
+}

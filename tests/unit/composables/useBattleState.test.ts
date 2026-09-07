@@ -34,25 +34,53 @@ function seededPrng(seed: number): () => number {
  *     敵の命中率は最大でも 0.95 なので必ず外れる。
  *  4. 敵が全滅した後の呼び出し（＝ドラフト抽選・次の敵の選定）→ 一様乱数。
  *     ここを固定値にすると shuffle が恒等変換になり、毎回同じ候補しか出なくなる。
+ *
+ * 【行動速度キューの仕様変更に伴う修正】行動速度キューは「プレイヤーが行動を決めた瞬間」に
+ * 組み立てるようになった（CLAUDE_TASKS.md参照）ため、AGIの高い敵が先手を取る場合、
+ * その敵の手番は selectAction と同じ呼び出しの中で（＝sinceActionが0/1の間に）解決されうる。
+ * 呼び出し回数だけで「プレイヤーの1発目/2発目」と決め打つと、先手を取った敵の判定に
+ * プレイヤー用の必中値が渡ってしまう（＝敵が必ず命中する事故になる）。
+ * 「今まさに行動しているのは誰か」（presentation.actorIsPlayer）で判定し直す。
+ *
+ * 【カウンター反撃態勢中の敵を攻撃した場合の修正】反撃態勢（pendingCounter）の相手に命中すると、
+ * プレイヤーの行動が完全に終わった直後、同じ同期呼び出しの中で flushCounterRetaliations() が
+ * 即座に反撃ダメージ（敵→プレイヤー）を処理する。この反撃も実体は「敵の命中判定」だが、
+ * actorIsPlayer はまだ切り替わっていない（反撃はcast演出を挟まない）ため、call countだけでは
+ * プレイヤー自身の追加ヒットと区別できない。反撃態勢は行動を選ぶ前から見えている状態
+ * （pendingCounter）なので、act() の先頭でその有無を確認し、後続の呼び出しを「敵の判定」
+ * （必ず外れる 0.99）として扱う
  */
 function winningHarness(seed = 12345): { battle: Battle; act: () => void } {
   const prng = seededPrng(seed)
   let sinceAction = Number.POSITIVE_INFINITY
+  let expectCounterRetaliation = false
   const battle = useBattleState()
   const rng = (): number => {
-    if (sinceAction === 0) { sinceAction++; return 0.001 }
-    if (sinceAction === 1) { sinceAction++; return 0.999 }
+    if (battle.presentation.actorIsPlayer) {
+      if (sinceAction === 0) { sinceAction++; return 0.001 }
+      if (sinceAction === 1) { sinceAction++; return 0.999 }
+      return expectCounterRetaliation ? 0.99 : 0.001
+    }
     return battle.state.enemies.some(e => e.alive) ? 0.99 : prng()
   }
   battle.initRun(rng)
   const act = (): void => {
     sinceAction = 0
-    const wasPlayerTurn = battle.isPlayerTurn.value
+    expectCounterRetaliation = battle.state.enemies.some(e => e.pendingCounter !== null)
+    // 【行動速度キューの仕様変更に伴う修正2】isPlayerTurn は「行動を決めた瞬間」に
+    // キューが空へ戻る（＝次のラウンドの入力待ち）タイミングでも true になるため、
+    // 「selectAction の前後でも isPlayerTurn のまま」は、もう「行動が不発だった」の
+    // 判定にならない（IMMEDIATE_SCHEDULERでは1ラウンド全体が同期的に完結し、成功した
+    // 行動の直後には次のラウンドの入力待ちに戻っているため、常にtrueのまま見える）。
+    // 代わりに roundCount が進んだかどうかで判定する: 有効な行動なら必ずそのラウンドが
+    // 最後まで解決して roundCount が増える（endOfRound() 参照）。CT中／minRound未達で
+    // selectAction が即returnした場合だけ roundCount が変わらない
+    const roundBefore = battle.state.roundCount
     battle.selectAction({ kind: 'active', slotIndex: 0 }, null)
     // スロット0がクールタイム中／minRound未達で不使用な場合、selectAction は何もせず即return する。
     // CT・使用可能ターンはコンテンツによって様々なため（龍鱗の長いCT・魔導式のminRound等）、
     // ドラフトで何が入っても行動が必ず進むよう「様子を見る」にフォールバックする
-    if (wasPlayerTurn && battle.isPlayerTurn.value) {
+    if (battle.state.roundCount === roundBefore) {
       battle.selectAction({ kind: 'builtin', action: 'pass' })
     }
   }
@@ -92,7 +120,10 @@ describe('useBattleState: ライフサイクル', () => {
     expect(battle.state.battleIndex).toBe(0)
     expect(battle.state.battlesWon).toBe(0)
     expect(battle.state.enemies.length).toBeGreaterThan(0)
-    expect(battle.state.turnQueue.length).toBeGreaterThan(0)
+    // 行動速度キューは「ラウンド開始時」ではなく「プレイヤーが行動を決めた瞬間」に組み立てる
+    // ようになったため（CLAUDE_TASKS.md参照）、まだ何も選んでいないこの時点では空
+    expect(battle.state.turnQueue.length).toBe(0)
+    expect(battle.isPlayerTurn.value).toBe(true)
     expect(battle.state.player.actives).toHaveLength(1)
     expect(battle.state.player.actives[0].slotIndex).toBe(0)
     expect(battle.state.playScore).toBe(0)
@@ -317,10 +348,10 @@ describe('useBattleState: スキルパネル（5戦ごとのポイント配分�
    * （proceedAfterDraftRound 参照）。250戦近い実プレイを避け、直近の勝利数だけ
    * toRaw 越しに書き換えてから通常のドラフトを1回完了させ、実際の遷移ロジックを検証する。
    */
-  function advanceToPanelBoundary(h: { battle: Battle }): void {
+  function advanceToPanelBoundary(h: { battle: Battle }, occurrence = 1): void {
     fightUntilBattleEnds(h)
     expect(h.battle.state.status).toBe('drafting')
-    toRaw(h.battle.state).battlesWon = SKILL_POINTS.panelIntervalBattles
+    toRaw(h.battle.state).battlesWon = SKILL_POINTS.panelIntervalBattles * occurrence
     h.battle.selectDraft(0)
   }
 
@@ -328,8 +359,14 @@ describe('useBattleState: スキルパネル（5戦ごとのポイント配分�
     const h = winningHarness()
     advanceToPanelBoundary(h)
     expect(h.battle.state.status).toBe('skillPanel')
-    expect(h.battle.state.skillPoints).toBe(SKILL_POINTS.panelSkillPoints)
+    expect(h.battle.state.skillPoints).toBe(SKILL_POINTS.panelSkillPointsCycle[0])
     expect(h.battle.state.statPoints).toBe(SKILL_POINTS.panelStatPoints)
+  })
+
+  it('スキルポイント付与量はパネル出現回数に応じて panelSkillPointsCycle を周期的に参照する', () => {
+    const h = winningHarness()
+    advanceToPanelBoundary(h, 2)
+    expect(h.battle.state.skillPoints).toBe(SKILL_POINTS.panelSkillPointsCycle[1])
   })
 
   it('節目でなければ通常どおり次の戦闘が始まる', () => {
@@ -537,6 +574,11 @@ describe('useBattleState: 決着とスコア', () => {
 
     expect(h.battle.state.enemies).toHaveLength(1)
     expect(h.battle.state.enemies[0].isBoss).toBe(true)
+    // 状態遷移（真のクリア判定）だけを検証したいテストであり、終盤のボスの実際の耐久力・
+    // シールド構成でここまで育っていない自機を戦わせるのは検証意図ではない。
+    // battleIndex と同様 toRaw 越しに直接弱らせ、次の一撃で確実に決着させる
+    toRaw(h.battle.state).enemies[0].hp = 1
+    toRaw(h.battle.state).enemies[0].shield = 0
 
     fightUntilBattleEnds(h)
     expect(h.battle.state.bossDefeated).toBe(true)
@@ -730,6 +772,56 @@ describe('useBattleState: 1手番の演出', () => {
     h.battle.selectDraft(0)
     expect(h.battle.state.backgroundId).toBeTruthy()
     expect(h.battle.state.backgroundId).not.toBe(first)
+  })
+
+  // 行動速度キューは「ラウンド開始時」ではなく「プレイヤーが行動を決めた瞬間」に組み立てる
+  // ようになった（第10フェーズ）。alwaysActsFirst を持つ行動を選んだ場合、AGIに関わらず
+  // 先手になることを確認する。
+  describe('行動速度キュー（先手判定）', () => {
+    it('AGIが低くても、alwaysActsFirstを持つ「守る」を選べば先手を取れる', () => {
+      const { battle } = pacedHarness()
+      const raw = toRaw(battle.state)
+      raw.player.baseStats = { ...raw.player.baseStats, agi: 1 }
+      raw.enemies[0].baseStats = { ...raw.enemies[0].baseStats, agi: 99999 }
+      battle.selectAction({ kind: 'builtin', action: 'guard' })
+      expect(battle.presentation.phase).toBe('announce')
+      expect(battle.presentation.actorIsPlayer).toBe(true)
+    })
+
+    it('alwaysActsFirstを持たない通常攻撃なら、AGIの高い敵が先手を取る', () => {
+      const { battle } = pacedHarness()
+      const raw = toRaw(battle.state)
+      raw.player.baseStats = { ...raw.player.baseStats, agi: 1 }
+      raw.enemies[0].baseStats = { ...raw.enemies[0].baseStats, agi: 99999 }
+      battle.selectAction({ kind: 'active', slotIndex: 0 }, null)
+      expect(battle.presentation.phase).toBe('announce')
+      expect(battle.presentation.actorIsPlayer).toBe(false)
+    })
+
+    it('不意打ちはAGIが低くても先手を取り、確率成立時は相手のこのラウンドの行動をキャンセルする', () => {
+      const sched = manualScheduler()
+      const battle = useBattleState({ scheduler: sched.scheduler })
+      battle.initRun(() => 0)   // 命中判定・cancelTargetActionの確率判定とも必ず成立させる
+      const raw = toRaw(battle.state)
+      raw.player.baseStats = { ...raw.player.baseStats, agi: 1, str: 1000, hitRate: 1 }
+      raw.player.actives = [{ id: 'skill_ambush', points: 0, level: 1, cooldown: 0, slotIndex: 0 }]
+      raw.enemies = raw.enemies.slice(0, 1)
+      raw.enemies[0].baseStats = { ...raw.enemies[0].baseStats, agi: 99999, hp: 999999, evadeRate: 0 }
+      raw.enemies[0].hp = 999999
+      const playerHpBefore = raw.player.hp
+
+      battle.selectAction({ kind: 'active', slotIndex: 0 }, null)
+      expect(battle.presentation.actorIsPlayer).toBe(true)   // 不意打ちが先手
+
+      sched.runAll()   // 不意打ちの解決（ダメージ＋行動キャンセル）から次のラウンド開始まで流し切る
+
+      expect(battle.state.enemies[0].hp).toBeLessThan(999999)   // 攻撃自体は命中している
+      expect(battle.state.enemies[0].skipNextTurn).toBe(false)   // 消費済み（1回限りのフラグ）
+      // 敵の行動がキャンセルされていれば、この戦闘唯一の攻撃役である敵は一度も動けず
+      // プレイヤーはノーダメージのまま次のラウンドへ進む
+      expect(battle.state.player.hp).toBe(playerHpBefore)
+      expect(battle.isPlayerTurn.value).toBe(true)
+    })
   })
 
   // effectiveOf 等の表示用ヘルパーが内部で toRaw(c) を経由していたため、その先で読む

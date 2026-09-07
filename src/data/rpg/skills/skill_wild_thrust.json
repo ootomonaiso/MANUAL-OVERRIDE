@@ -1,0 +1,39 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_wild_thrust",
+  "label": "乱れ突き",
+  "flavorText": "戦い方を思い出すまでの、束の間。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "combo",
+  "subCategories": [
+    "fatal"
+  ],
+  "cooldown": 6,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "minRound": 2,
+  "effects": [
+    "fx_slash"
+  ],
+  "effect": [
+    {
+      "op": "repeat",
+      "times": 2,
+      "body": [
+        {
+          "op": "damage",
+          "element": "physical",
+          "scale": {
+            "stat": "str",
+            "rate": 1.6
+          }
+        }
+      ]
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing",
+    "impact": "battle_hit_physical"
+  }
+}

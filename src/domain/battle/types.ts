@@ -106,7 +106,13 @@ export interface EffectNode {
  * 実装: battleEngine.ts の endOfRound() が、毎ラウンド `thisTurn` を失効させた**直後**に
  * `nextRound` を `thisTurn` へ格下げする（＝次の endOfRound で失効する）。付与→格下げ→失効で2ラウンド分保つ。
  */
-export type ModifierScope = 'thisHit' | 'thisTurn' | 'thisBattle' | 'permanent' | 'nextRound'
+/**
+ * 'rounds': `rounds` に指定したラウンド数だけ保つ（3ターン限定デバフ等、任意のターン数を
+ * 指定したい場合に使う）。`TemporaryModifier.roundsRemaining` を毎ラウンド1ずつ減らし、
+ * 0になったら失効する（`nextRound`固定の2ラウンドや`thisTurn`固定の1ラウンドでは
+ * 表現できない、任意長の時限効果のために追加）。
+ */
+export type ModifierScope = 'thisHit' | 'thisTurn' | 'thisBattle' | 'permanent' | 'nextRound' | 'rounds'
 
 // ─────────────────────────────────────────────────────────────
 // スキル・特性定義（JSONロード後の正規化済み形）
@@ -143,6 +149,15 @@ export interface ActiveSkillDef extends SkillDefBase {
   /** 指定した場合、state.roundCount がこの値未満の間は使用不可（プレイヤーの選択・敵のパターン選択の両方）。
    * 例: minRound:2 なら state.roundCount が0/1の間(=1,2ターン目)は使えず、3ターン目(roundCount:2)から使える */
   minRound?: number
+  /**
+   * true なら、このスキルを選んだ発動元はAGIに関わらずそのラウンドの行動順で必ず先手になる
+   * （守る/避ける/不意打ち 想定）。行動速度キューは「ラウンド開始時」ではなく「プレイヤーが
+   * 行動を決めた瞬間」に組み立てる（composables/useBattleState.ts::selectAction 参照）ため、
+   * 選んだ行動そのものにこのフラグが立っていれば、その場で先手判定に反映できる。
+   * 複数の対象が同時にこのフラグを持つ場合は、通常どおりAGI（→プレイヤー優先→左から）で
+   * その中の順序を決める（domain/battle/turnQueue.ts::buildTurnQueue 参照）
+   */
+  alwaysActsFirst?: boolean
   /** 指定した場合、使用後にこのスキルIDへ「変化」する（立直⇔自摸 想定）。所持スロット・レベル・スタックは維持し、
    * OwnedActive.id だけ差し替わる。相互変化させたい場合は双方が互いを指す */
   transformsInto?: string
@@ -273,6 +288,8 @@ export interface TemporaryModifier {
   flat?: number
   rate?: number
   scope: ModifierScope
+  /** scope: 'rounds' のときだけ使う残存ラウンド数。endOfRound() で1ずつ減り、0で失効する */
+  roundsRemaining?: number
   sourceId: string
 }
 
@@ -285,6 +302,22 @@ export interface PeriodicSelfEffect {
   kind: 'trueDamagePercentMaxHp'
   /** 実効最大HPに対する割合（0.15 = 15%） */
   ratio: number
+  sourceId: string
+}
+
+/**
+ * 継続ダメージ（DOT）を相手側へ与えるバフ（風の剣 想定）。自身に登録し、
+ * endOfRound() で発動元の実効ステータス（`scaleStat`）を都度参照して相手側全体へ
+ * 直接ダメージを与える（シールド・カット率を経由しない。periodicSelfDamage と同じ方針）。
+ * 同一スキル由来（`sourceId`）の効果が重複した場合は新規に増やさず `roundsRemaining` を延長する
+ * （同時に2つ発生しない）。
+ */
+export interface PeriodicTargetEffect {
+  element: Element
+  scaleStat: StatKey
+  /** レベル倍率適用済みの実効rate */
+  rate: number
+  roundsRemaining: number
   sourceId: string
 }
 
@@ -322,10 +355,18 @@ export interface Combatant {
   isPlayer: boolean
   /** 描画に使うスプライトID（EnemyDef.sprite / battle.json の playerSprite 由来） */
   spriteId: string
+  /** 敵のみ意味を持つ（EnemyDef.flavorText 由来）。プレイヤーは常に空文字。INFOパネルの敵詳細で表示する */
+  flavorText: string
 
   baseStats: BattleStats
   hp: number
   shield: number
+  /**
+   * shield が0まで減らずに到達した過去最高値（`applyShield` で更新）。ターン終了時・戦闘終了後の
+   * シールド減衰（`BATTLE.shield.decayPerTurn`/`decayPerBattle`）は、その時点の shield ではなく
+   * この値を基準に固定量を引く。shield が0になったら0へリセットし、次の付与から改めて積み上がる
+   */
+  maxShield: number
   alive: boolean
 
   traits: OwnedTrait[]
@@ -334,9 +375,16 @@ export interface Combatant {
 
   temporary: TemporaryModifier[]
   periodicSelfEffects: PeriodicSelfEffect[]
+  periodicTargetEffects: PeriodicTargetEffect[]
   pendingCounter: PendingCounter | null
   queuedCounterHits: number
   pendingTransformBonus: PendingTransformBonus | null
+  /**
+   * true の間、行動速度キューでこの対象の番が来ても行動させずに1回だけ飛ばす（不意打ち 想定）。
+   * 消費すると自動的に false へ戻る（composables/useBattleState.ts::processTurns 参照）。
+   * 敵の場合、飛ばされた行動はそのまま次のラウンドへ持ち越される（patternIndex は進めない）
+   */
+  skipNextTurn: boolean
 
   /** 「守る」「避ける」のクールタイム（両方には同時になれないが枠は共通で扱う） */
   builtinCooldowns: { guard: number; dodge: number }
@@ -375,6 +423,16 @@ export interface TurnEntry {
 // プレイヤーの行動
 // ─────────────────────────────────────────────────────────────
 export type BuiltinAction = 'guard' | 'pass' | 'dodge'
+
+/**
+ * 常設行動（守る/避ける/様子を見る）は他のスキルと同じくJSONで定義する
+ * （src/data/rpg/skills/skill_stance_*.json、draftable:falseで通常ドラフトには出さない）。
+ * BattleScreen.vue（表示）と useBattleState.ts（行動速度優先度の判定）の両方が
+ * このマッピングを必要とするため、重複させず単一の情報源としてここに置く。
+ */
+export const BUILTIN_SKILL_ID: Record<BuiltinAction, string> = {
+  guard: 'skill_stance_guard', dodge: 'skill_stance_watch', pass: 'skill_stance_idle',
+}
 
 export interface PlayerActionActive {
   kind: 'active'
@@ -511,6 +569,16 @@ export interface EffectContext {
   getEffective: (c: Combatant) => EffectiveStats
   /** スキル・特性定義の参照に使う */
   content: BattleContent
+  /**
+   * このスキル発動（`repeat`のネスト・複数対象への`damage`ヒットすべてを含む）で
+   * これまでに与えた合計ダメージ（烙天 想定）。`damage` op がヒットのたびに加算する。
+   * `selfDamageFromDealt` op がこれを参照して自傷量を決める。ctx は使い回されるため
+   * 同一オブジェクトを直接ミューテートする（コピーしない）。
+   * `missedPotential`: 命中判定に外れた対象について「クリティカルを考慮しない、命中していたら
+   * 与えていたはずの最終ダメージ」の合計（烙天の内部仕様: 外した分もこちらへ計上され、
+   * `selfDamageFromDealt` の自傷計算に使われる。外れを狙って自傷を回避することはできない）
+   */
+  dealtDamage: { total: number; missedPotential: number }
 }
 
 export interface EffectOp {

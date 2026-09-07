@@ -2,10 +2,17 @@
   "$schema": "../../../../schemas/battle-trait.schema.json",
   "id": "trait_swift_zenith",
   "label": "疾風の真髄",
-  "flavorText": "残像だけを置いて、もう次の行動に移っている。",
+  "flavorText": "「俺についてこれるかなっ！」(シュッシュッ)",
   "kind": "trait",
-  "unlockCondition": { "category": "swift", "points": 20 },
+  "unlockCondition": {
+    "category": "swift",
+    "points": 20
+  },
   "effect": [
-    { "op": "statBoost", "stat": "agi", "rate": 0.25 }
+    {
+      "op": "statBoost",
+      "stat": "agi",
+      "rate": 0.25
+    }
   ]
 }

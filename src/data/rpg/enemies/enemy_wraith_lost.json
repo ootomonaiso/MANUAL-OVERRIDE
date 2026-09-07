@@ -1,16 +1,34 @@
 {
   "$schema": "../../../../schemas/battle-enemy.schema.json",
   "id": "enemy_wraith_lost",
-  "label": "迷子の落丁",
-  "flavorText": "どの本から抜け落ちたのかも、もう分からない。",
+  "label": "怨霊",
+  "flavorText": "お呪い(おまじない)と呪いは表裏一体。",
   "sprite": "battle_wraith_lost",
   "stats": {
-    "hp": 6000, "str": 650, "def": 1400, "int": 800, "ref": 1000, "agi": 800,
-    "hitRate": 0.93, "evadeRate": 0, "critRate": 0.07, "critDamageMultiplier": 1.5
+    "hp": 12480,
+    "str": 1640,
+    "def": 3510,
+    "int": 2000,
+    "ref": 2520,
+    "agi": 2000,
+    "hitRate": 0.93,
+    "evadeRate": 0,
+    "critRate": 0.07,
+    "critDamageMultiplier": 1.5
   },
-  "traits": ["trait_weak_magical"],
-  "activeSkills": ["skill_piercing_bolt", "skill_double_bolt", "skill_swift_slash"],
+  "traits": [
+    "trait_weak_magical"
+  ],
+  "activeSkills": [
+    "skill_piercing_bolt",
+    "skill_double_bolt",
+    "skill_swift_slash"
+  ],
   "passiveSkills": [],
-  "actionPattern": ["skill_piercing_bolt", "skill_swift_slash", "skill_double_bolt"],
+  "actionPattern": [
+    "skill_piercing_bolt",
+    "skill_swift_slash",
+    "skill_double_bolt"
+  ],
   "isBoss": false
 }

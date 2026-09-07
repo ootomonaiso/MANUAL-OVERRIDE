@@ -5,19 +5,26 @@
   "lapsForTrueClear": 5,
   "bossIntervalBattles": 10,
   "bossDraftRounds": 3,
+  "$comment_bossOrder": "ボス巡回順（CLAUDE_TASKS.md 第10フェーズ BB-7 参照）: 澱み溜まりのスライム(A)→開発者(B)→成れ果ての亡霊(C)→隕烙の魔法騎士(D)→説明書の番人(E)。ユーザー指定順",
   "groups": {
-    "A": ["set_slime_solo", "set_bat_solo", "set_goblin_bat_duo", "set_boss_manual_keeper"],
-    "B": ["set_goblin_solo", "set_orc_solo", "set_goblin_raider_solo", "set_bat_elder_solo", "set_raider_bat_duo", "set_boss_iron_sentinel"],
-    "C": ["set_knight_solo", "set_cultist_solo", "set_wraith_solo", "set_orc_shaman_solo", "set_slime_acid_solo", "set_slime_frost_solo", "set_slime_lab_duo", "set_boss_arch_cultist"],
-    "D": ["set_knight_fallen_solo", "set_cultist_zealot_solo", "set_wraith_lost_solo", "set_fallen_order_duo", "set_boss_swamp_horror"],
-    "E": ["set_goblin_chief_solo", "set_orc_warlord_solo", "set_boss_night_wraith"]
+    "A": ["set_slime_solo", "set_bat_solo", "set_goblin_bat_duo", "set_boss_swamp_horror"],
+    "B": ["set_goblin_solo", "set_orc_solo", "set_goblin_raider_solo", "set_bat_elder_solo", "set_raider_bat_duo", "set_boss_arch_cultist"],
+    "C": ["set_knight_solo", "set_cultist_solo", "set_wraith_solo", "set_orc_shaman_solo", "set_slime_acid_solo", "set_slime_frost_solo", "set_slime_lab_duo", "set_boss_night_wraith"],
+    "D": ["set_knight_fallen_solo", "set_cultist_zealot_solo", "set_wraith_lost_solo", "set_fallen_order_duo", "set_boss_iron_sentinel"],
+    "E": ["set_goblin_chief_solo", "set_orc_warlord_solo", "set_boss_manual_keeper"]
   },
+  "$comment_spawnWeightTiers": "CLAUDE_TASKS.md 第10フェーズ BB-4 参照。minBattleIndexは0始まり（N戦目の重み変更は N-1 で指定する）。1〜20戦目はユーザー指定どおりのA→B 4段階遷移、それ以降は50戦目までにEへ到達させるため後半を圧縮した仮値",
   "spawnWeightTiers": [
-    { "minBattleIndex": 0, "weights": { "A": 0.8, "B": 0.2 } },
-    { "minBattleIndex": 5, "weights": { "A": 0.5, "B": 0.3, "C": 0.2 } },
-    { "minBattleIndex": 15, "weights": { "B": 0.5, "C": 0.5 } },
-    { "minBattleIndex": 25, "weights": { "B": 0.2, "C": 0.5, "D": 0.3 } },
-    { "minBattleIndex": 40, "weights": { "C": 0.3, "D": 0.5, "E": 0.2 } },
-    { "minBattleIndex": 60, "weights": { "D": 0.4, "E": 0.6 } }
+    { "minBattleIndex": 0, "weights": { "A": 1.0 } },
+    { "minBattleIndex": 5, "weights": { "A": 0.75, "B": 0.25 } },
+    { "minBattleIndex": 10, "weights": { "A": 0.25, "B": 0.75 } },
+    { "minBattleIndex": 15, "weights": { "B": 1.0 } },
+    { "minBattleIndex": 20, "weights": { "B": 0.75, "C": 0.25 } },
+    { "minBattleIndex": 25, "weights": { "B": 0.25, "C": 0.75 } },
+    { "minBattleIndex": 30, "weights": { "C": 1.0 } },
+    { "minBattleIndex": 35, "weights": { "C": 0.25, "D": 0.75 } },
+    { "minBattleIndex": 40, "weights": { "D": 0.75, "E": 0.25 } },
+    { "minBattleIndex": 45, "weights": { "D": 0.25, "E": 0.75 } },
+    { "minBattleIndex": 50, "weights": { "E": 1.0 } }
   ]
 }

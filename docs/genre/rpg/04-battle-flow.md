@@ -49,11 +49,11 @@
   │ 敵を1体以上生成／各敵の次スキルを決定・公開
   ▼
 ┌─ ラウンド開始 ──────────────────────────────┐
-│   行動順キューを構築（AGI + 特性）             │
-│     │                                          │
-│     ▼                                          │
+│   プレイヤーの行動選択を待つ（キューはまだ空）  │
+│     │ プレイヤーが行動を決めた瞬間に            │
+│     ▼ 行動順キューを構築（AGI + 特性 + alwaysActsFirst） │
 │   キュー順に各キャラが1回ずつ行動              │
-│     ├ プレイヤー: 行動選択 → フォーカス選択    │
+│     ├ プレイヤー: 決めていた行動を実行          │
 │     └ 敵: actionPattern に従い使用（minRound未達／CT中は飛ばす）│
 │     │                                          │
 │     ▼ 各行動ごとに効果解決 → 反撃(カウンター)解決 → エフェクト再生 │
@@ -73,6 +73,15 @@
 > それぞれ専用の節（「カウンター・反射（反撃）」「継続ダメージ（DOT）」）を参照。
 > `minRound`（使用可能ターン制限）も同フェーズで追加された（「敵の行動」節、
 > および「プレイヤーの行動選択」節の該当箇所を参照）。
+>
+> **第10フェーズで変更**: 行動順キューは、当初の設計（ラウンド開始時に全員ぶん確定）から
+> 「プレイヤーが行動を決めた瞬間に組み立てる」方式へ変更された。守る/避ける/不意打ちのように
+> **選んだ行動そのものが先手（`alwaysActsFirst`）を持つ**ケースは、ラウンド開始時点では
+> まだ誰も行動を決めていないため原理的に反映できず、この変更が必要になった。
+> `composables/useBattleState.ts::selectAction()` が、プレイヤーの選んだ行動と各敵の
+> 予定行動（`previewEnemyNextSkill()` による非破壊プレビュー）の両方の `alwaysActsFirst` を見て
+> この瞬間にキューを組み立て、選択済みの行動を保持したまま `processTurns()` へ渡す。
+> 詳細は `CLAUDE_TASKS.md` 第11フェーズ参照。
 
 ### 用語
 
@@ -108,6 +117,10 @@
 | `TIMED_SCHEDULER` | `App.vue`（実プレイ） | `setTimeout` で `battle.json` の `presentation` の尺だけ待つ |
 
 演出待ちの間は `isPlayerTurn` が `false` になり、行動を受け付けない。
+（第10フェーズで意味が変わった: `isPlayerTurn` は「行動速度キューがまだ空＝今ラウンドの
+行動を誰も決めていない」ことを指す。行動を決めるとキューが組み上がり、実際にプレイヤーの
+番が来るまでは `false` のまま——先手を取れない相手が先攻の場合、行動を決めた直後から
+その相手の演出が挟まる）。
 `reset()` / `giveUp()` は世代番号を進めて**保留中のコールバックを無効化**する
 （終了後に古い演出が状態を書き換えるのを防ぐ）。
 
@@ -155,7 +168,11 @@ export interface TurnEntry {
   priority: number     // 並べ替えに使う最終値
 }
 
-export function buildTurnQueue(combatants: readonly Combatant[]): TurnEntry[]
+export function buildTurnQueue(
+  combatants: readonly Combatant[],
+  agiOf: (c: Combatant) => number,
+  alwaysFirstOf: (c: Combatant) => boolean,   // 第10フェーズで追加。守る/避ける/不意打ち 想定
+): TurnEntry[]
 ```
 
 ### 並べ替え規則
@@ -166,7 +183,10 @@ export function buildTurnQueue(combatants: readonly Combatant[]): TurnEntry[]
 
 > 同値時の規則を固定するのは、乱数を使うと再現性がなくなりテストが書けないため。
 
-`priority` は既定では `agi` の実効値と等しい。特性による割り込み・優先度変更を許容するため、別フィールドとして持つ。
+`priority` は既定では `agi` の実効値と等しい。`alwaysFirstOf(c)` が true を返した対象は、
+`priority` に `ALWAYS_FIRST_PRIORITY_BONUS`（AGIがどれだけ高くても超えられない大きな定数）を
+加算する——AGIに関わらず必ず先手になる（第10フェーズで追加。守る/避ける/不意打ち 想定）。
+先手同士が複数いる場合も、その中では通常どおりAGIで順序を決める。
 
 ```ts
 priority = agiEffective + Σ(特性による優先度補正)
@@ -527,7 +547,9 @@ function proceedAfterDraftRound(): void {
     return
   }
   if (r.battlesWon > 0 && r.battlesWon % SKILL_POINTS.panelIntervalBattles === 0) {
-    state.skillPoints += SKILL_POINTS.panelSkillPoints
+    const occurrence = r.battlesWon / SKILL_POINTS.panelIntervalBattles
+    const cycle = SKILL_POINTS.panelSkillPointsCycle
+    state.skillPoints += cycle[(occurrence - 1) % cycle.length]
     state.statPoints += SKILL_POINTS.panelStatPoints
     state.status = 'skillPanel'
     return
@@ -539,6 +561,10 @@ function proceedAfterDraftRound(): void {
 - `panelIntervalBattles`（`skill_points.json`、既定5）戦ごとに `status: 'skillPanel'` へ遷移する。
   ドラフトの**代替ではなく追加**の画面。真のクリアで既にランが終わっている場合はこの関数自体が
   呼ばれない
+- 付与されるスキルポイントは固定値ではなく `panelSkillPointsCycle`（既定 `[1, 2]`）を、
+  このパネルが何回目の出現かで周期的に参照する（1回目→`[0]`=1、2回目→`[1]`=2、3回目→`[0]`=1、…）。
+  第9フェーズで導入: 固定3ポイントだと1回目のパネル（5戦目終了時）だけで
+  `pointsForLevel[2]=3` に届きLv3が確定してしまい強すぎたため、初回配分を1に抑えた
 - `bossIntervalBattles`（既定10）は `panelIntervalBattles`（既定5）の**倍数**であるため、
   ボス戦の直後は必ず「3連続ドラフト → スキルパネル」の両方が続けて発生する
 - スキルパネルで行えること（アクティブの入れ替え・スキルポイント配分・ステータスポイント配分）の

@@ -21,7 +21,7 @@
       "element": "magical",
       "scale": {
         "stat": "int",
-        "rate": 0.8
+        "rate": 0.6
       }
     }
   ],

@@ -37,6 +37,8 @@ export interface InfoCharacterView {
   id: string
   label: string
   spriteId: string
+  /** 敵のみ持つ（EnemyDef.flavorText 由来）。プレイヤーは持たない */
+  flavorText?: string
   hp: number
   maxHp: number
   stats: InfoStatRow[]
@@ -183,6 +185,7 @@ function hpPct(c: InfoCharacterView): number {
           <span class="info-hp-num">{{ Math.max(0, Math.floor(currentEnemy.hp)) }}/{{ Math.floor(currentEnemy.maxHp) }}</span>
         </div>
       </div>
+      <div v-if="currentEnemy.flavorText" class="character-flavor">「{{ currentEnemy.flavorText }}」</div>
       <div class="stat-grid">
         <div v-for="s in currentEnemy.stats" :key="s.key" class="stat-cell">
           <span class="stat-name"><GlossaryTerm :term-id="s.key">{{ s.label }}</GlossaryTerm></span>
@@ -259,6 +262,12 @@ function hpPct(c: InfoCharacterView): number {
   font-size: 13px;
   white-space: nowrap;
 }
+.character-flavor {
+  opacity: 0.6;
+  font-style: italic;
+  font-size: 12px;
+  white-space: pre-line;
+}
 .stat-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -319,5 +328,6 @@ function hpPct(c: InfoCharacterView): number {
   font-style: italic;
   font-size: 12px;
   margin-top: 4px;
+  white-space: pre-line;
 }
 </style>

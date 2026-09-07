@@ -2,10 +2,17 @@
   "$schema": "../../../../schemas/battle-trait.schema.json",
   "id": "trait_might_zenith",
   "label": "剛撃の真髄",
-  "flavorText": "拳ひとつで、道理を通す。",
+  "flavorText": "「これがパワーハラスメントか...」",
   "kind": "trait",
-  "unlockCondition": { "category": "might", "points": 20 },
+  "unlockCondition": {
+    "category": "might",
+    "points": 20
+  },
   "effect": [
-    { "op": "statBoost", "stat": "str", "rate": 0.25 }
+    {
+      "op": "statBoost",
+      "stat": "str",
+      "rate": 0.25
+    }
   ]
 }

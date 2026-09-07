@@ -66,14 +66,29 @@ export const damageOp: EffectOp = {
     const referenceValue = resolveReferenceValue(sourceStats, scale)
     const mult = ctx.skill.kind === 'active' ? levelMultiplier(ctx.level) : 1
     const scaleRate = scale.rate * mult
+    const effectMultiplier = collectEffectMultiplier(ctx.source, element, ctx.content)
 
     for (const target of ctx.targets) {
       if (!target.alive) continue
       const targetStats = ctx.getEffective(target)
 
+      // カット率・弱点/耐性は命中の成否に関係なく決まるため、外れた場合の「本来与えていたはずの
+      // ダメージ」（selfDamageFromDealt 用）も同じ値で計算できるよう、命中判定より前に出す
+      const finalCutRate = computeFinalCutRate({
+        element, target: targetStats,
+        traitCutRates: collectTraitCutRates(target, ctx),
+        shieldCutRate: target.shield > 0 ? shieldCutRateFor(element) : 0,
+        guardCutRate: readTemporaryFlat(target, 'cutRate'),
+      })
+      const affinityStage = computeAffinityStage(element, target.traits, ctx.content.traits)
+
       const hitChance = computeHitChance(sourceStats.hitRate, targetStats.evadeRate)
       if (!rollHit(hitChance, ctx.rng)) {
         ctx.emit({ effectId: 'fx_miss', targetRef: 'target', combatantId: target.id, payload: { skillId: ctx.skill.id } })
+        // 烙天の内部仕様: 外れてもクリティカルなしの想定ダメージを missedPotential へ計上する
+        const wouldBeOutgoing = computeOutgoingDamage({ referenceValue, scaleRate, critMultiplier: 1, effectMultiplier })
+        const wouldBeFinal = computeFinalDamage({ outgoingDamage: wouldBeOutgoing, finalCutRate, affinityStage })
+        ctx.dealtDamage.missedPotential += Math.floor(wouldBeFinal)
         continue
       }
       // カウンター/反射板: 反撃態勢中の対象への命中は、即時反撃せずキューに積むだけにする。
@@ -86,24 +101,16 @@ export const damageOp: EffectOp = {
       const critStacks = rollCriticalStacks(sourceStats.critRate, ctx.rng)
       const critMultiplier = criticalMultiplierForStacks(sourceStats.critDamageMultiplier, critStacks)
 
-      const effectMultiplier = collectEffectMultiplier(ctx.source, element, ctx.content)
       const outgoing = computeOutgoingDamage({
         referenceValue, scaleRate, critMultiplier, effectMultiplier,
       })
-
-      const finalCutRate = computeFinalCutRate({
-        element, target: targetStats,
-        traitCutRates: collectTraitCutRates(target, ctx),
-        shieldCutRate: target.shield > 0 ? shieldCutRateFor(element) : 0,
-        guardCutRate: readTemporaryFlat(target, 'cutRate'),
-      })
-      const affinityStage = computeAffinityStage(element, target.traits, ctx.content.traits)
 
       const finalDamage = computeFinalDamage({ outgoingDamage: outgoing, finalCutRate, affinityStage })
 
       let shieldBroke = false
       const absorbedByShield = target.shield > 0
       applyDamage(target, finalDamage, () => { shieldBroke = true })
+      ctx.dealtDamage.total += Math.floor(finalDamage)
 
       ctx.emit({ effectId: `fx_hit_${element}`, targetRef: 'target', combatantId: target.id,
         payload: { text: String(Math.floor(finalDamage)), absorbedByShield, skillId: ctx.skill.id } })

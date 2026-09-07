@@ -16,7 +16,7 @@ import type {
 
 /** state: readonly(state) から UI へ渡る Combatant の実体型（配列も再帰的に readonly になる） */
 export type CombatantView = DeepReadonly<Combatant>
-import { CATEGORY_IDS } from '../domain/battle/types'
+import { CATEGORY_IDS, BUILTIN_SKILL_ID } from '../domain/battle/types'
 import {
   initPlayer, spawnEnemyFromDef, pickEnemyDefs, resolveEffectiveStats,
   resolvePlayerFocus, useActiveSkill, useBuiltinAction, hasReplaceGuard,
@@ -31,8 +31,8 @@ import {
 import type { CategoryContribution } from '../domain/battle/skillDraft'
 import {
   confirmSwap as confirmSwapSkill, equipToFreeSlot, unequipActive as unequipActiveSkill,
-  allocateSkillPoint as allocateSkillPointOn, setStatAllocation as setStatAllocationOn,
-  resetStatAllocations as resetStatAllocationsOn,
+  allocateSkillPoint as allocateSkillPointOn, deallocateSkillPoint as deallocateSkillPointOn,
+  setStatAllocation as setStatAllocationOn, resetStatAllocations as resetStatAllocationsOn,
 } from '../domain/battle/skillPanel'
 import { pickBackgroundId } from '../domain/battle/backdrop'
 import { estimateSkillDamage } from '../domain/battle/damagePreview'
@@ -148,6 +148,13 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   let generation = 0
   let pendingTimers: number[] = []
   let seq = 0
+  /**
+   * プレイヤーが選んだ行動を、行動速度キューが組み上がって実際にプレイヤーの手番が
+   * 巡ってくるまで一時的に保持する（selectAction で確定 → processTurns が消費）。
+   * 行動順そのものは selectAction の中で（プレイヤーが行動を決めた瞬間に）確定するため、
+   * 「決めた瞬間」と「実際に処理される瞬間」がズレうる（先手を取れない相手が先攻の場合等）。
+   */
+  let pendingPlayerAction: { action: PlayerAction; centerEnemyIndex: number | null } | null = null
 
   const content = BATTLE_CONTENT
   const timing = BATTLE.presentation
@@ -226,11 +233,16 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     startNewRound()
   }
 
+  /**
+   * 行動速度キューは「ラウンド開始時」にはまだ組み立てない（ユーザー確定仕様）。
+   * プレイヤーが行動を決めた瞬間（selectAction）に、その行動の先手フラグを反映して初めて
+   * 組み立てる。ここでは入力待ち状態（turnQueueが空）に戻すだけ。
+   */
   function startNewRound(): void {
-    const queue = buildTurnQueue([state.player, ...state.enemies], c => resolveEffectiveStats(c, content).agi)
-    state.turnQueue = queue
+    state.turnQueue = []
     state.turnIndex = 0
-    processTurns()
+    pendingPlayerAction = null
+    clearPresentation()
   }
 
   // ── ターン進行 ────────────────────────────────────────────────
@@ -239,14 +251,40 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     return state.enemies.find(e => e.id === id)
   }
 
-  /** 次に動く参加者を探す。プレイヤーなら入力待ちで抜け、敵なら演出付きで行動させる */
+  /** 指定したスキルIDが alwaysActsFirst を持つか（未指定・存在しない・passive/traitはfalse） */
+  function skillAlwaysActsFirst(skillId: string | null): boolean {
+    if (!skillId) return false
+    const def = content.skills.get(skillId)
+    return !!(def && def.kind === 'active' && def.alwaysActsFirst)
+  }
+
+  /** 敵がこのラウンドで使う予定のスキル（プレビュー、消費はしない）が alwaysActsFirst を持つか */
+  function enemyAlwaysActsFirst(enemy: Combatant): boolean {
+    return skillAlwaysActsFirst(previewEnemyNextSkill(enemy, content, state.roundCount))
+  }
+
+  /** 次に動く参加者を探す。プレイヤーの番なら、selectAction で確定済みの行動を実行する */
   function processTurns(): void {
     for (;;) {
       if (state.turnIndex >= state.turnQueue.length) { finishRound(); return }
       const entry = state.turnQueue[state.turnIndex]
       const combatant = findCombatant(entry.combatantId)
       if (!combatant || !combatant.alive) { state.turnIndex++; continue }
-      if (combatant.isPlayer) { clearPresentation(); return }
+      // 不意打ち等で行動をキャンセルされた対象は、1回だけ飛ばす（消費したらフラグは戻す）
+      if (combatant.skipNextTurn) {
+        combatant.skipNextTurn = false
+        if (combatant.isPlayer) pendingPlayerAction = null
+        state.turnIndex++
+        continue
+      }
+      if (combatant.isPlayer) {
+        // 行動速度キューにプレイヤーが含まれている時点で、それを組み立てた selectAction が
+        // 必ず pendingPlayerAction を設定済み（同じ関数の中で行っている）
+        const pending = pendingPlayerAction as { action: PlayerAction; centerEnemyIndex: number | null }
+        pendingPlayerAction = null
+        executePlayerAction(pending.action, pending.centerEnemyIndex)
+        return
+      }
       runEnemyTurn(combatant)
       return
     }
@@ -340,11 +378,16 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   }
 
   // ── プレイヤーの行動 ──────────────────────────────────────────
+  /**
+   * 行動速度キューが空＝まだ今ラウンドの行動を誰も決めていない（プレイヤーが決めた瞬間に
+   * selectAction がキューを組み立てる）ため、「プレイヤーの入力を待つべきか」はキューの
+   * 有無だけで判定できる。キューが組み上がった後は、実際にプレイヤーの番が来るまで
+   * processTurns が他の参加者（先手を取った相手 等）を先に処理する。
+   */
   const isPlayerTurn = computed(() =>
     state.status === 'battle'
     && presentation.phase === 'idle'
-    && state.turnIndex < state.turnQueue.length
-    && state.turnQueue[state.turnIndex]?.combatantId === state.player.id,
+    && state.turnQueue.length === 0,
   )
 
   const isPresenting = computed(() => presentation.phase !== 'idle')
@@ -353,8 +396,42 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     hasReplaceGuard(state.player, content) ? 'dodge' : 'guard',
   )
 
+  /** プレイヤーが選んだ行動に対応するスキルID（builtinはBUILTIN_SKILL_ID経由） */
+  function playerActionSkillId(action: PlayerAction): string | null {
+    if (action.kind === 'builtin') return BUILTIN_SKILL_ID[action.action]
+    return state.player.actives.find(a => a.slotIndex === action.slotIndex)?.id ?? null
+  }
+
+  /**
+   * プレイヤーの行動を確定する。ユーザー確定仕様: 行動速度キューは「ラウンド開始時」ではなく
+   * 「プレイヤーが行動を決めたこの瞬間」に組み立てる。守る/避ける/不意打ち等の
+   * alwaysActsFirst を持つ行動を選んだかどうかを、ここで初めてキューへ反映できる。
+   */
   function selectAction(action: PlayerAction, centerEnemyIndex: number | null = null): void {
     if (!isPlayerTurn.value) return
+    const player = state.player
+
+    if (action.kind === 'active') {
+      const owned = player.actives.find(a => a.slotIndex === action.slotIndex)
+      if (!owned || owned.cooldown > 0) return
+      const def = content.skills.get(owned.id)
+      if (!def || def.kind !== 'active') return
+      if (def.minRound !== undefined && state.roundCount < def.minRound) return
+    }
+
+    const playerAlwaysFirst = skillAlwaysActsFirst(playerActionSkillId(action))
+    state.turnQueue = buildTurnQueue(
+      [player, ...state.enemies],
+      c => resolveEffectiveStats(c, content).agi,
+      c => (c.isPlayer ? playerAlwaysFirst : enemyAlwaysActsFirst(c)),
+    )
+    state.turnIndex = 0
+    pendingPlayerAction = { action, centerEnemyIndex }
+    processTurns()
+  }
+
+  /** selectAction で確定済みの行動を、実際にプレイヤーの番が来た時点で実行する */
+  function executePlayerAction(action: PlayerAction, centerEnemyIndex: number | null): void {
     const player = state.player
 
     if (action.kind === 'builtin') {
@@ -373,11 +450,10 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
       return
     }
 
+    // selectAction 側で妥当性を確認済み（枠・CT・minRound）。ここでは実行するのみ
     const owned = player.actives.find(a => a.slotIndex === action.slotIndex)
-    if (!owned || owned.cooldown > 0) return
-    const def = content.skills.get(owned.id)
-    if (!def || def.kind !== 'active') return
-    if (def.minRound !== undefined && state.roundCount < def.minRound) return
+    const def = owned && content.skills.get(owned.id)
+    if (!owned || !def || def.kind !== 'active') { afterAction(); return }
 
     announce(player, owned.id)
     after(timing.announceMs, () => {
@@ -433,7 +509,9 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     }
     state.pendingDraftRounds = 1
     if (state.battlesWon > 0 && state.battlesWon % SKILL_POINTS.panelIntervalBattles === 0) {
-      state.skillPoints += SKILL_POINTS.panelSkillPoints
+      const occurrence = state.battlesWon / SKILL_POINTS.panelIntervalBattles
+      const cycle = SKILL_POINTS.panelSkillPointsCycle
+      state.skillPoints += cycle[(occurrence - 1) % cycle.length]
       state.statPoints += SKILL_POINTS.panelStatPoints
       state.status = 'skillPanel'
       return
@@ -458,6 +536,11 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   function allocateSkillPoint(activeId: string, amount = 1): void {
     if (state.status !== 'skillPanel') return
     allocateSkillPointOn(state, activeId, amount)
+  }
+
+  function deallocateSkillPoint(activeId: string, amount = 1): void {
+    if (state.status !== 'skillPanel') return
+    deallocateSkillPointOn(state, activeId, amount)
   }
 
   function setStatAllocation(stat: GrowthStatKey, amount: number): void {
@@ -586,6 +669,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     selectStoredActiveToEquip,
     unequipActive,
     allocateSkillPoint,
+    deallocateSkillPoint,
     setStatAllocation,
     resetStatAllocations,
     closeSkillPanel,

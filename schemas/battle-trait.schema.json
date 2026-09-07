@@ -36,7 +36,8 @@
             "type": "string",
             "enum": ["damage", "heal", "shield", "repeat", "modifier",
                       "statBoost", "elementAffinity", "cutRate", "replaceGuard", "healBetweenBattles",
-                    "effectBoost", "healTaken", "noop", "counterStance", "periodicSelfDamage"]
+                    "effectBoost", "healTaken", "noop", "counterStance", "periodicSelfDamage", "periodicTargetDamage",
+                    "selfDamageFromDealt", "cancelTargetAction"]
           }
         }
       }

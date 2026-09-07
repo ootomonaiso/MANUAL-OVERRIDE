@@ -47,7 +47,7 @@ describe('skillText: 効果文の生成', () => {
     const skill = makeActive({
       id: 's', effect: [node('damage', { element: 'physical', scale: { stat: 'str', rate: 0.8 } })],
     })
-    expect(text(buildSkillText(skill, 1))).toBe('物理属性ダメージ: STRの80%分。')
+    expect(text(buildSkillText(skill, 1))).toBe('物理属性ダメージ: STRの80%分。対象: 敵単体。')
   })
 
   it('表示される数値にはスキルレベルの倍率が反映される', () => {
@@ -83,8 +83,8 @@ describe('skillText: 効果文の生成', () => {
   it('回復・シールドも同じ形で書き出される', () => {
     const heal = makeActive({ id: 'h', effect: [node('heal', { element: 'special', scale: { stat: 'int', rate: 0.8 } })] })
     const shield = makeActive({ id: 'g', effect: [node('shield', { element: 'special', scale: { stat: 'def', rate: 0.5 } })] })
-    expect(text(buildSkillText(heal, 1))).toBe('回復: INTの80%分。')
-    expect(text(buildSkillText(shield, 1))).toBe('シールド付与: DEFの50%分。')
+    expect(text(buildSkillText(heal, 1))).toBe('回復: INTの80%分。対象: 敵単体。')
+    expect(text(buildSkillText(shield, 1))).toBe('シールド付与: DEFの50%分。対象: 敵単体。')
   })
 
   it('複数の効果は句点で区切られる', () => {
@@ -95,7 +95,50 @@ describe('skillText: 効果文の生成', () => {
         node('heal', { element: 'special', scale: { stat: 'int', rate: 0.2 } }),
       ],
     })
-    expect(text(buildSkillText(skill, 1))).toBe('物理属性ダメージ: STRの100%分。回復: INTの20%分。')
+    expect(text(buildSkillText(skill, 1))).toBe('物理属性ダメージ: STRの100%分。回復: INTの20%分。対象: 敵単体。')
+  })
+})
+
+describe('skillText: 対象範囲の表記', () => {
+  it('既定（敵単体）は「対象: 敵単体」と表示される', () => {
+    const skill = makeActive({ id: 's', effect: [node('damage', { element: 'physical', scale: { stat: 'str', rate: 1 } })] })
+    expect(text(buildSkillText(skill, 1))).toContain('対象: 敵単体。')
+  })
+
+  it('全体攻撃は「対象: 敵全体」と表示される', () => {
+    const skill = makeActive({
+      id: 's', focusRange: 'all', effect: [node('damage', { element: 'physical', scale: { stat: 'str', rate: 1 } })],
+    })
+    expect(text(buildSkillText(skill, 1))).toContain('対象: 敵全体。')
+  })
+
+  it('隣接3体は「対象: 隣接する敵3体」と表示される', () => {
+    const skill = makeActive({
+      id: 's', focusRange: 'adjacent3', effect: [node('damage', { element: 'physical', scale: { stat: 'str', rate: 1 } })],
+    })
+    expect(text(buildSkillText(skill, 1))).toContain('対象: 隣接する敵3体。')
+  })
+
+  it('ランダム1体は「対象: ランダムな敵1体」と表示される', () => {
+    const skill = makeActive({
+      id: 's', focusRange: 'random', effect: [node('damage', { element: 'physical', scale: { stat: 'str', rate: 1 } })],
+    })
+    expect(text(buildSkillText(skill, 1))).toContain('対象: ランダムな敵1体。')
+  })
+
+  it('自分を対象にするスキルは range に関わらず「対象: 自分」と表示される', () => {
+    const skill = makeActive({
+      id: 's', defaultFocus: 'self', focusRange: 'single',
+      effect: [node('shield', { element: 'physical', scale: { stat: 'def', rate: 1 } })],
+    })
+    expect(text(buildSkillText(skill, 1))).toContain('対象: 自分。')
+  })
+
+  it('パッシブ・特性には対象範囲の表示が付かない（focusRangeを持たないため）', () => {
+    const passive = makePassive({ id: 'p', effect: [node('statBoost', { stat: 'str', amount: 100 })] })
+    const trait = makeTrait({ id: 't', effect: [node('cutRate', { amount: 0.1 })] })
+    expect(text(buildSkillText(passive, 1))).not.toContain('対象:')
+    expect(text(buildSkillText(trait, 1))).not.toContain('対象:')
   })
 })
 
@@ -111,7 +154,7 @@ describe('skillText: repeat の表記', () => {
 
   it('繰り返し回数と内側の効果、最後の1回の特例が書き出される', () => {
     expect(text(buildSkillText(triple, 1)))
-      .toBe('3回繰り返す（物理属性ダメージ: STRの80%分。）最後の1回のみ: 自分のクリティカル率を50%変化させる。')
+      .toBe('3回繰り返す（物理属性ダメージ: STRの80%分。）最後の1回のみ: 自分のクリティカル率を50%変化させる。対象: 敵単体。')
   })
 
   it('末尾が句点で終わっているときに句点を重ねない', () => {
@@ -128,7 +171,7 @@ describe('skillText: repeat の表記', () => {
       })],
     })
     const out = text(buildSkillText(skill, 1))
-    expect(out.endsWith('）。')).toBe(true)
+    expect(out).toContain('）。対象')
     expect(out).not.toContain('。。')
   })
 
@@ -151,29 +194,29 @@ describe('skillText: repeat の表記', () => {
 describe('skillText: 補正・宣言的opの表記', () => {
   it('modifier は既定で自分への効果として書かれる', () => {
     const skill = makeActive({ id: 's', effect: [node('modifier', { stat: 'str', amount: 100, scope: 'thisTurn' })] })
-    expect(text(buildSkillText(skill, 1))).toBe('自分のSTRを+100変化させる。')
+    expect(text(buildSkillText(skill, 1))).toBe('自分のSTRを+100変化させる。対象: 敵単体。')
   })
 
   it('applyTo: "target" は対象への効果として書かれる', () => {
     const skill = makeActive({ id: 's', effect: [node('modifier', { stat: 'def', rate: -0.2, scope: 'thisBattle', applyTo: 'target' })] })
-    expect(text(buildSkillText(skill, 1))).toBe('対象のDEFを-20%変化させる。')
+    expect(text(buildSkillText(skill, 1))).toBe('対象のDEFを-20%変化させる。対象: 敵単体。')
   })
 
   it('cutRate 指定は「カット率」と表示され、amountでも%表示になる', () => {
     const skill = makeActive({ id: 's', effect: [node('modifier', { stat: 'cutRate', amount: 0.2, scope: 'thisTurn' })] })
-    expect(text(buildSkillText(skill, 1))).toBe('自分のカット率を20%変化させる。')
+    expect(text(buildSkillText(skill, 1))).toBe('自分のカット率を20%変化させる。対象: 敵単体。')
   })
 
   it('critRate等の割合ステータスは amount 指定でも%表示になる（生の小数のまま出さない）', () => {
     const skill = makeActive({ id: 's', effect: [node('modifier', { stat: 'critRate', amount: 0.5, scope: 'thisHit' })] })
-    expect(text(buildSkillText(skill, 1))).toBe('自分のクリティカル率を50%変化させる。')
+    expect(text(buildSkillText(skill, 1))).toBe('自分のクリティカル率を50%変化させる。対象: 敵単体。')
   })
 
   it('割合ステータスの modifier はスキルレベルが上がっても表示が変わらない（execution側と一致させる）', () => {
     // レベル倍率を掛けて表示すると「Lv2で+150%」のように実際の値と食い違って見える
     // （PERCENT_STAT_KEYS参照。三連撃/見切り撃ちで確認された不具合）。
     const skill = makeActive({ id: 's', effect: [node('modifier', { stat: 'critRate', amount: 0.5, scope: 'thisHit' })] })
-    expect(text(buildSkillText(skill, 4))).toBe('自分のクリティカル率を50%変化させる。')
+    expect(text(buildSkillText(skill, 4))).toBe('自分のクリティカル率を50%変化させる。対象: 敵単体。')
   })
 
   it('statBoost は上昇として書かれる。割合ステータスは amount 指定でも%表示になる', () => {
@@ -221,12 +264,12 @@ describe('skillText: 補正・宣言的opの表記', () => {
 
   it('counterStance は反応する属性と反撃属性の両方が文に出る（カウンター/反射板は物理・魔法限定のため）', () => {
     const counter = makeActive({ id: 'c', effect: [node('counterStance', { scaleStat: 'def', rate: 1, element: 'physical' })] })
-    expect(text(buildSkillText(counter, 1))).toBe('反撃態勢に入る（次に物理属性で被弾した回数ぶん、自分のDEFの100%分の物理属性で反撃する）。')
+    expect(text(buildSkillText(counter, 1))).toBe('反撃態勢に入る（次に物理属性で被弾した回数ぶん、自分のDEFの100%分の物理属性で反撃する）。対象: 敵単体。')
   })
 
   it('未知の op はop名を括弧で示すだけで壊れない', () => {
     const skill = makeActive({ id: 's', effect: [node('mystery')] })
-    expect(text(buildSkillText(skill, 1))).toBe('(mystery)。')
+    expect(text(buildSkillText(skill, 1))).toBe('(mystery)。対象: 敵単体。')
   })
 
   it('効果が空でも例外を投げない（実データではスキーマの minItems: 1 で封じている）', () => {
@@ -237,7 +280,7 @@ describe('skillText: 補正・宣言的opの表記', () => {
     const skill = makeActive({
       id: 's', minRound: 2, effect: [node('damage', { element: 'magical', scale: { stat: 'int', rate: 0.5 } })],
     })
-    expect(text(buildSkillText(skill, 1))).toBe('魔法属性ダメージ: INTの50%分。3ターン目から使用可能。')
+    expect(text(buildSkillText(skill, 1))).toBe('魔法属性ダメージ: INTの50%分。対象: 敵単体。3ターン目から使用可能。')
   })
 
   it('minRound が無いアクティブスキルには使用可能ターンの文が付かない', () => {

@@ -125,6 +125,9 @@ export const EFFECT_OP_SKELETONS: Readonly<Record<string, Record<string, unknown
   noop: {},
   counterStance: { scaleStat: 'def', rate: 1, element: 'physical' },
   periodicSelfDamage: { ratio: 0.15 },
+  periodicTargetDamage: { element: 'none', scale: { stat: 'agi', rate: 0.5 }, duration: 3 },
+  selfDamageFromDealt: { rate: 0.5 },
+  cancelTargetAction: { chance: 0.1 },
 }
 
 export const ALLOWED_EFFECT_OPS = Object.keys(EFFECT_OP_SKELETONS)
@@ -146,6 +149,9 @@ export const EFFECT_OP_LABEL: Readonly<Record<string, string>> = {
   noop: '何もしない',
   counterStance: '反撃態勢（次に被弾した分だけ反撃）',
   periodicSelfDamage: '継続ダメージ（毎ラウンド最大HPの割合を直接減算、防げない）',
+  periodicTargetDamage: '継続ダメージ（バフとして自身に登録し、毎ラウンド相手側へ直接ダメージ）',
+  selfDamageFromDealt: '反動ダメージ（この一撃で与えた合計ダメージの割合を自傷。相手を全滅させた場合は無効）',
+  cancelTargetAction: '行動キャンセル（確率で対象のこのラウンドの行動を無効化）',
 }
 
 /** content-editor のタブが扱う編集カテゴリ。switch の網羅性を型で保証するために union で持つ */
@@ -248,7 +254,8 @@ export const EFFECT_OP_FIELDS: Readonly<Record<string, readonly EffectFieldSpec[
     { key: 'amount', kind: 'number', label: '実数加算（amount）', optional: true, percentByStat: true },
     { key: 'rate', kind: 'number', label: '割合加算（rate・%）', optional: true, step: 0.01, percent: true },
     { key: 'scale', kind: 'scale', label: '自分の参照ステータスによる加算（scale・任意、amountと併用可）', optional: true },
-    { key: 'scope', kind: 'select', label: '持続範囲', options: ['thisHit', 'thisTurn', 'nextRound', 'thisBattle', 'permanent'] },
+    { key: 'scope', kind: 'select', label: '持続範囲', options: ['thisHit', 'thisTurn', 'nextRound', 'thisBattle', 'permanent', 'rounds'] },
+    { key: 'rounds', kind: 'number', label: '持続ラウンド数（scope:roundsの時のみ）', optional: true, min: 1, step: 1 },
     { key: 'applyTo', kind: 'select', label: '対象（省略時は自分）', options: ['self', 'target'], optional: true },
   ],
   statBoost: [
@@ -283,6 +290,17 @@ export const EFFECT_OP_FIELDS: Readonly<Record<string, readonly EffectFieldSpec[
   ],
   periodicSelfDamage: [
     { key: 'ratio', kind: 'number', label: '毎ラウンドの最大HP減少割合（ratio・%。レベル倍率は掛からない）', step: 0.01, percent: true },
+  ],
+  periodicTargetDamage: [
+    { key: 'element', kind: 'element', label: '属性' },
+    { key: 'scale', kind: 'scale', label: '参照ステータス・毎ラウンドの倍率（%）' },
+    { key: 'duration', kind: 'number', label: '持続ラウンド数（再度付与した場合は加算延長）', min: 1, step: 1 },
+  ],
+  selfDamageFromDealt: [
+    { key: 'rate', kind: 'number', label: 'この一撃で与えた合計ダメージに対する自傷割合（rate・%。レベル倍率は掛からない）', step: 0.01, percent: true },
+  ],
+  cancelTargetAction: [
+    { key: 'chance', kind: 'number', label: 'キャンセルさせる確率（chance・%。レベル倍率は掛からない）', step: 0.01, percent: true },
   ],
 }
 

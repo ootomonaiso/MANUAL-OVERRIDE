@@ -196,7 +196,10 @@ export function applyDamage(
     target.shield -= absorbed
     const rest = dmg - absorbed
     if (rest > 0) target.hp -= rest
-    if (target.shield === 0) onShieldBreak?.()
+    if (target.shield === 0) {
+      target.maxShield = 0
+      onShieldBreak?.()
+    }
   } else {
     target.hp -= dmg
   }
@@ -215,9 +218,22 @@ export function applyHeal(target: Combatant, rawHeal: number, maxHp: number): nu
   return target.hp - before
 }
 
-/** シールドを付与する（複数回付与時は加算） */
+/** シールドを付与する（複数回付与時は加算）。maxShield（減衰の基準値）も併せて更新する */
 export function applyShield(target: Combatant, rawAmount: number): number {
   const amount = Math.floor(Math.max(0, rawAmount))
   target.shield += amount
+  target.maxShield = Math.max(target.maxShield, target.shield)
   return amount
+}
+
+/**
+ * シールドを maxShield 基準の固定割合だけ減衰させる（ターン終了時/戦闘終了後 想定）。
+ * 現在値ではなく過去最高値に rate を掛けるため、シールドが減っていても減衰量は変わらない
+ * （0まで減らした後に再付与すればそこから新たに積み上がる）
+ */
+export function decayShield(target: Combatant, rate: number): void {
+  if (target.maxShield <= 0) return
+  const amount = Math.floor(target.maxShield * rate)
+  target.shield = Math.max(0, target.shield - amount)
+  if (target.shield === 0) target.maxShield = 0
 }

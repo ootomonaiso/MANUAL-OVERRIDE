@@ -4,7 +4,7 @@ import {
   computeAffinityStage, affinityMultiplier,
   computeOutgoingDamage, computeFinalDamage, computeOutgoingHeal, computeFinalHeal,
   computeHitChance, rollHit, rollCritical, rollCriticalStacks, criticalMultiplierForStacks,
-  applyDamage, applyHeal, applyShield,
+  applyDamage, applyHeal, applyShield, decayShield,
 } from '../../../../src/domain/battle/damageCalc'
 import { BATTLE } from '../../../../src/data/tunables'
 import type { TraitDef } from '../../../../src/domain/battle/types'
@@ -298,5 +298,55 @@ describe('damageCalc: HP・シールドへの反映', () => {
     applyShield(c, 300)
     applyShield(c, 200.7)
     expect(c.shield).toBe(500)
+  })
+
+  it('シールド付与のたびに maxShield が過去最高値へ更新される', () => {
+    const c = makeCombatant({ shield: 0, maxShield: 0 })
+    applyShield(c, 300)
+    expect(c.maxShield).toBe(300)
+    applyShield(c, 100)
+    expect(c.maxShield).toBe(400)
+  })
+
+  it('シールドが割れる（0になる）とmaxShieldも0へリセットされる', () => {
+    const c = makeCombatant({ hp: 5000, shield: 300, maxShield: 300 })
+    applyDamage(c, 300)
+    expect(c.shield).toBe(0)
+    expect(c.maxShield).toBe(0)
+  })
+
+  it('シールドが残っていればmaxShieldは変わらない', () => {
+    const c = makeCombatant({ hp: 5000, shield: 300, maxShield: 300 })
+    applyDamage(c, 100)
+    expect(c.shield).toBe(200)
+    expect(c.maxShield).toBe(300)
+  })
+})
+
+describe('damageCalc: シールド減衰（decayShield）', () => {
+  it('maxShield基準で固定割合を失う。現在値が既に減っていても基準はmaxShieldのまま', () => {
+    const c = makeCombatant({ shield: 40, maxShield: 100 })
+    decayShield(c, 0.25)
+    expect(c.shield).toBe(15)   // 40 - floor(100 × 0.25)
+    expect(c.maxShield).toBe(100)   // 0にならない限りmaxShieldは変わらない
+  })
+
+  it('0未満にはならない', () => {
+    const c = makeCombatant({ shield: 10, maxShield: 100 })
+    decayShield(c, 0.25)
+    expect(c.shield).toBe(0)
+  })
+
+  it('0まで減った場合はmaxShieldもリセットされる（次の付与から新たに積み上がる）', () => {
+    const c = makeCombatant({ shield: 10, maxShield: 100 })
+    decayShield(c, 0.25)
+    expect(c.maxShield).toBe(0)
+  })
+
+  it('maxShieldが0（一度もシールドを持ったことがない）なら何も起きない', () => {
+    const c = makeCombatant({ shield: 0, maxShield: 0 })
+    decayShield(c, 0.25)
+    expect(c.shield).toBe(0)
+    expect(c.maxShield).toBe(0)
   })
 })

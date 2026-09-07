@@ -1,21 +1,57 @@
 {
   "$schema": "../../../../schemas/battle-enemy.schema.json",
   "id": "enemy_iron_sentinel",
-  "label": "鋼綴じの番人",
-  "flavorText": "何度斬りつけても、綴じ目が開かない。",
+  "label": "隕烙の魔法騎士",
+  "flavorText": "かの帝国が滅びたその日、領土すべてを覆い尽くさん星が降った。",
   "sprite": "battle_iron_sentinel",
   "stats": {
-    "hp": 22000, "str": 750, "def": 2400, "int": 500, "ref": 2200, "agi": 400,
-    "hitRate": 0.95, "evadeRate": 0, "critRate": 0.08, "critDamageMultiplier": 1.8
+    "hp": 128000,
+    "str": 4380,
+    "def": 13980,
+    "int": 2900,
+    "ref": 12800,
+    "agi": 2310,
+    "hitRate": 0.95,
+    "evadeRate": 0,
+    "critRate": 0.08,
+    "critDamageMultiplier": 1.8
   },
-  "traits": ["trait_resist_physical"],
+  "traits": [
+    "trait_resist_physical"
+  ],
   "activeSkills": [
-    { "id": "skill_triple_strike", "level": 3 },
-    "skill_guard_shield",
-    { "id": "skill_thorn_armor", "level": 2 },
-    { "id": "skill_wild_swing", "level": 2 }
+    {
+      "id": "skill_triple_strike",
+      "level": 3
+    },
+    {
+      "id": "skill_guard_shield",
+      "level": 1
+    },
+    {
+      "id": "skill_thorn_armor",
+      "level": 2
+    },
+    {
+      "id": "skill_wild_swing",
+      "level": 2
+    },
+    {
+      "id": "skill_meteor",
+      "level": 1
+    },
+    {
+      "id": "skill_magic_sword",
+      "level": 1
+    }
   ],
   "passiveSkills": [],
-  "actionPattern": ["skill_thorn_armor", "skill_triple_strike", "skill_guard_shield", "skill_wild_swing", "skill_triple_strike"],
+  "actionPattern": [
+    "skill_thorn_armor",
+    "skill_triple_strike",
+    "skill_guard_shield",
+    "skill_wild_swing",
+    "skill_triple_strike"
+  ],
   "isBoss": true
 }

@@ -613,6 +613,9 @@ function renderField(
   if (currentCategory === 'enemies' && path === 'actionPattern') { renderActionPattern(rootValue, path, container); return }
   if ((currentCategory === 'skills' || currentCategory === 'traits') && path === 'effect') { renderEffectNodeList(rootValue, path, container); return }
   if (currentCategory === 'battleEffects' && path === 'visual') { renderVisualField(schemaRaw, root, rootValue, path, container); return }
+  // flavorText は演出専用の地の文で、単一行の入力欄では改行を打てない
+  // （改行はゲーム内表示側で white-space:pre-line により反映される。InfoPanel.vue 等参照）
+  if (path === 'flavorText') { renderFlavorTextField(rootValue, path, container); return }
 
   const schema = resolveRef(schemaRaw, root)
   const kind = widgetKindOf(schemaRaw, root)
@@ -732,6 +735,16 @@ function renderField(
       return
     }
   }
+}
+
+/** flavorText: 複数行を打てるよう textarea にする（単一行の text 入力だと Enter で改行できないため） */
+function renderFlavorTextField(rootValue: Record<string, unknown>, path: string, container: HTMLElement): void {
+  const current = getAtPath(rootValue, path)
+  const textarea = h('textarea', 'flavor-textarea') as HTMLTextAreaElement
+  textarea.rows = 3
+  textarea.value = typeof current === 'string' ? current : ''
+  textarea.addEventListener('change', () => setAtPath(rootValue, path, textarea.value))
+  container.appendChild(textarea)
 }
 
 /** enemies.sprite: 通常のテキスト入力＋候補一覧に加え、実際のドット絵をその場に表示する */

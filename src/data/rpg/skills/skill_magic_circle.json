@@ -1,0 +1,37 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_magic_circle",
+  "label": "魔法陣",
+  "flavorText": "幾何学的に描かれた模様は、「魔法」を「魔術」へと昇格させた。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "wisdom",
+  "subCategories": [
+    "aegis"
+  ],
+  "cooldown": 5,
+  "defaultFocus": "ally",
+  "focusRange": "all",
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "modifier",
+      "stat": "int",
+      "rate": 0.2,
+      "scope": "thisBattle",
+      "applyTo": "target"
+    },
+    {
+      "op": "modifier",
+      "stat": "ref",
+      "rate": 0.2,
+      "scope": "thisBattle",
+      "applyTo": "target"
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical"
+  }
+}

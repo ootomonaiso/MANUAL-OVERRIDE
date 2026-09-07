@@ -11,6 +11,7 @@
   "defaultFocus": "self",
   "focusRange": "single",
   "draftable": false,
+  "alwaysActsFirst": true,
   "effect": [
     { "op": "modifier", "stat": "cutRate", "amount": 0.5, "scope": "thisTurn" }
   ]

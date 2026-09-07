@@ -205,5 +205,6 @@ function toggle(id: string) {
   opacity: 0.6;
   font-style: italic;
   margin-top: 2px;
+  white-space: pre-line;
 }
 </style>

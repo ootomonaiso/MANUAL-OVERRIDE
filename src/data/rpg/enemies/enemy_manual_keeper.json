@@ -5,17 +5,40 @@
   "flavorText": "最後のページを、誰にも読ませない。",
   "sprite": "battle_keeper",
   "stats": {
-    "hp": 20000, "str": 900, "def": 2000, "int": 900, "ref": 2000, "agi": 600,
-    "hitRate": 0.95, "evadeRate": 0, "critRate": 0.1, "critDamageMultiplier": 2.0
+    "hp": 256000,
+    "str": 11560,
+    "def": 25600,
+    "int": 11560,
+    "ref": 25600,
+    "agi": 7680,
+    "hitRate": 0.95,
+    "evadeRate": 0,
+    "critRate": 0.1,
+    "critDamageMultiplier": 2
   },
   "traits": [],
   "activeSkills": [
-    { "id": "skill_triple_strike", "level": 2 },
-    { "id": "skill_double_bolt", "level": 2 },
+    {
+      "id": "skill_triple_strike",
+      "level": 2
+    },
+    {
+      "id": "skill_double_bolt",
+      "level": 2
+    },
     "skill_guard_shield",
-    { "id": "skill_curse_bolt", "level": 2 }
+    {
+      "id": "skill_curse_bolt",
+      "level": 2
+    }
   ],
   "passiveSkills": [],
-  "actionPattern": ["skill_triple_strike", "skill_double_bolt", "skill_curse_bolt", "skill_guard_shield", "skill_triple_strike"],
+  "actionPattern": [
+    "skill_triple_strike",
+    "skill_double_bolt",
+    "skill_curse_bolt",
+    "skill_guard_shield",
+    "skill_triple_strike"
+  ],
   "isBoss": true
 }

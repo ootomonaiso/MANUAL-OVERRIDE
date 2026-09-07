@@ -1,0 +1,48 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_override",
+  "label": "オーバーライド",
+  "flavorText": "世界のすべてを書き換える。",
+  "kind": "active",
+  "element": "special",
+  "mainCategory": "curse",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 4,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_special"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "special",
+      "scale": {
+        "stat": "int",
+        "rate": 0.7
+      }
+    },
+    {
+      "op": "modifier",
+      "stat": "str",
+      "rate": -0.2,
+      "scope": "rounds",
+      "rounds": 3,
+      "applyTo": "target"
+    },
+    {
+      "op": "modifier",
+      "stat": "int",
+      "rate": -0.2,
+      "scope": "rounds",
+      "rounds": 3,
+      "applyTo": "target"
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_special",
+    "impact": "battle_curse"
+  }
+}

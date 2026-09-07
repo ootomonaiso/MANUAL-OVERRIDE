@@ -304,6 +304,7 @@ function onRerollClick(): void {
   font-size: 11px;
   opacity: 0.6;
   font-style: italic;
+  white-space: pre-line;
 }
 .swap-picker {
   display: flex;

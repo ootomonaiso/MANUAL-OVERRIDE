@@ -19,13 +19,13 @@
     {
       "op": "modifier",
       "stat": "def",
-      "amount": 6000,
+      "amount": 4000,
       "scope": "thisBattle"
     },
     {
       "op": "modifier",
       "stat": "ref",
-      "amount": 6000,
+      "amount": 4000,
       "scope": "thisBattle"
     },
     {

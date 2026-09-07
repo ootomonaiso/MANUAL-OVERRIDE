@@ -17,8 +17,12 @@ import {
   newAccumulator, addFlat, addRate, toModifiers, accumulatePassiveStatBoosts,
   computeEffectiveStats, clampHpToMax,
 } from './stats'
+import { decayShield } from './damageCalc'
 import { resolveAdjacent3, buildEnemyActivesFromPattern, pickEnemySkill } from './turnQueue'
-import { runEffects, clearThisTurnModifiers, clearThisBattleModifiers, downgradeNextRoundModifiers } from './effectOps'
+import {
+  runEffects, clearThisTurnModifiers, clearThisBattleModifiers, downgradeNextRoundModifiers,
+  decrementRoundsModifiers,
+} from './effectOps'
 
 type Emit = (req: EffectRequest) => void
 
@@ -39,19 +43,22 @@ function freshCombatant(id: string, label: string, isPlayer: boolean, formationI
   return {
     id, label, isPlayer,
     spriteId: '',
+    flavorText: '',
     baseStats: {
       hp: 0, str: 0, def: 0, int: 0, ref: 0, agi: 0,
       hitRate: BATTLE.initialStats.hitRate, evadeRate: 0,
       critRate: BATTLE.initialStats.critRate,
       critDamageMultiplier: BATTLE.initialStats.critDamageMultiplier,
     },
-    hp: 0, shield: 0, alive: true,
+    hp: 0, shield: 0, maxShield: 0, alive: true,
     traits: [], passives: [], actives: [],
     temporary: [],
     periodicSelfEffects: [],
+    periodicTargetEffects: [],
     pendingCounter: null,
     queuedCounterHits: 0,
     pendingTransformBonus: null,
+    skipNextTurn: false,
     builtinCooldowns: { guard: 0, dodge: 0 },
     actionPattern: [], patternIndex: 0, formationIndex, isBoss: false,
   }
@@ -84,6 +91,7 @@ export function spawnEnemyFromDef(
 ): Combatant {
   const c = freshCombatant(`${def.id}#${formationIndex}`, def.label, false, formationIndex)
   c.spriteId = def.sprite
+  c.flavorText = def.flavorText
   c.baseStats = { ...def.stats, ...statsOverride }
   c.isBoss = def.isBoss
   c.traits = def.traits.map(id => ({ id }))
@@ -316,6 +324,7 @@ export function useActiveSkill(params: {
     source, targets, skill: def, level, state, emit, rng,
     getEffective: c => resolveEffectiveStats(c, content),
     content,
+    dealtDamage: { total: 0, missedPotential: 0 },
   })
 
   flushCounterRetaliations({ attacker: source, hitTargets: targets, state, content, rng, emit })
@@ -379,6 +388,7 @@ function flushCounterRetaliations(params: {
         source: holder, targets: [attacker], skill: skillForRetaliation, level, state, emit, rng,
         getEffective: c => resolveEffectiveStats(c, content),
         content,
+        dealtDamage: { total: 0, missedPotential: 0 },
       })
     }
   }
@@ -446,7 +456,10 @@ export function endOfRound(state: BattleState, content: BattleContent, emit: Emi
     // これにより nextRound は「付与されたラウンドの残り＋次のラウンド丸ごと」＝2ラウンド分保つ
     clearThisTurnModifiers(c)
     downgradeNextRoundModifiers(c)
+    decrementRoundsModifiers(c)
     applyPeriodicSelfEffects(c, content, emit)
+    applyPeriodicTargetEffects(c, state, content, emit)
+    decayShield(c, BATTLE.shield.decayPerTurn)
     // 一発ツモ 想定: 変化先スキル専用ボーナスは nextRound と同じ2ラウンド寿命（未消費なら失効させる）
     if (c.pendingTransformBonus) {
       c.pendingTransformBonus.roundsRemaining--
@@ -474,6 +487,34 @@ function applyPeriodicSelfEffects(c: Combatant, content: BattleContent, emit: Em
   }
 }
 
+/**
+ * 継続ダメージ（風の剣 想定）を相手側全体へ与える。periodicSelfEffects と同じくシールド・
+ * カット率を経由せず直接HPを減らす。発動元(c)が戦闘不能なら何もしない
+ * （倒れた後もバフの残りターンぶん攻撃し続けるのは不自然なため）。
+ */
+function applyPeriodicTargetEffects(c: Combatant, state: BattleState, content: BattleContent, emit: Emit): void {
+  if (c.periodicTargetEffects.length === 0) return
+  const opposing = (c.isPlayer ? state.enemies : [state.player]).filter(t => t.alive)
+  if (c.alive && opposing.length > 0) {
+    const sourceStats = resolveEffectiveStats(c, content)
+    for (const pe of c.periodicTargetEffects) {
+      const dmg = Math.floor(sourceStats[pe.scaleStat] * pe.rate)
+      for (const target of opposing) {
+        target.hp = Math.max(0, target.hp - dmg)
+        emit({ effectId: `fx_hit_${pe.element}`, targetRef: 'target', combatantId: target.id,
+          payload: { text: `-${dmg}`, skillId: pe.sourceId } })
+        if (target.hp <= 0) {
+          target.alive = false
+          emit({ effectId: 'fx_defeat', targetRef: 'target', combatantId: target.id })
+        }
+      }
+    }
+  }
+  c.periodicTargetEffects = c.periodicTargetEffects
+    .map(pe => ({ ...pe, roundsRemaining: pe.roundsRemaining - 1 }))
+    .filter(pe => pe.roundsRemaining > 0)
+}
+
 // ─────────────────────────────────────────────────────────────
 // 勝敗判定・戦闘終了処理
 // ─────────────────────────────────────────────────────────────
@@ -488,6 +529,8 @@ export function checkBattleOutcome(state: BattleState): BattleOutcome {
 
 /**
  * 戦闘勝利時の後処理: HP と shield 以外を全てリセットし、healBetweenBattles 特性を適用する。
+ * shield は次戦へ持ち越されるが、無条件に強い持ち越し資源にならないよう decayPerBattle
+ * （既定50%、maxShield基準）だけ追加で目減りさせる。
  * 呼び出し後、状態は 'drafting' に遷移させる（ドラフト抽選は skillDraft.ts が別途行う）。
  */
 export function finishBattleOnVictory(state: BattleState, content: BattleContent): void {
@@ -496,11 +539,14 @@ export function finishBattleOnVictory(state: BattleState, content: BattleContent
 
   clearThisBattleModifiers(player)   // thisTurn/thisBattle/nextRound をまとめて除去。permanent は残す
   player.periodicSelfEffects = []    // 継続ダメージ（龍鱗等）も戦闘限りでリセットする
+  player.periodicTargetEffects = []  // 継続ダメージ（風の剣等、相手側へのもの）も戦闘限りでリセットする
   player.pendingCounter = null       // カウンター/反射板の反撃態勢も戦闘限りでリセットする
   player.queuedCounterHits = 0
   player.pendingTransformBonus = null   // 一発ツモ等の変化先スキル専用ボーナスも戦闘限りでリセットする
+  player.skipNextTurn = false           // 不意打ち等による行動キャンセルの持ち越しも戦闘限りでリセットする
   for (const a of player.actives) a.cooldown = 0
   player.builtinCooldowns = { guard: 0, dodge: 0 }
+  decayShield(player, BATTLE.shield.decayPerBattle)
 
   state.lastBattleEndNotices = []
 

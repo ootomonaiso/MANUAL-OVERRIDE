@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_bastion_wall",
+  "label": "鉄壁の陣",
+  "flavorText": "鍛え上げた守りは、そのまま壁になる。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "aegis",
+  "subCategories": [
+    "guard"
+  ],
+  "cooldown": 4,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_physical"
+  ],
+  "effect": [
+    {
+      "op": "shield",
+      "element": "physical",
+      "scale": {
+        "stat": "def",
+        "rate": 0.8
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_guard",
+    "impact": "battle_shield_gain"
+  }
+}

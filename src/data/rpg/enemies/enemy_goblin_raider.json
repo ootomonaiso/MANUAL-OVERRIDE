@@ -1,16 +1,36 @@
 {
   "$schema": "../../../../schemas/battle-enemy.schema.json",
   "id": "enemy_goblin_raider",
-  "label": "掠め取る者",
-  "flavorText": "余白ごと引きちぎって逃げていく。",
+  "label": "ゴブリンリーダー",
+  "flavorText": "知能が高いが、それ故に自分ができることは他の人もできると思い込んでいる。",
   "sprite": "battle_goblin_raider",
   "stats": {
-    "hp": 2200, "str": 480, "def": 350, "int": 150, "ref": 250, "agi": 550,
-    "hitRate": 0.94, "evadeRate": 0, "critRate": 0.08, "critDamageMultiplier": 1.6
+    "hp": 3120,
+    "str": 820,
+    "def": 590,
+    "int": 260,
+    "ref": 420,
+    "agi": 930,
+    "hitRate": 0.94,
+    "evadeRate": 0,
+    "critRate": 0.08,
+    "critDamageMultiplier": 1.6
   },
-  "traits": ["trait_weak_magical"],
-  "activeSkills": ["skill_swift_slash", { "id": "skill_focus_strike", "level": 1 }],
+  "traits": [
+    "trait_weak_magical"
+  ],
+  "activeSkills": [
+    "skill_swift_slash",
+    {
+      "id": "skill_focus_strike",
+      "level": 1
+    }
+  ],
   "passiveSkills": [],
-  "actionPattern": ["skill_swift_slash", "skill_swift_slash", "skill_focus_strike"],
+  "actionPattern": [
+    "skill_swift_slash",
+    "skill_swift_slash",
+    "skill_focus_strike"
+  ],
   "isBoss": false
 }

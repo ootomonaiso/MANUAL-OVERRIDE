@@ -17,11 +17,17 @@
   ],
   "effect": [
     {
+      "op": "modifier",
+      "stat": "hitRate",
+      "rate": -0.75,
+      "scope": "thisHit"
+    },
+    {
       "op": "damage",
       "element": "physical",
       "scale": {
         "stat": "str",
-        "rate": 1.8
+        "rate": 3.5
       }
     },
     {

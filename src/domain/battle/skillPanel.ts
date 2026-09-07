@@ -6,7 +6,7 @@
 
 import { BATTLE } from '../../data/tunables'
 import type { BattleState, Combatant, GrowthStatKey } from './types'
-import { addActivePoints, findFreeSlotIndex, MAX_ACTIVE_POINTS } from './skillDraft'
+import { addActivePoints, findFreeSlotIndex, levelForPoints, MAX_ACTIVE_POINTS } from './skillDraft'
 
 /** パネル: 装備中のアクティブを外して倉庫へ戻す。投資済みポイントは全額 state.skillPoints へ還元される */
 export function unequipActive(state: BattleState, activeId: string): void {
@@ -50,6 +50,18 @@ export function allocateSkillPoint(state: BattleState, activeId: string, amount:
   addActivePoints(owned, spend)
   state.skillPoints -= spend
   return spend
+}
+
+/** パネル: セット中のアクティブから投資済みポイントを引き戻し、未配分プールへ戻す。実際に引き戻せた量を返す */
+export function deallocateSkillPoint(state: BattleState, activeId: string, amount: number): number {
+  const owned = state.player.actives.find(a => a.id === activeId && a.slotIndex !== null)
+  if (!owned || amount <= 0) return 0
+  const refund = Math.min(amount, owned.points)
+  if (refund <= 0) return 0
+  owned.points -= refund
+  owned.level = levelForPoints(owned.points)
+  state.skillPoints += refund
+  return refund
 }
 
 function syncStatAllocationModifier(player: Combatant, stat: GrowthStatKey, points: number): void {

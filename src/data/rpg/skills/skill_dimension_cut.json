@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_dimension_cut",
+  "label": "次元断",
+  "flavorText": "空間ごと、断ち切る。",
+  "kind": "active",
+  "element": "special",
+  "mainCategory": "pierce",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 3,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_special"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "special",
+      "scale": {
+        "stat": "int",
+        "rate": 1.2
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_special",
+    "impact": "battle_bolt"
+  }
+}

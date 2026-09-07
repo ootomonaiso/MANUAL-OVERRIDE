@@ -520,9 +520,20 @@ describe('BattleScreen: スキルパネル（5戦ごとのポイント配分、�
     const h = mount()
     await advanceToSkillPanel(h)
     const before = h.battle.state.skillPoints
-    ;($(h.host, '.active-card .panel-btn:not(.ghost)') as HTMLButtonElement).click()
+    ;($(h.host, '.active-card .skill-point-inc') as HTMLButtonElement).click()
     await nextTick()
     expect(h.battle.state.skillPoints).toBe(before - 1)
+  })
+
+  it('配分済みのアクティブから引き戻すと、ポイントが戻って表示が更新される', async () => {
+    const h = mount()
+    await advanceToSkillPanel(h)
+    ;($(h.host, '.active-card .skill-point-inc') as HTMLButtonElement).click()
+    await nextTick()
+    const before = h.battle.state.skillPoints
+    ;($(h.host, '.active-card .skill-point-dec') as HTMLButtonElement).click()
+    await nextTick()
+    expect(h.battle.state.skillPoints).toBe(before + 1)
   })
 
   it('ステータスへ+1すると未配分ポイントが減る', async () => {
@@ -532,6 +543,23 @@ describe('BattleScreen: スキルパネル（5戦ごとのポイント配分、�
     ;($(h.host, '.stat-row .stepper:not(:disabled)') as HTMLButtonElement)?.click()
     await nextTick()
     expect(h.battle.state.statPoints).toBe(before - 1)
+  })
+
+  it('ステータスへ+1すると、同じパネル内の実効ステータス表示も即座に更新される', async () => {
+    const h = mount()
+    await advanceToSkillPanel(h)
+    const before = $(h.host, '.stat-effective')?.textContent
+    ;($(h.host, '.stat-row .stepper:not(:disabled)') as HTMLButtonElement).click()
+    await nextTick()
+    expect($(h.host, '.stat-effective')?.textContent).not.toBe(before)
+  })
+
+  it('セット中のアクティブを選ぶと、フレーバーテキストが表示される', async () => {
+    const h = mount()
+    await advanceToSkillPanel(h)
+    ;($(h.host, '.active-card') as HTMLElement).click()
+    await nextTick()
+    expect($(h.host, '.detail-flavor')).not.toBeNull()
   })
 
   it('パネルを閉じると戦闘が再開する', async () => {

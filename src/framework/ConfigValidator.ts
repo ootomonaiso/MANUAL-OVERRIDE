@@ -175,6 +175,8 @@ export function validateGameConfig(config: GameConfigMap): ConfigValidationResul
       ['dodge.cooldown', b.dodge?.cooldown, 0],
       ['shield.cutRate', b.shield?.cutRate, 0, 1],
       ['shield.cutRateVsSpecial', b.shield?.cutRateVsSpecial, 0, 1],
+      ['shield.decayPerTurn', b.shield?.decayPerTurn, 0, 1],
+      ['shield.decayPerBattle', b.shield?.decayPerBattle, 0, 1],
     ]
     for (const [path, val, min, max] of nested) {
       if (typeof val !== 'number') {
@@ -224,7 +226,11 @@ export function validateGameConfig(config: GameConfigMap): ConfigValidationResul
   if (config.skillPoints) {
     const sp = config.skillPoints
     if (sp.panelIntervalBattles < 1) errors.push('config.skillPoints.panelIntervalBattles は1以上が必要です')
-    if (sp.panelSkillPoints < 0) errors.push('config.skillPoints.panelSkillPoints は0以上が必要です')
+    if (!Array.isArray(sp.panelSkillPointsCycle) || sp.panelSkillPointsCycle.length === 0) {
+      errors.push('config.skillPoints.panelSkillPointsCycle は1件以上の配列が必要です')
+    } else if (sp.panelSkillPointsCycle.some(v => v < 0)) {
+      errors.push('config.skillPoints.panelSkillPointsCycle の要素はすべて0以上が必要です')
+    }
     if (sp.panelStatPoints < 0) errors.push('config.skillPoints.panelStatPoints は0以上が必要です')
     if (sp.duplicateDraftWeight < 1) errors.push('config.skillPoints.duplicateDraftWeight は1以上が必要です')
     if (!Array.isArray(sp.pointsForLevel) || sp.pointsForLevel.length === 0) {

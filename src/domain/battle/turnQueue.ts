@@ -13,19 +13,31 @@ function meetsMinRound(skillId: string, content: BattleContent, roundCount: numb
 }
 
 /**
+ * AGIがどれだけ高くても超えられないよう、「必ず先手」を通常のAGI帯（実測ではせいぜい数千程度）から
+ * 十分に離しておくための加算値。alwaysFirstOf が true の対象の priority に加算する。
+ */
+const ALWAYS_FIRST_PRIORITY_BONUS = 1_000_000
+
+/**
  * 行動順キューを構築する。
  * 並べ替え規則: priority 降順 → 同値ならプレイヤー優先 → 敵同士は左→右(formationIndex)。
+ * `alwaysFirstOf` が true を返した対象は、AGIに関わらず必ず先手になる（守る/避ける/不意打ち 想定。
+ * 同時に複数の対象がtrueの場合は、その中でも通常どおりAGIで順序を決める）。
  */
 export function buildTurnQueue(
   combatants: readonly Combatant[],
   agiOf: (c: Combatant) => number,
+  alwaysFirstOf: (c: Combatant) => boolean,
 ): TurnEntry[] {
   const alive = combatants.filter(c => c.alive)
-  const entries: TurnEntry[] = alive.map(c => ({
-    combatantId: c.id,
-    agi: agiOf(c),
-    priority: agiOf(c),
-  }))
+  const entries: TurnEntry[] = alive.map(c => {
+    const agi = agiOf(c)
+    return {
+      combatantId: c.id,
+      agi,
+      priority: alwaysFirstOf(c) ? agi + ALWAYS_FIRST_PRIORITY_BONUS : agi,
+    }
+  })
   const byId = new Map(alive.map(c => [c.id, c]))
   entries.sort((a, b) => {
     if (b.priority !== a.priority) return b.priority - a.priority

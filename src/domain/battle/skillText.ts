@@ -4,7 +4,10 @@
  * 表示される数値はスキルレベルの倍率を適用済みの実値にする。
  */
 
-import type { SkillDef, EffectNode, StatKey, Element, CategoryId, ModifierScope, TemporaryModifier } from './types'
+import type {
+  SkillDef, EffectNode, StatKey, Element, CategoryId, ModifierScope, TemporaryModifier,
+  FocusSide, FocusRange,
+} from './types'
 import { PERCENT_STAT_KEYS, isPercentStat } from './types'
 import { levelMultiplier } from './stats'
 
@@ -181,8 +184,38 @@ function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
       const ratio = node.ratio as number
       return [plain('毎ラウンド、自分の最大HPの'), numTok(pct(ratio)), plain('を防げずに失う')]
     }
+    case 'cancelTargetAction': {
+      const chance = node.chance as number
+      return [numTok(pct(chance)), plain('の確率で、相手のこのラウンドの行動をキャンセルする')]
+    }
+    case 'selfDamageFromDealt': {
+      const rate = node.rate as number
+      return [
+        plain('この一撃で与えた合計ダメージの'), numTok(pct(rate)), plain('分の反動を自分が受ける'),
+        plain('（この一撃で相手を全滅させた場合は反動を受けない）'),
+      ]
+    }
+    case 'periodicTargetDamage': {
+      const scale = node.scale as { stat: StatKey; rate: number }
+      const duration = node.duration as number
+      return [
+        numTok(`${duration}ターン`), plain('の間、ラウンド終了時に自分の'), statTok(scale.stat), plain('の'),
+        numTok(pct(scale.rate * mult)), plain('分の'), elemTok(node.element as Element), plain('属性ダメージを相手に与える'),
+      ]
+    }
     default:
       return [plain(`(${node.op})`)]
+  }
+}
+
+/** 対象範囲の表示ラベル（'ally' は 'self' と同じ挙動のフォールバックのため同じ表記にする） */
+function focusRangeLabel(side: FocusSide, range: FocusRange): string {
+  if (side === 'self' || side === 'ally') return '自分'
+  switch (range) {
+    case 'all': return '敵全体'
+    case 'adjacent3': return '隣接する敵3体'
+    case 'random': return 'ランダムな敵1体'
+    case 'single': default: return '敵単体'
   }
 }
 
@@ -198,6 +231,9 @@ function endsWithPeriod(tokens: readonly SkillTextToken[]): boolean {
 export const MODIFIER_SCOPE_LABEL: Record<ModifierScope, string> = {
   thisHit: 'この一撃のみ', thisTurn: 'このターンのみ', thisBattle: 'この戦闘中', permanent: '永続',
   nextRound: '次の自分の行動まで',
+  // 実際の残存ターン数は describeTemporaryModifier() が roundsRemaining から動的に組み立てるため、
+  // ここは roundsRemaining が取得できない場合のフォールバック表示にすぎない
+  rounds: '一定ターンの間',
 }
 
 export interface TemporaryModifierView {
@@ -214,7 +250,10 @@ export function describeTemporaryModifier(m: TemporaryModifier): TemporaryModifi
     : m.sourceId === 'dodge' ? '回避態勢'
       : m.stat === 'cutRate' ? 'ダメージ軽減'
         : `${STAT_LABEL[m.stat]}${isBuff ? '上昇' : '低下'}`
-  return { label, isBuff, scopeLabel: MODIFIER_SCOPE_LABEL[m.scope] }
+  // scope: 'rounds' は付与量が可変のため、静的なMODIFIER_SCOPE_LABELではなく
+  // 実際の残存ラウンド数（roundsRemaining）から都度組み立てる
+  const scopeLabel = m.scope === 'rounds' ? `残り${m.roundsRemaining ?? 0}ターン` : MODIFIER_SCOPE_LABEL[m.scope]
+  return { label, isBuff, scopeLabel }
 }
 
 /** 効果データから表示文を自動生成する。レベル倍率を適用済みの実値で表示する */
@@ -226,10 +265,18 @@ export function buildSkillText(def: SkillDef, level: number): SkillTextToken[] {
     out.push(...nodeToTokens(node, mult))
   })
   if (!endsWithPeriod(out)) out.push(plain('。'))
+  // 攻撃範囲（対象）は効果の数値だけでは分からないため明記する（全体攻撃・隣接3体等の把握漏れ対策）
+  if (def.kind === 'active') {
+    out.push(plain('対象: '), plain(focusRangeLabel(def.defaultFocus, def.focusRange)), plain('。'))
+  }
   // minRound はゲーム上の制約（いつから使えるか）なので、演出用の flavorText ではなく
   // 効果テキストの側に明記する（flavorText に役割を持たせ始めると際限がなくなるため）
   if (def.kind === 'active' && def.minRound !== undefined) {
     out.push(numTok(`${def.minRound + 1}ターン目`), plain('から使用可能。'))
+  }
+  // alwaysActsFirst も minRound と同じ理由（ゲーム上の制約）で効果テキスト側に明記する
+  if (def.kind === 'active' && def.alwaysActsFirst) {
+    out.push(plain('AGIに関わらず必ず先手を取る。'))
   }
   return out
 }

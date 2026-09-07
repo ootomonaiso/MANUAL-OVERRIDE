@@ -169,7 +169,12 @@ function validateEntry(key, data) {
   const validate = validators[key]
   if (!validate(data)) {
     for (const err of validate.errors ?? []) {
-      errors.push(`schema: ${err.instancePath || '(root)'} ${err.message}`)
+      // 実際に導入されている ajv は package.json の指定（^8.20.0）と異なり v6 系（node_modules/ajv
+      // のバージョン確認済み）で、エラーオブジェクトのプロパティ名が instancePath ではなく dataPath
+      // （例: ".element"）になる。instancePath だけを見ると常に undefined になり、
+      // どのフィールドが失敗したか分からないまま全件 "(root)" と表示されてしまっていた
+      const path = err.instancePath || err.dataPath || ''
+      errors.push(`schema: ${path || '(root)'} ${err.message}`)
     }
   }
   errors.push(...extraChecks(key, data))

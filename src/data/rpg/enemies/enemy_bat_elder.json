@@ -1,16 +1,43 @@
 {
   "$schema": "../../../../schemas/battle-enemy.schema.json",
   "id": "enemy_bat_elder",
-  "label": "古びた説明書コウモリ",
-  "flavorText": "何度も読み返された跡が、羽に刻まれている。",
+  "label": "原生コウモリ",
+  "flavorText": "太鼓の昔から生息していたコウモリは、もはや魔力に適応した。",
   "sprite": "battle_bat_elder",
   "stats": {
-    "hp": 2400, "str": 380, "def": 400, "int": 620, "ref": 480, "agi": 700,
-    "hitRate": 0.93, "evadeRate": 0, "critRate": 0.07, "critDamageMultiplier": 1.5
+    "hp": 5680,
+    "str": 640,
+    "def": 670,
+    "int": 1360,
+    "ref": 820,
+    "agi": 1180,
+    "hitRate": 0.93,
+    "evadeRate": 0,
+    "critRate": 0.07,
+    "critDamageMultiplier": 1.5
   },
-  "traits": ["trait_weak_magical"],
-  "activeSkills": ["skill_fireball", "skill_double_bolt"],
+  "traits": [
+    "trait_resist_magical"
+  ],
+  "activeSkills": [
+    {
+      "id": "skill_double_bolt",
+      "level": 1
+    },
+    {
+      "id": "skill_gale_step",
+      "level": 1
+    },
+    {
+      "id": "skill_wind_wrap",
+      "level": 1
+    }
+  ],
   "passiveSkills": [],
-  "actionPattern": ["skill_fireball", "skill_double_bolt"],
+  "actionPattern": [
+    "skill_gale_step",
+    "skill_wind_wrap",
+    "skill_double_bolt"
+  ],
   "isBoss": false
 }

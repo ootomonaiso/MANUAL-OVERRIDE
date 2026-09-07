@@ -17,7 +17,10 @@
     {
       "op": "heal",
       "element": "none",
-      "flat": 400
+      "scale": {
+        "stat": "hp",
+        "rate": 0.2
+      }
     }
   ],
   "sfx": {

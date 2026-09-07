@@ -325,7 +325,10 @@ export function useBattlePresentation(battle: ReturnType<typeof useBattleState>)
     // 新しい戦闘の開始時、前の戦闘の敵IDが再利用されうる（spawnEnemyFromDef は
     // 「defId#formationIndex」で命名するため）。表示専用HPを持ち越すと、
     // 新しい敵が前の戦闘の残りHPのまま出現して見えてしまうためクリアする。
-    if (status === 'battle' && (previous === 'drafting' || previous === 'swapping')) {
+    // 'skillPanel'（5戦ごとのスキル/ステータス配分パネル）経由で次の戦闘へ進む
+    // 場合もここでクリアしないと、パネルを閉じた直後の敵が前の戦闘の撃破済み表示
+    // （displayedAlive=false）を引き継いでしまい「死んだまま」に見える不具合があった。
+    if (status === 'battle' && (previous === 'drafting' || previous === 'swapping' || previous === 'skillPanel')) {
       displayedHp.clear()
       displayedAlive.clear()
       hpStepDelta.clear()

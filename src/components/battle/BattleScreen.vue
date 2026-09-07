@@ -36,7 +36,7 @@ import SkillCastBanner from './SkillCastBanner.vue'
 import HelpGuide from './HelpGuide.vue'
 import { useGlossaryPanel } from '../../composables/useGlossaryPanel'
 import type { PlayerAction, SkillDef, Element, GrowthStatKey } from '../../domain/battle/types'
-import { STAT_KEYS, CATEGORY_IDS, GROWTH_STAT_KEYS } from '../../domain/battle/types'
+import { STAT_KEYS, CATEGORY_IDS, GROWTH_STAT_KEYS, BUILTIN_SKILL_ID } from '../../domain/battle/types'
 import {
   STAT_LABEL, CATEGORY_LABEL, CATEGORY_COLOR, buildSkillText, describeTemporaryModifier,
   PERCENT_STAT_KEYS,
@@ -145,13 +145,6 @@ const commandEntries = computed<CommandEntry[]>(() => [
   { id: 'info', label: 'INFO' },
 ])
 
-/** 「守る」「避ける」「様子を見る」は特別扱いせず、他のスキルと同じくJSONで定義する
- *  （src/data/rpg/skills/skill_stance_*.json）。ただし常設の行動でありドラフトには出さないため、
- *  draftable: false を付けている（skillDraft.ts の buildCandidatePool 参照）。 */
-const BUILTIN_SKILL_ID: Record<'guard' | 'dodge' | 'pass', string> = {
-  guard: 'skill_stance_guard', dodge: 'skill_stance_watch', pass: 'skill_stance_idle',
-}
-
 const skillEntries = computed<SkillCommandEntry[]>(() => {
   const player = battle.state.player
   const entries: SkillCommandEntry[] = []
@@ -171,6 +164,7 @@ const skillEntries = computed<SkillCommandEntry[]>(() => {
       disabled: owned.cooldown > 0 || minRoundNotMet,
       note: minRoundNotMet && minRound !== undefined ? `Lv${owned.level}・${minRound + 1}ターン目から` : `Lv${owned.level}`,
       effectTokens: buildSkillText(def, owned.level),
+      flavorText: def.flavorText,
     })
   }
   const builtin = battle.guardOrDodge.value
@@ -184,6 +178,7 @@ const skillEntries = computed<SkillCommandEntry[]>(() => {
       cooldown: builtinCooldown,
       disabled: builtinCooldown > 0,
       effectTokens: buildSkillText(builtinDef, 1),
+      flavorText: builtinDef.flavorText,
     })
   }
   const passDef = content.skills.get(BUILTIN_SKILL_ID.pass)
@@ -195,6 +190,7 @@ const skillEntries = computed<SkillCommandEntry[]>(() => {
       cooldown: 0,
       disabled: false,
       effectTokens: buildSkillText(passDef, 1),
+      flavorText: passDef.flavorText,
     })
   }
   return entries
@@ -318,6 +314,7 @@ function characterViewOf(c: CombatantView): InfoCharacterView {
   const isEnemyC = c.id !== battle.state.player.id
   return {
     id: c.id, label: c.label, spriteId: c.spriteId,
+    flavorText: isEnemyC ? c.flavorText : undefined,
     hp: c.hp, maxHp: battle.effectiveOf(c).hp,
     stats: statRows(c),
     skills: isEnemyC ? {
@@ -530,17 +527,22 @@ function panelActiveView(a: { id: string; level: number; points: number }): Pane
     categoryLabel: def && 'mainCategory' in def ? CATEGORY_LABEL[def.mainCategory] : undefined,
     categoryColor: def && 'mainCategory' in def ? CATEGORY_COLOR[def.mainCategory] : undefined,
     effectTokens: def ? buildSkillText(def, a.level) : [],
+    flavorText: def?.flavorText,
   }
 }
 const panelEquippedActives = computed<PanelActiveView[]>(() =>
   battle.state.player.actives.filter(a => a.slotIndex !== null).map(panelActiveView))
 const panelStoredActives = computed<PanelActiveView[]>(() =>
   battle.state.player.actives.filter(a => a.slotIndex === null).map(panelActiveView))
-const panelStatRows = computed<StatAllocationRowView[]>(() => GROWTH_STAT_KEYS.map(key => ({
-  key, label: STAT_LABEL[key],
-  base: battle.state.player.baseStats[key],
-  allocated: battle.state.statAllocations[key],
-})))
+const panelStatRows = computed<StatAllocationRowView[]>(() => {
+  const effective = battle.effectiveOf(battle.state.player)
+  return GROWTH_STAT_KEYS.map(key => ({
+    key, label: STAT_LABEL[key],
+    base: battle.state.player.baseStats[key],
+    allocated: battle.state.statAllocations[key],
+    effective: effective[key],
+  }))
+})
 function onPanelStatInc(stat: GrowthStatKey): void {
   battle.setStatAllocation(stat, battle.state.statAllocations[stat] + 1)
 }
@@ -726,6 +728,7 @@ const bannerActorLabel = computed(() => labelForCombatant(battle.presentation.ac
       :stat-rows="panelStatRows"
       :stat-points="battle.state.statPoints"
       @allocate="battle.allocateSkillPoint($event)"
+      @deallocate="battle.deallocateSkillPoint($event)"
       @unequip="battle.unequipActive"
       @equip="battle.selectStoredActiveToEquip"
       @stat-inc="onPanelStatInc"

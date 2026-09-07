@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   unequipActive, equipToFreeSlot, confirmSwap,
-  allocateSkillPoint, setStatAllocation, resetStatAllocations,
+  allocateSkillPoint, deallocateSkillPoint, setStatAllocation, resetStatAllocations,
 } from '../../../../src/domain/battle/skillPanel'
 import { BATTLE } from '../../../../src/data/tunables'
 import { makePlayer, makeState } from './_helpers'
@@ -104,6 +104,39 @@ describe('skillPanel: allocateSkillPoint', () => {
     expect(allocateSkillPoint(state, 'a', 10)).toBe(1)
     expect(player.actives[0]).toMatchObject({ points: 7, level: 4 })
     expect(state.skillPoints).toBe(9)
+  })
+})
+
+describe('skillPanel: deallocateSkillPoint', () => {
+  it('投資済みポイントを引き戻し、未配分プールへ戻す。levelも再計算される', () => {
+    const player = makePlayer({ actives: [{ id: 'a', points: 3, level: 2, cooldown: 0, slotIndex: 0 }] })
+    const state = makeState({ player, skillPoints: 1 })
+    const refunded = deallocateSkillPoint(state, 'a', 3)
+    expect(refunded).toBe(3)
+    expect(player.actives[0]).toMatchObject({ points: 0, level: 1 })
+    expect(state.skillPoints).toBe(4)
+  })
+
+  it('投資済み量を超えては引き戻せない', () => {
+    const player = makePlayer({ actives: [{ id: 'a', points: 2, level: 1, cooldown: 0, slotIndex: 0 }] })
+    const state = makeState({ player, skillPoints: 0 })
+    expect(deallocateSkillPoint(state, 'a', 5)).toBe(2)
+    expect(player.actives[0].points).toBe(0)
+    expect(state.skillPoints).toBe(2)
+  })
+
+  it('未投資（points:0）なら何も起きない', () => {
+    const player = makePlayer({ actives: [{ id: 'a', points: 0, level: 1, cooldown: 0, slotIndex: 0 }] })
+    const state = makeState({ player, skillPoints: 0 })
+    expect(deallocateSkillPoint(state, 'a', 1)).toBe(0)
+    expect(state.skillPoints).toBe(0)
+  })
+
+  it('倉庫中（未セット）のアクティブからは引き戻せない', () => {
+    const player = makePlayer({ actives: [{ id: 'a', points: 3, level: 2, cooldown: 0, slotIndex: null }] })
+    const state = makeState({ player, skillPoints: 0 })
+    expect(deallocateSkillPoint(state, 'a', 1)).toBe(0)
+    expect(player.actives[0].points).toBe(3)
   })
 })
 

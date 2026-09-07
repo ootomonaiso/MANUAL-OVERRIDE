@@ -90,6 +90,7 @@
 | `minRound` | — | integer ≥ 0 | active | 第4フェーズで追加。`state.roundCount` がこの値未満の間は使用不可（プレイヤー選択・敵パターン選択の両方）。`minRound: 2` なら3ターン目（`roundCount: 2`）から使用可 |
 | `transformsInto` | — | string（`skill_` プレフィックス） | active | 第4フェーズで追加。使用後にこのスキルIDへ変化する（立直⇔自摸のように相互参照させる想定）。所持スロット・レベル・ポイントは維持し `OwnedActive.id` だけ差し替わる。**既知の制約**: 敵の `actionPattern`（固定ID列）には向かない。変化後は元のIDでマッチしなくなり選ばれなくなるため、プレイヤー所持スキル専用として設計されている |
 | `grantsBonusOnTransformUse` | — | `{stat: StatKey, amount: number}` | active | 第4フェーズで追加。`transformsInto` と併用必須（validate-json.mjs が検証）。変化先スキルが**次に使われた時だけ**指定ステータスへ一時ボーナスを与える（一発ツモ想定） |
+| `alwaysActsFirst` | — | boolean | active | 第10フェーズで追加。true ならAGIに関わらずそのラウンドの行動順で必ず先手になる（守る/避ける/不意打ち 想定）。行動速度キューは「プレイヤーが行動を決めた瞬間」に組み立てるため、選んだ行動そのものにこのフラグが立っていれば即座に反映される（04-battle-flow.md「行動順」参照） |
 
 ### 属性・対象範囲・スコープの拡張（第4フェーズ）
 
@@ -464,11 +465,14 @@ export function normalizeSkillRef(ref: EnemySkillRef): { id: string; level: numb
 **検証スクリプトは Node で動き、`effectOps` レジストリは TypeScript 側にある。** 直接 import できないため、**許可された `op` の一覧を JSON Schema 側の `enum` として持つ**。
 
 ```jsonc
-// schemas/battle-skill.schema.json（抜粋。実装後に effectBoost/healTaken/noop/counterStance/periodicSelfDamage の5opが追加された）
+// schemas/battle-skill.schema.json（抜粋。実装後に effectBoost/healTaken/noop/counterStance/
+// periodicSelfDamage/periodicTargetDamage/selfDamageFromDealt/cancelTargetAction の8opが追加された）
 { "allowedOps": ["damage", "heal", "shield", "repeat", "modifier",
                  "statBoost", "elementAffinity", "cutRate",
                  "replaceGuard", "healBetweenBattles",
-                 "effectBoost", "healTaken", "noop", "counterStance", "periodicSelfDamage"] }
+                 "effectBoost", "healTaken", "noop", "counterStance",
+                 "periodicSelfDamage", "periodicTargetDamage",
+                 "selfDamageFromDealt", "cancelTargetAction"] }
 ```
 
 **新しいオペレーションを追加したら、スキーマの `allowedOps` にも追記する必要がある。** この二重管理を避けるため、TS 側にも同じ配列を置き、ユニットテストで**スキーマとレジストリの一致を検証する**。
@@ -550,7 +554,7 @@ export const ENEMY_SETS: ReadonlyMap<string, EnemySet> = ...   // 第6フェー�
 
 - **敵セット・出現グループの2つのデータ種別を新設**（第6フェーズ）。`schemas/battle-enemy-set.schema.json` と `src/data/config/encounter_groups.json`（configファイルのため専用スキーマは持たず、`validate-json.mjs` が手書きの整合性チェックを行う）。詳細は上記「敵セット・出現グループ定義」参照
 - **`ActiveSkillDef` に `draftable`/`minRound`/`transformsInto`/`grantsBonusOnTransformUse` を追加**（第4フェーズ）。`Element`/`FocusRange`/`ModifierScope` も同時に拡張された（上記「属性・対象範囲・スコープの拡張」参照）
-- **`effectOps` レジストリが初期10opから15opへ増加**（`noop`/`counterStance`/`periodicSelfDamage`/`effectBoost`/`healTaken` を追加）。スキーマの `allowedOps` enum とレジストリの一致をユニットテストで検証する方針（上記「`op` の実在検証について」）は当初案どおり実装された
+- **`effectOps` レジストリが初期10opから18opへ増加**（`noop`/`counterStance`/`periodicSelfDamage`/`effectBoost`/`healTaken`/`periodicTargetDamage`/`selfDamageFromDealt`/`cancelTargetAction` を追加）。スキーマの `allowedOps` enum とレジストリの一致をユニットテストで検証する方針（上記「`op` の実在検証について」）は当初案どおり実装された
 - **`op` ごとの中身のフィールド（`scale`/`scope`/`stat` 等）は JSON Schema の `required` では検証されない**点に注意。`effectNode` の必須は `op` のみで、値の妥当性は実行時のTypeScript型と `scripts/validate-json.mjs::walkEffectNodes`（`damage`/`heal`/`shield` の `scale` 系のみ）が別途担保している。新しいopの中身フィールドを追加する際は、この関数への追随が必要になる場合がある
 - **スキルポイント制度（`src/data/config/skill_points.json`・`SkillPointsConfig`）を新設**（第7フェーズ）。`OwnedActive.points`（投資済みポイント）・`levelForPoints()` によるレベル導出等、`BattleState`/`Combatant` 側の型変更は本ドキュメントの対象外（[10-state.md](10-state.md)の管轄）だが、スキル・敵定義側のJSON形式そのものへの影響はない
 - **ローダのファイルパスが設計時の想定（`src/data/skills` 等のフラット配置）から実際には `src/data/rpg/skills` 等（rpg専用サブディレクトリ）に変更されている**（[01-architecture.md](01-architecture.md)にも同様の記録あり）。本ドキュメント内のパス表記は実際の配置に合わせて修正済み

@@ -23,6 +23,7 @@ export interface PanelActiveView {
   categoryLabel?: string
   categoryColor?: string
   effectTokens: SkillTextToken[]
+  flavorText?: string
 }
 
 export interface StatAllocationRowView {
@@ -30,6 +31,8 @@ export interface StatAllocationRowView {
   label: string
   base: number
   allocated: number
+  /** 配分反映後の実効値（base + 配分による補正）。割り振り操作と同時に更新される */
+  effective: number
 }
 
 const props = defineProps<{
@@ -42,6 +45,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'allocate', activeId: string): void
+  (e: 'deallocate', activeId: string): void
   (e: 'unequip', activeId: string): void
   (e: 'equip', activeId: string): void
   (e: 'stat-inc', stat: GrowthStatKey): void
@@ -84,7 +88,7 @@ function onCardClick(id: string): void { pinnedId.value = id }
           <div class="stat-list">
             <div v-for="s in statRows" :key="s.key" class="stat-row">
               <span class="stat-label">{{ s.label }}</span>
-              <span class="stat-base">{{ s.base }}</span>
+              <span class="stat-effective">{{ s.effective }}</span>
               <button type="button" class="stepper" :disabled="s.allocated <= 0" @click="emit('stat-dec', s.key)">−</button>
               <span class="stat-allocated">+{{ s.allocated }}</span>
               <button type="button" class="stepper" :disabled="statPoints <= 0" @click="emit('stat-inc', s.key)">+</button>
@@ -102,6 +106,7 @@ function onCardClick(id: string): void { pinnedId.value = id }
               <span v-else class="active-points">MAX</span>
             </div>
             <div class="detail-effect"><SkillText :tokens="focused.effectTokens" /></div>
+            <div v-if="focused.flavorText" class="detail-flavor">「{{ focused.flavorText }}」</div>
           </template>
           <div v-else class="empty-hint">セット中のアクティブがありません</div>
         </div>
@@ -122,7 +127,12 @@ function onCardClick(id: string): void { pinnedId.value = id }
               </div>
               <div class="active-card-actions">
                 <button
-                  type="button" class="panel-btn small"
+                  type="button" class="panel-btn small skill-point-dec"
+                  :disabled="a.points <= 0"
+                  @click.stop="emit('deallocate', a.id)"
+                >−1</button>
+                <button
+                  type="button" class="panel-btn small skill-point-inc"
                   :disabled="skillPoints <= 0 || a.pointsRequired === undefined"
                   @click.stop="emit('allocate', a.id)"
                 >+1</button>
@@ -240,12 +250,12 @@ function onCardClick(id: string): void { pinnedId.value = id }
   gap: 6px;
   font-size: 12px;
 }
-.stat-label, .stat-base {
+.stat-label, .stat-effective {
   width: 34px;
 }
-.stat-base {
+.stat-effective {
   text-align: right;
-  opacity: 0.75;
+  font-weight: 700;
 }
 .stat-allocated {
   width: 32px;
@@ -299,6 +309,13 @@ function onCardClick(id: string): void { pinnedId.value = id }
 .detail-effect {
   font-size: 12px;
   margin-top: 6px;
+}
+.detail-flavor {
+  margin-top: 6px;
+  opacity: 0.7;
+  font-style: italic;
+  font-size: 11px;
+  white-space: pre-line;
 }
 .empty-hint {
   font-size: 12px;
