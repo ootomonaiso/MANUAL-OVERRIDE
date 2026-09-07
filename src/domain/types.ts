@@ -434,4 +434,5 @@ export interface ScoreVars {
   bossDefeated?: number    // ラン中のボス撃破数の通算（battleEngine の bossesDefeatedCount）
   maxSkillLevel?: number   // 到達した最大スキルレベル
   traitsAcquired?: number  // 獲得した特性数
+  avgStat?: number         // 6成長ステータスの実効値平均（HPのみ/10）
 }

@@ -13,6 +13,7 @@ import {
 import { levelMultiplier, collectEffectMultiplier } from '../stats'
 import { BATTLE } from '../../../data/tunables'
 import { emitCriticalEffect } from './criticalFx'
+import { recordDamageDebug } from '../../../debug/battleStatsDebug'
 
 /** stat（単一ステータス参照）と statOptions（複数のうち実効値が最も高いものを参照。自摸＝STR/INTの高い方 想定）は排他 */
 export interface DamageScale { stat?: StatKey; statOptions?: StatKey[]; rate: number }
@@ -111,6 +112,7 @@ export const damageOp: EffectOp = {
       const absorbedByShield = target.shield > 0
       applyDamage(target, finalDamage, () => { shieldBroke = true })
       ctx.dealtDamage.total += Math.floor(finalDamage)
+      recordDamageDebug(ctx.source, target, element, Math.floor(finalDamage))
 
       ctx.emit({ effectId: `fx_hit_${element}`, targetRef: 'target', combatantId: target.id,
         payload: { text: String(Math.floor(finalDamage)), absorbedByShield, skillId: ctx.skill.id } })

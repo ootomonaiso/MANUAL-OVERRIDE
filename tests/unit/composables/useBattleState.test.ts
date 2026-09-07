@@ -495,6 +495,10 @@ describe('useBattleState: 決着とスコア', () => {
     let maxSkillLevel = 0
     for (const a of battle.state.player.actives) maxSkillLevel = Math.max(maxSkillLevel, a.level)
     for (const p of battle.state.player.passives) maxSkillLevel = Math.max(maxSkillLevel, p.level)
+    // avgStat: 6成長ステータスの実効値平均（HPのみ/10）。battleEngine.ts::buildBattleScoreVars と同じ式
+    const eff = battle.effectiveOf(battle.state.player)
+    const growthKeys = ['hp', 'str', 'def', 'int', 'ref', 'agi'] as const
+    const avgStat = growthKeys.reduce((sum, key) => sum + (key === 'hp' ? eff[key] / 10 : eff[key]), 0) / growthKeys.length
     return Math.max(0, Math.round(evalScoreFormula(formula, {
       distance: 0, kills: 0, combo: 0, exp: 0, beatHits: 0, survivedSec: 0,
       accuracy: 0, maxCombo: 0, deaths: 0, itemsCollected: 0,
@@ -503,6 +507,7 @@ describe('useBattleState: 決着とスコア', () => {
       bossDefeated: battle.state.bossDefeated ? 1 : 0,
       maxSkillLevel,
       traitsAcquired: battle.state.player.traits.length,
+      avgStat,
     })))
   }
 
@@ -553,6 +558,15 @@ describe('useBattleState: 決着とスコア', () => {
 
     expect(h.battle.state.enemies).toHaveLength(1)
     expect(h.battle.state.enemies[0].isBoss).toBe(true)
+
+    // このテストの検証意図は「ボス撃破後、真のクリアでなければ3連続ドラフトへ進む」という
+    // 状態遷移そのものであり、Aボス（skill_counterで反撃態勢を張る）を第1戦目相当の
+    // 育っていない自機で正攻法で削り切れるかどうかではない。反撃態勢中に三連撃/連撃技の
+    // ようなマルチヒット技を受けると queuedCounterHits がまとめて発動し、育っていない自機は
+    // 数ラウンドの反撃だけで倒れうる（実戦シミュレーションで確認）。真のクリア到達テストと
+    // 同じ方針で、決着を早めるためボスのHP/シールドを直接弱らせておく
+    toRaw(h.battle.state).enemies[0].hp = 1
+    toRaw(h.battle.state).enemies[0].shield = 0
 
     fightUntilBattleEnds(h)
     expect(h.battle.state.bossDefeated).toBe(true)
@@ -675,6 +689,12 @@ describe('useBattleState: 1手番の演出', () => {
     const sched = manualScheduler()
     const battle = useBattleState({ scheduler: sched.scheduler })
     battle.initRun(() => 0.5)
+    // このdescribe内のほとんどのテストは「プレイヤーが先手」を前提に書かれている
+    // （AGI順が本題のテストは「行動速度キュー（先手判定）」で個別にAGIを上書きする）。
+    // 第13フェーズの敵グループ再強化でAGIも大きく引き上げたため、実データの敵編成次第では
+    // 素のAGI比較でどちらが先手になるかが変わってしまう。ここで敵のAGIを固定的に下げ、
+    // 本来のテスト意図（先手判定そのものではなく提示/解決フェーズの検証）を安定させる
+    for (const e of toRaw(battle.state).enemies) e.baseStats = { ...e.baseStats, agi: 1 }
     return { battle, sched }
   }
 

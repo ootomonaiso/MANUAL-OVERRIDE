@@ -21,7 +21,7 @@
       "element": "physical",
       "scale": {
         "stat": "str",
-        "rate": 0.8
+        "rate": 0.9
       }
     }
   ],

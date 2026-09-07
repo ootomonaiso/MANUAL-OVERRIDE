@@ -5,7 +5,7 @@
   "thresholds": { "growth": 8 },
   "enableFeatures": ["hp"],
   "disableFeatures": ["auto_run", "beat_hazard"],
-  "scoreFormula": "battlesWon * 300 + bossDefeated * 3000 + maxSkillLevel * 200 + traitsAcquired * 150",
+  "scoreFormula": "battlesWon * 150 + avgStat * 4 + bossDefeated * 500 + maxSkillLevel * 100 + traitsAcquired * 80",
   "manualReveal": "これはRPGになりました。成長することが目的です。",
   "theme": "rpg",
   "bgColor": "#1a1200",

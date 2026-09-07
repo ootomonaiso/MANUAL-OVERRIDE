@@ -7,7 +7,7 @@ import type { ScoreVars } from '../../../src/domain/types'
 import type { ScoreVarsBattle } from '../../../src/domain/battle/types'
 
 const BATTLE_VAR_KEYS: ReadonlyArray<keyof ScoreVarsBattle> = [
-  'battlesWon', 'bossDefeated', 'maxSkillLevel', 'traitsAcquired',
+  'battlesWon', 'bossDefeated', 'maxSkillLevel', 'traitsAcquired', 'avgStat',
 ]
 
 function zeroVars(over: Partial<ScoreVars> = {}): ScoreVars {

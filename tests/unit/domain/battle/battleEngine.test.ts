@@ -158,12 +158,12 @@ describe('battleEngine: 実効ステータスの解決', () => {
   it('パッシブ・特性・一時効果がすべて合算される', () => {
     const c = makeCombatant({
       baseStats: makeStats({ str: 1000, def: 1000 }),
-      passives: [{ id: 'brawn', level: 2, stacks: 0 }],   // 100 × 1.25
+      passives: [{ id: 'brawn', level: 2, stacks: 0 }],   // 100 × (4/3)（passiveLevelMultiplier Lv2、第13フェーズ）
       traits: [{ id: 'stone' }],
       temporary: [{ stat: 'str', rate: 0.1, scope: 'thisTurn', sourceId: 'x' }],
     })
     const eff = resolveEffectiveStats(c, content)
-    expect(eff.str).toBeCloseTo((1000 + 125) * 1.1, 6)
+    expect(eff.str).toBeCloseTo((1000 + 100 * (4 / 3)) * 1.1, 6)
     expect(eff.def).toBeCloseTo(1500, 6)
   })
 
@@ -754,7 +754,13 @@ describe('battleEngine: 勝利時の後処理', () => {
 })
 
 describe('battleEngine: スコア変数', () => {
-  it('勝利数・ボス撃破・最大スキルレベル・特性数を集計する', () => {
+  const content = makeContent()
+  // makeStats() の既定値（hp5000, 他1000）はカット率/回避率のanchorと一致し補正ゼロ点になるため、
+  // 所持している 'p'/'t1'/'t2' が content 未登録（=効果なし）でも実効値は素の値のまま:
+  // avgStat = (hp/10 + str+def+int+ref+agi) / 6 = (500 + 1000*5) / 6
+  const defaultAvgStat = 5500 / 6
+
+  it('勝利数・ボス撃破・最大スキルレベル・特性数・平均ステータスを集計する', () => {
     const state = makeState({
       battlesWon: 7, bossesDefeatedCount: 3,
       player: makePlayer({
@@ -766,15 +772,23 @@ describe('battleEngine: スコア変数', () => {
         traits: [{ id: 't1' }, { id: 't2' }],
       }),
     })
-    expect(buildBattleScoreVars(state)).toEqual({
-      battlesWon: 7, bossDefeated: 3, maxSkillLevel: 4, traitsAcquired: 2,
+    expect(buildBattleScoreVars(state, content)).toEqual({
+      battlesWon: 7, bossDefeated: 3, maxSkillLevel: 4, traitsAcquired: 2, avgStat: defaultAvgStat,
     })
   })
 
   it('何も所持していなければ最大スキルレベルは 0', () => {
     const state = makeState({ player: makePlayer({ actives: [], passives: [] }) })
-    expect(buildBattleScoreVars(state).maxSkillLevel).toBe(0)
-    expect(buildBattleScoreVars(state).bossDefeated).toBe(0)
+    expect(buildBattleScoreVars(state, content).maxSkillLevel).toBe(0)
+    expect(buildBattleScoreVars(state, content).bossDefeated).toBe(0)
+  })
+
+  it('HPのみ/10してから6ステータスの平均を取る', () => {
+    const state = makeState({
+      player: makePlayer({ baseStats: makeStats({ hp: 10000, str: 2000, def: 2000, int: 2000, ref: 2000, agi: 1000 }) }),
+    })
+    // (10000/10 + 2000+2000+2000+2000+1000) / 6 = (1000+9000)/6
+    expect(buildBattleScoreVars(state, content).avgStat).toBeCloseTo(10000 / 6)
   })
 })
 

@@ -73,6 +73,10 @@ function mount(seed = 4242, scheduler?: BattleScheduler): Harness {
     if (sinceAction < 2) { sinceAction++; return 0.94 }
     return battle.state.enemies.some(e => e.alive) ? 0.99 : prng()
   })
+  // 「act() 後の最初の2回のrng呼び出し=プレイヤーの命中/クリティカル判定」という前提のハーネスのため、
+  // 敵のAGIがプレイヤーより高いとその前提が崩れる（先に解決される敵の判定にこの値が渡ってしまう）。
+  // 第13フェーズの敵グループ再強化でAGIも引き上げたため、常にプレイヤーが先手になるようここで固定する
+  for (const e of toRaw(battle.state).enemies) e.baseStats = { ...e.baseStats, agi: 1 }
   return mountBattle(battle, () => { sinceAction = 0 })
 }
 

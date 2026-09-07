@@ -154,3 +154,8 @@ export const ENCOUNTER_GROUPS = _c.encounterGroups
 // SKILL_POINTS — スキルポイント制度（rpg）
 // ─────────────────────────────────────────────────────────────
 export const SKILL_POINTS = _c.skillPoints
+
+// ─────────────────────────────────────────────────────────────
+// COMPLETE_BONUS — コンプリートボーナス（rpg）
+// ─────────────────────────────────────────────────────────────
+export const COMPLETE_BONUS = _c.completeBonus

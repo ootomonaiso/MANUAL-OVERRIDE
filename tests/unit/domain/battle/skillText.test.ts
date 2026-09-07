@@ -231,6 +231,18 @@ describe('skillText: 補正・宣言的opの表記', () => {
     expect(text(buildSkillText(critFlat, 4))).toBe('クリティカル率を5%上昇させる。')
   })
 
+  it('実数（flat）系の効果量は、レベル倍率を掛けた結果が非整数になっても四捨五入して整数で表示される', () => {
+    // アクティブ: levelMultiplier(2) = 1.25 → 101 × 1.25 = 126.25 のような割り切れない値になりうる
+    const skill = makeActive({ id: 's', effect: [node('modifier', { stat: 'str', amount: 101, scope: 'thisTurn' })] })
+    expect(text(buildSkillText(skill, 2))).toContain('+126')
+    expect(text(buildSkillText(skill, 2))).not.toContain('.')
+
+    // パッシブ: passiveLevelMultiplier(2) = 4/3 → 100 × 4/3 = 133.333... のような循環小数になりうる
+    const passive = makePassive({ id: 'p', effect: [node('statBoost', { stat: 'def', amount: 100 })] })
+    expect(text(buildSkillText(passive, 2))).toContain('+133')
+    expect(text(buildSkillText(passive, 2))).not.toContain('.')
+  })
+
   it('弱点・耐性の特性が読める文になる', () => {
     const weak = makeTrait({ id: 'w', effect: [node('elementAffinity', { element: 'physical', affinity: 'weak' })] })
     const resist = makeTrait({ id: 'r', effect: [node('elementAffinity', { element: 'magical', affinity: 'resist' })] })

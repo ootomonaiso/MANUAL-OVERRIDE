@@ -370,14 +370,14 @@ const skillListView = computed(() => {
       flavorText: def?.flavorText, effectTokens: def ? buildSkillText(def, a.level) : undefined,
     }
   })
-  // パッシブは第7フェーズでレベル/スタックの概念を廃止（所持しているか否かの二値のみ）
+  // パッシブは第13フェーズで重複強化を解禁（Lv4まで、重複を引くたびに+1。skillDraft.ts参照）
   const ownedPassives: SkillListItemView[] = player.passives.map(p => {
     const def = content.skills.get(p.id)
     return {
-      id: p.id, label: def?.label ?? p.id, visibility: 'owned',
+      id: p.id, label: def?.label ?? p.id, visibility: 'owned', level: p.level,
       categoryLabel: def ? CATEGORY_LABEL[def.mainCategory] : undefined,
       categoryColor: def ? CATEGORY_COLOR[def.mainCategory] : undefined,
-      flavorText: def?.flavorText, effectTokens: def ? buildSkillText(def, 1) : undefined,
+      flavorText: def?.flavorText, effectTokens: def ? buildSkillText(def, p.level) : undefined,
     }
   })
   const ownedTraits: SkillListItemView[] = player.traits.map(t => {
@@ -485,10 +485,13 @@ const draftCards = computed<DraftCardView[]>(() => {
 
     // セット中アクティブの重複候補は選ぶと必ず+1ポイント入る（skillDraft.ts::addActivePoints）。
     // その1ポイントが次のレベル閾値を跨ぐかどうかで「Lv遷移」表示を分ける。
+    // パッシブの重複（第13フェーズ）はポイント制ではなく1:1で必ずその場でLv+1になる。
+    const isPassiveDuplicate = opt.kind === 'passive' && opt.isDuplicate === true
     const currentLevel = opt.currentLevel ?? 0
     const currentPoints = opt.currentPoints ?? 0
-    const nextThreshold = currentLevel > 0 && currentLevel < MAX_ACTIVE_LEVEL ? SKILL_POINTS.pointsForLevel[currentLevel] : 0
-    const willLevelUp = nextThreshold > 0 && currentPoints + 1 >= nextThreshold
+    const nextThreshold = !isPassiveDuplicate && currentLevel > 0 && currentLevel < MAX_ACTIVE_LEVEL
+      ? SKILL_POINTS.pointsForLevel[currentLevel] : 0
+    const willLevelUp = isPassiveDuplicate || (nextThreshold > 0 && currentPoints + 1 >= nextThreshold)
     const displayLevel = currentLevel === 0 ? 1 : willLevelUp ? currentLevel + 1 : currentLevel
 
     return {
@@ -540,7 +543,8 @@ const panelStatRows = computed<StatAllocationRowView[]>(() => {
     key, label: STAT_LABEL[key],
     base: battle.state.player.baseStats[key],
     allocated: battle.state.statAllocations[key],
-    effective: effective[key],
+    // ステータス表示は必ず整数に丸める（第13フェーズ）。SkillPanel.vue はここを丸めず直接表示していた
+    effective: Math.round(effective[key]),
   }))
 })
 function onPanelStatInc(stat: GrowthStatKey): void {

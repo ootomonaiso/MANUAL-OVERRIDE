@@ -9,6 +9,7 @@ import type {
   Combatant, SkillDef, EffectNode, Element, BattleContent,
 } from './types'
 import { isPercentStat } from './types'
+import { MAX_PASSIVE_LEVEL } from './skillDraft'
 
 export function clamp(v: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, v))
@@ -33,6 +34,16 @@ export function stackMultipliers(rates: readonly number[]): number {
  */
 export function levelMultiplier(level: number): number {
   return 1 + (level - 1) * SKILL_POINTS.levelMultiplierStep
+}
+
+/**
+ * パッシブの重複強化専用の倍率（第13フェーズ）。重複を引くたびにLv+1（1:1、ポイント制ではない）、
+ * Lv4でちょうど2倍になる直線的な式。アクティブ用の levelMultiplier（ポイント制・
+ * levelMultiplierStep ベースで第8フェーズにあえて伸びを緩めた経緯がある）とは狙いが異なるため、
+ * 式を共有せず専用に用意した
+ */
+export function passiveLevelMultiplier(level: number): number {
+  return 1 + (level - 1) / (MAX_PASSIVE_LEVEL - 1)
 }
 
 /**
@@ -110,7 +121,7 @@ export function accumulatePassiveStatBoosts(
   acc: FlatRateAccumulator,
 ): void {
   for (const { level, def } of owned) {
-    const baseMult = def.kind === 'trait' ? 1 : levelMultiplier(level)
+    const baseMult = def.kind === 'trait' ? 1 : def.kind === 'passive' ? passiveLevelMultiplier(level) : levelMultiplier(level)
     for (const node of def.effect) {
       if (node.op !== 'statBoost') continue
       const stat = node.stat as StatKey
@@ -146,7 +157,7 @@ export function collectEffectMultiplier(
   }
   for (const p of source.passives) {
     const def = content.skills.get(p.id)
-    if (def && def.kind === 'passive') scan(def.effect, levelMultiplier(p.level))
+    if (def && def.kind === 'passive') scan(def.effect, passiveLevelMultiplier(p.level))
   }
   return stackMultipliers(rates)
 }

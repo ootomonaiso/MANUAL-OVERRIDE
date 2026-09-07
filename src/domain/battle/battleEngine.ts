@@ -12,7 +12,7 @@ import type {
   FocusSpec, ActiveSkillDef, StatKey, ScoreVarsBattle,
   BattleStats, EnemyDef, EnemySet,
 } from './types'
-import { STAT_KEYS } from './types'
+import { STAT_KEYS, GROWTH_STAT_KEYS } from './types'
 import {
   newAccumulator, addFlat, addRate, toModifiers, accumulatePassiveStatBoosts,
   computeEffectiveStats, clampHpToMax,
@@ -587,14 +587,19 @@ export function finishBattleOnVictory(state: BattleState, content: BattleContent
 // スコア（実装後に持ち越しの暫定式に対応する変数群）
 // ─────────────────────────────────────────────────────────────
 
-export function buildBattleScoreVars(state: BattleState): ScoreVarsBattle {
+export function buildBattleScoreVars(state: BattleState, content: BattleContent): ScoreVarsBattle {
   let maxSkillLevel = 0
   for (const a of state.player.actives) maxSkillLevel = Math.max(maxSkillLevel, a.level)
   for (const p of state.player.passives) maxSkillLevel = Math.max(maxSkillLevel, p.level)
+  const eff = resolveEffectiveStats(state.player, content)
+  // HPのみ/10してから平均する（他の成長ステータスと桁数感覚を揃えるため。第13フェーズ、スコア式用）
+  const avgStat = GROWTH_STAT_KEYS.reduce((sum, key) => sum + (key === 'hp' ? eff[key] / 10 : eff[key]), 0)
+    / GROWTH_STAT_KEYS.length
   return {
     battlesWon: state.battlesWon,
     bossDefeated: state.bossesDefeatedCount,
     maxSkillLevel,
     traitsAcquired: state.player.traits.length,
+    avgStat,
   }
 }

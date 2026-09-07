@@ -438,6 +438,16 @@ export interface SkillPointsConfig {
   duplicateDraftWeight: number
 }
 
+/**
+ * コンプリートボーナス（CLAUDE_TASKS.md 第13フェーズ）。数値は仮値（調整前提）。
+ * thresholds[i] の比率（所持数/ドラフト対象総数）に達すると statBonusRates[i] が
+ * 6成長ステータス全てへ加算される（達成した最も高い段階のみが有効。積み上げではない）
+ */
+export interface CompleteBonusConfig {
+  thresholds: number[]
+  statBonusRates: number[]
+}
+
 /** survival.json — サバイバルゲーム固有パラメータ */
 export interface SurvivalConfig {
   maxHunger: number
@@ -729,6 +739,7 @@ export interface GameConfigMap {
   battle: BattleConfig
   encounterGroups: EncounterGroupsConfig
   skillPoints: SkillPointsConfig
+  completeBonus: CompleteBonusConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap

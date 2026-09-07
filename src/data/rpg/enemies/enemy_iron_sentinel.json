@@ -16,21 +16,11 @@
     "critRate": 0.08,
     "critDamageMultiplier": 1.8
   },
-  "traits": [
-    "trait_resist_physical"
-  ],
+  "traits": [],
   "activeSkills": [
     {
       "id": "skill_triple_strike",
       "level": 3
-    },
-    {
-      "id": "skill_guard_shield",
-      "level": 1
-    },
-    {
-      "id": "skill_thorn_armor",
-      "level": 2
     },
     {
       "id": "skill_wild_swing",
@@ -42,16 +32,22 @@
     },
     {
       "id": "skill_magic_sword",
-      "level": 1
+      "level": 2
+    },
+    {
+      "id": "skill_counter",
+      "level": 2
     }
   ],
   "passiveSkills": [],
   "actionPattern": [
-    "skill_thorn_armor",
+    "skill_magic_sword",
     "skill_triple_strike",
-    "skill_guard_shield",
+    "skill_counter",
     "skill_wild_swing",
-    "skill_triple_strike"
+    "skill_counter",
+    "skill_magic_sword",
+    "skill_meteor"
   ],
   "isBoss": true
 }

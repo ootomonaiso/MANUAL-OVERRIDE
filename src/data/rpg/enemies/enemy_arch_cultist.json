@@ -16,31 +16,36 @@
     "critRate": 0.1,
     "critDamageMultiplier": 1.8
   },
-  "traits": [
-    "trait_weak_physical"
-  ],
+  "traits": [],
   "activeSkills": [
     {
       "id": "skill_curse_bolt",
       "level": 3
     },
     {
-      "id": "skill_flame_ring",
+      "id": "skill_override",
       "level": 2
     },
-    "skill_weird_wave",
     {
-      "id": "skill_arcane_bombardment",
+      "id": "skill_weird_wave",
       "level": 2
+    },
+    {
+      "id": "skill_magic_circle",
+      "level": 3
+    },
+    {
+      "id": "skill_double_bolt",
+      "level": 3
     }
   ],
   "passiveSkills": [],
   "actionPattern": [
+    "skill_magic_circle",
+    "skill_override",
     "skill_weird_wave",
     "skill_curse_bolt",
-    "skill_flame_ring",
-    "skill_arcane_bombardment",
-    "skill_curse_bolt"
+    "skill_double_bolt"
   ],
   "isBoss": true
 }

@@ -12,6 +12,7 @@
   "cooldown": 4,
   "defaultFocus": "self",
   "focusRange": "single",
+    "alwaysActsFirst": true,
   "effects": [
     "fx_cast_magical"
   ],

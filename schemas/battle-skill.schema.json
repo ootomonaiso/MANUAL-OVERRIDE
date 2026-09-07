@@ -43,6 +43,7 @@
       }
     },
     "draftable": { "type": "boolean", "description": "false なら通常ドラフトに出現しない（守る/様子を見る/何もしていない等、常設の行動用）" },
+    "draftMinBattle": { "type": "integer", "minimum": 0, "description": "指定した場合、state.battleIndexがこの値未満の間はドラフト候補に出現しない（既定0=制限なし）。minRound持ちの高リスク技をラン序盤で引かせないための項目" },
     "minRound": { "type": "integer", "minimum": 0, "description": "active のみ。指定した場合、roundCountがこの値未満の間は使用不可（例: 2なら3ターン目から）" },
     "alwaysActsFirst": { "type": "boolean", "description": "active のみ。true ならAGIに関わらずそのラウンドの行動順で必ず先手になる（守る/避ける/不意打ち 想定）" },
     "transformsInto": { "type": "string", "pattern": "^skill_[a-z0-9_]+$", "description": "active のみ。使用後にこのスキルIDへ変化する（立直⇔自摸 想定）" },

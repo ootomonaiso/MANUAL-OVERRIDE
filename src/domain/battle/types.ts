@@ -134,6 +134,11 @@ interface SkillDefBase {
   unlockCondition?: UnlockCondition
   /** 特性のみ。true (既定) ならドラフトに通常出現する */
   draftable?: boolean
+  /** 指定した場合、state.battleIndex がこの値未満の間はドラフト候補に出現しない（既定0=制限なし）。
+   * 戦闘開始直後は使えない高リスク技（minRound持ち）をラン序盤で引かせないための項目
+   * （CLAUDE_TASKS.md 第13フェーズ）。minRound（戦闘内のターン制限）とは独立した、ラン全体の
+   * 戦闘回数に対する制限 */
+  draftMinBattle?: number
 }
 
 export interface ActiveSkillDef extends SkillDefBase {
@@ -534,6 +539,8 @@ export interface ScoreVarsBattle {
   bossDefeated: number
   maxSkillLevel: number
   traitsAcquired: number
+  /** 6成長ステータスの実効値平均（HPのみ/10してから平均する）。第13フェーズ、スコア式用 */
+  avgStat: number
 }
 
 // ─────────────────────────────────────────────────────────────

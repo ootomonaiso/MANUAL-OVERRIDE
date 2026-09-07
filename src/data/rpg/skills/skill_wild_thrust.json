@@ -13,6 +13,7 @@
   "defaultFocus": "enemy",
   "focusRange": "single",
   "minRound": 2,
+  "draftMinBattle": 20,
   "effects": [
     "fx_slash"
   ],

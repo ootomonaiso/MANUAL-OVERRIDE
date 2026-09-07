@@ -23,7 +23,7 @@ const emit = defineEmits<{
 }>()
 
 function fmt(v: number, isPercent: boolean): string {
-  if (isPercent) return `${Math.round(v * 1000) / 10}%`
+  if (isPercent) return `${Math.round(v * 100)}%`
   return `${Math.round(v)}`
 }
 

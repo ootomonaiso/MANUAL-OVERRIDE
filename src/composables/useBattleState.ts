@@ -29,6 +29,8 @@ import {
   accumulateCategoryPoints, categoryContributionsOf,
 } from '../domain/battle/skillDraft'
 import type { CategoryContribution } from '../domain/battle/skillDraft'
+import { syncCompleteBonus } from '../domain/battle/completeBonus'
+import { beginBattleStatsDebug, endBattleStatsDebug } from '../debug/battleStatsDebug'
 import {
   confirmSwap as confirmSwapSkill, equipToFreeSlot, unequipActive as unequipActiveSkill,
   allocateSkillPoint as allocateSkillPointOn, deallocateSkillPoint as deallocateSkillPointOn,
@@ -44,7 +46,7 @@ import { evalScoreFormula } from '../domain/scoreCalc'
 import type { ScoreVars } from '../domain/types'
 import { GENRES } from '../data/genres'
 
-const RPG_SCORE_FORMULA_FALLBACK = 'battlesWon * 300 + bossDefeated * 3000 + maxSkillLevel * 200 + traitsAcquired * 150'
+const RPG_SCORE_FORMULA_FALLBACK = 'battlesWon * 150 + avgStat * 4 + bossDefeated * 500 + maxSkillLevel * 100 + traitsAcquired * 80'
 
 /**
  * 「間」の作り方の差し替え口。
@@ -230,6 +232,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     // roundCount はターン表示（turnNumber）の元。リセットしないとラン全体を通して
     // 増え続け、2戦目以降「前の戦闘の続きから始まっているように見える」（実機で確認）。
     state.roundCount = 0
+    beginBattleStatsDebug(state.battleIndex, resolveEffectiveStats(state.player, content))
     startNewRound()
   }
 
@@ -342,6 +345,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
 
   function handleOutcome(outcome: 'won' | 'lost'): void {
     clearPresentation()
+    endBattleStatsDebug()
     if (outcome === 'won') {
       // finishBattleOnVictory が battleIndex を内部でインクリメントするため、
       // 「今終わった戦闘が何戦目だったか」は真のクリア判定に使うので先に控えておく
@@ -357,7 +361,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
       // ボス撃破の見返り: 通常1回のところ、ボス撃破時はドラフトを bossDraftRounds 回連続で行う
       state.pendingDraftRounds = state.bossDefeated ? ENCOUNTER_GROUPS.bossDraftRounds : 1
       state.status = 'drafting'
-      state.draftOptions = rollDraft(state.player, content, rng)
+      state.draftOptions = rollDraft(state.player, content, rng, state.battleIndex)
     } else {
       state.runOutcome = 'lost'
       state.status = 'finished'
@@ -366,7 +370,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   }
 
   function finalizeScore(): void {
-    const battleVars = buildBattleScoreVars(state)
+    const battleVars = buildBattleScoreVars(state, content)
     const formula = GENRES.find(g => g.id === 'rpg')?.scoreFormula ?? RPG_SCORE_FORMULA_FALLBACK
     const vars: ScoreVars = {
       distance: 0, kills: 0, combo: 0, exp: 0, beatHits: 0, survivedSec: 0,
@@ -475,6 +479,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     const option = state.draftOptions[index]
     if (!option) return
     applyDraftChoice(state, option)
+    syncCompleteBonus(state.player, content)
     state.draftOptions = null
     proceedAfterDraftRound()
   }
@@ -504,7 +509,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     if (state.pendingDraftRounds > 1) {
       state.pendingDraftRounds--
       state.status = 'drafting'
-      state.draftOptions = rollDraft(state.player, content, rng)
+      state.draftOptions = rollDraft(state.player, content, rng, state.battleIndex)
       return
     }
     state.pendingDraftRounds = 1
@@ -563,7 +568,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
   function rerollDraft(): void {
     if (state.status !== 'drafting' || state.rerollCharges <= 0) return
     state.rerollCharges--
-    state.draftOptions = rollDraft(state.player, content, rng)
+    state.draftOptions = rollDraft(state.player, content, rng, state.battleIndex)
   }
 
   // ── 終了 ──────────────────────────────────────────────────────
@@ -572,6 +577,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     generation++          // 進行中の演出が終了後の状態を書き換えないようにする
     cancelPending()
     clearPresentation()
+    endBattleStatsDebug()
     state.runOutcome = 'gaveup'
     state.status = 'finished'
     finalizeScore()

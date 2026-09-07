@@ -9,7 +9,7 @@ import type {
   FocusSide, FocusRange,
 } from './types'
 import { PERCENT_STAT_KEYS, isPercentStat } from './types'
-import { levelMultiplier } from './stats'
+import { levelMultiplier, passiveLevelMultiplier } from './stats'
 
 export { PERCENT_STAT_KEYS }
 
@@ -53,8 +53,15 @@ export const ELEMENT_LABEL: Record<Element, string> = {
 // PERCENT_STAT_KEYS / isPercentStat は types.ts へ移設した（execution側と表示側の
 // 両方で参照する必要があるため）。ここでは import した実体をそのまま使う。
 
+/** ステータス・ダメージの表示は必ず整数に丸める（第13フェーズ）。レベル倍率適用後は非整数になりうるため */
 function pct(n: number): string {
-  return `${Math.round(n * 1000) / 10}%`
+  return `${Math.round(n * 100)}%`
+}
+
+/** 実数（flat）系の効果量表示。レベル倍率（levelMultiplier/passiveLevelMultiplier）を掛けた後は
+ * 非整数になりうるため、pct() と同じ理由で必ず整数に丸める */
+function flatNum(n: number): string {
+  return `+${Math.round(n)}`
 }
 
 function statTok(key: StatKey): SkillTextToken {
@@ -122,12 +129,12 @@ function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
         return [
           plain(`${applyTo}の`), statLabel, plain('を、自分の'), statTok(scale.stat), plain('の'),
           numTok(pct(scale.rate * effMult)), plain('分'),
-          ...(amount !== undefined ? [plain('と'), numTok(`+${amount * effMult}`)] : []),
+          ...(amount !== undefined ? [plain('と'), numTok(flatNum(amount * effMult))] : []),
           plain('変化させる'),
         ]
       }
       const valueTok = amount !== undefined
-        ? (isPercentStat(stat) ? numTok(pct(amount * effMult)) : numTok(`+${amount * effMult}`))
+        ? (isPercentStat(stat) ? numTok(pct(amount * effMult)) : numTok(flatNum(amount * effMult)))
         : numTok(pct((rate ?? 0) * effMult))
       return [plain(`${applyTo}の`), statLabel, plain('を'), valueTok, plain('変化させる')]
     }
@@ -139,7 +146,7 @@ function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
       // （execution側は stats.ts の accumulatePassiveStatBoosts）。
       const effMult = isPercentStat(stat) ? 1 : mult
       const valueTok = amount !== undefined
-        ? (isPercentStat(stat) ? numTok(pct(amount * effMult)) : numTok(`+${amount * effMult}`))
+        ? (isPercentStat(stat) ? numTok(pct(amount * effMult)) : numTok(flatNum(amount * effMult)))
         : numTok(pct((rate ?? 0) * effMult))
       return [statTok(stat), plain('を'), valueTok, plain('上昇させる')]
     }
@@ -168,7 +175,7 @@ function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
     case 'healBetweenBattles': {
       const amount = node.amount as number | undefined
       const rate = node.rate as number | undefined
-      const valueTok = amount !== undefined ? numTok(`${amount}`) : numTok(pct(rate ?? 0))
+      const valueTok = amount !== undefined ? numTok(`${Math.round(amount)}`) : numTok(pct(rate ?? 0))
       return [plain('戦闘終了時にHPを'), valueTok, plain('回復する')]
     }
     case 'counterStance': {
@@ -258,7 +265,7 @@ export function describeTemporaryModifier(m: TemporaryModifier): TemporaryModifi
 
 /** 効果データから表示文を自動生成する。レベル倍率を適用済みの実値で表示する */
 export function buildSkillText(def: SkillDef, level: number): SkillTextToken[] {
-  const mult = def.kind === 'trait' ? 1 : levelMultiplier(level)
+  const mult = def.kind === 'trait' ? 1 : def.kind === 'passive' ? passiveLevelMultiplier(level) : levelMultiplier(level)
   const out: SkillTextToken[] = []
   def.effect.forEach((node, i) => {
     if (i > 0 && !endsWithPeriod(out)) out.push(plain('。'))

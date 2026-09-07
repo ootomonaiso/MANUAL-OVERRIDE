@@ -16,29 +16,59 @@
     "critRate": 0.1,
     "critDamageMultiplier": 2
   },
-  "traits": [],
+  "traits": [
+    "trait_stone_skin"
+  ],
   "activeSkills": [
     {
-      "id": "skill_triple_strike",
+      "id": "skill_boundary_erosion",
+      "level": 3
+    },
+    {
+      "id": "skill_dimension_cut",
       "level": 2
     },
     {
-      "id": "skill_double_bolt",
+      "id": "skill_dust_veil",
       "level": 2
     },
-    "skill_guard_shield",
     {
-      "id": "skill_curse_bolt",
+      "id": "skill_wild_thrust",
       "level": 2
+    },
+    {
+      "id": "skill_spark",
+      "level": 2
+    },
+    {
+      "id": "skill_wind_wrap",
+      "level": 3
+    },
+    {
+      "id": "skill_meteor",
+      "level": 1
+    },
+    {
+      "id": "skill_imaginary_bullet",
+      "level": 2
+    },
+    {
+      "id": "skill_dragon_scale",
+      "level": 1
     }
   ],
   "passiveSkills": [],
   "actionPattern": [
-    "skill_triple_strike",
-    "skill_double_bolt",
-    "skill_curse_bolt",
-    "skill_guard_shield",
-    "skill_triple_strike"
+    "skill_dust_veil",
+    "skill_boundary_erosion",
+    "skill_wind_wrap",
+    "skill_dimension_cut",
+    "skill_spark",
+    "skill_wind_wrap",
+    "skill_boundary_erosion",
+    "skill_imaginary_bullet",
+    "skill_dragon_scale",
+    "skill_meteor"
   ],
   "isBoss": true
 }

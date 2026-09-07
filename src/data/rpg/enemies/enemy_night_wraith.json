@@ -16,27 +16,36 @@
     "critRate": 0.12,
     "critDamageMultiplier": 1.9
   },
-  "traits": [
-    "trait_weak_magical"
-  ],
+  "traits": [],
   "activeSkills": [
     {
-      "id": "skill_piercing_bolt",
+      "id": "skill_boundary_erosion",
+      "level": 3
+    },
+    {
+      "id": "skill_binding_mist",
       "level": 2
     },
     {
-      "id": "skill_iaido",
-      "level": 2
+      "id": "skill_spark",
+      "level": 3
     },
-    "skill_double_bolt",
-    "skill_counter"
+    {
+      "id": "skill_barrage",
+      "level": 3
+    },
+    {
+      "id": "skill_ambush",
+      "level": 4
+    }
   ],
   "passiveSkills": [],
   "actionPattern": [
-    "skill_counter",
-    "skill_iaido",
-    "skill_piercing_bolt",
-    "skill_double_bolt"
+    "skill_ambush",
+    "skill_boundary_erosion",
+    "skill_binding_mist",
+    "skill_spark",
+    "skill_barrage"
   ],
   "isBoss": true
 }

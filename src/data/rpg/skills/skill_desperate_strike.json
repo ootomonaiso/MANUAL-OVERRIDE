@@ -13,6 +13,7 @@
   "defaultFocus": "enemy",
   "focusRange": "single",
   "minRound": 2,
+  "draftMinBattle": 20,
   "effects": [
     "fx_slash"
   ],
@@ -24,6 +25,12 @@
         "stat": "str",
         "rate": 4.2
       }
+    },
+    {
+      "op": "modifier",
+      "stat": "def",
+      "scope": "thisBattle",
+      "rate": -0.99
     }
   ],
   "sfx": {

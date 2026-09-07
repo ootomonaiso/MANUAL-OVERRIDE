@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  levelForPoints, addActivePoints, MAX_ACTIVE_LEVEL, MAX_ACTIVE_POINTS,
+  levelForPoints, addActivePoints, MAX_ACTIVE_LEVEL, MAX_ACTIVE_POINTS, MAX_PASSIVE_LEVEL,
   zeroCategoryPoints, subCategoryWeight,
   accumulateCategoryPoints, rollDraft, applyDraftChoice, buildCandidatePool, findFreeSlotIndex,
 } from '../../../../src/domain/battle/skillDraft'
@@ -106,12 +106,12 @@ describe('skillDraft: カテゴリポイントの集計', () => {
   })
 })
 
-describe('skillDraft: ドラフト候補プールの構築（第7フェーズ）', () => {
+describe('skillDraft: ドラフト候補プールの構築（第7フェーズ、第13フェーズでパッシブ重複を解禁）', () => {
   const a1 = makeActive({ id: 'a1' })
   const p1 = makePassive({ id: 'p1' })
 
   it('未所持のアクティブは通常候補として1件だけ入る', () => {
-    const pool = buildCandidatePool(makePlayer(), makeContent({ skills: [a1] }), zeroCategoryPoints())
+    const pool = buildCandidatePool(makePlayer(), makeContent({ skills: [a1] }), zeroCategoryPoints(), 0)
     const entries = pool.filter(o => o.id === 'a1')
     expect(entries).toHaveLength(1)
     expect(entries[0].isDuplicate).toBeFalsy()
@@ -119,7 +119,7 @@ describe('skillDraft: ドラフト候補プールの構築（第7フェーズ）
 
   it('セット中（装備済み）のアクティブは duplicateDraftWeight 件ぶん重複候補として入る', () => {
     const player = makePlayer({ actives: [{ id: 'a1', points: 1, level: 2, cooldown: 0, slotIndex: 0 }] })
-    const pool = buildCandidatePool(player, makeContent({ skills: [a1] }), zeroCategoryPoints())
+    const pool = buildCandidatePool(player, makeContent({ skills: [a1] }), zeroCategoryPoints(), 0)
     const entries = pool.filter(o => o.id === 'a1')
     expect(entries).toHaveLength(SKILL_POINTS.duplicateDraftWeight)
     expect(entries.every(o => o.isDuplicate)).toBe(true)
@@ -128,25 +128,43 @@ describe('skillDraft: ドラフト候補プールの構築（第7フェーズ）
 
   it('倉庫保管中（未セット）のアクティブは候補に一切出ない', () => {
     const player = makePlayer({ actives: [{ id: 'a1', points: 3, level: 3, cooldown: 0, slotIndex: null }] })
-    const pool = buildCandidatePool(player, makeContent({ skills: [a1] }), zeroCategoryPoints())
+    const pool = buildCandidatePool(player, makeContent({ skills: [a1] }), zeroCategoryPoints(), 0)
     expect(pool.some(o => o.id === 'a1')).toBe(false)
   })
 
   it('Lv4（MAX_ACTIVE_POINTS）に達したアクティブは重複候補から外れる', () => {
     const player = makePlayer({ actives: [{ id: 'a1', points: MAX_ACTIVE_POINTS, level: MAX_ACTIVE_LEVEL, cooldown: 0, slotIndex: 0 }] })
-    const pool = buildCandidatePool(player, makeContent({ skills: [a1] }), zeroCategoryPoints())
+    const pool = buildCandidatePool(player, makeContent({ skills: [a1] }), zeroCategoryPoints(), 0)
     expect(pool.some(o => o.id === 'a1')).toBe(false)
   })
 
-  it('一度でも所持したパッシブは、装備の有無に関わらず二度と候補に出ない', () => {
-    const player = makePlayer({ passives: [{ id: 'p1', level: 1 }] })
-    const pool = buildCandidatePool(player, makeContent({ skills: [p1] }), zeroCategoryPoints())
+  it('未所持のパッシブは通常候補として1件だけ入る', () => {
+    const pool = buildCandidatePool(makePlayer(), makeContent({ skills: [p1] }), zeroCategoryPoints(), 0)
+    expect(pool.filter(o => o.id === 'p1')).toHaveLength(1)
+    expect(pool.find(o => o.id === 'p1')?.isDuplicate).toBeFalsy()
+  })
+
+  it('所持済みのパッシブは duplicateDraftWeight 件ぶん重複候補として入る（第13フェーズ）', () => {
+    const player = makePlayer({ passives: [{ id: 'p1', level: 2 }] })
+    const pool = buildCandidatePool(player, makeContent({ skills: [p1] }), zeroCategoryPoints(), 0)
+    const entries = pool.filter(o => o.id === 'p1')
+    expect(entries).toHaveLength(SKILL_POINTS.duplicateDraftWeight)
+    expect(entries.every(o => o.isDuplicate)).toBe(true)
+    expect(entries[0]).toMatchObject({ currentLevel: 2 })
+  })
+
+  it('MAX_PASSIVE_LEVEL に達したパッシブは重複候補から外れる', () => {
+    const player = makePlayer({ passives: [{ id: 'p1', level: MAX_PASSIVE_LEVEL }] })
+    const pool = buildCandidatePool(player, makeContent({ skills: [p1] }), zeroCategoryPoints(), 0)
     expect(pool.some(o => o.id === 'p1')).toBe(false)
   })
 
-  it('未所持のパッシブは通常候補として1件だけ入る', () => {
-    const pool = buildCandidatePool(makePlayer(), makeContent({ skills: [p1] }), zeroCategoryPoints())
-    expect(pool.filter(o => o.id === 'p1')).toHaveLength(1)
+  it('draftMinBattle が指定されたスキルは、battleIndex が満たない間は候補に出ない', () => {
+    const gated = makeActive({ id: 'gated', draftMinBattle: 5 })
+    const pool0 = buildCandidatePool(makePlayer(), makeContent({ skills: [gated] }), zeroCategoryPoints(), 4)
+    expect(pool0.some(o => o.id === 'gated')).toBe(false)
+    const pool1 = buildCandidatePool(makePlayer(), makeContent({ skills: [gated] }), zeroCategoryPoints(), 5)
+    expect(pool1.some(o => o.id === 'gated')).toBe(true)
   })
 })
 
@@ -158,18 +176,18 @@ describe('skillDraft: ドラフト抽選', () => {
   const content = makeContent({ skills: [a1, a2, p1], traits: [t1] })
 
   it('常に3択が返る', () => {
-    expect(rollDraft(makePlayer(), content, Math.random)).toHaveLength(3)
+    expect(rollDraft(makePlayer(), content, Math.random, 0)).toHaveLength(3)
   })
 
   it('同じIDが2度並ぶことはない（重複候補が複数コピー入っていても1件扱い）', () => {
     for (let i = 0; i < 30; i++) {
-      const ids = rollDraft(makePlayer(), content, Math.random).map(o => o.id)
+      const ids = rollDraft(makePlayer(), content, Math.random, 0).map(o => o.id)
       expect(new Set(ids).size).toBe(ids.length)
     }
   })
 
   it('候補が足りなければステータス微増で埋められる', () => {
-    const options = rollDraft(makePlayer(), makeContent(), Math.random)
+    const options = rollDraft(makePlayer(), makeContent(), Math.random, 0)
     expect(options).toHaveLength(3)
     expect(options.every(o => o.isFallback)).toBe(true)
     const stats = options.map(o => o.fallbackStat)
@@ -178,13 +196,13 @@ describe('skillDraft: ドラフト抽選', () => {
 
   it('既に所持している特性は候補に出ない', () => {
     const player = makePlayer({ traits: [{ id: 't1' }] })
-    const ids = rollDraft(player, content, Math.random).map(o => o.id)
+    const ids = rollDraft(player, content, Math.random, 0).map(o => o.id)
     expect(ids).not.toContain('t1')
   })
 
   it('draftable: false の特性は候補に出ない', () => {
     const hidden = makeTrait({ id: 'hidden', draftable: false })
-    const ids = rollDraft(makePlayer(), makeContent({ traits: [hidden] }), Math.random).map(o => o.id)
+    const ids = rollDraft(makePlayer(), makeContent({ traits: [hidden] }), Math.random, 0).map(o => o.id)
     expect(ids).not.toContain('hidden')
   })
 
@@ -195,6 +213,7 @@ describe('skillDraft: ドラフト抽選', () => {
       makePlayer(),
       makeContent({ skills: [hiddenActive, hiddenPassive] }),
       Math.random,
+      0,
     ).map(o => o.id)
     expect(ids).not.toContain('skill_hidden')
     expect(ids).not.toContain('passive_hidden')
@@ -203,7 +222,7 @@ describe('skillDraft: ドラフト抽選', () => {
   it('解放条件を満たさないスキルは候補に出ない', () => {
     const locked = makeActive({ id: 'locked', unlockCondition: { category: 'might', points: 100 } })
     const c = makeContent({ skills: [locked] })
-    const ids = rollDraft(makePlayer(), c, Math.random).map(o => o.id)
+    const ids = rollDraft(makePlayer(), c, Math.random, 0).map(o => o.id)
     expect(ids).not.toContain('locked')
   })
 
@@ -212,7 +231,7 @@ describe('skillDraft: ドラフト抽選', () => {
     const key = makeActive({ id: 'key', mainCategory: 'might', subCategories: [] })
     const c = makeContent({ skills: [gate, key] })
     const player = makePlayer({ actives: [{ id: 'key', points: 0, level: 1, cooldown: 0, slotIndex: 0 }] })
-    const options = rollDraft(player, c, Math.random)
+    const options = rollDraft(player, c, Math.random, 0)
     const found = options.find(o => o.id === 'gate')
     expect(found).toBeDefined()
     expect(found?.isUnlocked).toBe(true)
@@ -236,16 +255,22 @@ describe('skillDraft: ドラフト選択の適用', () => {
     expect(player.traits).toEqual([{ id: 't1' }])
   })
 
-  it('新規パッシブは追加される（レベル概念は無く、常に level:1 で固定）', () => {
+  it('新規パッシブは追加される（level:1）', () => {
     const player = makePlayer()
     apply(player, { kind: 'passive', id: 'p1' })
     expect(player.passives).toEqual([{ id: 'p1', level: 1 }])
   })
 
-  it('既に所持しているパッシブを渡されても重複追加されない（本来は候補にすら出ない防御）', () => {
+  it('既に所持しているパッシブの重複を選ぶとLvが+1される（第13フェーズ、1:1）', () => {
     const player = makePlayer({ passives: [{ id: 'p1', level: 1 }] })
-    apply(player, { kind: 'passive', id: 'p1' })
-    expect(player.passives).toEqual([{ id: 'p1', level: 1 }])
+    apply(player, { kind: 'passive', id: 'p1', isDuplicate: true, currentLevel: 1 })
+    expect(player.passives).toEqual([{ id: 'p1', level: 2 }])
+  })
+
+  it('パッシブのLvは MAX_PASSIVE_LEVEL で頭打ちになる', () => {
+    const player = makePlayer({ passives: [{ id: 'p1', level: MAX_PASSIVE_LEVEL }] })
+    apply(player, { kind: 'passive', id: 'p1', isDuplicate: true, currentLevel: MAX_PASSIVE_LEVEL })
+    expect(player.passives).toEqual([{ id: 'p1', level: MAX_PASSIVE_LEVEL }])
   })
 
   it('新規アクティブは空いている最小の枠に入る', () => {

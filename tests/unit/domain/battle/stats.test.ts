@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  clamp, computeEffective, stackMultipliers, levelMultiplier,
+  clamp, computeEffective, stackMultipliers, levelMultiplier, passiveLevelMultiplier,
   computeEffectiveStats, deriveEvadeBase, newAccumulator, addFlat, addRate, toModifiers,
   accumulatePassiveStatBoosts, collectEffectMultiplier, clampHpToMax,
 } from '../../../../src/domain/battle/stats'
@@ -30,6 +30,14 @@ describe('stats: 基本の算術', () => {
 
   it('レベル倍率は 1 + (Lv-1)×0.25（Lv1〜4 で ×1 / ×1.25 / ×1.5 / ×1.75）', () => {
     expect([1, 2, 3, 4].map(levelMultiplier)).toEqual([1, 1.25, 1.5, 1.75])
+  })
+
+  it('パッシブ重複強化のレベル倍率はLv4でちょうど2倍になる（第13フェーズ）', () => {
+    const values = [1, 2, 3, 4].map(passiveLevelMultiplier)
+    expect(values[0]).toBe(1)
+    expect(values[3]).toBe(2)
+    expect(values[1]).toBeCloseTo(4 / 3, 10)
+    expect(values[2]).toBeCloseTo(5 / 3, 10)
   })
 })
 
@@ -105,11 +113,11 @@ describe('stats: 補正アキュムレータ', () => {
 })
 
 describe('stats: accumulatePassiveStatBoosts', () => {
-  it('パッシブの statBoost にはレベル倍率が掛かる', () => {
-    const def = makePassive({ id: 'p', effect: [{ op: 'statBoost', stat: 'def', amount: 800 }] })
+  it('パッシブの statBoost には重複強化のレベル倍率が掛かる（第13フェーズ、Lv4で2倍になる式）', () => {
+    const def = makePassive({ id: 'p', effect: [{ op: 'statBoost', stat: 'def', amount: 900 }] })
     const acc = newAccumulator()
     accumulatePassiveStatBoosts([{ level: 2, def }], acc)
-    expect(toModifiers(acc).def?.flat).toBe(1000)   // 800 × 1.25（Lv2）
+    expect(toModifiers(acc).def?.flat).toBe(1200)   // 900 × (4/3)（passiveLevelMultiplier Lv2）
   })
 
   it('特性の statBoost はレベル倍率を掛けない（常に等倍）', () => {
@@ -147,7 +155,7 @@ describe('stats: accumulatePassiveStatBoosts', () => {
 describe('stats: collectEffectMultiplier（効果倍率）', () => {
   const traitPhys = makeTrait({ id: 'tp', effect: [{ op: 'effectBoost', element: 'physical', rate: 0.5 }] })
   const traitAny = makeTrait({ id: 'ta', effect: [{ op: 'effectBoost', element: 'any', rate: 0.2 }] })
-  const passiveMagic = makePassive({ id: 'pm', effect: [{ op: 'effectBoost', element: 'magical', rate: 0.1 }] })
+  const passiveMagic = makePassive({ id: 'pm', effect: [{ op: 'effectBoost', element: 'magical', rate: 0.15 }] })
   const content = makeContent({ traits: [traitPhys, traitAny], skills: [passiveMagic] })
 
   it('効果倍率を持たなければ 1（等倍）', () => {
@@ -174,9 +182,9 @@ describe('stats: collectEffectMultiplier（効果倍率）', () => {
     expect(collectEffectMultiplier(c, 'physical', content)).toBeCloseTo(1.7, 6)
   })
 
-  it('パッシブ由来の効果倍率にはレベル倍率が掛かる', () => {
+  it('パッシブ由来の効果倍率には重複強化のレベル倍率が掛かる（第13フェーズ）', () => {
     const c = makeCombatant({ passives: [{ id: 'pm', level: 2, stacks: 0 }] })
-    expect(collectEffectMultiplier(c, 'magical', content)).toBeCloseTo(1.125, 6)   // 0.1 × 1.25（Lv2）
+    expect(collectEffectMultiplier(c, 'magical', content)).toBeCloseTo(1.2, 6)   // 0.15 × (4/3)（passiveLevelMultiplier Lv2）
   })
 
   it('未知のIDを持っていても壊れない', () => {

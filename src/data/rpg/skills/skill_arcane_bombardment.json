@@ -13,6 +13,7 @@
   "defaultFocus": "enemy",
   "focusRange": "random",
   "minRound": 2,
+  "draftMinBattle": 20,
   "effects": [
     "fx_cast_magical"
   ],

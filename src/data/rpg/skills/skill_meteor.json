@@ -11,6 +11,7 @@
   ],
   "cooldown": 5,
   "minRound": 2,
+  "draftMinBattle": 20,
   "defaultFocus": "enemy",
   "focusRange": "all",
   "effects": [
@@ -22,7 +23,7 @@
       "element": "magical",
       "scale": {
         "stat": "int",
-        "rate": 4
+        "rate": 3.5
       }
     },
     {

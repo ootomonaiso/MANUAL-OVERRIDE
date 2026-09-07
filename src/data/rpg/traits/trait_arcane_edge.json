@@ -5,6 +5,10 @@
   "flavorText": "言葉に、刃を宿す。",
   "kind": "trait",
   "effect": [
-    { "op": "effectBoost", "element": "magical", "rate": 0.5 }
+    {
+      "op": "effectBoost",
+      "element": "magical",
+      "rate": 0.2
+    }
   ]
 }

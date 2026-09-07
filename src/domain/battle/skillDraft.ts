@@ -18,6 +18,12 @@ import { CATEGORY_IDS } from './types'
 export const MAX_ACTIVE_LEVEL = SKILL_POINTS.pointsForLevel.length
 /** Lv4到達に必要な累計ポイント（配分・重複取得の上限） */
 export const MAX_ACTIVE_POINTS = SKILL_POINTS.pointsForLevel[MAX_ACTIVE_LEVEL - 1]
+/**
+ * パッシブの最大レベル（第13フェーズ、重複強化）。ポイント制のアクティブとは異なり、
+ * ドラフトで重複を引くたびに単純に+1される（1:1）。効果倍率は stats.ts::passiveLevelMultiplier
+ * が担い、Lv4でちょうど2倍になるよう設計している
+ */
+export const MAX_PASSIVE_LEVEL = 4
 
 /** 累計投資ポイントから実効レベルを導出する（pointsForLevel: index=レベル-1、値=そのレベルへの必要累計値） */
 export function levelForPoints(points: number): number {
@@ -125,22 +131,25 @@ export function nextCategoryThreshold(current: number): number {
 // ─────────────────────────────────────────────────────────────
 
 /**
- * ドラフト候補を構築する（第7フェーズで大きく方針転換）。
+ * ドラフト候補を構築する（第7フェーズで大きく方針転換、第13フェーズでパッシブの重複を解禁）。
  * - アクティブ: 未所持は通常候補として1件。セット中（装備済み）は重複候補として
  *   duplicateDraftWeight 倍の重みで出現し、選ぶと+1ポイントが即座に入る。
  *   倉庫保管中（slotIndex===null）は候補に一切出さない（＝重複が二度と出ない）。
- * - パッシブ: 一度でも所持したら以後永久に候補から除外する（重複取得が発生しない）。
+ * - パッシブ: アクティブと同じ形で重複を許可する（Lv4で候補から除外）。選ぶとLvが+1される
+ *   （ポイント制ではなく1:1。stats.ts::passiveLevelMultiplier 参照）。
  * - 特性: 既存どおり（所持済みを除外するだけ）。
+ * - battleIndex: draftMinBattle が設定された技（戦闘開始直後は使えない高リスク技等）を
+ *   ラン序盤のドラフトから除外するために使う（第13フェーズ）。
  */
 export function buildCandidatePool(
-  player: Combatant, content: BattleContent, points: Record<CategoryId, number>,
+  player: Combatant, content: BattleContent, points: Record<CategoryId, number>, battleIndex: number,
 ): DraftOption[] {
   const pool: DraftOption[] = []
   const ownedTraitIds = new Set(player.traits.map(t => t.id))
-  const ownedPassiveIds = new Set(player.passives.map(p => p.id))
 
   for (const def of content.skills.values()) {
     if (def.draftable === false) continue
+    if ((def.draftMinBattle ?? 0) > battleIndex) continue
     if (def.unlockCondition && (points[def.unlockCondition.category] ?? 0) < def.unlockCondition.points) continue
 
     if (def.kind === 'active') {
@@ -157,13 +166,23 @@ export function buildCandidatePool(
       }
       for (let i = 0; i < SKILL_POINTS.duplicateDraftWeight; i++) pool.push(dup)
     } else {
-      if (ownedPassiveIds.has(def.id)) continue   // 一度所持したら二度と候補に出ない
-      pool.push({ kind: 'passive', id: def.id, isUnlocked: !!def.unlockCondition })
+      const owned = player.passives.find(p => p.id === def.id)
+      if (!owned) {
+        pool.push({ kind: 'passive', id: def.id, isUnlocked: !!def.unlockCondition })
+        continue
+      }
+      if (owned.level >= MAX_PASSIVE_LEVEL) continue
+      const dup: DraftOption = {
+        kind: 'passive', id: def.id, currentLevel: owned.level, isDuplicate: true,
+        isUnlocked: !!def.unlockCondition,
+      }
+      for (let i = 0; i < SKILL_POINTS.duplicateDraftWeight; i++) pool.push(dup)
     }
   }
   for (const def of content.traits.values()) {
     if (def.draftable === false) continue
     if (ownedTraitIds.has(def.id)) continue
+    if ((def.draftMinBattle ?? 0) > battleIndex) continue
     if (def.unlockCondition && (points[def.unlockCondition.category] ?? 0) < def.unlockCondition.points) continue
     pool.push({ kind: 'trait', id: def.id, isUnlocked: !!def.unlockCondition })
   }
@@ -189,9 +208,9 @@ function shuffle<T>(arr: readonly T[], rng: () => number): T[] {
 }
 
 /** 撃破後の3択を抽選する。重複しない3件（同じ重複候補が複数回入っていても1件扱い）。候補が足りなければステータス微増で埋める */
-export function rollDraft(player: Combatant, content: BattleContent, rng: () => number): DraftOption[] {
+export function rollDraft(player: Combatant, content: BattleContent, rng: () => number, battleIndex: number): DraftOption[] {
   const points = accumulateCategoryPoints(player, content)
-  const pool = shuffle(buildCandidatePool(player, content, points), rng)
+  const pool = shuffle(buildCandidatePool(player, content, points, battleIndex), rng)
 
   const picked: DraftOption[] = []
   const usedIds = new Set<string>()
@@ -235,7 +254,10 @@ export function applyDraftChoice(state: BattleState, option: DraftOption): void 
   }
 
   if (option.kind === 'passive') {
-    if (!player.passives.some(p => p.id === option.id)) {
+    const existingPassive = player.passives.find(p => p.id === option.id)
+    if (existingPassive) {
+      existingPassive.level = Math.min(MAX_PASSIVE_LEVEL, existingPassive.level + 1)
+    } else {
       player.passives.push({ id: option.id, level: 1 })
     }
     return

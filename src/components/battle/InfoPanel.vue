@@ -118,7 +118,7 @@ const currentSkill = computed<InfoSkillRow | null>(() =>
 )
 
 function fmt(v: number, isPercent: boolean): string {
-  return isPercent ? `${Math.round(v * 1000) / 10}%` : `${Math.round(v)}`
+  return isPercent ? `${Math.round(v * 100)}%` : `${Math.round(v)}`
 }
 function hpPct(c: InfoCharacterView): number {
   return c.maxHp > 0 ? Math.max(0, Math.min(1, c.hp / c.maxHp)) * 100 : 0

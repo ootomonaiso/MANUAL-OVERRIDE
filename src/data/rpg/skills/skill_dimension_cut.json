@@ -1,21 +1,28 @@
 {
   "$schema": "../../../../schemas/battle-skill.schema.json",
   "id": "skill_dimension_cut",
-  "label": "次元断",
-  "flavorText": "空間ごと、断ち切る。",
+  "label": "次元斬",
+  "flavorText": "空間を断絶する。",
   "kind": "active",
   "element": "special",
   "mainCategory": "pierce",
   "subCategories": [
     "wisdom"
   ],
-  "cooldown": 3,
+  "cooldown": 4,
   "defaultFocus": "enemy",
   "focusRange": "single",
   "effects": [
     "fx_cast_special"
   ],
   "effect": [
+    {
+      "op": "modifier",
+      "stat": "hitRate",
+      "amount": 100,
+      "scope": "thisTurn",
+      "applyTo": "self"
+    },
     {
       "op": "damage",
       "element": "special",

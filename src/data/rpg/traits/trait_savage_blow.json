@@ -9,7 +9,7 @@
     {
       "op": "effectBoost",
       "element": "physical",
-      "rate": 0.5
+      "rate": 0.2
     }
   ]
 }
