@@ -345,7 +345,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
 
   function handleOutcome(outcome: 'won' | 'lost'): void {
     clearPresentation()
-    endBattleStatsDebug()
+    endBattleStatsDebug(state.roundCount)
     if (outcome === 'won') {
       // finishBattleOnVictory が battleIndex を内部でインクリメントするため、
       // 「今終わった戦闘が何戦目だったか」は真のクリア判定に使うので先に控えておく
@@ -577,7 +577,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
     generation++          // 進行中の演出が終了後の状態を書き換えないようにする
     cancelPending()
     clearPresentation()
-    endBattleStatsDebug()
+    endBattleStatsDebug(state.roundCount)
     state.runOutcome = 'gaveup'
     state.status = 'finished'
     finalizeScore()

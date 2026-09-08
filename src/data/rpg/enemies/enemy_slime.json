@@ -5,7 +5,7 @@
   "flavorText": "世界各地で見られる、普遍的な魔物",
   "sprite": "battle_slime",
   "stats": {
-    "hp": 2200,
+    "hp": 3650,
     "str": 370,
     "def": 420,
     "int": 210,

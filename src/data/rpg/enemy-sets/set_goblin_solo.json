@@ -5,7 +5,7 @@
   "members": [
     {
       "enemyId": "enemy_goblin",
-      "statsOverride": { "hp": 3440, "str": 740, "def": 820, "int": 260, "ref": 420, "agi": 720 }
+      "statsOverride": { "hp": 8420, "str": 740, "def": 820, "int": 260, "ref": 420, "agi": 720 }
     }
   ]
 }

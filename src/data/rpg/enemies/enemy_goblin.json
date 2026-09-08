@@ -5,7 +5,7 @@
   "flavorText": "知能が低く、群れで行動することが多い。",
   "sprite": "battle_goblin",
   "stats": {
-    "hp": 2150,
+    "hp": 2790,
     "str": 460,
     "def": 510,
     "int": 160,

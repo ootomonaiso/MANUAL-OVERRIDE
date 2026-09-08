@@ -4,6 +4,6 @@
   "label": "掠め取る者&古びた説明書コウモリ",
   "members": [
     { "enemyId": "enemy_goblin_raider" },
-    { "enemyId": "enemy_bat_elder", "statsOverride": { "hp": 2560 } }
+    { "enemyId": "enemy_bat_elder", "statsOverride": { "hp": 1900 } }
   ]
 }

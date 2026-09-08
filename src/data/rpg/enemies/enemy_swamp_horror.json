@@ -5,10 +5,10 @@
   "flavorText": "流行によって生まれ、流行に滅ぼされた怨念が淀みとなった。",
   "sprite": "battle_swamp_horror",
   "stats": {
-    "hp": 20000,
-    "str": 1000,
+    "hp": 39100,
+    "str": 505,
     "def": 1500,
-    "int": 480,
+    "int": 242,
     "ref": 800,
     "agi": 210,
     "hitRate": 0.95,

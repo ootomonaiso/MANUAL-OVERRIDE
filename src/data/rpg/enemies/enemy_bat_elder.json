@@ -5,7 +5,7 @@
   "flavorText": "太鼓の昔から生息していたコウモリは、もはや魔力に適応した。",
   "sprite": "battle_bat_elder",
   "stats": {
-    "hp": 5680,
+    "hp": 4210,
     "str": 640,
     "def": 670,
     "int": 1360,

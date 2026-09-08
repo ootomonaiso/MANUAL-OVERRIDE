@@ -5,7 +5,7 @@
   "flavorText": "スライムの発生機序はあまり分かっていない。",
   "sprite": "battle_slime_acid",
   "stats": {
-    "hp": 7560,
+    "hp": 13140,
     "str": 960,
     "def": 1460,
     "int": 1220,
