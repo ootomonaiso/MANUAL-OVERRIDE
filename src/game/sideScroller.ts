@@ -1216,9 +1216,9 @@ export class SideScroller {
         this._drawRect(sx, y, h.w, h.h, color)
     }
 
-    // STG: HP バー（StgPlugin / AerialStgPlugin の HP バーと同じく px.rect で描き、
-    // デバイス空間スナップを効かせる。比率・幅の計算式は変更しない）
-    if (r.features.has('enemy_hp') && h.maxHp > 1) {
+    // enemy_hp: 汎用 HP バー（drawHazard を true で返さないジャンル用）。drawsOwnHpBar=true のプラグインは自前バーを描くためスキップ。
+    // px.rect がデバイス空間スナップを自動適用（4px グリッド）。比率・幅の計算式は変更しない。
+    if (r.features.has('enemy_hp') && h.maxHp > 1 && !pluginH.drawsOwnHpBar) {
       const barW = h.w * (h.hp / h.maxHp)
       const barColor = barW / h.w > HAZARD_VFX.hpBarThreshold ? HAZARD_VFX.hpBarHighColor : HAZARD_VFX.hpBarLowColor
       this.px.rect(sx, y - HAZARD_VFX.hpBarOffsetY, h.w, HAZARD_VFX.hpBarHeight, `rgba(0,0,0,${HAZARD_VFX.hpBarBgAlpha})`)

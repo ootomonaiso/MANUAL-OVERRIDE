@@ -10,6 +10,7 @@
 |-----------|-------------|------|
 | `stg` | [stg-genre.md](./stg-genre.md) | 横スクロールシューティング（重力なし自由移動＋射撃） |
 | `aerial_stg` | [aerial-stg.md](./aerial-stg.md) | 縦スクロールシューティング（4方向自由飛行＋射撃） |
+| `bullet_runner` | [bullet-runner-genre.md](./bullet-runner-genre.md) | 弾幕ランナー（自動走行＋射撃・敵HPバー） |
 | `puzzle` | [puzzle-genre.md](./puzzle-genre.md) | スライドパズル（グリッド・タイムアタック） |
 | `tetris` | [tetris-genre.md](./tetris-genre.md) | 落ち物パズル（10×20グリッド・7-bag・ライン消去） |
 
