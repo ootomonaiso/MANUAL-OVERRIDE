@@ -435,6 +435,21 @@ export interface NearMissConfig {
   nearMissComboDecay: number
 }
 
+/** platformer.json — プラットフォームアクション（縦スクロール）固有パラメータ */
+export interface PlatformerConfig {
+  gravity: number
+  runSpeed: number
+  maxFallSpeed: number
+  lavaRiseRate: number
+  lavaStartOffset: number
+  lavaHeight: number
+  lavaColor: string
+  lavaGlowColor: string
+  platformLandingThreshold: number
+  movingPlatformDriftAmp: number
+  movingPlatformDriftFreq: number
+}
+
 /** genre_defaults.json — ジャンル定義のデフォルト値 */
 export interface GenreDefaultsConfig {
   enableFeatures: string[]
@@ -641,6 +656,7 @@ export interface GameConfigMap {
   near_miss: NearMissConfig
   genre_defaults: GenreDefaultsConfig
   palette_defaults: PaletteDefaultsConfig
+  platformer: PlatformerConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap

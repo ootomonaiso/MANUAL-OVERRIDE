@@ -82,7 +82,11 @@ export class MovementFeature implements FeatureSystem {
       const moveUp   = r.controls.moveUp   ? input.keys.has(r.controls.moveUp)   : false
       const moveDown = r.controls.moveDown ? input.keys.has(r.controls.moveDown) : false
       p.vx = input.keys.has(r.controls.moveRight) ? runSpeed : input.keys.has(r.controls.moveLeft) ? -runSpeed : 0
-      p.vy = moveUp ? -runSpeed : moveDown ? runSpeed : 0
+      // platformer 有効時は p.vy を触らない（縦スクロールの自由移動は PlatformerFeature が
+      // 重力積分を独占するため。ここで上書きするとジャンプ/落下速度が 1 フレームで消滅する）
+      if (!r.features.has('platformer')) {
+        p.vy = moveUp ? -runSpeed : moveDown ? runSpeed : 0
+      }
     } else if (this.dash.timer <= 0 && !this.slide.active) {
       // ダッシュ中は _updateDash が vx を設定済み、スライド中は速度維持
       const isAutoRun = r.features.has('auto_run')

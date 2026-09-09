@@ -220,8 +220,8 @@ describe('JSON 直接検証: ジャンル定義と Feature enable 整合性', ()
     expect(dungeonJson.enableFeatures).toContain('melee_kill')
   })
 
-  it('platformer.json が near_miss_combo を enableFeatures に持つ', () => {
-    expect(platformerJson.enableFeatures).toContain('near_miss_combo')
+  it('platformer.json が near_miss_combo を持たない（safe ハザードのみで無効）', () => {
+    expect(platformerJson.enableFeatures).not.toContain('near_miss_combo')
   })
 
   it('runner.json が near_miss_combo を enableFeatures に持つ', () => {
@@ -247,8 +247,8 @@ describe('JSON 直接検証: ジャンル定義と Feature enable 整合性', ()
     expect(dungeonJson.scoreFormula).toContain('kills')
   })
 
-  it('near_miss_combo Feature が 5 ジャンルの scoreFormula に maxCombo 項を含んでいる', () => {
-    expect(platformerJson.scoreFormula).toContain('maxCombo')
+  it('near_miss_combo Feature が 4 ジャンルの scoreFormula に maxCombo 項を含んでいる', () => {
+    // platformer は near_miss_combo を持たないため maxCombo 項も削除済み
     expect(runnerJson.scoreFormula).toContain('maxCombo')
     expect(racingJson.scoreFormula).toContain('maxCombo')
     expect(sportsJson.scoreFormula).toContain('maxCombo')

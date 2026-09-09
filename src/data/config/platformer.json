@@ -1,0 +1,16 @@
+{
+  "$comment": "プラットフォームアクション（縦スクロール）固有パラメータ",
+  "section": "platformer",
+  "gravity": 1500,
+  "runSpeed": 480,
+  "maxFallSpeed": 1200,
+  "$commentLava": "lavaStartOffset は画面下端からのオフスクリーン距離（px）。溶岩は画面下端より下から上昇開始し、猶予 = lavaStartOffset / lavaRiseRate 秒。最初のプラットフォーム到達（約3.1秒）に余裕を持たせる",
+  "lavaRiseRate": 15,
+  "lavaStartOffset": 100,
+  "lavaHeight": 60,
+  "lavaColor": "#ff4400",
+  "lavaGlowColor": "#ffaa00",
+  "platformLandingThreshold": 24,
+  "movingPlatformDriftAmp": 60,
+  "movingPlatformDriftFreq": 0.8
+}

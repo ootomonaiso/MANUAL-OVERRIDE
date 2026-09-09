@@ -12,6 +12,7 @@
 | `aerial_stg` | [aerial-stg.md](./aerial-stg.md) | 縦スクロールシューティング（4方向自由飛行＋射撃） |
 | `puzzle` | [puzzle-genre.md](./puzzle-genre.md) | スライドパズル（グリッド・タイムアタック） |
 | `tetris` | [tetris-genre.md](./tetris-genre.md) | 落ち物パズル（10×20グリッド・7-bag・ライン消去） |
+| `platformer` | [platformer-genre.md](./platformer-genre.md) | 縦スクロールクライム（重力・一方通行プラットフォーム・溶岩） |
 
 ## 記載方針
 

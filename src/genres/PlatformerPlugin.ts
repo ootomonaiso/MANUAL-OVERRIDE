@@ -51,12 +51,19 @@ export class PlatformerPlugin extends DarkThemePlugin {
     land:  'rgba(80,200,60,0.6)',
   }
 
+  // 縦モードでは全エントリが画面上端・ランダム X から出現するため、
+  // w/h はプラットフォーム寸法のみを決める。全 safe で被弾死因を溶岩のみにする。
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',   placement: 'ground', weightStart: 6, weightEnd: 5, wRange: [28, 52], hRange: [30, 55] },
-    { shape: 'rect',   placement: 'air',    weightStart: 4, weightEnd: 6, wRange: [32, 56], hRange: [22, 36], safeChance: 0.3 },
-    { shape: 'spike',  placement: 'ground', weightStart: 2, weightEnd: 4, wRange: [25, 42], hRange: [30, 45] },
-    { shape: 'diamond', placement: 'float', weightStart: 1, weightEnd: 3, wRange: [28, 38], hRange: [28, 38], safeChance: 0.4 },
+    // 広いプラットフォーム（主たる登段手段）
+    { shape: 'rect', placement: 'air', weightStart: 6, weightEnd: 6, wRange: [80, 140], hRange: [16, 24], safeChance: 1 },
+    // 狭いプラットフォーム（リスク高）
+    { shape: 'rect', placement: 'air', weightStart: 4, weightEnd: 4, wRange: [44, 76], hRange: [16, 24], safeChance: 1 },
+    // ダイヤモンド型（sin 漂動で動く）
+    { shape: 'diamond', placement: 'float', weightStart: 2, weightEnd: 3, wRange: [40, 52], hRange: [30, 40], safeChance: 1 },
   ]
+
+  // 縦スクロールモードでも遠景・中景（雲・丘）を描画する
+  readonly verticalBackgroundLayers = true
 
   override drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
     const px = new PixelCanvas(ctx)

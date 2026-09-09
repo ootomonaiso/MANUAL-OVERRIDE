@@ -139,3 +139,8 @@ export const PIXELART = _c.pixelart
 // NEAR_MISS — near-miss combo パラメータ
 // ─────────────────────────────────────────────────────────────
 export const NEAR_MISS = _c.near_miss
+
+// ─────────────────────────────────────────────────────────────
+// PLATFORMER — プラットフォームアクション（縦スクロール）
+// ─────────────────────────────────────────────────────────────
+export const PLATFORMER = _c.platformer
