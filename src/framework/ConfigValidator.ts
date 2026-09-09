@@ -61,6 +61,7 @@ const RANGE_CHECKS: Array<{
   { section: 'physics',    field: 'dashDurationSec', min: 0 },
   { section: 'physics',    field: 'dashCooldownSec', min: 0 },
   { section: 'physics',    field: 'wallJumpPushSpeed', min: 0 },
+  { section: 'physics',    field: 'springBounceVelocity', max: 0 },
   { section: 'shoot',      field: 'bulletSpeed',    min: 0 },
   { section: 'shoot',      field: 'shotCooldown',   min: 0 },
   { section: 'shoot',      field: 'comboResetTime', min: 0 },

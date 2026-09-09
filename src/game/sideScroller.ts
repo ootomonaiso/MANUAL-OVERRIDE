@@ -655,6 +655,11 @@ export class SideScroller {
       for (let i = this.hazards.length - 1; i >= 0; i--) {
         const h = this.hazards[i]
         if (!rectsOverlap(p.rect, h.rect)) continue
+        // Spring: 落下中（vy>=0）に当たると上へ弾かれる。被弾・safe-touch のいずれも通さない
+        if (h.shape === 'spring' && p.vy >= 0) {
+          this._onSpringBounce(p, h.x, h)
+          continue
+        }
         const isHazard = isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
         if (isHazard) {
           // stealth_mode 無効ジャンル（tetris / tower_def / idle 等）では
@@ -825,6 +830,11 @@ export class SideScroller {
         const sx = h.x - this.cameraX
         const hRect = { ...h.rect, x: sx }
         if (!rectsOverlap(p.rect, hRect)) continue
+        // Spring: 落下中（vy>=0）に当たると上へ弾かれる。被弾・safe-touch のいずれも通さない
+        if (h.shape === 'spring' && p.vy >= 0) {
+          this._onSpringBounce(p, sx, h)
+          continue
+        }
         const isHazard = isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
         if (isHazard) {
           // stealth_mode 無効ジャンル（tetris / tower_def / idle 等）では
@@ -1467,6 +1477,30 @@ export class SideScroller {
         x + (Math.random() - 0.5) * VFX.jumpParticleOffsetX, y,
         Math.cos(angle) * speed, Math.sin(angle) * speed,
         VFX.jumpParticleLife, color, VFX.jumpParticleSize,
+      )
+    }
+  }
+
+  /** Spring ハザード発動: 上へ弾き上げる（被弾ではないため無敵時間・stats.jumps には影響しない） */
+  private _onSpringBounce(p: Player, screenX: number, h: Hazard): void {
+    p.vy = PLAYER_PHYSICS.springBounceVelocity
+    p.onGround = false
+    // バネはジャンプではない — ジャンプ状態を消費・クリアしないと、
+    // 次フレームのジャンプ判定が bounce の速度をジャンプ速度で上書きし、
+    // stats.jumps / onPlayerJump を発火させてしまう（バネは発射源でありジャンプではない）
+    this.jumpBufferTimer = 0
+    this.coyoteTimer = 0
+    this.jumpHeld = false
+    p.jumpsLeft = 0
+    soundManager.onJump()
+    const topY = h.rect.y
+    for (let i = 0; i < VFX.springParticleCount; i++) {
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * VFX.springParticleSpread
+      const speed = VFX.springParticleSpeedMin + Math.random() * (VFX.springParticleSpeedMax - VFX.springParticleSpeedMin)
+      this.particles.add(
+        screenX + (Math.random() - 0.5) * h.w, topY,
+        Math.cos(angle) * speed, Math.sin(angle) * speed,
+        VFX.springParticleLife, h.glowColor, VFX.springParticleSize,
       )
     }
   }

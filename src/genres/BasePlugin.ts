@@ -139,6 +139,7 @@ export class RunnerPlugin extends DarkThemePlugin {
     { shape: 'rect',    placement: 'air',    weightStart: 2,  weightEnd: 4,  wRange: [28, 48], hRange: [25, 40] },
     { shape: 'spike',   placement: 'ground', weightStart: 1,  weightEnd: 5,  wRange: [22, 40], hRange: [40, 65] },
     { shape: 'pillar',  placement: 'ground', weightStart: 0,  weightEnd: 3,  wRange: [14, 18], hRange: [70, 130] },
+    { shape: 'spring',  placement: 'ground', weightStart: 0,  weightEnd: 2,  wRange: [28, 36], hRange: [20, 28], safeChance: 1 },
   ]
 }
 
