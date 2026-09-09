@@ -1,171 +1,171 @@
-# Runner ジャンル「バネ（Spring）ハザード」設計・要件定義
+﻿# Runner 繧ｸ繝｣繝ｳ繝ｫ縲後ヰ繝搾ｼ・pring・峨ワ繧ｶ繝ｼ繝峨崎ｨｭ險医・隕∽ｻｶ螳夂ｾｩ
 
-- 日付: 2026-09-09
-- 対象ブランチ: `feature/runner-genre`
-- ステータス: 実装指示済み
+- 譌･莉・ 2026-09-09
+- 蟇ｾ雎｡繝悶Λ繝ｳ繝・ `feature/runner-genre`
+- 繧ｹ繝・・繧ｿ繧ｹ: 螳溯｣・欠遉ｺ貂医∩
 
-## 1. 背景・目的
+## 1. 閭梧勹繝ｻ逶ｮ逧・
 
-Runner（エンドレスランナー）ジャンルは既に以下を持っている:
+Runner・医お繝ｳ繝峨Ξ繧ｹ繝ｩ繝ｳ繝翫・・峨ず繝｣繝ｳ繝ｫ縺ｯ譌｢縺ｫ莉･荳九ｒ謖√▲縺ｦ縺・ｋ:
 
-- `RunnerPlugin`（`src/genres/BasePlugin.ts`）— 視覚テーマ（dark テーマ、safe 色はティール `#00cec9`/`#55efc4`）
-- `src/data/genres/runner.json` — ジャンル定義（`auto_run` / `double_jump` / `long_air` / `near_miss_combo`）
-- 移動系コア機能 — 自動走行、二段ジャンプ、コヨーテタイム、ジャンプバッファ（`MovementFeature` + `sideScroller.ts`）
+- `RunnerPlugin`・・src/genres/BasePlugin.ts`・俄・隕冶ｦ壹ユ繝ｼ繝橸ｼ・ark 繝・・繝槭《afe 濶ｲ縺ｯ繝・ぅ繝ｼ繝ｫ `#00cec9`/`#55efc4`・・
+- `src/data/genres/runner.json` 窶・繧ｸ繝｣繝ｳ繝ｫ螳夂ｾｩ・・auto_run` / `double_jump` / `long_air` / `near_miss_combo`・・
+- 遘ｻ蜍慕ｳｻ繧ｳ繧｢讖溯・ 窶・閾ｪ蜍戊ｵｰ陦後∽ｺ梧ｮｵ繧ｸ繝｣繝ｳ繝励√さ繝ｨ繝ｼ繝・ち繧､繝縲√ず繝｣繝ｳ繝励ヰ繝・ヵ繧｡・・MovementFeature` + `sideScroller.ts`・・
 
-今回の目的: **バネ（Spring）** という新しい安全ハザードを追加する。
-プレイヤーが上から当たると通常のジャンプより大きく弾き上げられる。
-これにより「ジャンプの代わりにバネを踏んで高度を得る」というランナーらしい手触りを加える。
+莉雁屓縺ｮ逶ｮ逧・ **繝舌ロ・・pring・・* 縺ｨ縺・≧譁ｰ縺励＞螳牙・繝上じ繝ｼ繝峨ｒ霑ｽ蜉縺吶ｋ縲・
+繝励Ξ繧､繝､繝ｼ縺御ｸ翫°繧牙ｽ薙◆繧九→騾壼ｸｸ縺ｮ繧ｸ繝｣繝ｳ繝励ｈ繧雁､ｧ縺阪￥蠑ｾ縺堺ｸ翫￡繧峨ｌ繧九・
+縺薙ｌ縺ｫ繧医ｊ縲後ず繝｣繝ｳ繝励・莉｣繧上ｊ縺ｫ繝舌ロ繧定ｸ上ｓ縺ｧ鬮伜ｺｦ繧貞ｾ励ｋ縲阪→縺・≧繝ｩ繝ｳ繝翫・繧峨＠縺・焔隗ｦ繧翫ｒ蜉縺医ｋ縲・
 
-## 2. 要件
+## 2. 隕∽ｻｶ
 
-### 2.1 バネハザード
+### 2.1 繝舌ロ繝上じ繝ｼ繝・
 
-- 形状ID: `'spring'`（`HazardShape` に追加）
-- 常に安全（`isSafe = true`）。**絶対にダメージを与えない**（被弾経路 `_onPlayerHit` を通さない）
-- 条件: プレイヤー矩形とバネ矩形が重なっている **かつ** `player.vy >= 0`（落下中 or 静止）
-  - 弾かれた直後は `vy < 0` になるため、上昇中は再発動しない（クールダウン不要）
-- 発動時の効果:
-  1. `player.vy = PLAYER_PHYSICS.springBounceVelocity`（`-950`。通常ジャンプ `-720` より高い）
+- 蠖｢迥ｶID: `'spring'`・・HazardShape` 縺ｫ霑ｽ蜉・・
+- 蟶ｸ縺ｫ螳牙・・・isSafe = true`・峨・*邨ｶ蟇ｾ縺ｫ繝繝｡繝ｼ繧ｸ繧剃ｸ弱∴縺ｪ縺・*・郁｢ｫ蠑ｾ邨瑚ｷｯ `_onPlayerHit` 繧帝壹＆縺ｪ縺・ｼ・
+- 譚｡莉ｶ: 繝励Ξ繧､繝､繝ｼ遏ｩ蠖｢縺ｨ繝舌ロ遏ｩ蠖｢縺碁㍾縺ｪ縺｣縺ｦ縺・ｋ **縺九▽** `player.vy >= 0`・郁誠荳倶ｸｭ or 髱呎ｭ｢・・
+  - 蠑ｾ縺九ｌ縺溽峩蠕後・ `vy < 0` 縺ｫ縺ｪ繧九◆繧√∽ｸ頑・荳ｭ縺ｯ蜀咲匱蜍輔＠縺ｪ縺・ｼ医け繝ｼ繝ｫ繝繧ｦ繝ｳ荳崎ｦ・ｼ・
+- 逋ｺ蜍墓凾縺ｮ蜉ｹ譫・
+  1. `player.vy = PLAYER_PHYSICS.springBounceVelocity`・・-950`縲る壼ｸｸ繧ｸ繝｣繝ｳ繝・`-720` 繧医ｊ鬮倥＞・・
   2. `player.onGround = false`
-  3. `soundManager.onJump()` を再生（専用の SFX JSON は今回は作らない）
-  4. バネの上部から上向きにパーティクルを発生（色は `h.glowColor` = ジャンルパレットの safeGlow）
-- **ジャンプ状態の決定**: バネ発動時に `jumpsLeft → 0`、`jumpBufferTimer`・`coyoteTimer`・`jumpHeld` をクリアする。
-  これによりジャンプ状態マシンが bounce の速度をジャンプ速度で上書き（downgrade）することを防止し、
-  `stats.jumps` および `onPlayerJump` フックが発火しないことを保証する（バネは発射源でありジャンプではない）。
-- **形状駆動**: `isHazardous()` の判定（beat_hazard 反転含む）**より前**にバネ処理を行う。
-  反転ON でもバネは常に「弾く・無傷」のまま（色ではなく形状で意味を持つ）
-- 横モード（`_updateHorizontal`）と縦モード（`_updateVertical`）の両方に同じ処理を入れる
-  （横モードの collision ループは sideScroller.ts 約 822〜843 行、縦モードは 654〜674 行）
-- `stats.jumps++` や `onPlayerJump` フックは**発火させない**（ジャンプ操作ではないため。
-  ジャンプ反応系 Feature の二重起動を防ぐ）
+  3. `soundManager.onJump()` 繧貞・逕滂ｼ亥ｰら畑縺ｮ SFX JSON 縺ｯ莉雁屓縺ｯ菴懊ｉ縺ｪ縺・ｼ・
+  4. 繝舌ロ縺ｮ荳企Κ縺九ｉ荳雁髄縺阪↓繝代・繝・ぅ繧ｯ繝ｫ繧堤匱逕滂ｼ郁牡縺ｯ `h.glowColor` = 繧ｸ繝｣繝ｳ繝ｫ繝代Ξ繝・ヨ縺ｮ safeGlow・・
+- **繧ｸ繝｣繝ｳ繝礼憾諷九・豎ｺ螳・*: 繝舌ロ逋ｺ蜍墓凾縺ｫ `jumpsLeft 竊・0`縲～jumpBufferTimer`繝ｻ`coyoteTimer`繝ｻ`jumpHeld` 繧偵け繝ｪ繧｢縺吶ｋ縲・
+  縺薙ｌ縺ｫ繧医ｊ繧ｸ繝｣繝ｳ繝礼憾諷九・繧ｷ繝ｳ縺・bounce 縺ｮ騾溷ｺｦ繧偵ず繝｣繝ｳ繝鈴溷ｺｦ縺ｧ荳頑嶌縺搾ｼ・owngrade・峨☆繧九％縺ｨ繧帝亟豁｢縺励・
+  `stats.jumps` 縺翫ｈ縺ｳ `onPlayerJump` 繝輔ャ繧ｯ縺檎匱轣ｫ縺励↑縺・％縺ｨ繧剃ｿ晁ｨｼ縺吶ｋ・医ヰ繝阪・逋ｺ蟆・ｺ舌〒縺ゅｊ繧ｸ繝｣繝ｳ繝励〒縺ｯ縺ｪ縺・ｼ峨・
+- **蠖｢迥ｶ鬧・虚**: `isHazardous()` 縺ｮ蛻､螳夲ｼ・eat_hazard 蜿崎ｻ｢蜷ｫ繧・・*繧医ｊ蜑・*縺ｫ繝舌ロ蜃ｦ逅・ｒ陦後≧縲・
+  蜿崎ｻ｢ON 縺ｧ繧ゅヰ繝阪・蟶ｸ縺ｫ縲悟ｼｾ縺上・辟｡蛯ｷ縲阪・縺ｾ縺ｾ・郁牡縺ｧ縺ｯ縺ｪ縺丞ｽ｢迥ｶ縺ｧ諢丞袖繧呈戟縺､・・
+- 讓ｪ繝｢繝ｼ繝会ｼ・_updateHorizontal`・峨→邵ｦ繝｢繝ｼ繝会ｼ・_updateVertical`・峨・荳｡譁ｹ縺ｫ蜷後§蜃ｦ逅・ｒ蜈･繧後ｋ
+  ・域ｨｪ繝｢繝ｼ繝峨・ collision 繝ｫ繝ｼ繝励・ sideScroller.ts 邏・822縲・43 陦後∫ｸｦ繝｢繝ｼ繝峨・ 654縲・74 陦鯉ｼ・
+- `stats.jumps++` 繧・`onPlayerJump` 繝輔ャ繧ｯ縺ｯ**逋ｺ轣ｫ縺輔○縺ｪ縺・*・医ず繝｣繝ｳ繝玲桃菴懊〒縺ｯ縺ｪ縺・◆繧√・
+  繧ｸ繝｣繝ｳ繝怜渚蠢懃ｳｻ Feature 縺ｮ莠碁㍾襍ｷ蜍輔ｒ髦ｲ縺撰ｼ・
 
-### 2.2 パラメータ（JSON駆動・マジックナンバー禁止）
+### 2.2 繝代Λ繝｡繝ｼ繧ｿ・・SON鬧・虚繝ｻ繝槭ず繝・け繝翫Φ繝舌・遖∵ｭ｢・・
 
-| ファイル | 追加キー | 値 | 備考 |
+| 繝輔ぃ繧､繝ｫ | 霑ｽ蜉繧ｭ繝ｼ | 蛟､ | 蛯呵・|
 |---|---|---|---|
-| `src/data/config/physics.json` | `springBounceVelocity` | `-950` | 上向き（負） |
+| `src/data/config/physics.json` | `springBounceVelocity` | `-950` | 荳雁髄縺搾ｼ郁ｲ・・|
 | `src/data/config/vfx.json` | `springParticleCount` | `10` | |
-| 〃 | `springParticleSpeedMin` / `springParticleSpeedMax` | `60` / `200` | 上向き扇状 |
-| 〃 | `springParticleLife` | `0.45` | |
-| 〃 | `springParticleSpread` | `2.4` | ラジアン（上向き中心のばらつき幅） |
-| 〃 | `springParticleSize` | `3` | |
+| 縲・| `springParticleSpeedMin` / `springParticleSpeedMax` | `60` / `200` | 荳雁髄縺肴援迥ｶ |
+| 縲・| `springParticleLife` | `0.45` | |
+| 縲・| `springParticleSpread` | `2.4` | 繝ｩ繧ｸ繧｢繝ｳ・井ｸ雁髄縺堺ｸｭ蠢・・縺ｰ繧峨▽縺榊ｹ・ｼ・|
+| 縲・| `springParticleSize` | `3` | |
 
-対応する型・再エクスポート・検証:
+蟇ｾ蠢懊☆繧句梛繝ｻ蜀阪お繧ｯ繧ｹ繝昴・繝医・讀懆ｨｼ:
 
-| ファイル | 変更 |
+| 繝輔ぃ繧､繝ｫ | 螟画峩 |
 |---|---|
-| `src/framework/config-types.ts` | `PhysicsConfig` に `springBounceVelocity: number`、`VfxConfig` に springParticle* 6件 |
-| `src/data/gameBalance.ts` | `PLAYER_PHYSICS` に `springBounceVelocity: _p.springBounceVelocity` |
-| `src/framework/ConfigValidator.ts` | `RANGE_CHECKS` に `{ section: 'physics', field: 'springBounceVelocity', max: 0 }`（上向き=負でなければならない） |
+| `src/framework/config-types.ts` | `PhysicsConfig` 縺ｫ `springBounceVelocity: number`縲～VfxConfig` 縺ｫ springParticle* 6莉ｶ |
+| `src/data/gameBalance.ts` | `PLAYER_PHYSICS` 縺ｫ `springBounceVelocity: _p.springBounceVelocity` |
+| `src/framework/ConfigValidator.ts` | `RANGE_CHECKS` 縺ｫ `{ section: 'physics', field: 'springBounceVelocity', max: 0 }`・井ｸ雁髄縺・雋縺ｧ縺ｪ縺代ｌ縺ｰ縺ｪ繧峨↑縺・ｼ・|
 
-### 2.3 RunnerPlugin スポーンテーブル
+### 2.3 RunnerPlugin 繧ｹ繝昴・繝ｳ繝・・繝悶Ν
 
-`src/genres/BasePlugin.ts` の `RunnerPlugin.spawnTable` に追加:
+`src/genres/BasePlugin.ts` 縺ｮ `RunnerPlugin.spawnTable` 縺ｫ霑ｽ蜉:
 
 ```ts
 { shape: 'spring', placement: 'ground', weightStart: 0, weightEnd: 2, wRange: [28, 36], hRange: [20, 28], safeChance: 1 }
 ```
 
-- `weightStart: 0` → ゲーム開始直後には出現しない（distance 3000px までで重み 2 に逓増）
-- `safeChance: 1` → **常に `isSafe = true`** で出現（_spawnHazard の安全色経路を通る。
-  ティール系で描画され、「安全色=触れてよい」という既存の視覚言語と一致する）
-- `hRange: [20, 28]` → プレイヤー高さ（52）より低い。通常ジャンプ（跳ね約162px）で余裕で越えられる
+- `weightStart: 0` 竊・繧ｲ繝ｼ繝髢句ｧ狗峩蠕後↓縺ｯ蜃ｺ迴ｾ縺励↑縺・ｼ・istance 3000px 縺ｾ縺ｧ縺ｧ驥阪∩ 2 縺ｫ騾灘｢暦ｼ・
+- `safeChance: 1` 竊・**蟶ｸ縺ｫ `isSafe = true`** 縺ｧ蜃ｺ迴ｾ・・spawnHazard 縺ｮ螳牙・濶ｲ邨瑚ｷｯ繧帝壹ｋ縲・
+  繝・ぅ繝ｼ繝ｫ邉ｻ縺ｧ謠冗判縺輔ｌ縲√悟ｮ牙・濶ｲ=隗ｦ繧後※繧医＞縲阪→縺・≧譌｢蟄倥・隕冶ｦ夊ｨ隱槭→荳閾ｴ縺吶ｋ・・
+- `hRange: [20, 28]` 竊・繝励Ξ繧､繝､繝ｼ鬮倥＆・・2・峨ｈ繧贋ｽ弱＞縲る壼ｸｸ繧ｸ繝｣繝ｳ繝暦ｼ郁ｷｳ縺ｭ邏・62px・峨〒菴呵｣輔〒雜翫∴繧峨ｌ繧・
 
-### 2.4 描画
+### 2.4 謠冗判
 
-- `_drawHazard` の switch に専用分岐は**追加しない**。default の rect 経路で描画（安全色で十分読める）
-- 将来改善候補: コイル状の専用 `_drawSpring`（ドキュメントの「今後の改善候補」に明記）
+- `_drawHazard` 縺ｮ switch 縺ｫ蟆ら畑蛻・ｲ舌・**霑ｽ蜉縺励↑縺・*縲Ｅefault 縺ｮ rect 邨瑚ｷｯ縺ｧ謠冗判・亥ｮ牙・濶ｲ縺ｧ蜊∝・隱ｭ繧√ｋ・・
+- 蟆・擂謾ｹ蝟・呵｣・ 繧ｳ繧､繝ｫ迥ｶ縺ｮ蟆ら畑 `_drawSpring`・医ラ繧ｭ繝･繝｡繝ｳ繝医・縲御ｻ雁ｾ後・謾ｹ蝟・呵｣懊阪↓譏手ｨ假ｼ・
 
-### 2.5 設計判断の記録
+### 2.5 險ｭ險亥愛譁ｭ縺ｮ險倬鹸
 
-1. **バネ判定の位置**: 衝突ループ内・`isHazardous()` の直前。`continue` で被弾・safe-touch の
-   両方を経由しない（NearMissComboFeature は `world.hazards` を直接走査するため影響なし）。
-2. **無敵時間中のバネ**: 現状ループは `p.invincible <= 0` ガード内にあるため、無敵中はバネが
-   効かない。Runner には hp feature がなく一撃で終わるため許容する（最小差分優先）。
-   ドキュメントの「実装上の注意点」に明記すること。
-3. **専用 SFX なし**: `onJump()` を流用（タスク指示どおり）。専用 JSON は後回し。
+1. **繝舌ロ蛻､螳壹・菴咲ｽｮ**: 陦晉ｪ√Ν繝ｼ繝怜・繝ｻ`isHazardous()` 縺ｮ逶ｴ蜑阪Ａcontinue` 縺ｧ陲ｫ蠑ｾ繝ｻsafe-touch 縺ｮ
+   荳｡譁ｹ繧堤ｵ檎罰縺励↑縺・ｼ・earMissComboFeature 縺ｯ `world.hazards` 繧堤峩謗･襍ｰ譟ｻ縺吶ｋ縺溘ａ蠖ｱ髻ｿ縺ｪ縺暦ｼ峨・
+2. **辟｡謨ｵ譎る俣荳ｭ縺ｮ繝舌ロ**: 迴ｾ迥ｶ繝ｫ繝ｼ繝励・ `p.invincible <= 0` 繧ｬ繝ｼ繝牙・縺ｫ縺ゅｋ縺溘ａ縲∫┌謨ｵ荳ｭ縺ｯ繝舌ロ縺・
+   蜉ｹ縺九↑縺・３unner 縺ｫ縺ｯ hp feature 縺後↑縺丈ｸ謦・〒邨ゅｏ繧九◆繧∬ｨｱ螳ｹ縺吶ｋ・域怙蟆丞ｷｮ蛻・━蜈茨ｼ峨・
+   繝峨く繝･繝｡繝ｳ繝医・縲悟ｮ溯｣・ｸ翫・豕ｨ諢冗せ縲阪↓譏手ｨ倥☆繧九％縺ｨ縲・
+3. **蟆ら畑 SFX 縺ｪ縺・*: `onJump()` 繧呈ｵ∫畑・医ち繧ｹ繧ｯ謖・､ｺ縺ｩ縺翫ｊ・峨ょｰら畑 JSON 縺ｯ蠕悟屓縺励・
 
-## 3. ドキュメント
+## 3. 繝峨く繝･繝｡繝ｳ繝・
 
-### 3.1 `docs/genre/runner-genre.md`（新規作成）
+### 3.1 `docs/genre/runner-genre.md`・域眠隕丈ｽ懈・・・
 
-> 注: 既存の `Runner.md` はリポジトリに存在しないため、「移動」ではなく新規作成する。
+> 豕ｨ: 譌｢蟄倥・ `Runner.md` 縺ｯ繝ｪ繝昴ず繝医Μ縺ｫ蟄伜惠縺励↑縺・◆繧√√檎ｧｻ蜍輔阪〒縺ｯ縺ｪ縺乗眠隕丈ｽ懈・縺吶ｋ縲・
 
-`docs/genre/tetris-genre.md` と同じ形式で**実装を記録**する（設計ではなく実際の実装）。
-最低限以下のセクション:
+`docs/genre/tetris-genre.md` 縺ｨ蜷後§蠖｢蠑上〒**螳溯｣・ｒ險倬鹸**縺吶ｋ・郁ｨｭ險医〒縺ｯ縺ｪ縺丞ｮ滄圀縺ｮ螳溯｣・ｼ峨・
+譛菴朱剞莉･荳九・繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ:
 
-- 概要
-- アーキテクチャ（ファイル構成: entities.ts / physics.json / vfx.json / gameBalance.ts /
-  config-types.ts / ConfigValidator.ts / sideScroller.ts / BasePlugin.ts / runner.json）
-- ジャンル収束条件（`runner.json` の `thresholds: { tempo: 8 }`、tempo を加算するカード例:
-  `c-tempo-smooth` +2 / `c-tempo-speed` +3 / `c-rhythm-beat` +1 等）
-- ゲーム仕様（操作: 自動走行 + Space ジャンプ/二段ジャンプ。コヨーテ/バッファ。
-  long_air スコア。near_miss_combo。**バネの挙動と数値**）
-- 実装上の注意点（§2.5 の設計判断 + `isSafe`/`safeChance` の関係 + 無敵時間中の非動作）
-- テスト（§4 のテスト一覧と結果）
+- 讎りｦ・
+- 繧｢繝ｼ繧ｭ繝・け繝√Ε・医ヵ繧｡繧､繝ｫ讒区・: entities.ts / physics.json / vfx.json / gameBalance.ts /
+  config-types.ts / ConfigValidator.ts / sideScroller.ts / BasePlugin.ts / runner.json・・
+- 繧ｸ繝｣繝ｳ繝ｫ蜿取據譚｡莉ｶ・・runner.json` 縺ｮ `thresholds: { tempo: 8 }`縲》empo 繧貞刈邂励☆繧九き繝ｼ繝我ｾ・
+  `c-tempo-smooth` +2 / `c-tempo-speed` +3 / `c-rhythm-beat` +1 遲会ｼ・
+- 繧ｲ繝ｼ繝莉墓ｧ假ｼ域桃菴・ 閾ｪ蜍戊ｵｰ陦・+ Space 繧ｸ繝｣繝ｳ繝・莠梧ｮｵ繧ｸ繝｣繝ｳ繝励ゅさ繝ｨ繝ｼ繝・繝舌ャ繝輔ぃ縲・
+  long_air 繧ｹ繧ｳ繧｢縲Ｏear_miss_combo縲・*繝舌ロ縺ｮ謖吝虚縺ｨ謨ｰ蛟､**・・
+- 螳溯｣・ｸ翫・豕ｨ諢冗せ・按ｧ2.5 縺ｮ險ｭ險亥愛譁ｭ + `isSafe`/`safeChance` 縺ｮ髢｢菫・+ 辟｡謨ｵ譎る俣荳ｭ縺ｮ髱槫虚菴懶ｼ・
+- 繝・せ繝茨ｼ按ｧ4 縺ｮ繝・せ繝井ｸ隕ｧ縺ｨ邨先棡・・
 
 ### 3.2 `docs/genre/README.md`
 
-ドキュメント一覧の表に `runner` の行を追加:
-`| runner | [runner-genre.md](./runner-genre.md) | エンドレスランナー（自動走行・二段ジャンプ・バネ） |`
+繝峨く繝･繝｡繝ｳ繝井ｸ隕ｧ縺ｮ陦ｨ縺ｫ `runner` 縺ｮ陦後ｒ霑ｽ蜉:
+`| runner | docs/genre/runner-genre.md（docs/genre/ 配下） | 繧ｨ繝ｳ繝峨Ξ繧ｹ繝ｩ繝ｳ繝翫・・郁・蜍戊ｵｰ陦後・莠梧ｮｵ繧ｸ繝｣繝ｳ繝励・繝舌ロ・・|`
 
-## 4. テスト
+## 4. 繝・せ繝・
 
-### 4.1 ユニットテスト `tests/unit/game/SpringFeature.test.ts`（新規）
+### 4.1 繝ｦ繝九ャ繝医ユ繧ｹ繝・`tests/unit/game/SpringFeature.test.ts`・域眠隕擾ｼ・
 
-パターン参照: `tests/unit/game/multiHitGuard.test.ts`
-（`new SideScroller(canvas, rules)` + private メソッド呼び出し。
-`any` を使わず、`scroller as unknown as { ... }` の型付きキャストで private へアクセスする）
+繝代ち繝ｼ繝ｳ蜿ら・: `tests/unit/game/multiHitGuard.test.ts`
+・・new SideScroller(canvas, rules)` + private 繝｡繧ｽ繝・ラ蜻ｼ縺ｳ蜃ｺ縺励・
+`any` 繧剃ｽｿ繧上★縲～scroller as unknown as { ... }` 縺ｮ蝙倶ｻ倥″繧ｭ繝｣繧ｹ繝医〒 private 縺ｸ繧｢繧ｯ繧ｻ繧ｹ縺吶ｋ・・
 
-必須テスト:
+蠢・医ユ繧ｹ繝・
 
-1. **バネがプレイヤーを弾く**: 落下中（`vy > 0`）or 接地でバネと重なったプレイヤーが
-   `_updateHorizontal` 1 フレーム後に `vy === PLAYER_PHYSICS.springBounceVelocity`、
-   `onGround === false` になる
-2. **バネはプレイヤーにダメージを与えない**: バネと重なる状態で `_updateHorizontal` を実行しても
-   `stats.collisions === 0`、`dead === false`、HP 変化なし
-3. **バネの跳ね速度は通常ジャンプより高い**:
+1. **繝舌ロ縺後・繝ｬ繧､繝､繝ｼ繧貞ｼｾ縺・*: 關ｽ荳倶ｸｭ・・vy > 0`・頴r 謗･蝨ｰ縺ｧ繝舌ロ縺ｨ驥阪↑縺｣縺溘・繝ｬ繧､繝､繝ｼ縺・
+   `_updateHorizontal` 1 繝輔Ξ繝ｼ繝蠕後↓ `vy === PLAYER_PHYSICS.springBounceVelocity`縲・
+   `onGround === false` 縺ｫ縺ｪ繧・
+2. **繝舌ロ縺ｯ繝励Ξ繧､繝､繝ｼ縺ｫ繝繝｡繝ｼ繧ｸ繧剃ｸ弱∴縺ｪ縺・*: 繝舌ロ縺ｨ驥阪↑繧狗憾諷九〒 `_updateHorizontal` 繧貞ｮ溯｡後＠縺ｦ繧・
+   `stats.collisions === 0`縲～dead === false`縲？P 螟牙喧縺ｪ縺・
+3. **繝舌ロ縺ｮ霍ｳ縺ｭ騾溷ｺｦ縺ｯ騾壼ｸｸ繧ｸ繝｣繝ｳ繝励ｈ繧企ｫ倥＞**:
    `PLAYER_PHYSICS.springBounceVelocity < PLAYER_PHYSICS.jumpVelocity`
-   （つまり絶対値で 950 > 720）
+   ・医▽縺ｾ繧顔ｵｶ蟇ｾ蛟､縺ｧ 950 > 720・・
 
-追加テスト（推奨・実装容易なもの):
+霑ｽ蜉繝・せ繝茨ｼ域耳螂ｨ繝ｻ螳溯｣・ｮｹ譏薙↑繧ゅ・):
 
-4. 上昇中（`vy < 0`）のバネは再発動しない
-5. 縦モード（`_updateVertical`）でもバネが弾く
+4. 荳頑・荳ｭ・・vy < 0`・峨・繝舌ロ縺ｯ蜀咲匱蜍輔＠縺ｪ縺・
+5. 邵ｦ繝｢繝ｼ繝会ｼ・_updateVertical`・峨〒繧ゅヰ繝阪′蠑ｾ縺・
 
-### 4.2 検証コマンド
+### 4.2 讀懆ｨｼ繧ｳ繝槭Φ繝・
 
-- `npx vitest run`（全ユニットテストが通ること）
-- `npm run build`（vue-tsc + vite build）
+- `npx vitest run`・亥・繝ｦ繝九ャ繝医ユ繧ｹ繝医′騾壹ｋ縺薙→・・
+- `npm run build`・・ue-tsc + vite build・・
 - `npm run lint`
 - `npm run validate`
 
-### 4.3 視覚確認（実装後の検証フェーズで実施）
+### 4.3 隕冶ｦ夂｢ｺ隱搾ｼ亥ｮ溯｣・ｾ後・讀懆ｨｼ繝輔ぉ繝ｼ繧ｺ縺ｧ螳滓命・・
 
-- dev サーバ起動（`DEBUG_MODE = import.meta.env.DEV` で dev 環境ではデバッグパネル出現）
-- デバッグパネルの `force genre` で `runner` を強制
-- スpring（ティール色の矩形）が地面に出現すること、プレイヤーが踏むと高く弾かれることを
-  スクリーンショット/動画で確認
+- dev 繧ｵ繝ｼ繝占ｵｷ蜍包ｼ・DEBUG_MODE = import.meta.env.DEV` 縺ｧ dev 迺ｰ蠅・〒縺ｯ繝・ヰ繝・げ繝代ロ繝ｫ蜃ｺ迴ｾ・・
+- 繝・ヰ繝・げ繝代ロ繝ｫ縺ｮ `force genre` 縺ｧ `runner` 繧貞ｼｷ蛻ｶ
+- 繧ｹpring・医ユ繧｣繝ｼ繝ｫ濶ｲ縺ｮ遏ｩ蠖｢・峨′蝨ｰ髱｢縺ｫ蜃ｺ迴ｾ縺吶ｋ縺薙→縲√・繝ｬ繧､繝､繝ｼ縺瑚ｸ上・縺ｨ鬮倥￥蠑ｾ縺九ｌ繧九％縺ｨ繧・
+  繧ｹ繧ｯ繝ｪ繝ｼ繝ｳ繧ｷ繝ｧ繝・ヨ/蜍慕判縺ｧ遒ｺ隱・
 
-## 5. 変更ファイル一覧（想定）
+## 5. 螟画峩繝輔ぃ繧､繝ｫ荳隕ｧ・域Φ螳夲ｼ・
 
-| ファイル | 種別 |
+| 繝輔ぃ繧､繝ｫ | 遞ｮ蛻･ |
 |---|---|
-| `src/game/entities.ts` | 修改（`HazardShape` に `'spring'`） |
-| `src/data/config/physics.json` | 修改（`springBounceVelocity: -950`） |
-| `src/data/config/vfx.json` | 修改（springParticle* 6件） |
-| `src/framework/config-types.ts` | 修改（PhysicsConfig / VfxConfig） |
-| `src/data/gameBalance.ts` | 修改（PLAYER_PHYSICS） |
-| `src/framework/ConfigValidator.ts` | 修改（RANGE_CHECKS 1件） |
-| `src/game/sideScroller.ts` | 修改（横/縦 collision ループ + `_onSpringBounce` ヘルパー） |
-| `src/genres/BasePlugin.ts` | 修改（RunnerPlugin.spawnTable 1行） |
-| `tests/unit/game/SpringFeature.test.ts` | 新規 |
-| `docs/genre/runner-genre.md` | 新規 |
-| `docs/genre/README.md` | 修改（索引1行） |
+| `src/game/entities.ts` | 菫ｮ謾ｹ・・HazardShape` 縺ｫ `'spring'`・・|
+| `src/data/config/physics.json` | 菫ｮ謾ｹ・・springBounceVelocity: -950`・・|
+| `src/data/config/vfx.json` | 菫ｮ謾ｹ・・pringParticle* 6莉ｶ・・|
+| `src/framework/config-types.ts` | 菫ｮ謾ｹ・・hysicsConfig / VfxConfig・・|
+| `src/data/gameBalance.ts` | 菫ｮ謾ｹ・・LAYER_PHYSICS・・|
+| `src/framework/ConfigValidator.ts` | 菫ｮ謾ｹ・・ANGE_CHECKS 1莉ｶ・・|
+| `src/game/sideScroller.ts` | 菫ｮ謾ｹ・域ｨｪ/邵ｦ collision 繝ｫ繝ｼ繝・+ `_onSpringBounce` 繝倥Ν繝代・・・|
+| `src/genres/BasePlugin.ts` | 菫ｮ謾ｹ・・unnerPlugin.spawnTable 1陦鯉ｼ・|
+| `tests/unit/game/SpringFeature.test.ts` | 譁ｰ隕・|
+| `docs/genre/runner-genre.md` | 譁ｰ隕・|
+| `docs/genre/README.md` | 菫ｮ謾ｹ・育ｴ｢蠑・陦鯉ｼ・|
 
-## 6. コーディング規約（再確認）
+## 6. 繧ｳ繝ｼ繝・ぅ繝ｳ繧ｰ隕冗ｴ・ｼ亥・遒ｺ隱搾ｼ・
 
-- `any` 型禁止（ESLint `@typescript-eslint/no-explicit-any`: error。テストも `any` 不使用）
-- ソース内の数値リテラル禁止 → 必ず JSON 設定経由（`PLAYER_PHYSICS` / `VFX`）
-- 重複ロジック（横/縦で同じバネ処理）は `_onSpringBounce` ヘルパーに抽出
-- コメントは「なぜ」だけ。命名規則は既存に従う（private は `_` プレフィックス）
+- `any` 蝙狗ｦ∵ｭ｢・・SLint `@typescript-eslint/no-explicit-any`: error縲ゅユ繧ｹ繝医ｂ `any` 荳堺ｽｿ逕ｨ・・
+- 繧ｽ繝ｼ繧ｹ蜀・・謨ｰ蛟､繝ｪ繝・Λ繝ｫ遖∵ｭ｢ 竊・蠢・★ JSON 險ｭ螳夂ｵ檎罰・・PLAYER_PHYSICS` / `VFX`・・
+- 驥崎､・Ο繧ｸ繝・け・域ｨｪ/邵ｦ縺ｧ蜷後§繝舌ロ蜃ｦ逅・ｼ峨・ `_onSpringBounce` 繝倥Ν繝代・縺ｫ謚ｽ蜃ｺ
+- 繧ｳ繝｡繝ｳ繝医・縲後↑縺懊阪□縺代ょ多蜷崎ｦ丞援縺ｯ譌｢蟄倥↓蠕薙≧・・rivate 縺ｯ `_` 繝励Ξ繝輔ぅ繝・け繧ｹ・・
