@@ -7,6 +7,7 @@
   "playerHeight": 52,
   "jumpVelocity": -720,
   "doubleJumpVelocity": -610,
+  "springBounceVelocity": -950,
   "jumpCutMultiplier": 0.45,
   "fallGravityMult": 1.65,
   "runSpeed": 240,

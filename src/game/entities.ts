@@ -42,7 +42,7 @@ export class Player {
 // ──────────────────────────────────────────────────────────────────────
 // Hazard（障害物）
 // ──────────────────────────────────────────────────────────────────────
-export type HazardShape = 'rect' | 'spike' | 'pillar' | 'diamond'
+export type HazardShape = 'rect' | 'spike' | 'pillar' | 'diamond' | 'spring'
 
 export type HazardDirection = 'right' | 'left'
 

@@ -19,6 +19,7 @@ export interface PhysicsConfig {
   playerStartX: number
   jumpVelocity: number
   doubleJumpVelocity: number
+  springBounceVelocity: number
   jumpCutMultiplier: number
   gravity: number
   fallGravityMult: number
@@ -113,6 +114,12 @@ export interface VfxConfig {
   landParticleYRatio: number
   landParticleColor: string
   landParticleSize: number
+  springParticleCount: number
+  springParticleSpeedMin: number
+  springParticleSpeedMax: number
+  springParticleLife: number
+  springParticleSpread: number
+  springParticleSize: number
   hitParticleCount: number
   hitParticleSpeedMin: number
   hitParticleSpeedMax: number
