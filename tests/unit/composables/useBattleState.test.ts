@@ -5,7 +5,6 @@ import { BATTLE_CONTENT } from '../../../src/data/rpg/battleContent'
 import { BATTLE, ENCOUNTER_GROUPS, SKILL_POINTS } from '../../../src/data/tunables'
 import { GENRES } from '../../../src/data/genres'
 import { evalScoreFormula } from '../../../src/domain/scoreCalc'
-import type { BattleStatus } from '../../../src/domain/battle/types'
 
 type Battle = ReturnType<typeof useBattleState>
 
@@ -97,11 +96,6 @@ function losingHarness(): { battle: Battle; pass: () => void } {
 /** 現在の戦闘が終わる（ドラフト or 決着）まで攻撃し続ける */
 function fightUntilBattleEnds(h: { battle: Battle; act: () => void }): void {
   for (let i = 0; i < MAX_TURNS && h.battle.state.status === 'battle'; i++) h.act()
-}
-
-/** 進行中に何度も変わる値なので、型の絞り込みを残さずに都度読み直す */
-function statusOf(battle: Battle): BattleStatus {
-  return battle.state.status
 }
 
 /** ドラフト候補から「未所持のアクティブ」を優先して選ぶ（枠を埋めるため） */

@@ -239,10 +239,6 @@ describe('skillDraft: ドラフト抽選', () => {
 })
 
 describe('skillDraft: ドラフト選択の適用', () => {
-  const a1 = makeActive({ id: 'a1' })
-  const p1 = makePassive({ id: 'p1' })
-  const t1 = makeTrait({ id: 't1' })
-
   function apply(player: Combatant, option: DraftOption) {
     const state = makeState({ player })
     applyDraftChoice(state, option)

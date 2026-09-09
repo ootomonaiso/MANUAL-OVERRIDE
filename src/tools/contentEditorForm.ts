@@ -76,9 +76,17 @@ export function getAtPath(obj: unknown, path: string): unknown {
   }, obj)
 }
 
+/** `__proto__`・`constructor`・`prototype` を経由したプロトタイプ汚染を防ぐためのキー検査 */
+const UNSAFE_PATH_KEYS = new Set(['__proto__', 'constructor', 'prototype'])
+
+function assertSafePathKey(key: string): void {
+  if (UNSAFE_PATH_KEYS.has(key)) throw new Error(`setAtPath: 危険なパスセグメントです: ${key}`)
+}
+
 /** dot区切りのパスへ値を書く。中間のオブジェクト/配列が無ければ作る */
 export function setAtPath(obj: Record<string, unknown>, path: string, value: unknown): void {
   const keys = path.split('.')
+  for (const key of keys) assertSafePathKey(key)
   let cur: Record<string, unknown> = obj
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i]

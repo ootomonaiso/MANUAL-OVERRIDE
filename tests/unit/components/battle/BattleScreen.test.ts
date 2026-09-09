@@ -5,7 +5,6 @@ import { useBattleState, type BattleScheduler } from '../../../../src/composable
 import { BATTLE_CONTENT, BATTLE_EFFECTS } from '../../../../src/data/rpg/battleContent'
 import { soundManager } from '../../../../src/plugins/SoundManager'
 import { BATTLE, SKILL_POINTS } from '../../../../src/data/tunables'
-import type { BattleStatus } from '../../../../src/domain/battle/types'
 
 type Battle = ReturnType<typeof useBattleState>
 
@@ -119,11 +118,6 @@ async function openBattleMenu(host: HTMLElement): Promise<void> {
   const battleCommand = commandItems(host).find(b => b.textContent?.includes('BATTLE'))
   battleCommand?.click()
   await nextTick()
-}
-
-/** 進行中に何度も変わる値なので、型の絞り込みを残さずに都度読み直す */
-function statusOf(battle: Battle): BattleStatus {
-  return battle.state.status
 }
 
 /** 現在の戦闘が終わるまでUIから攻撃し続ける */
