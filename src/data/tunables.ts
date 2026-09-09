@@ -139,3 +139,13 @@ export const PIXELART = _c.pixelart
 // NEAR_MISS — near-miss combo パラメータ
 // ─────────────────────────────────────────────────────────────
 export const NEAR_MISS = _c.near_miss
+
+// ─────────────────────────────────────────────────────────────
+// AQUATIC_TUNING — aquatic ジャンル固有パラメータ
+// ─────────────────────────────────────────────────────────────
+export const AQUATIC_TUNING = _c.aquatic
+
+// ─────────────────────────────────────────────────────────────
+// GIMMICKS — runner/bullet_runner/platformer 共通ギミック
+// ─────────────────────────────────────────────────────────────
+export const GIMMICKS = _c.gimmicks

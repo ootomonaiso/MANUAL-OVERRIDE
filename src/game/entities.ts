@@ -59,6 +59,22 @@ export class Hazard {
   floatAmp = 0  // 上下に浮遊する振幅
   direction: HazardDirection = 'right'
 
+  // ── ギミック用フラグ（runner/bullet_runner/platformer/aquatic）。既定値は全て無効化状態 ──
+  /** 弾の当たり判定から除外する（ShootFeature が参照）。障害物・ギミックは弾で壊れない */
+  isGimmick = false
+  /** 上から乗ると着地できる足場（isSafe と併用。着地判定は sideScroller が処理） */
+  isPlatform = false
+  /** 着地時に強く跳ね返すバネ（isPlatform 相当の着地判定 + 反発） */
+  isSpring = false
+  /** 横スクロール専用: 地面が欠落しているマーカー。この区間では通常の地面着地をしない */
+  isHole = false
+  /** 足場上のプレイヤーに与える水平速度（コンベア用。px/sec） */
+  conveyorVx = 0
+  /** 水平ドリフト（climb の移動足場用）。MovementFeature の vertical_scroll ドリフト対象 */
+  driftEnabled = false
+  /** aquatic専用: isSafe な地形・生物・回復オブジェクトの意味分け */
+  interactionKind: 'terrain' | 'creature' | 'heal' | undefined = undefined
+
   constructor(
     x: number, y: number, w: number, h: number,
     color: string, glowColor: string,

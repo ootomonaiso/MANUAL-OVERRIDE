@@ -3,12 +3,12 @@
   "id": "bullet_runner",
   "label": "弾幕ランナー",
   "thresholds": { "tempo": 7, "enemy": 6 },
-  "enableFeatures": ["auto_run", "shoot", "enemy_hp"],
+  "enableFeatures": ["auto_run", "shoot", "enemy_hp", "double_jump", "long_air"],
   "disableFeatures": ["grid_stop", "puzzle_solve", "slow_precise", "stealth_mode"],
   "scoreFormula": "kills * 100 + distance * 1.5 + maxCombo * 60",
   "manualReveal": "これは弾幕ランナーになりました。走りながら戦ってください。",
   "theme": "stg",
-  "bgColor": "#100010",
+  "bgColor": "#08000f",
   "controls": {
     "jump": "Space",
     "moveLeft": "ArrowLeft",
@@ -18,5 +18,10 @@
     "shoot": "z"
   },
   "gravity": 1600,
-  "endingFlavor": "あなたは走りながら撃ち続けた。説明書は読む間もなかった。"
+  "endingFlavor": "あなたは走りながら撃ち続けた。説明書は読む間もなかった。",
+  "spawnDensity": {
+    "baseInterval": 1300,
+    "minInterval": 480,
+    "decayRate": 0.00013
+  }
 }

@@ -502,6 +502,38 @@ export interface HudSafezoneConfig {
   boundaryLineAlpha: number
 }
 
+/** aquatic.json — aquatic ジャンル固有パラメータ（酸素ゲージ・地形/生物/回復の相互作用） */
+export interface AquaticConfig {
+  /** 酸素の時間経過減少率（毎秒 maxHp に対する割合換算値） */
+  oxygenDecayRate: number
+  /** 地形（岩）接触中、プレイヤーを上方向へ押し戻す速度 (px/sec) */
+  terrainPushSpeed: number
+  /** 危険生物・構造物接触中の酸素減少率（毎秒） */
+  creatureDamageRate: number
+  /** サンゴ接触中の酸素回復率（毎秒） */
+  healRate: number
+  /** サンゴ接触中に発生する泡パーティクルの生成間隔 (秒) */
+  bubbleIntervalSec: number
+}
+
+/** gimmicks.json — runner/bullet_runner/platformer 共通ギミック（穴・足場・バネ・コンベア・溶岩） */
+export interface GimmicksConfig {
+  /** 穴に落下し画面外(下)へ抜けたと判定する余白 (px) */
+  holeDeathMarginPx: number
+  /** 足場着地判定: 足場より上にいてよい許容量 (px)。大きいほど貫通しにくい */
+  platformLandToleranceUpPx: number
+  /** 足場着地判定: 1フレームで足場を通過してよい下方向の許容量 (px) */
+  platformLandToleranceDownPx: number
+  /** バネ着地時の反発速度 (px/sec, 負値で上方向) */
+  springBounceVelocity: number
+  /** コンベアのデフォルト水平速度 (px/sec) */
+  conveyorDefaultSpeed: number
+  /** climb フィーチャー: 画面下端の溶岩帯の高さ (px) */
+  lavaBandHeightPx: number
+  /** climb フィーチャー: 移動足場の水平ドリフト振幅 (px) */
+  movingPlatformDriftAmp: number
+}
+
 /** genre_params.json — ジャンルパラメータ設計支援 */
 export interface GenreParamsConfig {
   recommendedSingleChoice: number
@@ -581,6 +613,8 @@ export interface GenreDefJSON {
   environment?: string
   scrollDirection?: string
   gravity?: number
+  /** 最大HP/ゲージ上限（hp/oxygen Feature 有効時）。省略時は RULE_DEFAULTS.playerMaxHp（3） */
+  playerMaxHp?: number
   controls?: Partial<Controls>
   /** TSプラグインなしでビジュアルをカスタマイズする場合に指定。省略時はthemeから自動決定。 */
   visual?: GenreVisualConfig
@@ -641,6 +675,8 @@ export interface GameConfigMap {
   near_miss: NearMissConfig
   genre_defaults: GenreDefaultsConfig
   palette_defaults: PaletteDefaultsConfig
+  aquatic: AquaticConfig
+  gimmicks: GimmicksConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap

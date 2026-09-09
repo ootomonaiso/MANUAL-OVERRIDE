@@ -8,10 +8,12 @@
  */
 
 import { GenrePluginBase } from '../engine/GenrePluginBase'
-import type { SpawnEntry } from '../engine/types'
+import type { SpawnEntry, MutableWorld } from '../engine/types'
 import type { GenreId } from '../domain/types'
+import type { Hazard } from '../game/entities'
 import { PixelCanvas } from '../game/render'
 import { PIXELART } from '../data/tunables'
+import { drawGimmickHazard } from './shared/gimmickRender'
 
 // 山シルエット（drawFarLayer）の描画範囲マージン。スクロール時の端の途切れを防ぐ
 // （旧実装の sin サンプリング step=40 と同じ余白をセル単位で踏襲）
@@ -121,25 +123,37 @@ export class BasePlugin extends DarkThemePlugin {
 }
 
 // ──────────────────────────────────────────────────────────────────────
-// RunnerPlugin — 'runner' ジャンル
+// RunnerPlugin — 'runner' ジャンル（昼の都市。奥にビル街）
 // ──────────────────────────────────────────────────────────────────────
 export class RunnerPlugin extends DarkThemePlugin {
   readonly id: GenreId = 'runner'
-  readonly skyColors: readonly [string, string] = ['#0d0d1e', '#1e1e3e']
-  readonly groundColors: readonly [string, string] = ['#1a1a3a', '#0e0e22']
-  readonly farLayerColor = '#1a1a4a'
-  readonly midLayerColor = '#15153a'
-  readonly starColor: string | undefined = '#ffffff'
+  readonly skyColors: readonly [string, string] = ['#4fa8e6', '#bfe6ff']
+  readonly groundColors: readonly [string, string] = ['#6b6b70', '#4a4a50']
+  readonly farLayerColor = '#8fb4d6'
+  readonly midLayerColor = '#5f7a94'
+  // 昼間のため星なし。DarkThemePlugin.drawMidLayer の窓灯りは starColor を流用する実装
+  // だが、undefined 時は midLayerColor にフォールバックし窓が浮かず自然に馴染む
+  readonly starColor: string | undefined = undefined
   readonly palette = {
     danger: '#e74c3c', dangerGlow: '#ff6b6b',
-    safe:   '#00cec9', safeGlow:   '#55efc4',
+    safe:   '#00b894', safeGlow:   '#55efc4',
   }
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',    placement: 'ground', weightStart: 8,  weightEnd: 5,  wRange: [22, 40], hRange: [30, 55] },
-    { shape: 'rect',    placement: 'air',    weightStart: 2,  weightEnd: 4,  wRange: [28, 48], hRange: [25, 40] },
-    { shape: 'spike',   placement: 'ground', weightStart: 1,  weightEnd: 5,  wRange: [22, 40], hRange: [40, 65] },
-    { shape: 'pillar',  placement: 'ground', weightStart: 0,  weightEnd: 3,  wRange: [14, 18], hRange: [70, 130] },
+    { shape: 'rect',    placement: 'ground', weightStart: 7,  weightEnd: 4,  wRange: [22, 40], hRange: [30, 55] },
+    { shape: 'pillar',  placement: 'ground', weightStart: 0,  weightEnd: 2,  wRange: [14, 18], hRange: [70, 130] },
+    { shape: 'diamond', placement: 'ground', weightStart: 1,  weightEnd: 5,  wRange: [26, 40], hRange: [34, 46], colorOverride: '#c0392b', safeColorOverride: '#8e2418' },
+    // ギミック: 穴（落下死）・空中足場（二段ジャンプで着地）・バネ（強反発）
+    { shape: 'rect', placement: 'ground', weightStart: 1, weightEnd: 3, wRange: [50, 90], hRange: [20, 20],
+      direction: 'right', safeChance: 1, isHole: true, isGimmick: true },
+    { shape: 'rect', placement: 'air', weightStart: 2, weightEnd: 4, wRange: [70, 110], hRange: [16, 16],
+      safeChance: 1, isPlatform: true, isGimmick: true, colorOverride: '#7a5a3a', safeColorOverride: '#5a4128' },
+    { shape: 'rect', placement: 'ground', weightStart: 1, weightEnd: 2, wRange: [30, 30], hRange: [16, 16],
+      safeChance: 1, isSpring: true, isGimmick: true, colorOverride: '#e0a030', safeColorOverride: '#a87422' },
   ]
+
+  override drawHazard(ctx: CanvasRenderingContext2D, hazard: Hazard, sx: number, world: MutableWorld): boolean {
+    return drawGimmickHazard(ctx, hazard, sx, world.canvas.height)
+  }
 }
 
 export default [new BasePlugin(), new RunnerPlugin()]

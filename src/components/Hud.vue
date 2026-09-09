@@ -86,6 +86,18 @@ const comboGlow = computed(() => {
         >♥</span>
       </div>
 
+      <!-- 酸素ゲージ（oxygen feature あり時。aquatic 用） -->
+      <div v-if="features.has('oxygen')" class="hud-oxygen">
+        <span class="hud-oxygen-label">O2</span>
+        <div class="hud-oxygen-bar">
+          <div
+            class="hud-oxygen-fill"
+            :class="{ low: hp / maxHp < 0.25 }"
+            :style="{ width: Math.max(0, Math.min(100, (hp / maxHp) * 100)) + '%' }"
+          />
+        </div>
+      </div>
+
       <!-- STG: Kill / Combo -->
       <template v-if="features.has('shoot') || features.has('enemy_hp')">
         <div class="hud-stat">
@@ -196,6 +208,33 @@ const comboGlow = computed(() => {
 .hud-hp-heart.empty {
   color: var(--genre-glow, var(--green-glow));
   text-shadow: none;
+}
+.hud-oxygen {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hud-oxygen-label {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: #66ccff;
+  letter-spacing: 0.05em;
+}
+.hud-oxygen-bar {
+  width: 90px;
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(0, 20, 40, 0.6);
+  border: 1px solid rgba(102, 204, 255, 0.4);
+  overflow: hidden;
+}
+.hud-oxygen-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0088cc, #66ccff);
+  transition: width 0.15s linear;
+}
+.hud-oxygen-fill.low {
+  background: linear-gradient(90deg, #cc3344, #ff6688);
 }
 .hud-stat {
   display: flex;

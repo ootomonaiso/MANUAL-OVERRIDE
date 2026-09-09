@@ -3,16 +3,22 @@
  * 'aquatic' ジャンル（水中アドベンチャー）のプラグイン。
  *
  * 深海の静寂。暗い青緑・生物発光・珊瑚礁。
- * ダイバーが深淵へ潜る探索スタイル。
+ * ダイバーが深淵へ潜る探索スタイル。地形は岩、危険生物・回復サンゴが下から迫り上げる。
  */
 
 import { GenrePluginBase } from '../engine/GenrePluginBase'
-import type { SpawnEntry } from '../engine/types'
+import type { SpawnEntry, MutableWorld } from '../engine/types'
 import type { GenreId } from '../domain/types'
+import type { Hazard } from '../game/entities'
 import { PixelCanvas } from '../game/render'
 
 // ダイバーのフィン（バタ足）アニメーションのフレーム数
 const SWIM_FRAME_COUNT = 2
+
+// 岩のファセット描画に使う疑似乱数ハッシュ（h.x はハザードの寿命中不変なのでちらつかない）
+function _hashOf(seed: number): number {
+  return (Math.floor(seed) * 2654435761) >>> 0
+}
 
 export class AquaticPlugin extends GenrePluginBase {
   readonly id: GenreId = 'aquatic'
@@ -27,6 +33,9 @@ export class AquaticPlugin extends GenrePluginBase {
     danger: '#ff3366', dangerGlow: '#ff88aa',
     safe:   '#00ffcc', safeGlow:   '#66ffee',
   }
+
+  // 縦スクロールでも遠景（岩山）・中景（珊瑚・海藻）レイヤーを描画する
+  readonly verticalBackgroundLayers = true
 
   readonly hazardConfig = {
     glowBlur: 10,
@@ -44,13 +53,35 @@ export class AquaticPlugin extends GenrePluginBase {
     land:  'rgba(0,120,160,0.45)',
   }
 
-  // 珊瑚・岩礁・海流障害物。アイテム（宝）が浮いている
+  // 岩（地形・押し戻し）・危険生物（酸素大幅減少）・サンゴ（酸素回復）。
+  // すべて direction:'left' = 画面下から出現し上へ流れる（sideScroller._updateVertical）。
+  // すべて safeChance:1（isSafe扱いにして通常の即死経路を迂回し、AquaticFeature が処理する）。
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',    placement: 'ground', weightStart: 6, weightEnd: 5, wRange: [22, 42], hRange: [30, 55], safeChance: 0.30 },
-    { shape: 'pillar',  placement: 'ground', weightStart: 3, weightEnd: 4, wRange: [14, 22], hRange: [55, 110], safeChance: 0.20 },
-    { shape: 'spike',   placement: 'ground', weightStart: 2, weightEnd: 3, wRange: [20, 36], hRange: [28, 48], safeChance: 0.15 },
-    { shape: 'diamond', placement: 'float',  weightStart: 2, weightEnd: 5, wRange: [24, 36], hRange: [24, 36], safeChance: 0.60 },
-    { shape: 'rect',    placement: 'air',    weightStart: 1, weightEnd: 2, wRange: [22, 38], hRange: [20, 34], safeChance: 0.35 },
+    {
+      shape: 'rect', placement: 'ground', weightStart: 6, weightEnd: 7,
+      wRange: [40, 90], hRange: [50, 110], direction: 'left', safeChance: 1,
+      colorOverride: '#5a5248', safeColorOverride: '#3a342c', interactionKind: 'terrain',
+    },
+    {
+      shape: 'pillar', placement: 'ground', weightStart: 3, weightEnd: 4,
+      wRange: [20, 34], hRange: [70, 140], direction: 'left', safeChance: 1,
+      colorOverride: '#4a4238', safeColorOverride: '#2e2a22', interactionKind: 'terrain',
+    },
+    {
+      shape: 'spike', placement: 'air', weightStart: 2, weightEnd: 5,
+      wRange: [26, 40], hRange: [30, 48], direction: 'left', safeChance: 1,
+      colorOverride: '#ff2255', safeColorOverride: '#aa1133', interactionKind: 'creature',
+    },
+    {
+      shape: 'diamond', placement: 'air', weightStart: 1, weightEnd: 3,
+      wRange: [30, 44], hRange: [30, 44], direction: 'left', safeChance: 1,
+      colorOverride: '#ff4477', safeColorOverride: '#cc2255', interactionKind: 'creature',
+    },
+    {
+      shape: 'diamond', placement: 'air', weightStart: 3, weightEnd: 2,
+      wRange: [26, 36], hRange: [26, 36], direction: 'left', safeChance: 1,
+      colorOverride: '#22ffcc', safeColorOverride: '#11cc99', interactionKind: 'heal',
+    },
   ]
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
@@ -139,6 +170,35 @@ export class AquaticPlugin extends GenrePluginBase {
       px.circle(w * 0.78, h * 0.08, 3, '#aaddff')
       px.circle(w * 0.85, h * 0.01, 2, '#aaddff')
     })
+  }
+
+  /** 地形（岩）だけ独自の岩肌ファセット描画にする。危険生物・サンゴはデフォルト形状描画に任せる */
+  override drawHazard(ctx: CanvasRenderingContext2D, hazard: Hazard, sx: number, _world: MutableWorld): boolean {
+    if (hazard.interactionKind !== 'terrain') return false
+
+    const px = new PixelCanvas(ctx)
+    const { w, h } = hazard
+    const y = hazard.rect.y
+    const seed = _hashOf(hazard.x + hazard.y)
+    const base = '#4d453a'
+    const shade = '#332d24'
+    const highlight = '#665c4c'
+
+    px.rect(sx, y, w, h, base)
+    // 岩肌のファセット（ハザードごとに決定論的な位置・サイズで安定表示）
+    const facetCount = 3 + (seed % 3)
+    for (let i = 0; i < facetCount; i++) {
+      const fh = (seed >> (i * 4)) % 0xffff
+      const fx = sx + (fh % Math.max(1, w - 12))
+      const fy = y + ((fh >> 4) % Math.max(1, h - 12))
+      const fw = 8 + (fh >> 8) % 14
+      const fcolor = (fh & 1) === 0 ? shade : highlight
+      px.tri(fx, fy, fw, fw * 0.8, (fh & 2) === 0 ? 'up' : 'down', fcolor)
+    }
+    // 縁取り
+    px.line(sx, y, sx + w, y, highlight, 1)
+    px.line(sx, y + h, sx + w, y + h, shade, 2)
+    return true
   }
 }
 

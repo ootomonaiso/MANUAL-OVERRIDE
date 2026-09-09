@@ -1,0 +1,9 @@
+{
+  "$comment": "aquatic ジャンル固有パラメータ。酸素ゲージは genres/aquatic.json の playerMaxHp=100 として player.hp を流用する",
+  "section": "aquatic",
+  "oxygenDecayRate": 4,
+  "terrainPushSpeed": 220,
+  "creatureDamageRate": 40,
+  "healRate": 26,
+  "bubbleIntervalSec": 0.12
+}

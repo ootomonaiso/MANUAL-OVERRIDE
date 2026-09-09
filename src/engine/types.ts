@@ -242,9 +242,26 @@ export interface SpawnEntry {
   /**
     * ハザードの移動方向。'right' = 右から左へ（デフォルト）、
     * 'left' = 左から右へ（サバイバルの両方向攻撃対応）。
+    * 縦スクロールでは 'left' = 画面下から出現し上へ流れる（aquatic / platformer の climb 用）。
     * 省略時は 'right'。
     */
   direction?: HazardDirection
+
+  // ── ギミック用フィールド（runner / bullet_runner / platformer / aquatic） ──
+  /** true の場合、弾の当たり判定から除外する（障害物・ギミックは弾で壊れない） */
+  isGimmick?: boolean
+  /** true の場合、上から乗ると着地できる足場になる */
+  isPlatform?: boolean
+  /** true の場合、着地時に強く跳ね返すバネになる（isPlatform 相当の着地判定 + 反発） */
+  isSpring?: boolean
+  /** true の場合、横スクロールの地面欠落マーカー（穴）になる */
+  isHole?: boolean
+  /** 足場上のプレイヤーに与える水平速度（コンベア用。px/sec）。省略時 0 */
+  conveyorVx?: number
+  /** 水平ドリフト対象にする（climb の移動足場用） */
+  driftEnabled?: boolean
+  /** aquatic専用: isSafe な地形・生物・回復オブジェクトの意味分け */
+  interactionKind?: 'terrain' | 'creature' | 'heal'
 }
 
 /** distance に基づいて SpawnEntry の重みを補間して返す */

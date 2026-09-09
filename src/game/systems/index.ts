@@ -22,6 +22,7 @@ import { TetrisFeature }     from './TetrisFeature'
 import { SurvivalFeature }   from './SurvivalFeature'
 import { MeleeKillFeature }  from './MeleeKillFeature'
 import { NearMissComboFeature } from './NearMissComboFeature'
+import { AquaticFeature }    from './AquaticFeature'
 
 registerFeature(new ShootFeature())
 registerFeature(new RhythmFeature())
@@ -33,3 +34,4 @@ registerFeature(new TetrisFeature())
 registerFeature(new SurvivalFeature())
 registerFeature(new MeleeKillFeature())
 registerFeature(new NearMissComboFeature())
+registerFeature(new AquaticFeature())

@@ -2,10 +2,10 @@ import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule,
 import type { MutableWorld, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup, type HazardShape } from './entities'
 import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL, BASE_SCROLL_SPEED, DEFAULT_SCORE_FORMULA } from '../data/gameBalance'
-import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY, PIXELART, HUD_SAFEZONE } from '../data/tunables'
+import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY, PIXELART, HUD_SAFEZONE, GIMMICKS, EXTRA_MOVEMENT } from '../data/tunables'
 import { classifyHudLayout, computeSafeZone, type SafeZone } from '../domain/hudLayout'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
-import { resolveWeight } from '../engine/types'
+import { resolveWeight, type SpawnEntry } from '../engine/types'
 import { soundManager } from '../plugins/SoundManager'
 import { evalScoreFormula, getLastFormulaError } from '../domain/scoreCalc'
 import { evaluateLearningRules, describeEffect } from '../domain/LearningSystem'
@@ -146,6 +146,10 @@ export class SideScroller {
   private jumpBufferTimer = 0   // ジャンプ先行入力フレーム数
   private jumpHeld = false      // ジャンプキー押しっぱなし判定
 
+  // climb フィーチャー（platformer）専用状態
+  private climbDriftTime = 0            // 移動足場の水平ドリフト位相
+  private climbStandingOn: Hazard | null = null  // 現在立っている足場（コンベア速度の適用に使用）
+
   // ─── 演出 ────────────────────────────────────────────────────────
   private scorePopups: ScorePopup[] = []
   private shakeIntensity = 0
@@ -203,6 +207,10 @@ export class SideScroller {
     this.player.jumpsLeft = rules.features.has('double_jump') ? 2 : 1
 
     this.input.setGameKeys(rules.controls)
+
+    // climb フィーチャーを最初から持つ状態で起動される場合（デバッグの force genre 等）、
+    // updateRules() の enteringClimb 判定を経由しないため、ここでも足場を用意する。
+    if (rules.features.has('climb')) this._seedClimbStart()
   }
 
   // ルール更新（ManualVersion があれば learningRules を同期）
@@ -229,6 +237,7 @@ export class SideScroller {
         sys.onDisable?.(preWorld)
       }
     }
+    const enteringClimb = !oldFeatures.has('climb') && rules.features.has('climb')
 
     this.rules = rules
     this.input.setGameKeys(rules.controls)
@@ -238,6 +247,16 @@ export class SideScroller {
       // double_jump が削除された場合、最大ジャンプ回数を1に制限
       this.player.jumpsLeft = Math.min(this.player.jumpsLeft, 1)
     }
+
+    // playerMaxHp をプレイヤーへ反映（hp/oxygen ゲージの上限）。満タンだった場合は
+    // 新上限でも満タンに保つ（ジャンル遷移時の自然な「回復」演出として扱う）。
+    if (this.player.maxHp !== rules.playerMaxHp) {
+      const wasFull = this.player.hp >= this.player.maxHp
+      this.player.maxHp = rules.playerMaxHp
+      this.player.hp = wasFull ? this.player.maxHp : Math.min(this.player.hp, this.player.maxHp)
+    }
+
+    if (enteringClimb) this._seedClimbStart()
     // LearningSystem の副作用状態をリセット（ルール差し替えで古いエフェクトが残らないよう）
     this._disabledActions.clear()
     this._invertHazardUntil = -Infinity
@@ -614,6 +633,11 @@ export class SideScroller {
 
   // ─── 縦スクロール更新 ────────────────────────────────────────────
   private _updateVertical(dt: number, speed: number): boolean {
+    // climb フィーチャー（platformer）: 自由飛行ではなく重力・ジャンプ・足場着地の
+    // 専用物理を使う。既存の縦スクロール自由移動（aquatic / aerial_stg 等）とは
+    // 挙動が根本的に異なるため、早期に別メソッドへ委譲する。
+    if (this.rules.features.has('climb')) return this._updateClimb(dt, speed)
+
     const r = this.rules
     const p = this.player
     const W = this.canvas.width
@@ -634,10 +658,14 @@ export class SideScroller {
     this.cameraX = 0
 
     for (const h of this.hazards) {
-      h.y += speed * dt
+      // direction='left' は「下から出現し上へ流れる」ジャンル用（aquatic）。既定の
+      // 'right' は従来通り上から下へ（aerial_stg / bullet_hell 等、挙動不変）。
+      h.y += (h.direction === 'left' ? -speed : speed) * dt
       h.pulse += dt * VFX.hazardPulseRate
     }
-    this.hazards = this.hazards.filter(h => h.y < H + SPAWN.hazardCullBelow)
+    this.hazards = this.hazards.filter(h =>
+      h.direction === 'left' ? h.y > -SPAWN.hazardCullBelow - h.h : h.y < H + SPAWN.hazardCullBelow
+    )
 
     for (const item of this.items) {
       item.y += speed * dt
@@ -675,6 +703,188 @@ export class SideScroller {
 
     // 発射数の統計は実発射する ShootFeature 側で addShot() により計上する（#209）
     return false
+  }
+
+  /**
+   * climb フィーチャーが有効化された瞬間に1回呼ぶ。それまでの横スクロールから
+   * 引き継いだプレイヤー位置の直下に安全な足場を1枚生成し、遷移直後に溶岩へ
+   * 落下する理不尽な事故を防ぐ。
+   */
+  private _seedClimbStart(): void {
+    const p = this.player
+    const H = this.canvas.height
+    // 横スクロール時の地面付近（画面下部）から引き継ぐと、溶岩帯とほぼ同じ高さに
+    // なり着地直後に接触してしまう。climb開始時は画面中央付近の安全な高さへ
+    // 再配置してから足場を置く。
+    p.y = H * 0.45 - p.h
+    const w = Math.max(120, p.w * 3)
+    const startPlatform = new Hazard(
+      p.x + p.w / 2 - w / 2, p.y + p.h + 4, w, 16,
+      getGenre('platformer').palette.safe, getGenre('platformer').palette.safeGlow,
+      'rect', 1, true,
+    )
+    startPlatform.isPlatform = true
+    startPlatform.isGimmick = true
+    this.hazards.push(startPlatform)
+    p.vy = 0
+    p.onGround = true
+    p.jumpsLeft = this.rules.features.has('double_jump') ? 2 : 1
+    this.climbStandingOn = startPlatform
+  }
+
+  // ─── climb 更新（platformer: 縦スクロール + 重力・ジャンプ・足場登り） ──────
+  // 通常の縦スクロール（_updateVertical）は自由飛行だが、climb は横スクロールと
+  // 同じ重力・コヨーテ・ジャンプバッファ・二段ジャンプ物理を縦方向に適用し、
+  // 「地面」の代わりに動的に流れてくる isPlatform ハザードに着地する。
+  private _updateClimb(dt: number, speed: number): boolean {
+    const r = this.rules
+    const p = this.player
+    const W = this.canvas.width
+    const H = this.canvas.height
+    const jumpKey = r.controls.jump
+    const leftKey = r.controls.moveLeft
+    const rightKey = r.controls.moveRight
+
+    if (this.input.keys.has(leftKey))  this.stats.moveLeft++
+    if (this.input.keys.has(rightKey)) this.stats.moveRight++
+    if (p.onGround) this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
+
+    // 横方向は自由移動（vx は MovementFeature.preUpdate が設定済み）
+    p.x += p.vx * dt
+    p.x = Math.max(0, Math.min(W - p.w, p.x))
+
+    // ─── ジャンプ（横スクロールと同じ coyote / buffer / 二段ジャンプ） ──────
+    const isDouble = r.features.has('double_jump')
+    const jumpJustPressed = this.input.justPressed.has(jumpKey)
+    const jumpJustReleased = this.input.justReleased.has(jumpKey)
+
+    if (p.onGround) {
+      this.coyoteTimer = PLAYER_PHYSICS.coyoteFrames
+    } else if (this.coyoteTimer > 0) {
+      this.coyoteTimer--
+    }
+    if (jumpJustPressed) {
+      this.jumpBufferTimer = PLAYER_PHYSICS.jumpBufferFrames
+    } else if (this.jumpBufferTimer > 0) {
+      this.jumpBufferTimer--
+    }
+
+    const canJumpCoyote = this.coyoteTimer > 0 && p.jumpsLeft === (isDouble ? 2 : 1)
+    const canJumpDouble = isDouble && p.jumpsLeft > 0
+    if (this.jumpBufferTimer > 0 && (canJumpCoyote || (canJumpDouble && !p.onGround) || p.onGround)) {
+      if (p.jumpsLeft > 0 || this.coyoteTimer > 0) {
+        p.vy = PLAYER_PHYSICS.jumpVelocity
+        p.jumpsLeft = Math.max(0, p.jumpsLeft - 1)
+        p.onGround = false
+        this.climbStandingOn = null
+        this.jumpHeld = true
+        this.jumpBufferTimer = 0
+        this.coyoteTimer = 0
+        this.stats.jumps++
+        this.firstJumpDone = true
+        this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
+        soundManager.onJump()
+        const jw = this._getWorld()
+        getGenre(r.genre).onPlayerJump?.(jw)
+        for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
+      }
+    }
+    if (jumpJustReleased && p.vy < 0 && this.jumpHeld) {
+      p.vy *= PLAYER_PHYSICS.jumpCutMultiplier
+      this.jumpHeld = false
+    }
+    if (!this.input.keys.has(jumpKey)) this.jumpHeld = false
+
+    // ─── 重力 ───────────────────────────────────────────────────────
+    p.vy += r.gravity * (p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0) * dt
+    p.y += p.vy * dt
+    p.onGround = false
+
+    // ─── 世界のスクロール（足場・溶岩が流れてくる演出） ────────────────
+    this.climbDriftTime += dt
+    for (const h of this.hazards) {
+      h.y += speed * dt
+      h.pulse += dt * VFX.hazardPulseRate
+      if (h.driftEnabled) {
+        // 移動足場: MovementFeature の vertical_scroll ドリフトと同じ式を climb 専用に流用
+        // （vertical_scroll は aerial_stg 等の全ハザード蛇行に使われており、
+        // driftEnabled 限定にすると既存ジャンルの演出が消えるため共用しない）
+        const drift = Math.sin(this.climbDriftTime * EXTRA_MOVEMENT.verticalDriftFreq + h.y * 0.01)
+          * GIMMICKS.movingPlatformDriftAmp * dt
+        h.x = Math.max(0, Math.min(W - h.w, h.x + drift))
+      }
+    }
+    this.hazards = this.hazards.filter(h => h.y < H + SPAWN.hazardCullBelow)
+    this.distance += speed * dt
+    this.cameraX = 0
+
+    if (this.distance >= this.nextSpawnDist) {
+      this._spawnHazard()
+      const sp = this._getSpawnParams()
+      const interval = sp.baseInterval * Math.exp(-sp.decayRate * this.distance)
+      this.nextSpawnDist += (Math.max(sp.minInterval, interval) / MS_TO_SEC) * speed
+    }
+
+    // ─── 足場・バネへの着地判定 ───────────────────────────────────────
+    this._resolveClimbLanding(p)
+
+    // ─── コンベア: 立っている足場の水平速度を加算 ──────────────────────
+    if (p.onGround && this.climbStandingOn?.conveyorVx) {
+      p.x = Math.max(0, Math.min(W - p.w, p.x + this.climbStandingOn.conveyorVx * dt))
+    }
+
+    if (p.landSquash > 0) p.landSquash *= PHYSICS.landSquashDecay
+
+    // ─── 溶岩判定: 画面下端の帯に触れたら即死 ─────────────────────────
+    if (p.y + p.h >= H - GIMMICKS.lavaBandHeightPx) {
+      this._die(p)
+      return true
+    }
+
+    return false
+  }
+
+  /** climb 用の足場着地判定。足場・バネの上端に近接していれば着地/反発させる */
+  private _resolveClimbLanding(p: Player): void {
+    if (p.vy < 0) { this.climbStandingOn = null; return }  // 上昇中は着地しない（下からは素通り）
+
+    let best: Hazard | null = null
+    let bestDist = Infinity
+    for (const h of this.hazards) {
+      if (!h.isPlatform && !h.isSpring) continue
+      const top = h.rect.y
+      if (p.x + p.w <= h.x || p.x >= h.x + h.w) continue  // 水平方向に重なっていない
+      const feetY = p.y + p.h
+      const dist = feetY - top
+      if (dist < -GIMMICKS.platformLandToleranceUpPx || dist > GIMMICKS.platformLandToleranceDownPx) continue
+      if (Math.abs(dist) < bestDist) { bestDist = Math.abs(dist); best = h }
+    }
+
+    if (!best) { this.climbStandingOn = null; return }
+
+    const isDouble = this.rules.features.has('double_jump')
+    if (best.isSpring) {
+      p.y = best.rect.y - p.h
+      p.vy = GIMMICKS.springBounceVelocity
+      p.onGround = false
+      p.jumpsLeft = isDouble ? 2 : 1
+      this.climbStandingOn = null
+      this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
+      soundManager.onJump()
+    } else {
+      const wasInAir = !p.onGround
+      p.y = best.rect.y - p.h
+      p.vy = 0
+      p.onGround = true
+      p.jumpsLeft = isDouble ? 2 : 1
+      this.climbStandingOn = best
+      if (wasInAir) {
+        p.landSquash = 1.0
+        this._spawnLandParticles(p.x + p.w / 2, best.rect.y)
+        soundManager.onLand()
+        getGenre(this.rules.genre).onPlayerLand?.(this._getWorld())
+      }
+    }
   }
 
   // ─── 横スクロール更新 ────────────────────────────────────────────
@@ -762,18 +972,30 @@ export class SideScroller {
     }
     p.y += p.vy * dt
 
-    if (p.y + p.h >= gY) {
+    const landing = this._resolveHorizontalLanding(p, gY)
+    if (landing.surfaceY !== null && p.y + p.h >= landing.surfaceY) {
       const wasInAir = !p.onGround
-      p.y = gY - p.h
-      p.vy = 0
-      p.onGround = true
-      p.jumpsLeft = isDouble ? 2 : 1
+      p.y = landing.surfaceY - p.h
+      if (landing.isSpring) {
+        p.vy = GIMMICKS.springBounceVelocity
+        p.onGround = false
+        p.jumpsLeft = isDouble ? 2 : 1
+        this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
+        soundManager.onJump()
+      } else {
+        p.vy = 0
+        p.onGround = true
+        p.jumpsLeft = isDouble ? 2 : 1
+        if (landing.hazard?.conveyorVx) {
+          p.x = Math.max(PHYSICS.playerMinX, Math.min(W * PHYSICS.playerMaxXRatio, p.x + landing.hazard.conveyorVx * dt))
+        }
+      }
       if (wasInAir) {
         p.landSquash = 1.0
-        this._spawnLandParticles(p.x + p.w / 2, gY)
+        this._spawnLandParticles(p.x + p.w / 2, landing.surfaceY)
         soundManager.onLand()
         getGenre(r.genre).onPlayerLand?.(this._getWorld())
-        if (this.jumpBufferTimer > 0) {
+        if (!landing.isSpring && this.jumpBufferTimer > 0) {
           p.vy = PLAYER_PHYSICS.jumpVelocity
           p.onGround = false
           p.jumpsLeft = isDouble ? 1 : 0
@@ -793,6 +1015,11 @@ export class SideScroller {
     } else {
       p.onGround = false
       p.airTime += dt
+      // 穴の上で着地先が無いまま画面外(下)へ落ちきったら死亡（穴に落下）
+      if (landing.overHole && p.y > H + GIMMICKS.holeDeathMarginPx) {
+        this._die(p)
+        return true
+      }
     }
     if (p.landSquash > 0) p.landSquash *= PHYSICS.landSquashDecay
     }
@@ -1371,10 +1598,14 @@ export class SideScroller {
 
     if (isVertical) {
       // ─── 縦スクロール: 可動域内のランダムX位置に出現 ──────────
-      // hazard は screen 座標で管理（y が増加 → 下に落ちる）
+      // hazard は screen 座標で管理。direction='right'（既定）は画面上部から出現し下へ流れる
+      // （aerial_stg 等の降下型）。direction='left' は画面下部から出現し上へ流れる
+      // （aquatic の潜行・platformer の climb など、プレイヤーが「上へ進む」ジャンル用）。
       const spawnX = bandMinX + Math.random() * Math.max(0, bandMaxX - w - bandMinX)
-      const spawnY = -h - 20  // 画面外上部
-      this.hazards.push(new Hazard(spawnX, spawnY, w, h, color, glowColor, entry.shape, hp, isSafe, 0, direction))
+      const spawnY = direction === 'left' ? H + 20 : -h - 20
+      const hz = new Hazard(spawnX, spawnY, w, h, color, glowColor, entry.shape, hp, isSafe, 0, direction)
+      this._applyGimmickFields(hz, entry)
+      this.hazards.push(hz)
       if (entry.isBoss) {
         const bw = this._getWorld()
         for (const sys of getActiveSystems(r.features)) sys.onBossSpawn?.(bw)
@@ -1422,7 +1653,9 @@ export class SideScroller {
       const spawnX = direction === 'left'
         ? this.cameraX - w - SPAWN.hazardSpawnOffsetX
         : worldX
-      this.hazards.push(new Hazard(spawnX, y, w, h, color, glowColor, entry.shape, hp, isSafe, floatAmp, direction))
+      const hz = new Hazard(spawnX, y, w, h, color, glowColor, entry.shape, hp, isSafe, floatAmp, direction)
+      this._applyGimmickFields(hz, entry)
+      this.hazards.push(hz)
       if (entry.isBoss) {
         const bw = this._getWorld()
         for (const sys of getActiveSystems(r.features)) sys.onBossSpawn?.(bw)
@@ -1434,6 +1667,45 @@ export class SideScroller {
         this.items.push(new Item(worldX + SPAWN.itemOffsetX, itemY, type))
       }
     }
+  }
+
+  /**
+   * 横スクロールの着地先を判定する（runner/bullet_runner の穴・空中足場・バネ対応）。
+   * 通常の地面(gY)に加え、isPlatform/isSpring ハザードへの着地と isHole による
+   * 地面の欠落を扱う。足場は世界座標のY位置が動かないため、既存の gY 判定と同じ
+   * 「今フレームで足元が到達したか」だけを見れば十分（climb と異なり許容量は不要）。
+   */
+  private _resolveHorizontalLanding(p: Player, gY: number): {
+    surfaceY: number | null
+    hazard: Hazard | null
+    isSpring: boolean
+    overHole: boolean
+  } {
+    let overHole = false
+    let best: Hazard | null = null
+    let bestTop = Infinity
+    for (const h of this.hazards) {
+      const sx = h.x - this.cameraX
+      if (p.x + p.w <= sx || p.x >= sx + h.w) continue  // 水平方向に重なっていない
+      if (h.isHole) { overHole = true; continue }
+      if (!h.isPlatform && !h.isSpring) continue
+      const top = h.rect.y
+      if (top < bestTop) { bestTop = top; best = h }
+    }
+    if (best) return { surfaceY: bestTop, hazard: best, isSpring: best.isSpring, overHole }
+    if (overHole) return { surfaceY: null, hazard: null, isSpring: false, overHole: true }
+    return { surfaceY: gY, hazard: null, isSpring: false, overHole: false }
+  }
+
+  /** SpawnEntry のギミックフィールドを生成済み Hazard へ反映する（runner/bullet_runner/platformer/aquatic） */
+  private _applyGimmickFields(hz: Hazard, entry: SpawnEntry): void {
+    hz.isGimmick = entry.isGimmick ?? false
+    hz.isPlatform = entry.isPlatform ?? false
+    hz.isSpring = entry.isSpring ?? false
+    hz.isHole = entry.isHole ?? false
+    hz.conveyorVx = entry.conveyorVx ?? 0
+    hz.driftEnabled = entry.driftEnabled ?? false
+    hz.interactionKind = entry.interactionKind
   }
 
   /** 重み配列からインデックスを確率選択する */

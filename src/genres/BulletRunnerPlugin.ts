@@ -7,10 +7,12 @@
  */
 
 import { GenrePluginBase } from '../engine/GenrePluginBase'
-import type { SpawnEntry } from '../engine/types'
+import type { SpawnEntry, MutableWorld } from '../engine/types'
 import type { GenreId } from '../domain/types'
+import type { Hazard } from '../game/entities'
 import { PixelCanvas } from '../game/render'
 import { PIXELART } from '../data/tunables'
+import { drawGimmickHazard } from './shared/gimmickRender'
 
 // プレイヤーの走りアニメーションのフレーム数（run_a / run_b の2枚）
 const RUNNER_RUN_FRAME_COUNT = 2
@@ -58,11 +60,23 @@ export class BulletRunnerPlugin extends GenrePluginBase {
   }
 
   readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',    placement: 'ground', weightStart: 5, weightEnd: 4, wRange: [22, 40], hRange: [30, 55] },
-    { shape: 'rect',    placement: 'air',    weightStart: 3, weightEnd: 5, wRange: [25, 42], hRange: [25, 42], safeChance: 0.2 },
-    { shape: 'diamond', placement: 'float',  weightStart: 2, weightEnd: 5, wRange: [26, 36], hRange: [26, 36] },
-    { shape: 'spike',   placement: 'ground', weightStart: 1, weightEnd: 4, wRange: [22, 36], hRange: [35, 55] },
+    // 敵（enemy_hp で複数発必要。isGimmick を付けないため弾が命中する）
+    { shape: 'diamond', placement: 'ground', weightStart: 6, weightEnd: 9, wRange: [28, 40], hRange: [30, 40], hpOverride: 2 },
+    { shape: 'diamond', placement: 'air',    weightStart: 4, weightEnd: 8, wRange: [28, 40], hRange: [30, 40], hpOverride: 3, safeChance: 0.15 },
+    { shape: 'spike',   placement: 'ground', weightStart: 3, weightEnd: 6, wRange: [26, 40], hRange: [35, 50], hpOverride: 2 },
+    // 障害物・ギミック（isGimmick: 弾は素通り、破壊不可）
+    { shape: 'pillar', placement: 'ground', weightStart: 2, weightEnd: 2, wRange: [16, 22], hRange: [70, 130], isGimmick: true },
+    { shape: 'rect', placement: 'ground', weightStart: 1, weightEnd: 2, wRange: [50, 90], hRange: [20, 20],
+      safeChance: 1, isHole: true, isGimmick: true },
+    { shape: 'rect', placement: 'air', weightStart: 1, weightEnd: 2, wRange: [70, 100], hRange: [16, 16],
+      safeChance: 1, isPlatform: true, isGimmick: true, colorOverride: '#3a2a4a', safeColorOverride: '#241a30' },
+    { shape: 'rect', placement: 'ground', weightStart: 1, weightEnd: 1, wRange: [30, 30], hRange: [16, 16],
+      safeChance: 1, isSpring: true, isGimmick: true, colorOverride: '#ff44cc', safeColorOverride: '#aa2288' },
   ]
+
+  override drawHazard(ctx: CanvasRenderingContext2D, hazard: Hazard, sx: number, world: MutableWorld): boolean {
+    return drawGimmickHazard(ctx, hazard, sx, world.canvas.height)
+  }
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
     const px = new PixelCanvas(ctx)

@@ -79,10 +79,14 @@ export class MovementFeature implements FeatureSystem {
       : PLAYER_PHYSICS.runSpeed
 
     if (r.scrollAxis === 'y') {
-      const moveUp   = r.controls.moveUp   ? input.keys.has(r.controls.moveUp)   : false
-      const moveDown = r.controls.moveDown ? input.keys.has(r.controls.moveDown) : false
       p.vx = input.keys.has(r.controls.moveRight) ? runSpeed : input.keys.has(r.controls.moveLeft) ? -runSpeed : 0
-      p.vy = moveUp ? -runSpeed : moveDown ? runSpeed : 0
+      // climb（platformer）は重力・ジャンプで vy を自前管理するため、上下キーによる
+      // 自由飛行の vy 上書きはしない（sideScroller._updateClimb が担当）。
+      if (!r.features.has('climb')) {
+        const moveUp   = r.controls.moveUp   ? input.keys.has(r.controls.moveUp)   : false
+        const moveDown = r.controls.moveDown ? input.keys.has(r.controls.moveDown) : false
+        p.vy = moveUp ? -runSpeed : moveDown ? runSpeed : 0
+      }
     } else if (this.dash.timer <= 0 && !this.slide.active) {
       // ダッシュ中は _updateDash が vx を設定済み、スライド中は速度維持
       const isAutoRun = r.features.has('auto_run')

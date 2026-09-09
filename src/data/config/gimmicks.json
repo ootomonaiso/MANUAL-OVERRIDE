@@ -1,0 +1,11 @@
+{
+  "$comment": "runner / bullet_runner / platformer 共通ギミック（穴・足場・バネ・コンベア・溶岩）",
+  "section": "gimmicks",
+  "holeDeathMarginPx": 120,
+  "platformLandToleranceUpPx": 18,
+  "platformLandToleranceDownPx": 48,
+  "springBounceVelocity": -980,
+  "conveyorDefaultSpeed": 90,
+  "lavaBandHeightPx": 46,
+  "movingPlatformDriftAmp": 70
+}
