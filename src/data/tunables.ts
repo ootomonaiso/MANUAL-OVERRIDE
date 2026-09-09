@@ -139,3 +139,8 @@ export const PIXELART = _c.pixelart
 // NEAR_MISS — near-miss combo パラメータ
 // ─────────────────────────────────────────────────────────────
 export const NEAR_MISS = _c.near_miss
+
+// ─────────────────────────────────────────────────────────────
+// OXYGEN — 水中アクション（酸素ゲージ）
+// ─────────────────────────────────────────────────────────────
+export const OXYGEN = _c.oxygen

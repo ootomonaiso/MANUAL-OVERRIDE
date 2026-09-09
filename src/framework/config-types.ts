@@ -427,6 +427,25 @@ export interface SurvivalConfig {
   killShakeIntensity: number
 }
 
+/** oxygen.json — 水中アクション（酸素ゲージ） */
+export interface OxygenConfig {
+  maxOxygen: number
+  oxygenDecayRate: number
+  oxygenHitDamage: number
+  oxygenCoralRestore: number
+  oxygenLowThreshold: number
+  hudBarWidth: number
+  hudBarHeight: number
+  hudTopOffset: number
+  hudLeftOffset: number
+  hudLabelColor: string
+  oxygenColorHigh: string
+  oxygenColorLow: string
+  oxygenBarBgColor: string
+  coralPopupColor: string
+  oxygenHitPopupColor: string
+}
+
 /** near_miss.json — near-miss combo パラメータ */
 export interface NearMissConfig {
   /** ハザードとプレイヤーの垂直間隔の閾値（px）。これ以下なら near-miss 判定 */
@@ -639,6 +658,7 @@ export interface GameConfigMap {
   survival: SurvivalConfig
   pixelart: PixelartConfig
   near_miss: NearMissConfig
+  oxygen: OxygenConfig
   genre_defaults: GenreDefaultsConfig
   palette_defaults: PaletteDefaultsConfig
 }
