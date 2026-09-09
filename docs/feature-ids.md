@@ -86,6 +86,7 @@
 | `survival_level` | XP蓄積・レベルアップ（survival ジャンル） | SurvivalFeature ✅ |
 | `melee_kill` | 近接攻撃（Zキーで矩形範囲内のハザードを一撃破壊） | MeleeKillFeature ✅ |
 | `near_miss_combo` | 接近回避コンボ（ハザードを衝突なしで通過時にコンボ加算） | NearMissComboFeature ✅ |
+| `oxygen` | 酸素ゲージ（時間減衰・被弾ダメージ・珊瑚回復・0 で死亡） | OxygenFeature ✅ |
 
 ## テトリス系
 
@@ -113,6 +114,7 @@
 | SurvivalFeature | survival_hunger / survival_melee / survival_level | ✅ |
 | MeleeKillFeature | melee_kill | ✅ |
 | NearMissComboFeature | near_miss_combo | ✅ |
+| OxygenFeature | oxygen | ✅ |
 
 ---
 

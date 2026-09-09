@@ -116,6 +116,14 @@ const RANGE_CHECKS: Array<{
   { section: 'pixelart', field: 'blockShadeAmount', min: 0, max: 255 },
   { section: 'pixelart', field: 'spriteCacheMax', min: 1 },
   { section: 'pixelart', field: 'textCacheMax', min: 1 },
+  // oxygen — 水中アクション（酸素ゲージ）
+  { section: 'oxygen', field: 'maxOxygen',          min: 1 },
+  { section: 'oxygen', field: 'oxygenDecayRate',    min: 0 },
+  { section: 'oxygen', field: 'oxygenHitDamage',    min: 0 },
+  { section: 'oxygen', field: 'oxygenCoralRestore', min: 0 },
+  { section: 'oxygen', field: 'oxygenLowThreshold', min: 0, max: 100 },
+  { section: 'oxygen', field: 'hudBarWidth',        min: 0 },
+  { section: 'oxygen', field: 'hudBarHeight',       min: 0 },
 ]
 
 export function validateGameConfig(config: GameConfigMap): ConfigValidationResult {

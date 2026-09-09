@@ -12,6 +12,7 @@
 | `aerial_stg` | [aerial-stg.md](./aerial-stg.md) | 縦スクロールシューティング（4方向自由飛行＋射撃） |
 | `puzzle` | [puzzle-genre.md](./puzzle-genre.md) | スライドパズル（グリッド・タイムアタック） |
 | `tetris` | [tetris-genre.md](./tetris-genre.md) | 落ち物パズル（10×20グリッド・7-bag・ライン消去） |
+| `aquatic` | [aquatic-genre.md](./aquatic-genre.md) | 水中アクション（縦スクロール・酸素ゲージ・珊瑚回復） |
 
 ## 記載方針
 

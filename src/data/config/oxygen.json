@@ -1,0 +1,19 @@
+{
+  "$comment": "水中アクション固有パラメータ（酸素ゲージ）",
+  "section": "oxygen",
+  "maxOxygen": 100,
+  "oxygenDecayRate": 4.0,
+  "oxygenHitDamage": 25,
+  "oxygenCoralRestore": 30,
+  "oxygenLowThreshold": 30,
+  "hudBarWidth": 160,
+  "hudBarHeight": 10,
+  "hudTopOffset": 80,
+  "hudLeftOffset": 12,
+  "hudLabelColor": "#aaddff",
+  "oxygenColorHigh": "#44ddff",
+  "oxygenColorLow": "#ff4444",
+  "oxygenBarBgColor": "rgba(0,0,0,0.5)",
+  "coralPopupColor": "#66ffee",
+  "oxygenHitPopupColor": "#ff6688"
+}
