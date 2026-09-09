@@ -655,8 +655,9 @@ export class TetrisFeature implements FeatureSystem {
     }
   }
 
-  onPlayerHit(): void {
+  onPlayerHit(): boolean {
     // テトリスモードでは被弾処理は行わない
+    return false
   }
 
   // ─── 内部メソッド ───────────────────────────────────────────

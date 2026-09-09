@@ -55,8 +55,8 @@ export class NearMissComboFeature implements FeatureSystem {
     this._detectNearMisses(world)
   }
 
-  onPlayerHit(world: MutableWorld): void {
-    if (!world.rules.features.has('near_miss_combo')) return
+  onPlayerHit(world: MutableWorld): boolean {
+    if (!world.rules.features.has('near_miss_combo')) return false
     world.resetCombo()
     // 被弾時に重叠中のハザードを passedHazards へ追加する。
     // clear() だと画面内に残る通過済みハザードが再評価され二重 near-miss になるため。
@@ -70,6 +70,7 @@ export class NearMissComboFeature implements FeatureSystem {
       }
     }
     this.state.decayTimer = 0
+    return false
   }
 
   // ─── 内部: 減衰タイマー ──────────────────────────────────────────
