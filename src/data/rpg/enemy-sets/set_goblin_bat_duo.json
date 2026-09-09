@@ -9,7 +9,7 @@
     {
       "enemyId": "enemy_bat",
       "statsOverride": {
-        "hp": 3100,
+        "hp": 1000,
         "evadeRate": 0
       }
     }
