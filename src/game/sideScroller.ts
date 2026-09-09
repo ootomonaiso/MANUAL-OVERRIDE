@@ -861,11 +861,12 @@ export class SideScroller {
     this.hitFlash = 1.0  // 被ダメフラッシュ
     const world = this._getWorld()
     soundManager.onHit()
+    let absorbed = false
     for (const sys of getActiveSystems(this.rules.features)) {
-      sys.onPlayerHit?.(world)
+      if (sys.onPlayerHit?.(world) === true) absorbed = true
     }
-    // どのシステムも死亡を処理しなかった場合（hp feature なし）は即死
-    if (!this.dead) {
+    // どのシステムも被弾を処理しなかった場合（hp / oxygen feature なし）は即死
+    if (!this.dead && !absorbed) {
       this._die(p)
     }
   }

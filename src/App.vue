@@ -108,6 +108,11 @@ function startGame() {
     showToast('エラー: キャンバスが初期化されていません')
     return
   }
+  // 前回インスタンスを停止して二重起動を防ぐ。止まらずに残ったエンジンは
+  // FeatureSystem シングルトンを新エンジンと同時更新し、フィーチャー状態を
+  // 壊す（酸素減衰 2 倍化・死亡トリガーが片方のプレイヤーのみ発火、等）。
+  scroller?.stop()
+  cancelAnimationFrame(snapRaf)
   resizeCanvas()
   scroller = new SideScroller(canvas, cloneRules())
   // 初期説明書を履歴に登録

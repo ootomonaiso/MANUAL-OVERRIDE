@@ -19,8 +19,8 @@ export class RpgFeature implements FeatureSystem {
   readonly handles = ['hp', 'exp', 'item_pickup', 'shield'] as const
 
   /** hp feature: 被弾時に HP 減算・シールド・無敵・シェイク・パーティクルを処理 */
-  onPlayerHit(world: MutableWorld): void {
-    if (!world.rules.features.has('hp')) return
+  onPlayerHit(world: MutableWorld): boolean {
+    if (!world.rules.features.has('hp')) return false
     const p = world.player
 
     // shield feature: ダメージを1回ガード（クールダウンなし、連続被弾時は消費後即無効）
@@ -43,7 +43,7 @@ export class RpgFeature implements FeatureSystem {
       }
       // shield は1回で消費（feature フラグを削除＝永続的な shield 設定が必要な場合は外す）
       world.rules.features.delete('shield')
-      return
+      return true
     }
 
     world.modifyPlayerHp(-1)
@@ -62,6 +62,7 @@ export class RpgFeature implements FeatureSystem {
         )
       }
     }
+    return true
   }
 
   /** item_pickup feature: アイテムのパルスアニメ・収集判定・EXP / HP 付与 */

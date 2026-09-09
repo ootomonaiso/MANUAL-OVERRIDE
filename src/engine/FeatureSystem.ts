@@ -54,9 +54,11 @@ export interface FeatureSystem {
   /**
    * オプショナル: プレイヤーが被弾した時に呼ばれる。
    * 独自の被弾演出や状態変化を追加できる。
+   * @returns true を返したシステムがある場合、エンジンは即死フォールバックをスキップする
+   *          （被弾を「処理した」＝生存可能、という意味）。
    * 省略可。
    */
-  onPlayerHit?(world: MutableWorld): void
+  onPlayerHit?(world: MutableWorld): boolean
 
   /**
    * オプショナル: 安全なハザード（isSafe=true）にプレイヤーが触れた時に呼ばれる。
