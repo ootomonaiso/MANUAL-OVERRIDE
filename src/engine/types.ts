@@ -104,6 +104,8 @@ export interface MutableWorld {
   setBeatHazardInverted(v: boolean): void
   /** 発射（1斉射）を統計にカウント。accuracy = hits/shots 計算用（ShootFeature が使用） */
   addShot(): void
+  /** ジャンプを統計にカウントし初回ジャンプ完了をマーク（PlatformerFeature が使用） */
+  addJump(): void
 
   // ─ ScoreVars 書き込み（FeatureSystem が scoreFormula 計算用に更新）
   /** accuracy 計算用：敵撃破時のヒット数をインクリメント（ShootFeature が使用） */

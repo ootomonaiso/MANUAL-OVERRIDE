@@ -1580,6 +1580,7 @@ export class SideScroller {
       addBeatHit()             { self._gameStats.beatHits++ },
       setBeatHazardInverted(v) { self._gameStats.beatHazardInverted = v },
       addShot()                { self.stats.shots++ },
+      addJump()                { self.stats.jumps++; self.firstJumpDone = true },
 
       addScoreVarsHit()        { self.scoreVarsHits++ },
       addScoreVarsItemCollected() { self.scoreVarsItemsCollected++ },

@@ -116,6 +116,11 @@ const RANGE_CHECKS: Array<{
   { section: 'pixelart', field: 'blockShadeAmount', min: 0, max: 255 },
   { section: 'pixelart', field: 'spriteCacheMax', min: 1 },
   { section: 'pixelart', field: 'textCacheMax', min: 1 },
+  { section: 'platformer', field: 'gravity', min: 0 },
+  { section: 'platformer', field: 'runSpeed', min: 0 },
+  { section: 'platformer', field: 'maxFallSpeed', min: 0 },
+  { section: 'platformer', field: 'lavaRiseRate', min: 0 },
+  { section: 'platformer', field: 'platformLandingThreshold', min: 0 },
 ]
 
 export function validateGameConfig(config: GameConfigMap): ConfigValidationResult {

@@ -2,20 +2,20 @@ import { describe, it, expect } from 'vitest'
 import { GENRES } from '../../../src/data/genres'
 
 /**
- * 対象13ジャンルの scoreFormula に独立トークン "combo" が残っていないことを検証する。
+ * 対象12ジャンルの scoreFormula に独立トークン "combo" が残っていないことを検証する。
  *
  * 対象: stg, aerial_stg, bullet_hell, bullet_runner, arena, tower_def,
- *       platformer, puzzle, racing, rhythm, runner, sports, tetris
+ *       puzzle, racing, rhythm, runner, sports, tetris
  *
  * 変更対象外（確認のみ）:
  *   - hack_slash: 既に maxCombo を使用
- *   - aquatic, base, dungeon, glitch, horror, idle, rpg, stealth_action, survival:
- *     scoreFormula に combo が元々含まれていない
+ *   - aquatic, base, dungeon, glitch, horror, idle, platformer, rpg,
+ *     stealth_action, survival: scoreFormula に combo が元々含まれていない
  */
 
 const TARGET_GENRES = [
   'stg', 'aerial_stg', 'bullet_hell', 'bullet_runner', 'arena', 'tower_def',
-  'platformer', 'puzzle', 'racing', 'rhythm', 'runner', 'sports', 'tetris',
+  'puzzle', 'racing', 'rhythm', 'runner', 'sports', 'tetris',
 ] as const
 
 /**
@@ -58,7 +58,7 @@ describe('genre scoreFormula — combo → maxCombo 置換検証 (#215)', () => 
   it('combo を含まないジャンルの scoreFormula は変更されていない', () => {
     const noComboGenres = [
       'aquatic', 'base', 'dungeon', 'glitch', 'horror',
-      'idle', 'rpg', 'stealth_action', 'survival',
+      'idle', 'platformer', 'rpg', 'stealth_action', 'survival',
     ]
     for (const genreId of noComboGenres) {
       const genre = GENRES.find(g => g.id === genreId)
