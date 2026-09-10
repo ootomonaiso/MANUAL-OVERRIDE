@@ -1,0 +1,133 @@
+{
+  "$comment": "Aquatic 専用の縦エンドレス連結パターン集。plan/spec-aquatic.md 参照。座標系: x=可動域帯内のローカル座標px（referenceWidthPx基準、実行時に実際の帯幅へスケーリング）、y=セグメント起点（浅い側）からの深さpx（0〜segmentLengthPx）。全パターン共通の固定長 segmentLengthPx を使用し、プールから均一確率で選んで縦に連結する。kind:'oneWayPlatform' が岩本体（driftEnabled:true でふわふわ足場）、kind:'spike' が敵（自力移動しない固定ハザード、接触即死）、kind:'current' が流れゾーン（非接触、重なっている間だけ水平方向へ押し流す）。到達可能性は scripts/pattern-reach-sim.mjs で検証する（岩の連続する y ギャップが aquatic.json の maxFallGapPx を超えないこと、セグメント境界（y=0 / y=segmentLengthPx）付近に岩があること）。",
+  "section": "aquatic_patterns",
+  "segmentLengthPx": 700,
+  "referenceWidthPx": 480,
+  "patterns": [
+    {
+      "id": "a_001_basic_zigzag",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 20,  "y": 110, "w": 240, "h": 30 },
+        { "kind": "oneWayPlatform", "x": 220, "y": 330, "w": 240, "h": 30 },
+        { "kind": "oneWayPlatform", "x": 20,  "y": 575, "w": 240, "h": 30 }
+      ]
+    },
+    {
+      "id": "a_002_basic_zigzag_mirror",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 220, "y": 110, "w": 240, "h": 30 },
+        { "kind": "oneWayPlatform", "x": 20,  "y": 330, "w": 240, "h": 30 },
+        { "kind": "oneWayPlatform", "x": 220, "y": 575, "w": 240, "h": 30 }
+      ]
+    },
+    {
+      "id": "a_003_narrow_zigzag",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 10,  "y": 110, "w": 190, "h": 26 },
+        { "kind": "oneWayPlatform", "x": 290, "y": 330, "w": 190, "h": 26 },
+        { "kind": "oneWayPlatform", "x": 10,  "y": 575, "w": 190, "h": 26 }
+      ]
+    },
+    {
+      "id": "a_004_center_rest",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 20,  "y": 100, "w": 240, "h": 30 },
+        { "kind": "oneWayPlatform", "x": 120, "y": 320, "w": 320, "h": 34 },
+        { "kind": "oneWayPlatform", "x": 220, "y": 575, "w": 240, "h": 30 }
+      ]
+    },
+    {
+      "id": "a_005_spike_between",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 20,  "y": 110, "w": 240, "h": 30 },
+        { "kind": "spike",          "x": 300, "y": 210, "w": 32,  "h": 32 },
+        { "kind": "oneWayPlatform", "x": 220, "y": 330, "w": 240, "h": 30 },
+        { "kind": "spike",          "x": 60,  "y": 440, "w": 32,  "h": 32 },
+        { "kind": "oneWayPlatform", "x": 20,  "y": 575, "w": 240, "h": 30 }
+      ]
+    },
+    {
+      "id": "a_006_drift_platform_step",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 20,  "y": 110, "w": 240, "h": 30 },
+        { "kind": "oneWayPlatform", "x": 160, "y": 330, "w": 160, "h": 26, "driftEnabled": true },
+        { "kind": "oneWayPlatform", "x": 20,  "y": 575, "w": 240, "h": 30 }
+      ]
+    },
+    {
+      "id": "a_007_drift_double",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 220, "y": 100, "w": 240, "h": 30 },
+        { "kind": "oneWayPlatform", "x": 60,  "y": 320, "w": 160, "h": 26, "driftEnabled": true },
+        { "kind": "oneWayPlatform", "x": 260, "y": 550, "w": 160, "h": 26, "driftEnabled": true },
+        { "kind": "oneWayPlatform", "x": 60,  "y": 660, "w": 240, "h": 30 }
+      ]
+    },
+    {
+      "id": "a_008_current_assist_right",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 10,  "y": 110, "w": 220, "h": 30 },
+        { "kind": "current",        "x": 0,   "y": 150, "w": 480, "h": 150, "currentVx": 90 },
+        { "kind": "oneWayPlatform", "x": 240, "y": 340, "w": 240, "h": 30 },
+        { "kind": "oneWayPlatform", "x": 20,  "y": 575, "w": 240, "h": 30 }
+      ]
+    },
+    {
+      "id": "a_009_current_resist_left",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 220, "y": 100, "w": 240, "h": 30 },
+        { "kind": "current",        "x": 0,   "y": 150, "w": 480, "h": 150, "currentVx": -110 },
+        { "kind": "oneWayPlatform", "x": 220, "y": 340, "w": 240, "h": 30 },
+        { "kind": "oneWayPlatform", "x": 20,  "y": 575, "w": 240, "h": 30 }
+      ]
+    },
+    {
+      "id": "a_010_tight_zigzag",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 10,  "y": 100, "w": 200, "h": 26 },
+        { "kind": "oneWayPlatform", "x": 280, "y": 280, "w": 200, "h": 26 },
+        { "kind": "oneWayPlatform", "x": 10,  "y": 460, "w": 200, "h": 26 },
+        { "kind": "oneWayPlatform", "x": 280, "y": 620, "w": 200, "h": 26 }
+      ]
+    },
+    {
+      "id": "a_011_four_step",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 200, "y": 90,  "w": 220, "h": 28 },
+        { "kind": "oneWayPlatform", "x": 20,  "y": 270, "w": 220, "h": 28 },
+        { "kind": "oneWayPlatform", "x": 240, "y": 450, "w": 220, "h": 28 },
+        { "kind": "oneWayPlatform", "x": 20,  "y": 620, "w": 220, "h": 28 }
+      ]
+    },
+    {
+      "id": "a_012_drift_and_spike",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 20,  "y": 100, "w": 240, "h": 30 },
+        { "kind": "spike",          "x": 300, "y": 190, "w": 30,  "h": 30 },
+        { "kind": "oneWayPlatform", "x": 140, "y": 330, "w": 180, "h": 26, "driftEnabled": true },
+        { "kind": "spike",          "x": 20,  "y": 470, "w": 30,  "h": 30 },
+        { "kind": "oneWayPlatform", "x": 220, "y": 575, "w": 240, "h": 30 }
+      ]
+    },
+    {
+      "id": "a_013_current_and_spike",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 220, "y": 110, "w": 240, "h": 30 },
+        { "kind": "current",        "x": 0,   "y": 160, "w": 480, "h": 120, "currentVx": -90 },
+        { "kind": "spike",          "x": 40,  "y": 260, "w": 30,  "h": 30 },
+        { "kind": "oneWayPlatform", "x": 20,  "y": 330, "w": 240, "h": 30 },
+        { "kind": "oneWayPlatform", "x": 220, "y": 575, "w": 240, "h": 30 }
+      ]
+    },
+    {
+      "id": "a_014_wide_gap_double_spike",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 20,  "y": 100, "w": 240, "h": 30 },
+        { "kind": "spike",          "x": 300, "y": 200, "w": 30,  "h": 30 },
+        { "kind": "spike",          "x": 300, "y": 260, "w": 30,  "h": 30 },
+        { "kind": "oneWayPlatform", "x": 220, "y": 340, "w": 240, "h": 30 },
+        { "kind": "oneWayPlatform", "x": 20,  "y": 575, "w": 240, "h": 30 }
+      ]
+    }
+  ]
+}

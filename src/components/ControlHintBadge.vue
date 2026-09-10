@@ -48,7 +48,9 @@ const entries = computed<Entry[]>(() => {
     list.push({ id: 'moveLeft', key: keyLabel(c.moveLeft), action: '左移動' })
     list.push({ id: 'moveRight', key: keyLabel(c.moveRight), action: '右移動' })
   }
-  if (props.scrollAxis === 'y') {
+  // pattern_climb（platformer）/ pattern_descend（aquatic）は縦スクロールでも
+  // 重力・ジャンプで進むため上下キーを受け付けない（plan/spec-aquatic.md）
+  if (props.scrollAxis === 'y' && !has('pattern_climb') && !has('pattern_descend')) {
     list.push({ id: 'moveUp',   key: keyLabel(c.moveUp   ?? 'ArrowUp'),   action: '上移動' })
     list.push({ id: 'moveDown', key: keyLabel(c.moveDown ?? 'ArrowDown'), action: '下移動' })
   }

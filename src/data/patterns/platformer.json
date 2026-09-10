@@ -1,0 +1,162 @@
+{
+  "$comment": "Platformer の部屋パターン集。plan/spec-platformer.md 参照。座標系: x=帯の左端からの水平距離px、y=部屋の床を0とした高さpx。部屋の床（起点）は暗黙に帯いっぱいの幅で自動生成される（entriesには含めない）。exitは部屋の出口（一方通行足場）で、到達すると部屋クリア。ランタイムでは常に帯いっぱいの幅（床と同じ長さ）で生成されるため、ここでのexitのx/wは到達可能性検証（scripts/pattern-reach-sim.mjs）専用の参考値。各entryのrouteタグ（\"a\"/\"b\"）は床→exitへの独立した複数ルートを表す。ルートaはx0〜300付近、ルートbはx400〜600付近の別ゾーンに配置し、間に空白帯を挟むことで足場同士の重なりを避けつつ可動域全体（x0〜600）へ広く散らしてある（タグなしは全ルート共通）。",
+  "section": "platformer_patterns",
+  "patterns": [
+    {
+      "id": "p_001_stairs_basic",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 40, "y": 120, "w": 130, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 180, "y": 240, "w": 120, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 30, "y": 360, "w": 120, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 480, "y": 190, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 410, "y": 300, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 490, "y": 420, "w": 100, "h": 18, "route": "b" }
+      ],
+      "exit": { "kind": "oneWayPlatform", "x": 150, "y": 480, "w": 140, "h": 18 }
+    },
+    {
+      "id": "p_002_spring_boost",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 60, "y": 100, "w": 120, "h": 18, "route": "a" },
+        { "kind": "spring", "x": 100, "y": 100, "w": 36, "h": 24, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 200, "y": 400, "w": 130, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 60, "y": 520, "w": 120, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 490, "y": 150, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 420, "y": 300, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 490, "y": 450, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 410, "y": 590, "w": 100, "h": 18, "route": "b" }
+      ],
+      "exit": { "kind": "oneWayPlatform", "x": 160, "y": 640, "w": 140, "h": 18 }
+    },
+    {
+      "id": "p_003_zigzag_narrow",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 50, "y": 110, "w": 100, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 200, "y": 220, "w": 100, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 50, "y": 340, "w": 100, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 200, "y": 460, "w": 100, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 480, "y": 165, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 410, "y": 275, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 490, "y": 395, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 420, "y": 515, "w": 100, "h": 18, "route": "b" }
+      ],
+      "exit": { "kind": "oneWayPlatform", "x": 80, "y": 580, "w": 140, "h": 18 }
+    },
+    {
+      "id": "p_004_drift_platform",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 60, "y": 120, "w": 110, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 150, "y": 250, "w": 90, "h": 18, "driftEnabled": true, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 60, "y": 380, "w": 110, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 480, "y": 185, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 420, "y": 315, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 490, "y": 440, "w": 100, "h": 18, "route": "b" }
+      ],
+      "exit": { "kind": "oneWayPlatform", "x": 150, "y": 500, "w": 140, "h": 18 }
+    },
+    {
+      "id": "p_005_double_jump_room",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 80, "y": 180, "w": 120, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 60, "y": 400, "w": 120, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 480, "y": 100, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 410, "y": 250, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 490, "y": 330, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 420, "y": 470, "w": 100, "h": 18, "route": "b" }
+      ],
+      "exit": { "kind": "oneWayPlatform", "x": 150, "y": 560, "w": 140, "h": 18 }
+    },
+    {
+      "id": "p_006_conveyor_climb",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 50, "y": 110, "w": 120, "h": 18, "conveyorVx": 80, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 200, "y": 230, "w": 110, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 50, "y": 350, "w": 120, "h": 18, "conveyorVx": -80, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 480, "y": 170, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 410, "y": 290, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 490, "y": 410, "w": 100, "h": 18, "route": "b" }
+      ],
+      "exit": { "kind": "oneWayPlatform", "x": 180, "y": 470, "w": 140, "h": 18 }
+    },
+    {
+      "id": "p_007_spring_double",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 60, "y": 100, "w": 110, "h": 18, "route": "a" },
+        { "kind": "spring", "x": 90, "y": 100, "w": 36, "h": 24, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 150, "y": 340, "w": 120, "h": 18, "route": "a" },
+        { "kind": "spring", "x": 180, "y": 340, "w": 36, "h": 24, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 480, "y": 165, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 410, "y": 280, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 490, "y": 395, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 420, "y": 470, "w": 100, "h": 18, "route": "b" }
+      ],
+      "exit": { "kind": "oneWayPlatform", "x": 60, "y": 520, "w": 140, "h": 18 }
+    },
+    {
+      "id": "p_008_wide_gap_challenge",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 40, "y": 130, "w": 110, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 220, "y": 260, "w": 100, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 50, "y": 390, "w": 110, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 480, "y": 195, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 410, "y": 325, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 490, "y": 450, "w": 100, "h": 18, "route": "b" }
+      ],
+      "exit": { "kind": "oneWayPlatform", "x": 190, "y": 510, "w": 140, "h": 18 }
+    },
+    {
+      "id": "p_009_staircase_tight",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 70, "y": 100, "w": 90, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 150, "y": 200, "w": 90, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 70, "y": 300, "w": 90, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 150, "y": 400, "w": 90, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 480, "y": 150, "w": 90, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 410, "y": 250, "w": 90, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 490, "y": 350, "w": 90, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 420, "y": 450, "w": 90, "h": 18, "route": "b" }
+      ],
+      "exit": { "kind": "oneWayPlatform", "x": 70, "y": 500, "w": 140, "h": 18 }
+    },
+    {
+      "id": "p_010_moving_drift_chain",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 60, "y": 120, "w": 100, "h": 18, "driftEnabled": true, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 200, "y": 260, "w": 100, "h": 18, "driftEnabled": true, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 60, "y": 400, "w": 100, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 480, "y": 50, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 410, "y": 190, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 490, "y": 330, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 420, "y": 460, "w": 100, "h": 18, "route": "b" }
+      ],
+      "exit": { "kind": "oneWayPlatform", "x": 180, "y": 520, "w": 140, "h": 18 }
+    },
+    {
+      "id": "p_011_high_spring_rescue",
+      "entries": [
+        { "kind": "spring", "x": 80, "y": 0, "w": 36, "h": 24, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 150, "y": 280, "w": 120, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 60, "y": 420, "w": 110, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 480, "y": 140, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 410, "y": 325, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 490, "y": 470, "w": 100, "h": 18, "route": "b" }
+      ],
+      "exit": { "kind": "oneWayPlatform", "x": 160, "y": 540, "w": 140, "h": 18 }
+    },
+    {
+      "id": "p_012_final_gauntlet",
+      "entries": [
+        { "kind": "oneWayPlatform", "x": 50, "y": 120, "w": 100, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 200, "y": 240, "w": 90, "h": 18, "conveyorVx": 70, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 50, "y": 370, "w": 100, "h": 18, "route": "a" },
+        { "kind": "spring", "x": 80, "y": 370, "w": 36, "h": 24, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 180, "y": 500, "w": 110, "h": 18, "route": "a" },
+        { "kind": "oneWayPlatform", "x": 480, "y": 70, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 410, "y": 180, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 490, "y": 300, "w": 100, "h": 18, "route": "b" },
+        { "kind": "oneWayPlatform", "x": 420, "y": 430, "w": 100, "h": 18, "route": "b" }
+      ],
+      "exit": { "kind": "oneWayPlatform", "x": 60, "y": 620, "w": 140, "h": 18 }
+    }
+  ]
+}

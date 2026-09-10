@@ -1,0 +1,9 @@
+{
+  "$comment": "パターン系ジャンル(runner/bullet_runner/platformer)の到達可能性ヒューリスティック検証(scripts/pattern-reach-sim.mjs)専用の定数。physics.json (jumpVelocity/doubleJumpVelocity/defaultGravity/runSpeed/fallGravityMult) からの理論値に安全マージンを持たせた保守値。実プレイで要調整。ランタイムのゲームロジックからは参照しない（検証スクリプト専用）。",
+  "section": "patterns",
+  "maxJumpRisePx": 140,
+  "maxDoubleJumpRisePx": 230,
+  "maxJumpGapPx": 160,
+  "maxDoubleJumpGapPx": 260,
+  "minSpikeLandingGapPx": 50
+}

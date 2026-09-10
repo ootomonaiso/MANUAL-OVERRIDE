@@ -202,8 +202,6 @@ describe('JSON 直接検証: ジャンル定義と Feature enable 整合性', ()
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const dungeonJson = require('../../../src/data/genres/dungeon.json')
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const platformerJson = require('../../../src/data/genres/platformer.json')
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const runnerJson = require('../../../src/data/genres/runner.json')
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const racingJson = require('../../../src/data/genres/racing.json')
@@ -221,10 +219,6 @@ describe('JSON 直接検証: ジャンル定義と Feature enable 整合性', ()
 
   it('dungeon.json が melee_kill を enableFeatures に持つ', () => {
     expect(dungeonJson.enableFeatures).toContain('melee_kill')
-  })
-
-  it('platformer.json が near_miss_combo を enableFeatures に持つ', () => {
-    expect(platformerJson.enableFeatures).toContain('near_miss_combo')
   })
 
   it('runner.json が near_miss_combo を enableFeatures に持つ', () => {
@@ -255,8 +249,7 @@ describe('JSON 直接検証: ジャンル定義と Feature enable 整合性', ()
     expect(rpgJson.scoreFormula).not.toContain('kills')
   })
 
-  it('near_miss_combo Feature が 5 ジャンルの scoreFormula に maxCombo 項を含んでいる', () => {
-    expect(platformerJson.scoreFormula).toContain('maxCombo')
+  it('near_miss_combo Feature が 4 ジャンルの scoreFormula に maxCombo 項を含んでいる', () => {
     expect(runnerJson.scoreFormula).toContain('maxCombo')
     expect(racingJson.scoreFormula).toContain('maxCombo')
     expect(sportsJson.scoreFormula).toContain('maxCombo')

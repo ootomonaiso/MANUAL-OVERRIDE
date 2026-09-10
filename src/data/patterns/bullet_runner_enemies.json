@@ -1,0 +1,93 @@
+{
+  "$comment": "Bullet Runner の敵オーバーレイ。src/data/patterns/runner.json のパターンに敵の出現候補を重ねる。plan/spec-bullet-runner.md 参照。座標系はrunner.jsonと同一（x=パターン起点からの水平距離px、y=地面からの高さpx）。spawnChanceの確率でパターンごとに独立抽選される。敵は必ず空中（プレイヤーの通常走行ヒットボックス高さ=52pxより上）に配置し、地面固定のトゲ（壊せない障害物）と明確に区別する。ふわふわ浮遊アニメーションはコード側（PatternRunnerFeature）で付与する。",
+  "section": "bullet_runner_enemy_overlay",
+  "overlays": [
+    {
+      "patternId": "r_001_spike_gauntlet_basic",
+      "spots": [
+        { "x": 340, "y": 100, "w": 32, "h": 32, "hpOverride": 2, "spawnChance": 0.6 },
+        { "x": 620, "y": 140, "w": 32, "h": 32, "hpOverride": 3, "spawnChance": 0.4 }
+      ]
+    },
+    {
+      "patternId": "r_002_spike_pair_tight",
+      "spots": [
+        { "x": 420, "y": 110, "w": 32, "h": 32, "hpOverride": 2, "spawnChance": 0.5 }
+      ]
+    },
+    {
+      "patternId": "r_003_spike_triple_chain",
+      "spots": [
+        { "x": 290, "y": 100, "w": 32, "h": 32, "hpOverride": 2, "spawnChance": 0.5 },
+        { "x": 570, "y": 150, "w": 32, "h": 32, "hpOverride": 3, "spawnChance": 0.4 }
+      ]
+    },
+    {
+      "patternId": "r_004_platform_staircase",
+      "spots": [
+        { "x": 450, "y": 200, "w": 32, "h": 32, "hpOverride": 2, "spawnChance": 0.4 }
+      ]
+    },
+    {
+      "patternId": "r_005_spike_dense",
+      "spots": [
+        { "x": 680, "y": 110, "w": 32, "h": 32, "hpOverride": 2, "spawnChance": 0.5 }
+      ]
+    },
+    {
+      "patternId": "r_006_double_jump_challenge",
+      "spots": [
+        { "x": 450, "y": 120, "w": 32, "h": 32, "hpOverride": 2, "spawnChance": 0.5 }
+      ]
+    },
+    {
+      "patternId": "r_007_spring_launch",
+      "spots": [
+        { "x": 300, "y": 180, "w": 32, "h": 32, "hpOverride": 2, "spawnChance": 0.4 }
+      ]
+    },
+    {
+      "patternId": "r_008_moving_platform",
+      "spots": [
+        { "x": 600, "y": 100, "w": 32, "h": 32, "hpOverride": 2, "spawnChance": 0.5 }
+      ]
+    },
+    {
+      "patternId": "r_009_conveyor",
+      "spots": [
+        { "x": 380, "y": 110, "w": 32, "h": 32, "hpOverride": 2, "spawnChance": 0.4 }
+      ]
+    },
+    {
+      "patternId": "r_010_spike_wall",
+      "spots": [
+        { "x": 500, "y": 130, "w": 32, "h": 32, "hpOverride": 3, "spawnChance": 0.5 }
+      ]
+    },
+    {
+      "patternId": "r_011_platform_zigzag",
+      "spots": [
+        { "x": 420, "y": 220, "w": 32, "h": 32, "hpOverride": 2, "spawnChance": 0.4 }
+      ]
+    },
+    {
+      "patternId": "r_012_gauntlet_mixed",
+      "spots": [
+        { "x": 470, "y": 110, "w": 32, "h": 32, "hpOverride": 2, "spawnChance": 0.5 }
+      ]
+    },
+    {
+      "patternId": "r_013_wide_spike_wall",
+      "spots": [
+        { "x": 500, "y": 130, "w": 32, "h": 32, "hpOverride": 3, "spawnChance": 0.5 }
+      ]
+    },
+    {
+      "patternId": "r_014_spring_platform_combo",
+      "spots": [
+        { "x": 450, "y": 250, "w": 32, "h": 32, "hpOverride": 2, "spawnChance": 0.4 },
+        { "x": 780, "y": 110, "w": 32, "h": 32, "hpOverride": 2, "spawnChance": 0.4 }
+      ]
+    }
+  ]
+}

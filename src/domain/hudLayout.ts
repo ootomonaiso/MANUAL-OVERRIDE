@@ -25,14 +25,19 @@ export interface HudLayoutInput {
 
 /**
  * RuntimeRules からレイアウトを分類する。
- * shoot フィーチャーの有無で STG 系を判定するため、aquatic（vertical だが
- * shoot を disable）や tetris（gravity 0 だが shoot なし）は自然に除外される。
+ * shoot フィーチャーの有無で STG 系を判定するため、tetris（gravity 0 だが
+ * shoot なし）は自然に除外される。aquatic / platformer は shoot を持たないが、
+ * 画面の左右を vstg と同じ帯で埋める見た目にするため明示的に vstg 判定へ含める
+ * （plan/spec-aquatic.md: aerial_stg のカメラ・画面サイズ実装を流用。platformer も
+ * pattern_climb の水平可動域が vstg と同じ比率の帯のため、見た目を揃える）。
+ * bullet_runner は shoot を持つが重力ありの接地ランナー（無重力の hstg 系 STG とは
+ * 別物）なので、hstg には分類せず runner と同じ hbase（原点配置）に含める。
  */
 export function classifyHudLayout(r: HudLayoutInput): HudLayout {
   const hasShoot = r.features.has('shoot')
-  if (r.scrollAxis === 'y' && hasShoot) return 'vstg'
+  if (r.scrollAxis === 'y' && (hasShoot || r.genre === 'aquatic' || r.genre === 'platformer')) return 'vstg'
   if (r.scrollAxis === 'x' && r.gravity === 0 && hasShoot) return 'hstg'
-  if (r.genre === 'base' || r.genre === 'runner') return 'hbase'
+  if (r.genre === 'base' || r.genre === 'runner' || r.genre === 'bullet_runner') return 'hbase'
   return 'other'
 }
 

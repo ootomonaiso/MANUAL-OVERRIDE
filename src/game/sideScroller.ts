@@ -2,10 +2,10 @@ import type { RuntimeRules, ActionStats, ScoreVars, ManualVersion, LearningRule,
 import type { MutableWorld, GameStats } from '../engine/types'
 import { Player, Hazard, Item, Bullet, rectsOverlap, type ScorePopup, type HazardShape } from './entities'
 import { HAZARD_SPAWN, PLAYER_PHYSICS, UPDATE_DISTANCES, DISTANCE_ACCEL, BASE_SCROLL_SPEED, DEFAULT_SCORE_FORMULA } from '../data/gameBalance'
-import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY, PIXELART, HUD_SAFEZONE } from '../data/tunables'
+import { VFX, CAMERA, BACKGROUND, HAZARD_VFX, UI, SPAWN, SCORE, PHYSICS, DIFFICULTY, PIXELART, HUD_SAFEZONE, GIMMICKS, EXTRA_MOVEMENT, AQUATIC_TUNING } from '../data/tunables'
 import { classifyHudLayout, computeSafeZone, type SafeZone } from '../domain/hudLayout'
 import { getGenre, getActiveSystems } from '../engine/GameRegistry'
-import { resolveWeight } from '../engine/types'
+import { resolveWeight, type SpawnEntry } from '../engine/types'
 import { soundManager } from '../plugins/SoundManager'
 import { evalScoreFormula, getLastFormulaError } from '../domain/scoreCalc'
 import { evaluateLearningRules, describeEffect } from '../domain/LearningSystem'
@@ -14,6 +14,8 @@ import { InputManager } from './InputManager'
 import { ParticleSystem } from './ParticleSystem'
 import { PixelCanvas } from './render'
 import { SPRITES } from '../data/sprites'
+import { PLATFORMER_ROOMS, pickRandomPattern } from '../framework/PatternLoader'
+import type { PatternEntry } from '../engine/patternTypes'
 // ジャンルプラグインとフィーチャーシステムを一括登録
 import '../genres/index'
 import '../game/systems/index'
@@ -148,6 +150,25 @@ export class SideScroller {
   private jumpBufferTimer = 0   // ジャンプ先行入力フレーム数
   private jumpHeld = false      // ジャンプキー押しっぱなし判定
 
+  // 穴落下の確定フラグ（runner/bullet_runner）: 穴の真上で地面ラインに到達した時点で
+  // true になり、以後は穴のハザードが画面外へ抜けても地面判定を復活させない
+  // （_resolveHorizontalLanding が参照・更新する）
+  private inLethalHoleFall = false
+
+  // pattern_climb フィーチャー（platformer）専用状態。部屋は連続スクロールせず、
+  // 出口に到達したら次の部屋へハードカット（即座に切り替え）する方式（plan/spec-platformer.md）
+  private climbDriftTime = 0            // 移動足場の水平ドリフト位相
+  private climbStandingOn: Hazard | null = null  // 現在立っている足場（コンベア速度の適用に使用）
+  private climbLavaTopY = 0             // 溶岩上端のスクリーンY座標。上限なく上昇し続ける
+  private climbLavaGraceSec = 0         // 残り猶予秒数。0より大きい間は溶岩が上昇しない
+  private climbRoomsCleared = 0         // クリアした部屋数（スコア・溶岩速度の計算に使用）
+  private climbLastRoomId: string | null = null  // 直前の部屋ID（連続同一部屋を避けるため）
+
+  // pattern_descend フィーチャー（aquatic）専用状態。連続スクロールしながら重力・ジャンプで
+  // 岩（一方通行足場）を乗り継ぐ方式（plan/spec-aquatic.md）
+  private aquaticDriftTime = 0                    // ふわふわ足場の水平ドリフト位相
+  private aquaticStandingOn: Hazard | null = null  // 現在立っている岩・足場
+
   // ─── 演出 ────────────────────────────────────────────────────────
   private scorePopups: ScorePopup[] = []
   private shakeIntensity = 0
@@ -207,6 +228,10 @@ export class SideScroller {
     this.player.jumpsLeft = rules.features.has('double_jump') ? 2 : 1
 
     this.input.setGameKeys(rules.controls)
+
+    // pattern_climb フィーチャーを最初から持つ状態で起動される場合（デバッグの force genre 等）、
+    // updateRules() の enteringClimb 判定を経由しないため、ここでも部屋を用意する。
+    if (rules.features.has('pattern_climb')) this._seedClimbRoom(true)
   }
 
   // ルール更新（ManualVersion があれば learningRules を同期）
@@ -233,6 +258,7 @@ export class SideScroller {
         sys.onDisable?.(preWorld)
       }
     }
+    const enteringClimb = !oldFeatures.has('pattern_climb') && rules.features.has('pattern_climb')
 
     this.rules = rules
     this.input.setGameKeys(rules.controls)
@@ -242,6 +268,16 @@ export class SideScroller {
       // double_jump が削除された場合、最大ジャンプ回数を1に制限
       this.player.jumpsLeft = Math.min(this.player.jumpsLeft, 1)
     }
+
+    // playerMaxHp をプレイヤーへ反映（hp ゲージの上限）。満タンだった場合は
+    // 新上限でも満タンに保つ（ジャンル遷移時の自然な「回復」演出として扱う）。
+    if (this.player.maxHp !== rules.playerMaxHp) {
+      const wasFull = this.player.hp >= this.player.maxHp
+      this.player.maxHp = rules.playerMaxHp
+      this.player.hp = wasFull ? this.player.maxHp : Math.min(this.player.hp, this.player.maxHp)
+    }
+
+    if (enteringClimb) this._seedClimbRoom(true)
     // LearningSystem の副作用状態をリセット（ルール差し替えで古いエフェクトが残らないよう）
     this._disabledActions.clear()
     this._invertHazardUntil = -Infinity
@@ -568,10 +604,14 @@ export class SideScroller {
    * ジャンル確定時に1回呼ぶ（App.vue の lockedGenre watch から）。
    * 新レイアウトが STG系（セーフゾーンを持つ）の場合のみ遷移演出を開始する。
    * それ以外のジャンルでは中央への自動移動は不自然なため何もしない。
+   * pattern_climb（platformer）は左右パネル表示のため vstg に分類されるが、
+   * 自由飛行の中央寄せは部屋の床に立つ物理と噛み合わないため対象外
+   * （_seedClimbRoom が入室時の配置を専用に処理する）。
    */
   beginGenreTransition(): void {
     const layout = classifyHudLayout(this.rules)
     if (layout !== 'hstg' && layout !== 'vstg') return
+    if (this.rules.features.has('pattern_climb')) return
     this._transitionRemaining = HUD_SAFEZONE.transitionSec
   }
 
@@ -623,6 +663,15 @@ export class SideScroller {
 
   // ─── 縦スクロール更新 ────────────────────────────────────────────
   private _updateVertical(dt: number, speed: number): boolean {
+    // pattern_climb フィーチャー（platformer）: 自由飛行ではなく重力・ジャンプ・足場着地の
+    // 専用物理を使う。既存の縦スクロール自由移動（aerial_stg 等）とは
+    // 挙動が根本的に異なるため、早期に別メソッドへ委譲する。
+    if (this.rules.features.has('pattern_climb')) return this._updateClimbRoom(dt)
+    // pattern_descend フィーチャー（aquatic）: pattern_climb と同じ重力・ジャンプ・一方通行足場の
+    // 物理を使うが、部屋のハードカットではなく連続スクロールしながら進む（Runnerの横エンドレスを
+    // 縦に転用した第3の形）ため、こちらも別メソッドへ委譲する。
+    if (this.rules.features.has('pattern_descend')) return this._updateAquaticDescent(dt)
+
     const r = this.rules
     const p = this.player
     const W = this.canvas.width
@@ -643,10 +692,14 @@ export class SideScroller {
     this.cameraX = 0
 
     for (const h of this.hazards) {
-      h.y += speed * dt
+      // direction='left' は「下から出現し上へ流れる」ジャンル用（aquatic）。既定の
+      // 'right' は従来通り上から下へ（aerial_stg / bullet_hell 等、挙動不変）。
+      h.y += (h.direction === 'left' ? -speed : speed) * dt
       h.pulse += dt * VFX.hazardPulseRate
     }
-    this.hazards = this.hazards.filter(h => h.y < H + SPAWN.hazardCullBelow)
+    this.hazards = this.hazards.filter(h =>
+      h.direction === 'left' ? h.y > -SPAWN.hazardCullBelow - h.h : h.y < H + SPAWN.hazardCullBelow
+    )
 
     for (const item of this.items) {
       item.y += speed * dt
@@ -684,6 +737,425 @@ export class SideScroller {
 
     // 発射数の統計は実発射する ShootFeature 側で addShot() により計上する（#209）
     return false
+  }
+
+  /** 縦STG系ジャンル（vstg）共通の水平可動域（画面端の左右を除いた帯）。pattern_climb / pattern_descend が使う */
+  private _vstgBandX(): { min: number; max: number } {
+    const W = this.canvas.width
+    return { min: W * HUD_SAFEZONE.vstgLeftRatio, max: W * (1 - HUD_SAFEZONE.vstgRightRatio) }
+  }
+
+  /** pattern_climb: 部屋の床の世界Y座標（部屋高さの基準点）。_seedClimbRoom / _updateClimbRoom で共有する */
+  private _climbFloorY(): number {
+    return this.canvas.height - GIMMICKS.climbFloorBottomMarginPx - GIMMICKS.climbFloorHeightPx
+  }
+
+  /**
+   * pattern_climb フィーチャーの部屋を1つ生成する。フィーチャーが有効化された瞬間、および
+   * 部屋クリア（出口足場への着地）のたびに呼ぶ。既存のハザードを全て破棄し、プールから
+   * 均一確率で選んだ部屋パターン（直前と同一は除外）の床・entries・exit を新たに生成し、
+   * プレイヤーを新しい部屋の床の上へ再配置する。連続スクロールしないハードカット方式のため、
+   * 溶岩の位置も部屋ごとに同じ相対位置（画面下端）へリセットされる（plan/spec-platformer.md）。
+   */
+  private _seedClimbRoom(isInitialEntry = false): void {
+    const p = this.player
+    const H = this.canvas.height
+    const { min: bandMinX, max: bandMaxX } = this._vstgBandX()
+    const floorY = this._climbFloorY()
+    const plugin = getGenre('platformer')
+    const pal = plugin.palette
+
+    this.hazards = []
+
+    const floor = new Hazard(bandMinX, floorY, bandMaxX - bandMinX, GIMMICKS.climbFloorHeightPx, pal.safe, pal.safeGlow, 'rect', 1, true)
+    floor.isPlatform = true
+    floor.isOneWay = true
+    floor.isGimmick = true
+    this.hazards.push(floor)
+
+    p.x = (bandMinX + bandMaxX) / 2 - p.w / 2
+    p.y = floorY - p.h
+    p.vy = 0
+    p.onGround = true
+    p.jumpsLeft = this.rules.features.has('double_jump') ? 2 : 1
+    this.climbStandingOn = floor
+    this.climbLavaTopY = H
+    // ジャンル確定演出（GenreRevealOverlay）表示中は画面が見えず溶岩の接近に気づけないため、
+    // 演出時間（2.8秒）より長めの猶予を設けてから上昇を始める。通常の部屋クリア時は0のまま
+    this.climbLavaGraceSec = isInitialEntry ? GIMMICKS.climbInitialGraceSec : 0
+
+    if (PLATFORMER_ROOMS.length === 0) return
+    const room = pickRandomPattern(PLATFORMER_ROOMS, this.climbLastRoomId)
+    this.climbLastRoomId = room.id
+
+    for (const entry of room.entries) {
+      this.hazards.push(this._buildClimbHazard(entry, bandMinX, floorY, plugin))
+    }
+    // 出口は帯いっぱいの幅（床と同じ長さ）にする。JSONのx/wは無視し、どの経路から
+    // 登ってきても指定の高さへ達しさえすれば到達できるようにする（複数ルート対応）。
+    const exit = this._buildClimbHazard(
+      { ...room.exit, x: 0, w: bandMaxX - bandMinX },
+      bandMinX, floorY, plugin,
+    )
+    exit.isRoomExit = true
+    this.hazards.push(exit)
+  }
+
+  /** pattern_climb: PatternEntry（entries / exit 共通）から Hazard を生成する */
+  private _buildClimbHazard(entry: PatternEntry, bandMinX: number, floorY: number, plugin: ReturnType<typeof getGenre>): Hazard {
+    const pal = plugin.palette
+    const gp = plugin.gimmickPalette
+    const worldX = bandMinX + entry.x
+
+    if (entry.kind === 'spring') {
+      // 地面に乗る物体は下端基準（上端基準にすると entry.y=0 のとき床に埋まってしまう）
+      const spec = gp?.spring ?? { color: pal.safe, glow: pal.safeGlow }
+      const worldY = floorY - entry.y - entry.h
+      const hz = new Hazard(worldX, worldY, entry.w, entry.h, spec.color, spec.glow, 'diamond', 1, true)
+      hz.isSpring = true
+      hz.isGimmick = true
+      // isOneWay を立てないと「このフレームで上端を跨いだか」を見ない＝一度でも下を
+      // 通過した後は足元Yがバネの上端を超えている限りずっと反発対象になってしまい、
+      // 部屋の床にいるだけで遠く離れた場所のバネに反応する巨大な当たり判定になる。
+      // 通常の足場と同じ一方通行判定に乗せ、着地の瞬間だけ反発するよう制限する。
+      hz.isOneWay = true
+      return hz
+    }
+
+    // oneWayPlatform（exit含む）: 着地面（上端）の高さが entry.y になるよう上端基準で配置する
+    const spec = gp?.platform ?? { color: pal.safe, glow: pal.safeGlow }
+    const worldY = floorY - entry.y
+    const hz = new Hazard(worldX, worldY, entry.w, entry.h, spec.color, spec.glow, 'rect', 1, true)
+    hz.isPlatform = true
+    hz.isOneWay = true
+    hz.isGimmick = true
+    hz.driftEnabled = entry.driftEnabled ?? false
+    hz.conveyorVx = entry.conveyorVx ?? 0
+    return hz
+  }
+
+  // ─── pattern_climb 更新（platformer: 部屋内の重力・ジャンプ・足場登り） ──────────
+  // 横スクロールと同じ重力・コヨーテ・ジャンプバッファ・二段ジャンプ物理を縦方向に適用する。
+  // 部屋は連続スクロールしない（ハードカット方式）ため、ハザードは部屋内で静止したままで
+  // よく、着地判定は横スクロールの isOneWay 判定と同じ「このフレームで足場上端を跨いだか」
+  // だけで足りる（穴修正で得た知見と同じロジック。plan/spec-platformer.md）。
+  private _updateClimbRoom(dt: number): boolean {
+    const r = this.rules
+    const p = this.player
+    const floorY = this._climbFloorY()
+    const { min: bandMinX, max: bandMaxX } = this._vstgBandX()
+    const jumpKey = r.controls.jump
+    const leftKey = r.controls.moveLeft
+    const rightKey = r.controls.moveRight
+
+    if (this.input.keys.has(leftKey))  this.stats.moveLeft++
+    if (this.input.keys.has(rightKey)) this.stats.moveRight++
+    if (p.onGround) this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
+
+    // 横方向は自由移動（vx は MovementFeature.preUpdate が設定済み）
+    p.x += p.vx * dt
+    p.x = Math.max(bandMinX, Math.min(bandMaxX - p.w, p.x))
+
+    // ─── ジャンプ（横スクロールと同じ coyote / buffer / 二段ジャンプ） ──────
+    const isDouble = r.features.has('double_jump')
+    const jumpJustPressed = this.input.justPressed.has(jumpKey)
+    const jumpJustReleased = this.input.justReleased.has(jumpKey)
+
+    if (p.onGround) {
+      this.coyoteTimer = PLAYER_PHYSICS.coyoteFrames
+    } else if (this.coyoteTimer > 0) {
+      this.coyoteTimer--
+    }
+    if (jumpJustPressed) {
+      this.jumpBufferTimer = PLAYER_PHYSICS.jumpBufferFrames
+    } else if (this.jumpBufferTimer > 0) {
+      this.jumpBufferTimer--
+    }
+
+    const canJumpCoyote = this.coyoteTimer > 0 && p.jumpsLeft === (isDouble ? 2 : 1)
+    const canJumpDouble = isDouble && p.jumpsLeft > 0
+    if (this.jumpBufferTimer > 0 && (canJumpCoyote || (canJumpDouble && !p.onGround) || p.onGround)) {
+      if (p.jumpsLeft > 0 || this.coyoteTimer > 0) {
+        p.vy = PLAYER_PHYSICS.jumpVelocity
+        p.jumpsLeft = Math.max(0, p.jumpsLeft - 1)
+        p.onGround = false
+        this.climbStandingOn = null
+        this.jumpHeld = true
+        this.jumpBufferTimer = 0
+        this.coyoteTimer = 0
+        this.stats.jumps++
+        this.firstJumpDone = true
+        this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
+        soundManager.onJump()
+        const jw = this._getWorld()
+        getGenre(r.genre).onPlayerJump?.(jw)
+        for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
+      }
+    }
+    if (jumpJustReleased && p.vy < 0 && this.jumpHeld) {
+      p.vy *= PLAYER_PHYSICS.jumpCutMultiplier
+      this.jumpHeld = false
+    }
+    if (!this.input.keys.has(jumpKey)) this.jumpHeld = false
+
+    // ─── 重力 ───────────────────────────────────────────────────────
+    // isOneWay判定用: 移動前の足元Y（このフレームでまだ足場に潜り込んでいなかったか）
+    const prevFootY = p.y + p.h
+    p.vy += r.gravity * (p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0) * dt
+    p.y += p.vy * dt
+
+    // ─── 移動足場のドリフトアニメーション（連続スクロールしないため経過時間ベース） ──
+    this.climbDriftTime += dt
+    for (const h of this.hazards) {
+      h.pulse += dt * VFX.hazardPulseRate
+      if (h.driftEnabled) {
+        const drift = Math.sin(this.climbDriftTime * EXTRA_MOVEMENT.verticalDriftFreq + h.y * 0.01)
+          * GIMMICKS.movingPlatformDriftAmp * dt
+        h.x = Math.max(bandMinX, Math.min(bandMaxX - h.w, h.x + drift))
+      }
+    }
+
+    // ─── 足場・バネ・出口への着地判定 ───────────────────────────────────
+    const landed = this._resolveClimbLanding(p, prevFootY)
+
+    // ─── コンベア: 立っている足場の水平速度を加算 ──────────────────────
+    if (p.onGround && this.climbStandingOn?.conveyorVx) {
+      p.x = Math.max(bandMinX, Math.min(bandMaxX - p.w, p.x + this.climbStandingOn.conveyorVx * dt))
+    }
+
+    if (p.landSquash > 0) p.landSquash *= PHYSICS.landSquashDecay
+
+    // ─── 部屋クリア: 出口に着地したら次の部屋へハードカット ──────────────
+    if (landed?.isRoomExit) {
+      this.climbRoomsCleared++
+      this.distance += floorY - landed.rect.y  // 「高度」= クリアした部屋の床→出口の高さを積算
+      this._seedClimbRoom()
+      return false
+    }
+
+    // ─── 溶岩: 猶予中は上昇を止め、明けたら部屋クリア数に応じて上限付きで加速しながら上昇し続ける ──
+    if (this.climbLavaGraceSec > 0) {
+      this.climbLavaGraceSec = Math.max(0, this.climbLavaGraceSec - dt)
+    } else {
+      const lavaSpeed = Math.min(
+        GIMMICKS.lavaSpeedBasePxPerSec + this.climbRoomsCleared * GIMMICKS.lavaSpeedGrowthPerRoomPxPerSec,
+        GIMMICKS.lavaSpeedMaxPxPerSec,
+      )
+      this.climbLavaTopY -= lavaSpeed * dt
+      if (p.y + p.h >= this.climbLavaTopY) {
+        this._die(p)
+        return true
+      }
+    }
+
+    return false
+  }
+
+  /**
+   * pattern_climb 用の足場・バネ・出口への着地判定。isOneWay足場は横スクロールと同じ
+   * 一方通行ロジック（上昇中は素通り、下降中に足場上端を跨いだフレームだけ着地）を使う。
+   * 着地したハザードを返す（出口判定・コンベア適用に使う）。p.onGround は呼び出し前の値
+   * （＝前フレームの接地状態）を読んでから確定させる（wasInAir 判定に使うため）。
+   */
+  private _resolveClimbLanding(p: Player, prevFootY: number): Hazard | null {
+    let best: Hazard | null = null
+    let bestTop = Infinity
+    for (const h of this.hazards) {
+      if (!h.isPlatform && !h.isSpring) continue
+      if (p.x + p.w <= h.x || p.x >= h.x + h.w) continue  // 水平方向に重なっていない
+      const top = h.rect.y
+      if (h.isOneWay && (p.vy < 0 || prevFootY > top)) continue
+      if (p.y + p.h < top) continue  // まだ足場に到達していない
+      if (top < bestTop) { bestTop = top; best = h }
+    }
+
+    if (!best) { p.onGround = false; this.climbStandingOn = null; return null }
+
+    const isDouble = this.rules.features.has('double_jump')
+    if (best.isSpring) {
+      p.y = best.rect.y - p.h
+      p.vy = GIMMICKS.springBounceVelocity
+      p.onGround = false
+      p.jumpsLeft = isDouble ? 2 : 1
+      this.climbStandingOn = null
+      this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
+      soundManager.onJump()
+    } else {
+      const wasInAir = !p.onGround
+      p.y = best.rect.y - p.h
+      p.vy = 0
+      p.onGround = true
+      p.jumpsLeft = isDouble ? 2 : 1
+      this.climbStandingOn = best
+      if (wasInAir) {
+        p.landSquash = 1.0
+        this._spawnLandParticles(p.x + p.w / 2, best.rect.y)
+        soundManager.onLand()
+        getGenre(this.rules.genre).onPlayerLand?.(this._getWorld())
+      }
+    }
+    return best
+  }
+
+  // ─── pattern_descend 更新（aquatic: 重力・ジャンプで岩を乗り継ぐ縦エンドレス潜行） ──────
+  // pattern_climb と同じ重力・コヨーテ・ジャンプバッファ物理を使うが（二段ジャンプは無し）、
+  // 部屋のハードカットではなく連続スクロールしながら進む点が異なる（plan/spec-aquatic.md）。
+  // 画面外（上端・下端）への逸脱はどちらも敗北として扱う。
+  private _updateAquaticDescent(dt: number): boolean {
+    const r = this.rules
+    const p = this.player
+    const H = this.canvas.height
+    const band = this._vstgBandX()
+    const jumpKey = r.controls.jump
+    const leftKey = r.controls.moveLeft
+    const rightKey = r.controls.moveRight
+
+    const scrollSpeed = Math.min(
+      AQUATIC_TUNING.scrollSpeedBasePxPerSec + this.survivedSec * AQUATIC_TUNING.scrollSpeedGrowthPxPerSec2,
+      AQUATIC_TUNING.scrollSpeedMaxPxPerSec,
+    )
+
+    if (this.input.keys.has(leftKey))  this.stats.moveLeft++
+    if (this.input.keys.has(rightKey)) this.stats.moveRight++
+    if (p.onGround) this.runCycle += Math.abs(p.vx) * dt * VFX.runCycleRate
+
+    // 横方向は自由移動（vx は MovementFeature.preUpdate が設定済み）
+    p.x += p.vx * dt
+    p.x = Math.max(band.min, Math.min(band.max - p.w, p.x))
+
+    // ─── ジャンプ（横スクロールと同じ coyote / buffer。二段ジャンプは無し） ──────────
+    const jumpJustPressed = this.input.justPressed.has(jumpKey)
+    const jumpJustReleased = this.input.justReleased.has(jumpKey)
+
+    if (p.onGround) {
+      this.coyoteTimer = PLAYER_PHYSICS.coyoteFrames
+    } else if (this.coyoteTimer > 0) {
+      this.coyoteTimer--
+    }
+    if (jumpJustPressed) {
+      this.jumpBufferTimer = PLAYER_PHYSICS.jumpBufferFrames
+    } else if (this.jumpBufferTimer > 0) {
+      this.jumpBufferTimer--
+    }
+    if (this.jumpBufferTimer > 0 && (p.onGround || this.coyoteTimer > 0)) {
+      p.vy = AQUATIC_TUNING.aquaticJumpVelocityPxPerSec
+      p.jumpsLeft = 0
+      p.onGround = false
+      this.aquaticStandingOn = null
+      this.jumpHeld = true
+      this.jumpBufferTimer = 0
+      this.coyoteTimer = 0
+      this.stats.jumps++
+      this.firstJumpDone = true
+      this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
+      soundManager.onJump()
+      const jw = this._getWorld()
+      getGenre(r.genre).onPlayerJump?.(jw)
+      for (const sys of getActiveSystems(r.features)) sys.onPlayerJump?.(jw)
+    }
+    if (jumpJustReleased && p.vy < 0 && this.jumpHeld) {
+      p.vy *= PLAYER_PHYSICS.jumpCutMultiplier
+      this.jumpHeld = false
+    }
+    if (!this.input.keys.has(jumpKey)) this.jumpHeld = false
+
+    // ─── 重力（小さいジャンル定義値。画面外脱出を検知するため y は clamp しない） ──────
+    const prevFootY = p.y + p.h
+    p.vy += r.gravity * (p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0) * dt
+    p.y += p.vy * dt
+
+    // ─── ハザードのスクロール・パルス・ドリフト（ふわふわ足場） ───────────────────
+    // direction='left' は「下から出現し上へ流れる」（既存の縦スクロール規約）
+    this.aquaticDriftTime += dt
+    for (const h of this.hazards) {
+      h.y += (h.direction === 'left' ? -scrollSpeed : scrollSpeed) * dt
+      h.pulse += dt * VFX.hazardPulseRate
+      if (h.driftEnabled) {
+        const drift = Math.sin(this.aquaticDriftTime * EXTRA_MOVEMENT.verticalDriftFreq + h.y * 0.01)
+          * GIMMICKS.movingPlatformDriftAmp * dt
+        h.x = Math.max(band.min, Math.min(band.max - h.w, h.x + drift))
+      }
+    }
+    this.hazards = this.hazards.filter(h =>
+      h.direction === 'left' ? h.y > -SPAWN.hazardCullBelow - h.h : h.y < H + SPAWN.hazardCullBelow
+    )
+
+    // ─── 岩・ふわふわ足場への着地判定 ───────────────────────────────────
+    this._resolveAquaticLanding(p, prevFootY)
+    if (p.onGround && this.aquaticStandingOn?.conveyorVx) {
+      p.x = Math.max(band.min, Math.min(band.max - p.w, p.x + this.aquaticStandingOn.conveyorVx * dt))
+    }
+    if (p.landSquash > 0) p.landSquash *= PHYSICS.landSquashDecay
+
+    // ─── 流れが強い場所: 重なっている間、水平方向へ強制的に押し流す ───────────────
+    for (const h of this.hazards) {
+      if (!h.isCurrentZone || !rectsOverlap(p.rect, h.rect)) continue
+      p.x = Math.max(band.min, Math.min(band.max - p.w, p.x + h.currentVx * dt))
+    }
+
+    // ─── 敵（トゲ）等の危険ハザードとの接触判定 ───────────────────────────
+    if (p.invincible > 0) p.invincible -= dt
+    if (p.invincible <= 0) {
+      for (let i = this.hazards.length - 1; i >= 0; i--) {
+        const h = this.hazards[i]
+        if (!rectsOverlap(p.rect, h.rect)) continue
+        const isHazard = isHazardous(this._gameStats.beatHazardInverted, r.features.has('beat_hazard'), h.isSafe)
+        if (isHazard) {
+          if (this.stealthHidden && r.features.has('stealth_mode')) { /* 隠密中は被弾しない */ }
+          else {
+            this._onPlayerHit(p)
+            if (this.dead) return true
+            break
+          }
+        } else {
+          for (const sys of getActiveSystems(r.features)) {
+            sys.onSafeHazardTouch?.(this._getWorld(), h, h.x)
+          }
+        }
+      }
+    }
+
+    // ─── 画面外への逸脱（上下どちらも敗北） ─────────────────────────────
+    if (p.y + p.h <= 0 || p.y >= H) {
+      this._die(p)
+      return true
+    }
+
+    this.distance += scrollSpeed * dt
+    this.cameraX = 0
+    return false
+  }
+
+  /**
+   * pattern_descend の岩・ふわふわ足場への着地判定。isOneWay足場は横スクロールと同じ
+   * 一方通行ロジック（上昇中は素通り、下降中に足場上端を跨いだフレームだけ着地）を使う。
+   */
+  private _resolveAquaticLanding(p: Player, prevFootY: number): void {
+    let best: Hazard | null = null
+    let bestTop = Infinity
+    for (const h of this.hazards) {
+      if (!h.isPlatform) continue
+      if (p.x + p.w <= h.x || p.x >= h.x + h.w) continue  // 水平方向に重なっていない
+      const top = h.rect.y
+      if (h.isOneWay && (p.vy < 0 || prevFootY > top)) continue
+      if (p.y + p.h < top) continue  // まだ足場に到達していない
+      if (top < bestTop) { bestTop = top; best = h }
+    }
+
+    if (!best) { p.onGround = false; this.aquaticStandingOn = null; return }
+
+    const wasInAir = !p.onGround
+    p.y = best.rect.y - p.h
+    p.vy = 0
+    p.onGround = true
+    p.jumpsLeft = 1
+    this.aquaticStandingOn = best
+    if (wasInAir) {
+      p.landSquash = 1.0
+      this._spawnLandParticles(p.x + p.w / 2, best.rect.y)
+      soundManager.onLand()
+      getGenre(this.rules.genre).onPlayerLand?.(this._getWorld())
+    }
   }
 
   // ─── 横スクロール更新 ────────────────────────────────────────────
@@ -769,20 +1241,34 @@ export class SideScroller {
     } else {
       p.vy += r.gravity * (p.vy > 0 ? PLAYER_PHYSICS.fallGravityMult : 1.0) * dt
     }
+    // isOneWay足場の判定用: 移動前の足元Y（このフレームでまだ足場に潜り込んでいなかったか）
+    const prevFootY = p.y + p.h
     p.y += p.vy * dt
 
-    if (p.y + p.h >= gY) {
+    const landing = this._resolveHorizontalLanding(p, gY, prevFootY)
+    if (landing.surfaceY !== null && p.y + p.h >= landing.surfaceY) {
       const wasInAir = !p.onGround
-      p.y = gY - p.h
-      p.vy = 0
-      p.onGround = true
-      p.jumpsLeft = isDouble ? 2 : 1
+      p.y = landing.surfaceY - p.h
+      if (landing.isSpring) {
+        p.vy = GIMMICKS.springBounceVelocity
+        p.onGround = false
+        p.jumpsLeft = isDouble ? 2 : 1
+        this._spawnJumpParticles(p.x + p.w / 2, p.y + p.h)
+        soundManager.onJump()
+      } else {
+        p.vy = 0
+        p.onGround = true
+        p.jumpsLeft = isDouble ? 2 : 1
+        if (landing.hazard?.conveyorVx) {
+          p.x = Math.max(PHYSICS.playerMinX, Math.min(W * PHYSICS.playerMaxXRatio, p.x + landing.hazard.conveyorVx * dt))
+        }
+      }
       if (wasInAir) {
         p.landSquash = 1.0
-        this._spawnLandParticles(p.x + p.w / 2, gY)
+        this._spawnLandParticles(p.x + p.w / 2, landing.surfaceY)
         soundManager.onLand()
         getGenre(r.genre).onPlayerLand?.(this._getWorld())
-        if (this.jumpBufferTimer > 0) {
+        if (!landing.isSpring && this.jumpBufferTimer > 0) {
           p.vy = PLAYER_PHYSICS.jumpVelocity
           p.onGround = false
           p.jumpsLeft = isDouble ? 1 : 0
@@ -802,6 +1288,11 @@ export class SideScroller {
     } else {
       p.onGround = false
       p.airTime += dt
+      // 穴の上で着地先が無いまま画面外(下)へ落ちきったら死亡（穴に落下）
+      if (landing.overHole && p.y > H + GIMMICKS.holeDeathMarginPx) {
+        this._die(p)
+        return true
+      }
     }
     if (p.landSquash > 0) p.landSquash *= PHYSICS.landSquashDecay
     }
@@ -812,7 +1303,9 @@ export class SideScroller {
     this.distance += speed * dt
     this.cameraX = this.distance - CAMERA.leadOffset
 
-    if (this.distance >= this.nextSpawnDist) {
+    // pattern_runner（runner/bullet_runner）は手作りパターンで自前スポーンするため、
+    // 汎用の重み付きランダム生成（spawnTable ベース）は呼ばない（plan/spec-pattern-system.md）。
+    if (!r.features.has('pattern_runner') && this.distance >= this.nextSpawnDist) {
       this._spawnHazard()
       const sp = this._getSpawnParams()
       const interval = sp.baseInterval * Math.exp(-sp.decayRate * this.distance)
@@ -964,7 +1457,7 @@ export class SideScroller {
 
     // ─── 前景レイヤー（シェイクの影響を受けない画面固定レイヤー） ──
     // ビネット・スキャンライン・HUDフレーム等の画面固定装飾はここで1回だけ描画
-    getGenre(r.genre).drawForeground?.(ctx, this.cameraX, W, H, gY)
+    getGenre(r.genre).drawForeground?.(ctx, this.cameraX, W, H, gY, this._getWorld())
 
     // ─── セーフゾーン境界のグラデーションフェード（仕様 3-3） ──────
     this._drawSafeZoneBoundaries(W, H)
@@ -1377,16 +1870,22 @@ export class SideScroller {
     const direction = entry.direction ?? 'right'
 
     // 可動域（左右セーフゾーンを除いた帯）。縦STGで敵がUIゾーンに湧かないようにする。
+    // pattern_climb（platformer）は自前の _seedClimbRoom/_buildClimbHazard でハザードを
+    // 生成し、この汎用スポーンは通らない（_updateVertical が早期に専用メソッドへ委譲するため）。
     const sz = this.safeZone
     const bandMinX = sz.left + HAZARD_BAND_MARGIN
     const bandMaxX = W - sz.right - HAZARD_BAND_MARGIN
 
     if (isVertical) {
       // ─── 縦スクロール: 可動域内のランダムX位置に出現 ──────────
-      // hazard は screen 座標で管理（y が増加 → 下に落ちる）
+      // hazard は screen 座標で管理。direction='right'（既定）は画面上部から出現し下へ流れる
+      // （aerial_stg 等の降下型）。direction='left' は画面下部から出現し上へ流れる
+      // （aquatic の潜行・platformer の climb など、プレイヤーが「上へ進む」ジャンル用）。
       const spawnX = bandMinX + Math.random() * Math.max(0, bandMaxX - w - bandMinX)
-      const spawnY = -h - 20  // 画面外上部
-      this.hazards.push(new Hazard(spawnX, spawnY, w, h, color, glowColor, entry.shape, hp, isSafe, 0, direction))
+      const spawnY = direction === 'left' ? H + 20 : -h - 20
+      const hz = new Hazard(spawnX, spawnY, w, h, color, glowColor, entry.shape, hp, isSafe, 0, direction)
+      this._applyGimmickFields(hz, entry)
+      this.hazards.push(hz)
       if (entry.isBoss) {
         const bw = this._getWorld()
         for (const sys of getActiveSystems(r.features)) sys.onBossSpawn?.(bw)
@@ -1441,7 +1940,9 @@ export class SideScroller {
       const spawnX = direction === 'left'
         ? this.cameraX - w - SPAWN.hazardSpawnOffsetX
         : worldX
-      this.hazards.push(new Hazard(spawnX, y, w, h, color, glowColor, entry.shape, hp, isSafe, floatAmp, direction))
+      const hz = new Hazard(spawnX, y, w, h, color, glowColor, entry.shape, hp, isSafe, floatAmp, direction)
+      this._applyGimmickFields(hz, entry)
+      this.hazards.push(hz)
       if (entry.isBoss) {
         const bw = this._getWorld()
         for (const sys of getActiveSystems(r.features)) sys.onBossSpawn?.(bw)
@@ -1459,6 +1960,76 @@ export class SideScroller {
         }
       }
     }
+  }
+
+  /**
+   * 横スクロールの着地先を判定する（runner/bullet_runner の穴・空中足場・バネ対応）。
+   * 通常の地面(gY)に加え、isPlatform/isSpring ハザードへの着地と isHole による
+   * 地面の欠落を扱う。足場は世界座標のY位置が動かないため、既存の gY 判定と同じ
+   * 「今フレームで足元が到達したか」だけを見れば十分（climb と異なり許容量は不要）。
+   *
+   * 穴（isHole）は自身の幅が狭いと、地面ラインまで落下しきる前にハザード自体が
+   * スクロールで画面外へ抜けてしまうことがある。その瞬間に「重なっているハザードが
+   * 無い＝地面」という暗黙のフォールバックへ単純に戻すと、まだ落下中のプレイヤーが
+   * 宙で地面に引き戻されてしまう。逆に、一度でも overHole 開始時点の判定を後々まで
+   * 引きずると、穴をジャンプで正常に飛び越えた後の何もない地面でも着地できなくなる
+   * （狭い穴限定の問題を全ハザード共通の地面判定に波及させてしまう）。
+   *
+   * 正しい判定は「穴の真上にいる間に、地面ラインへ到達／通過したか」だけを見ること。
+   * これが起きた時点で「もう地面には戻れない（穴に落ちた）」と確定させ、その後は
+   * 穴のハザードが画面外へ抜けていても地面判定を復活させない（this.inLethalHoleFall）。
+   * 逆にジャンプで飛び越え、地面ラインに到達する前に穴を通過し終えていれば、通常通り
+   * 何もない地面に着地できる。
+   */
+  private _resolveHorizontalLanding(p: Player, gY: number, prevFootY: number): {
+    surfaceY: number | null
+    hazard: Hazard | null
+    isSpring: boolean
+    overHole: boolean
+  } {
+    let overHole = false
+    let best: Hazard | null = null
+    let bestTop = Infinity
+    for (const h of this.hazards) {
+      const sx = h.x - this.cameraX
+      if (p.x + p.w <= sx || p.x >= sx + h.w) continue  // 水平方向に重なっていない
+      if (h.isHole) { overHole = true; continue }
+      if (!h.isPlatform && !h.isSpring) continue
+      const top = h.rect.y
+      // isOneWay: 上昇中（vy<0）は素通り、下降中でもまだ足場に潜り込んでいなかった
+      // （前フレームの足元Yが足場上端以上）場合のみ着地対象にする（plan/spec-pattern-system.md）
+      if (h.isOneWay && (p.vy < 0 || prevFootY > top)) continue
+      if (top < bestTop) { bestTop = top; best = h }
+    }
+    if (best) {
+      // 明示的な足場・バネに着地できた＝安全な地面に戻れたのでフラグを解除する
+      this.inLethalHoleFall = false
+      return { surfaceY: bestTop, hazard: best, isSpring: best.isSpring, overHole }
+    }
+    if (overHole) {
+      if (p.y + p.h >= gY) {
+        // 穴の真上で地面ラインに到達＝本来着地するはずの高さまで落ちた。
+        // ここで確定的に「落ちた」とみなし、以後は地面へ戻さず落下を継続させる
+        this.inLethalHoleFall = true
+      }
+      return { surfaceY: null, hazard: null, isSpring: false, overHole: true }
+    }
+    if (this.inLethalHoleFall) {
+      // 直前まで穴に落下確定していた。穴のハザード自体が画面外へ抜けても地面には戻さず、
+      // 画面外への落下（死亡判定）に委ねる
+      return { surfaceY: null, hazard: null, isSpring: false, overHole: true }
+    }
+    return { surfaceY: gY, hazard: null, isSpring: false, overHole: false }
+  }
+
+  /** SpawnEntry のギミックフィールドを生成済み Hazard へ反映する（runner/bullet_runner/platformer/aquatic） */
+  private _applyGimmickFields(hz: Hazard, entry: SpawnEntry): void {
+    hz.isGimmick = entry.isGimmick ?? false
+    hz.isPlatform = entry.isPlatform ?? false
+    hz.isSpring = entry.isSpring ?? false
+    hz.isHole = entry.isHole ?? false
+    hz.conveyorVx = entry.conveyorVx ?? 0
+    hz.driftEnabled = entry.driftEnabled ?? false
   }
 
   /** 重み配列からインデックスを確率選択する */
@@ -1558,9 +2129,12 @@ export class SideScroller {
       get gameStats()   { return self._gameStats },
       get scrollMode()  { return self.rules.scrollAxis as 'x' | 'y' },
       get stealthHidden() { return self.stealthHidden },
+      get climbLavaTopY() { return self.rules.features.has('pattern_climb') ? self.climbLavaTopY : Infinity },
+      get patternRoomsCleared() { return self.rules.features.has('pattern_climb') ? self.climbRoomsCleared : 0 },
       setStealthHidden(v) { self.stealthHidden = v },
 
       addScore(amount)              { self.playScore += amount },
+      addDistance(amount)           { self.distance += amount },
       addScorePopup(x, y, text, c) { self._addScorePopup(x, y, text, c) },
       triggerShake(intensity)       { self.shakeIntensity = Math.max(self.shakeIntensity, intensity) },
       addParticle(x, y, vx, vy, life, color, size = 3) {
