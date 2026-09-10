@@ -35,16 +35,16 @@
     "vue": "^3.5.41"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1",
+    "@playwright/test": "^1.63.0",
     "@vitejs/plugin-vue": "^6.0.8",
     "ajv": "^8.20.0",
-    "eslint": "^10.8.1",
-    "eslint-plugin-vue": "^10.10.0",
-    "happy-dom": "^20.11.6",
+    "eslint": "^10.10.0",
+    "eslint-plugin-vue": "^10.11.0",
+    "happy-dom": "^20.14.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.67.0",
+    "typescript-eslint": "^8.69.0",
     "vite": "^8.2.2",
     "vitest": "^4.1.11",
-    "vue-tsc": "^3.3.10"
+    "vue-tsc": "^3.3.11"
   }
 }
