@@ -8,6 +8,7 @@
 
 import { GAME_CONFIG } from './config'
 import { UPDATE_DISTANCES } from './gameBalance'
+import type { BulletHellConfig } from '../framework/config-types'
 
 const _c = GAME_CONFIG
 
@@ -159,3 +160,8 @@ export const SKILL_POINTS = _c.skillPoints
 // COMPLETE_BONUS — コンプリートボーナス（rpg）
 // ─────────────────────────────────────────────────────────────
 export const COMPLETE_BONUS = _c.completeBonus
+
+// ─────────────────────────────────────────────────────────────
+// BULLET_HELL — 弾幕STGジャンル（ボス位置・弾幕パターン・弾速・カラー等）
+// ─────────────────────────────────────────────────────────────
+export const BULLET_HELL = _c.bullet_hell as BulletHellConfig

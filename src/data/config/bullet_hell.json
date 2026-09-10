@@ -1,0 +1,33 @@
+{
+  "$comment": "弾幕STGジャンル — 常駐ボスの弾幕パターン・弾速・カラー等のチューニング値",
+  "section": "bullet_hell",
+  "boss": {
+    "yRatio": 0.12,
+    "w": 96,
+    "h": 96,
+    "swayAmp": 10,
+    "swaySpeed": 0.8
+  },
+  "bullet": {
+    "radius": 6,
+    "speed": 180,
+    "fireIntervalSec": 0.5,
+    "maxBullets": 220,
+    "rimColor": "#4a90ff",
+    "fillColor": "#ffffff"
+  },
+  "pattern": {
+    "radialCount": 24,
+    "fanCount": 9,
+    "fanSpreadDeg": 60,
+    "aimedCount": 3,
+    "aimedSpreadDeg": 14,
+    "patternCycleSec": 2.4
+  },
+  "autoAim": {
+    "sideOffsetDeg": 12
+  },
+  "playerHitbox": {
+    "radius": 4
+  }
+}

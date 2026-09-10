@@ -707,6 +707,39 @@ export interface GenresConfig {
   themeColors?: Record<string, ThemeColorDef>
 }
 
+/** bullet_hell.json — 弾幕STGジャンル（ボス位置・弾幕パターン・弾速・カラー等） */
+export interface BulletHellConfig {
+  boss: {
+    yRatio: number
+    w: number
+    h: number
+    swayAmp: number
+    swaySpeed: number
+  }
+  bullet: {
+    radius: number
+    speed: number
+    fireIntervalSec: number
+    maxBullets: number
+    rimColor: string
+    fillColor: string
+  }
+  pattern: {
+    radialCount: number
+    fanCount: number
+    fanSpreadDeg: number
+    aimedCount: number
+    aimedSpreadDeg: number
+    patternCycleSec: number
+  }
+  autoAim: {
+    sideOffsetDeg: number
+  }
+  playerHitbox: {
+    radius: number
+  }
+}
+
 /** GameConfigMap: セクション名 → 設定オブジェクトのマッピング */
 export interface GameConfigMap {
   physics: PhysicsConfig
@@ -740,6 +773,7 @@ export interface GameConfigMap {
   encounterGroups: EncounterGroupsConfig
   skillPoints: SkillPointsConfig
   completeBonus: CompleteBonusConfig
+  bullet_hell: BulletHellConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap

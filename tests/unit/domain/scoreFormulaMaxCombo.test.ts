@@ -19,12 +19,12 @@ const TARGET_GENRES = [
 ] as const
 
 /**
- * scoreFormula 内で独立した "combo" トークン（maxCombo の一部ではない）が
- * 存在するか検査する。正規表現 \bcombo\b に相当。
+ * scoreFormula 内で独立した "combo" トークン（maxCombo / maxHitCombo の一部
+ * ではない）が存在するか検査する。
  */
 function hasStandaloneCombo(formula: string): boolean {
-  // "combo" が単語境界で出現し、"maxCombo" の一部でないことを確認
-  const pattern = /(?<!max)combo\b/
+  // "combo" が単語境界で出現し、"maxCombo" / "maxHitCombo" の一部でないことを確認
+  const pattern = /(?<!maxHit)(?<!max)combo\b/
   return pattern.test(formula)
 }
 
@@ -40,10 +40,10 @@ describe('genre scoreFormula — combo → maxCombo 置換検証 (#215)', () => 
         `${genreId} の scoreFormula "${formula}" に独立した "combo" が残っている`,
       ).toBe(false)
 
-      // maxCombo が含まれていることを確認
+      // maxCombo / maxHitCombo が含まれていることを確認
       expect(
-        formula.includes('maxCombo'),
-        `${genreId} の scoreFormula に "maxCombo" が含まれている`,
+        formula.includes('maxCombo') || formula.includes('maxHitCombo'),
+        `${genreId} の scoreFormula に "maxCombo" または "maxHitCombo" が含まれている`,
       ).toBe(true)
     }
   })

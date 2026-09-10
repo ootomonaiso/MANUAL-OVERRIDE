@@ -376,6 +376,7 @@ export function useBattleState(options: { scheduler?: BattleScheduler } = {}) {
       distance: 0, kills: 0, combo: 0, exp: 0, beatHits: 0, survivedSec: 0,
       accuracy: 0, maxCombo: 0, deaths: 0, itemsCollected: 0,
       bossKills: 0, stealthBonus: 0, colorTouches: 0,
+      hitsOnBoss: 0, maxHitCombo: 0,
       ...battleVars,
     }
     state.playScore = Math.max(0, Math.round(evalScoreFormula(formula, vars)))
