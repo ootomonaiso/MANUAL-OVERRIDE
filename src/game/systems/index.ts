@@ -24,6 +24,7 @@ import { MeleeKillFeature }  from './MeleeKillFeature'
 import { NearMissComboFeature } from './NearMissComboFeature'
 import { AquaticFeature }    from './AquaticFeature'
 import { PatternRunnerFeature } from './PatternRunnerFeature'
+import { PowerUpFeature }    from './PowerUpFeature'
 
 registerFeature(new ShootFeature())
 registerFeature(new RhythmFeature())
@@ -37,3 +38,4 @@ registerFeature(new MeleeKillFeature())
 registerFeature(new NearMissComboFeature())
 registerFeature(new AquaticFeature())
 registerFeature(new PatternRunnerFeature())
+registerFeature(new PowerUpFeature())
