@@ -12,7 +12,10 @@ import { gzipSync } from 'zlib'
 
 // ── Budgets (bytes) ───────────────────────────────────────────────────────
 const BUDGETS = {
-  totalJs:   800 * 1024,   // 800 KB
+  // 860 KB: bullet_hell 本実装 (#288)・rpg ローグライク戦闘 (#299)・
+  // aquatic/runner/bullet_runner/platformer のパターンベース再設計 (#301) が
+  // 同時に main に入ったことで 833 KB へ達し 800KB を超えたため引き上げ。
+  totalJs:   860 * 1024,   // 860 KB
   // 124 KB: 第8フェーズでスキルパネル(SkillPanel.vue)を3ゾーンレイアウトへ再設計した際に
   // 120KBへ肉薄したため引き上げた（120KB自体も rpg 戦闘のUI追加時に同様の理由で引き上げた値）。
   // 画面1枚ぶんのスタイルとしては妥当な範囲で、上限に張り付いたままでは次の変更が通らなくなる。
