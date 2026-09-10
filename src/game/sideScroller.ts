@@ -122,6 +122,8 @@ export class SideScroller {
   private scoreVarsBossKills = 0      // ボス撃破数
   private scoreVarsStealthBonus = 0   // ステルス継続フレーム数の累積
   private scoreVarsColorTouches = 0   // 安全色タッチ回数
+  private scoreVarsHitsOnBoss = 0     // ボスへの命中数（bullet_hell）
+  private scoreVarsMaxHitCombo = 0    // 被弾せずに連続命中させた最大数（bullet_hell）
   private deaths = 0                  // 死亡回数（hp 有効時は複数回あり得る）
 
   // カメラ
@@ -427,6 +429,8 @@ export class SideScroller {
       bossKills: this.scoreVarsBossKills,
       stealthBonus: this.scoreVarsStealthBonus,
       colorTouches: this.scoreVarsColorTouches,
+      hitsOnBoss: this.scoreVarsHitsOnBoss,
+      maxHitCombo: this.scoreVarsMaxHitCombo,
     }
 
     const genre = GENRES.find(g => g.id === this.rules.genre)
@@ -1849,6 +1853,9 @@ export class SideScroller {
     const pal = plugin.palette
     const table = plugin.spawnTable
     const weights = table.map(e => resolveWeight(e, this.distance, e.weightMaxDist ?? SPAWN.spawnWeightMaxDist))
+    // 空テーブルまたは全重みが0の場合は早期 return（#bullet_hell: spawnTable=[] の安全ガード）
+    if (table.length === 0 || weights.every(w => w <= 0)) return
+
     const entry = table[this._weightedRandom(weights)]
 
     const w = entry.wRange[0] + Math.random() * (entry.wRange[1] - entry.wRange[0])
@@ -2178,6 +2185,8 @@ export class SideScroller {
       addScoreVarsBossKill()   { self.scoreVarsBossKills++ },
       addScoreVarsStealthBonus(amount: number) { self.scoreVarsStealthBonus += amount },
       addScoreVarsColorTouch() { self.scoreVarsColorTouches++ },
+      addScoreVarsHitsOnBoss() { self.scoreVarsHitsOnBoss++ },
+      setScoreVarsMaxHitCombo(n: number) { if (n > self.scoreVarsMaxHitCombo) self.scoreVarsMaxHitCombo = n },
 
       // power_up フィーチャー用: ShootFeature が powerBoostTimer を参照
       get powerBoostTimer(): number { return self._powerBoostTimer },

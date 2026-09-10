@@ -69,6 +69,8 @@ function createMockWorld(options?: {
     addScoreVarsBossKill: () => {},
     addScoreVarsStealthBonus: () => {},
     addScoreVarsColorTouch: () => {},
+    addScoreVarsHitsOnBoss: () => {},
+    setScoreVarsMaxHitCombo: () => {},
     spawnHazard: () => {},
     spawnItem: () => {},
     removeHazardById: () => {},

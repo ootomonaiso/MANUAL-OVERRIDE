@@ -8,6 +8,7 @@
 
 import { GAME_CONFIG } from './config'
 import { UPDATE_DISTANCES } from './gameBalance'
+import type { BulletHellConfig } from '../framework/config-types'
 
 const _c = GAME_CONFIG
 
@@ -149,3 +150,8 @@ export const AQUATIC_TUNING = _c.aquatic
 // GIMMICKS — runner/bullet_runner/platformer 共通ギミック
 // ─────────────────────────────────────────────────────────────
 export const GIMMICKS = _c.gimmicks
+
+// ─────────────────────────────────────────────────────────────
+// BULLET_HELL — 弾幕STGジャンル（ボス位置・弾幕パターン・弾速・カラー等）
+// ─────────────────────────────────────────────────────────────
+export const BULLET_HELL = _c.bullet_hell as BulletHellConfig

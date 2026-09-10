@@ -12,21 +12,23 @@
  */
 
 import { registerFeature } from '../../engine/GameRegistry'
-import { ShootFeature }      from './ShootFeature'
-import { RhythmFeature }     from './RhythmFeature'
-import { MovementFeature }   from './MovementFeature'
-import { RpgFeature }        from './RpgFeature'
-import { PuzzleFeature }     from './PuzzleFeature'
-import { SpecialFeature }    from './SpecialFeature'
-import { TetrisFeature }     from './TetrisFeature'
-import { SurvivalFeature }   from './SurvivalFeature'
-import { MeleeKillFeature }  from './MeleeKillFeature'
-import { NearMissComboFeature } from './NearMissComboFeature'
-import { AquaticFeature }    from './AquaticFeature'
-import { PatternRunnerFeature } from './PatternRunnerFeature'
-import { PowerUpFeature }    from './PowerUpFeature'
+import { ShootFeature }            from './ShootFeature'
+import { BulletHellBossFeature }   from './BulletHellBossFeature'
+import { RhythmFeature }           from './RhythmFeature'
+import { MovementFeature }         from './MovementFeature'
+import { RpgFeature }              from './RpgFeature'
+import { PuzzleFeature }           from './PuzzleFeature'
+import { SpecialFeature }          from './SpecialFeature'
+import { TetrisFeature }           from './TetrisFeature'
+import { SurvivalFeature }         from './SurvivalFeature'
+import { MeleeKillFeature }        from './MeleeKillFeature'
+import { NearMissComboFeature }    from './NearMissComboFeature'
+import { AquaticFeature }          from './AquaticFeature'
+import { PatternRunnerFeature }    from './PatternRunnerFeature'
+import { PowerUpFeature }          from './PowerUpFeature'
 
 registerFeature(new ShootFeature())
+registerFeature(new BulletHellBossFeature())
 registerFeature(new RhythmFeature())
 registerFeature(new MovementFeature())
 registerFeature(new RpgFeature())
