@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_slime_acid",
+  "label": "グリーンスライム",
+  "flavorText": "スライムの発生機序はあまり分かっていない。",
+  "sprite": "battle_slime_acid",
+  "stats": {
+    "hp": 13140,
+    "str": 960,
+    "def": 1460,
+    "int": 1220,
+    "ref": 1220,
+    "agi": 720,
+    "hitRate": 0.93,
+    "evadeRate": 0,
+    "critRate": 0.05,
+    "critDamageMultiplier": 1.5
+  },
+  "traits": [
+    "trait_weak_physical"
+  ],
+  "activeSkills": [
+    "skill_weird_wave",
+    "skill_strike"
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_weird_wave",
+    "skill_strike",
+    "skill_strike"
+  ],
+  "isBoss": false
+}

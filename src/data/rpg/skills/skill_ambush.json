@@ -1,0 +1,37 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_ambush",
+  "label": "不意打ち",
+  "flavorText": "隙を突く一撃に、抗う術はない。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "swift",
+  "subCategories": [
+    "fatal"
+  ],
+  "cooldown": 4,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "alwaysActsFirst": true,
+  "effects": [
+    "fx_cast_physical"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "physical",
+      "scale": {
+        "stat": "str",
+        "rate": 0.5
+      }
+    },
+    {
+      "op": "cancelTargetAction",
+      "chance": 0.1
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing",
+    "impact": "battle_hit_physical"
+  }
+}

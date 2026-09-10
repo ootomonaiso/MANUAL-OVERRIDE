@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_swift_slash",
+  "label": "疾風斬り",
+  "flavorText": "最速=最強はこの世界の真理だ。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "swift",
+  "subCategories": [],
+  "cooldown": 1,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_slash"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "physical",
+      "scale": {
+        "stat": "agi",
+        "rate": 1.2
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing",
+    "impact": "battle_hit_physical"
+  }
+}

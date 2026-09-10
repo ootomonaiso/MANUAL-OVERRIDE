@@ -1,0 +1,6 @@
+{
+  "$comment": "コンプリートボーナス。CLAUDE_TASKS.md 第13フェーズ参照。数値は仮値（調整前提）",
+  "section": "completeBonus",
+  "thresholds": [0.25, 0.5, 0.75, 1.0],
+  "statBonusRates": [0.125, 0.25, 0.375, 0.5]
+}

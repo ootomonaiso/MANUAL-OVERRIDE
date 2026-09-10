@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_flurry_shot",
+  "label": "乱れ撃ち",
+  "flavorText": "とりあえず撃ってから考えよう。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "combo",
+  "subCategories": [
+    "swift"
+  ],
+  "cooldown": 3,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_slash"
+  ],
+  "effect": [
+    {
+      "op": "repeat",
+      "times": 5,
+      "body": [
+        {
+          "op": "damage",
+          "element": "physical",
+          "scale": {
+            "stat": "str",
+            "rate": 0.3
+          }
+        }
+      ]
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing",
+    "impact": "battle_hit_physical"
+  }
+}

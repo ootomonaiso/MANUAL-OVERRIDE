@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "passive_keen_eye",
+  "label": "急所を読む目",
+  "flavorText": "世界が透き通って見えた。",
+  "kind": "passive",
+  "mainCategory": "fatal",
+  "subCategories": [],
+  "effect": [
+    {
+      "op": "statBoost",
+      "stat": "critRate",
+      "rate": 0.08
+    }
+  ]
+}

@@ -20,7 +20,7 @@ const REQUIRED_SECTIONS: GameConfigSection[] = [
   'physics', 'shoot', 'throw', 'spawn', 'vfx', 'camera', 'background',
   'hazard_vfx', 'ui', 'score', 'difficulty', 'boss', 'rhythm_tuning',
   'stealth', 'genre_params', 'game_balance', 'genres', 'pixelart',
-  'genre_defaults', 'palette_defaults',
+  'genre_defaults', 'palette_defaults', 'battle',
 ]
 
 const REQUIRED_NUMBER_FIELDS: Partial<Record<GameConfigSection, string[]>> = {
@@ -154,6 +154,95 @@ export function validateGameConfig(config: GameConfigMap): ConfigValidationResul
     }
     if (max !== undefined && val > max) {
       errors.push(`config.${section}.${field} = ${val} は最大値 ${max} を超えています`)
+    }
+  }
+
+  // battle: 入れ子フィールドは RANGE_CHECKS の対象外のためここで個別チェック
+  if (config.battle) {
+    const b = config.battle
+    const nested: Array<[string, number, number?, number?]> = [
+      ['initialStats.hpMin', b.initialStats?.hpMin, 1],
+      ['initialStats.hpMax', b.initialStats?.hpMax, 1],
+      ['initialStats.baseMin', b.initialStats?.baseMin, 1],
+      ['initialStats.baseMax', b.initialStats?.baseMax, 1],
+      ['initialStats.hitRate', b.initialStats?.hitRate, 0],
+      ['initialStats.critRate', b.initialStats?.critRate, 0, 1],
+      ['cut.divisor', b.cut?.divisor, 1],
+      ['cut.max', b.cut?.max, 0, 1],
+      ['evade.divisor', b.evade?.divisor, 1],
+      ['evade.max', b.evade?.max, 0, 1],
+      ['guard.cooldown', b.guard?.cooldown, 0],
+      ['dodge.cooldown', b.dodge?.cooldown, 0],
+      ['shield.cutRate', b.shield?.cutRate, 0, 1],
+      ['shield.cutRateVsSpecial', b.shield?.cutRateVsSpecial, 0, 1],
+      ['shield.decayPerTurn', b.shield?.decayPerTurn, 0, 1],
+      ['shield.decayPerBattle', b.shield?.decayPerBattle, 0, 1],
+    ]
+    for (const [path, val, min, max] of nested) {
+      if (typeof val !== 'number') {
+        errors.push(`config.battle.${path}: number が必要です`)
+        continue
+      }
+      if (min !== undefined && val < min) {
+        errors.push(`config.battle.${path} = ${val} は最小値 ${min} を下回っています`)
+      }
+      if (max !== undefined && val > max) {
+        errors.push(`config.battle.${path} = ${val} は最大値 ${max} を超えています`)
+      }
+    }
+    if (b.initialStats && b.initialStats.hpMin > b.initialStats.hpMax) {
+      errors.push('config.battle.initialStats: hpMin が hpMax を上回っています')
+    }
+    if (b.initialStats && b.initialStats.baseMin > b.initialStats.baseMax) {
+      errors.push('config.battle.initialStats: baseMin が baseMax を上回っています')
+    }
+  }
+
+  // encounterGroups: グループ構成・重み・周期の妥当性
+  if (config.encounterGroups) {
+    const eg = config.encounterGroups
+    if (eg.bossIntervalBattles < 1) errors.push('config.encounterGroups.bossIntervalBattles は1以上が必要です')
+    if (eg.lapsForTrueClear < 1) errors.push('config.encounterGroups.lapsForTrueClear は1以上が必要です')
+    if (eg.bossDraftRounds < 1) errors.push('config.encounterGroups.bossDraftRounds は1以上が必要です')
+    if (!Array.isArray(eg.groupOrder) || eg.groupOrder.length === 0) {
+      errors.push('config.encounterGroups.groupOrder は1件以上の配列が必要です')
+    } else {
+      for (const g of eg.groupOrder) {
+        if (!eg.groups || !(g in eg.groups)) {
+          errors.push(`config.encounterGroups.groups に groupOrder のグループ "${g}" が定義されていません`)
+        }
+      }
+    }
+    for (const tier of eg.spawnWeightTiers ?? []) {
+      for (const g of Object.keys(tier.weights)) {
+        if (!eg.groupOrder.includes(g)) {
+          errors.push(`config.encounterGroups.spawnWeightTiers が未知のグループ "${g}" を参照しています`)
+        }
+      }
+    }
+  }
+
+  // skillPoints: レベル閾値・パネル周期の妥当性
+  if (config.skillPoints) {
+    const sp = config.skillPoints
+    if (sp.panelIntervalBattles < 1) errors.push('config.skillPoints.panelIntervalBattles は1以上が必要です')
+    if (!Array.isArray(sp.panelSkillPointsCycle) || sp.panelSkillPointsCycle.length === 0) {
+      errors.push('config.skillPoints.panelSkillPointsCycle は1件以上の配列が必要です')
+    } else if (sp.panelSkillPointsCycle.some(v => v < 0)) {
+      errors.push('config.skillPoints.panelSkillPointsCycle の要素はすべて0以上が必要です')
+    }
+    if (sp.panelStatPoints < 0) errors.push('config.skillPoints.panelStatPoints は0以上が必要です')
+    if (sp.duplicateDraftWeight < 1) errors.push('config.skillPoints.duplicateDraftWeight は1以上が必要です')
+    if (!Array.isArray(sp.pointsForLevel) || sp.pointsForLevel.length === 0) {
+      errors.push('config.skillPoints.pointsForLevel は1件以上の配列が必要です')
+    } else {
+      if (sp.pointsForLevel[0] !== 0) errors.push('config.skillPoints.pointsForLevel[0]（Lv1）は0が必要です')
+      for (let i = 1; i < sp.pointsForLevel.length; i++) {
+        if (sp.pointsForLevel[i] <= sp.pointsForLevel[i - 1]) {
+          errors.push('config.skillPoints.pointsForLevel は単調増加である必要があります')
+          break
+        }
+      }
     }
   }
 

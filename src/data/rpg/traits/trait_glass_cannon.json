@@ -1,0 +1,19 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_glass_cannon",
+  "label": "安定感",
+  "flavorText": "安定感とパワーはトレードオフだ。",
+  "kind": "trait",
+  "effect": [
+    {
+      "op": "statBoost",
+      "stat": "critRate",
+      "amount": 0.5
+    },
+    {
+      "op": "statBoost",
+      "stat": "critDamageMultiplier",
+      "amount": -0.5
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "battle_hit_special",
+  "$comment": "特殊属性ヒット — 濁った低音の炸裂",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "square",
+      "freq": 140,
+      "freqEnd": 60,
+      "durationSec": 0.24,
+      "volume": 0.2,
+      "filter": {
+        "type": "lowpass",
+        "freq": 1200
+      }
+    },
+    {
+      "kind": "noise",
+      "durationSec": 0.16,
+      "volume": 0.2,
+      "filter": {
+        "type": "bandpass",
+        "freq": 420,
+        "freqEnd": 180,
+        "q": 0.9
+      }
+    }
+  ]
+}

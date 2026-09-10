@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "passive_iron_will",
+  "label": "鉄の意志",
+  "flavorText": "やるべきことを尽くした後に頼れるのは、気合と根性だ。",
+  "kind": "passive",
+  "mainCategory": "guard",
+  "subCategories": [],
+  "effect": [
+    {
+      "op": "statBoost",
+      "stat": "def",
+      "amount": 1200
+    }
+  ]
+}

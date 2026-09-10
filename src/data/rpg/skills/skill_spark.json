@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_spark",
+  "label": "スパーク",
+  "flavorText": "ほとばしる光が、一瞬で決着をつける。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "wisdom",
+  "subCategories": [],
+  "cooldown": 4,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "magical",
+      "scale": {
+        "stat": "int",
+        "rate": 1.8
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_bolt"
+  }
+}

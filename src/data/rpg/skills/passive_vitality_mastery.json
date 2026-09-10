@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "passive_vitality_mastery",
+  "label": "頑強の極意",
+  "flavorText": "重すぎるランドセルやカバンに耐え抜いた若者世代は何を得たのだろうか。",
+  "kind": "passive",
+  "mainCategory": "vitality",
+  "subCategories": [],
+  "unlockCondition": {
+    "category": "vitality",
+    "points": 10
+  },
+  "effect": [
+    {
+      "op": "statBoost",
+      "stat": "hp",
+      "rate": 0.15
+    }
+  ]
+}

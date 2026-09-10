@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_orc_shaman_solo",
+  "label": "呪文詠みのオーク",
+  "members": [{ "enemyId": "enemy_orc_shaman" }]
+}

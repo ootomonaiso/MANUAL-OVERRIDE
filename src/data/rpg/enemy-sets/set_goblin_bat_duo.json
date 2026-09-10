@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_goblin_bat_duo",
+  "label": "ゴブリン&コウモリ",
+  "members": [
+    {
+      "enemyId": "enemy_goblin"
+    },
+    {
+      "enemyId": "enemy_bat",
+      "statsOverride": {
+        "hp": 1000,
+        "evadeRate": 0
+      }
+    }
+  ]
+}

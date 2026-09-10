@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_curse_zenith",
+  "label": "呪詛の真髄",
+  "flavorText": "相手に効果的に嫌がらせをする方法を知った。",
+  "kind": "trait",
+  "unlockCondition": {
+    "category": "curse",
+    "points": 20
+  },
+  "effect": [
+    {
+      "op": "statBoost",
+      "stat": "hitRate",
+      "rate": 0.15
+    },
+    {
+      "op": "statBoost",
+      "stat": "critRate",
+      "amount": 0.05
+    }
+  ]
+}

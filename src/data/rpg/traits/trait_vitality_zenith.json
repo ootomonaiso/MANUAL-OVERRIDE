@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_vitality_zenith",
+  "label": "頑強の真髄",
+  "flavorText": "この程度の戦場は、地獄とは言わない。",
+  "kind": "trait",
+  "unlockCondition": {
+    "category": "vitality",
+    "points": 20
+  },
+  "effect": [
+    {
+      "op": "statBoost",
+      "stat": "hp",
+      "rate": 0.25
+    }
+  ]
+}

@@ -17,6 +17,8 @@ const props = defineProps<{
   features?: Set<string> | ReadonlySet<string>
   highlight?: boolean
   layout?: HudLayout
+  /** 画面をキャラクターに使いたい場面（rpg 戦闘）で小さく畳む */
+  compact?: boolean
 }>()
 
 // 残り時間バーのCSSアニメーション時間（ms → s文字列）。useManualの自動復帰
@@ -62,7 +64,7 @@ const filteredDiffLines = computed(() => {
 </script>
 
 <template>
-  <div class="manual-panel" :class="[themeClass, posClass, { 'panel-centered': isCentered, 'manual-highlight': highlight }]">
+  <div class="manual-panel" :class="[themeClass, posClass, { 'panel-centered': isCentered, 'manual-highlight': highlight, 'panel-compact': compact }]">
     <!-- ヘッダー -->
     <div class="manual-header">
       <div class="manual-ver-badge">
@@ -179,6 +181,23 @@ const filteredDiffLines = computed(() => {
   width: min(21vw, 260px);
   font-size: 12px;
   max-height: 60vh;
+}
+
+/* ── 小型表示（rpg 戦闘）──
+   戦闘画面はキャラクターが主役なので、説明書は隅で読める最小限まで縮める。
+   中央表示（更新演出）のときは panel-centered の !important が優先される。 */
+.manual-panel.panel-compact:not(.panel-centered) {
+  bottom: 12px;
+  right: 12px;
+  width: 210px;
+  padding: 8px 10px;
+  font-size: 10px;
+  line-height: 1.5;
+  max-height: 132px;
+  opacity: 0.9;
+}
+.manual-panel.panel-compact:not(.panel-centered):hover {
+  opacity: 1;
 }
 
 /* ── 中央表示（説明書更新時） ── */

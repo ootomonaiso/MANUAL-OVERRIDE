@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_goblin_raider_solo",
+  "label": "掠め取る者",
+  "members": [{ "enemyId": "enemy_goblin_raider" }]
+}

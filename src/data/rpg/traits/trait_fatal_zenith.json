@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_fatal_zenith",
+  "label": "致命の真髄",
+  "flavorText": "「隙すぎて滅」",
+  "kind": "trait",
+  "unlockCondition": {
+    "category": "fatal",
+    "points": 20
+  },
+  "effect": [
+    {
+      "op": "statBoost",
+      "stat": "critRate",
+      "amount": 0.1
+    },
+    {
+      "op": "statBoost",
+      "stat": "critDamageMultiplier",
+      "rate": 0.15
+    }
+  ]
+}

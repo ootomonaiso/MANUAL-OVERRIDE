@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_slime",
+  "label": "ブルースライム",
+  "flavorText": "世界各地で見られる、普遍的な魔物",
+  "sprite": "battle_slime",
+  "stats": {
+    "hp": 3650,
+    "str": 370,
+    "def": 420,
+    "int": 210,
+    "ref": 310,
+    "agi": 310,
+    "hitRate": 0.9,
+    "evadeRate": 0,
+    "critRate": 0.03,
+    "critDamageMultiplier": 1.5
+  },
+  "traits": [
+    "trait_weak_physical"
+  ],
+  "activeSkills": [
+    "skill_strike"
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_strike"
+  ],
+  "isBoss": false
+}

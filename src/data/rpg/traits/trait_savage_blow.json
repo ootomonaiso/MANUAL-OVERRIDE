@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_savage_blow",
+  "label": "荒々しい打撃",
+  "flavorText": "その右手を相手に打ち込め。",
+  "kind": "trait",
+  "draftable": true,
+  "effect": [
+    {
+      "op": "effectBoost",
+      "element": "physical",
+      "rate": 0.2
+    }
+  ]
+}

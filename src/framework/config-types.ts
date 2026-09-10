@@ -353,6 +353,101 @@ export interface PuzzleConfig {
   timeHalfLifeSteps: number
 }
 
+/** battle.json — rpg ジャンル（ローグライク戦闘）のバランス定数 */
+export interface BattleConfig {
+  initialStats: {
+    hpMin: number
+    hpMax: number
+    baseMin: number
+    baseMax: number
+    favoredMin: number
+    favoredMax: number
+    hitRate: number
+    critRate: number
+    critDamageMultiplier: number
+  }
+  /** カット率: (防御ステータス - anchor) / divisor、上限 max */
+  cut: { anchor: number; divisor: number; max: number }
+  /** 回避率の基礎値: (AGI実効値 - anchor) / divisor、上限 max */
+  evade: { anchor: number; divisor: number; max: number }
+  /** 相性段階の重み（弱点/耐性1つあたり） */
+  affinity: { weakStage: number; resistStage: number }
+  guard: { cutRate: number; cooldown: number }
+  dodge: { evadeBonus: number; cooldown: number }
+  /**
+   * decayPerTurn: 毎ターン終了時に最大シールド値（過去に到達した最高値。シールドが0まで
+   * 減ると次回付与時にリセットされる）からこの割合を失う。decayPerBattle: 戦闘終了後（勝利時、
+   * shieldはHPと共に次戦へ持ち越されるため）追加でこの割合を失う。第10フェーズで導入
+   */
+  shield: { cutRate: number; cutRateVsSpecial: number; decayPerTurn: number; decayPerBattle: number }
+  /** カテゴリ特化の解放に必要な累計ポイント（段階配列。実装後に持ち越しの暫定値） */
+  categoryUnlockThresholds: number[]
+  fallbackStatBoost: { hp: number; other: number }
+  /** 戦闘終了時、特性の有無に関わらず無条件で回復する最大HP比率 */
+  postBattleHealRate: number
+  multiHitIntervalMs: number
+  /** プレイヤーの見た目に使うスプライトID（src/data/sprites/*.json） */
+  playerSprite: string
+  /** 戦闘演出の尺。0 に近づけるほどテンポは速いが手応えは薄くなる */
+  presentation: {
+    announceMs: number
+    impactMs: number
+    popupMs: number
+    flashMs: number
+    attackPoseMs: number
+    screenCriticalFlashMs: number
+    battleEndMs: number
+  }
+  /** 同時出現する敵の体数に応じたスプライト縮小率・敵同士の間隔（画面外へのはみ出し防止） */
+  enemyScaleByCount: {
+    spriteScale: Record<string, number>
+    gapPx: Record<string, number>
+  }
+}
+
+/**
+ * 敵グループ/難易度スケーリング（CLAUDE_TASKS.md 第6フェーズ）。
+ * groups の値は src/data/rpg/enemy-sets/*.json の id。数値・構成は仮値（調整前提）
+ */
+export interface EncounterGroupsConfig {
+  groupOrder: string[]
+  /** 何周（groupOrderを何巡）した時点のボス撃破を「真のクリア」とするか */
+  lapsForTrueClear: number
+  /** 何戦ごとにボス戦になるか */
+  bossIntervalBattles: number
+  /** ボス撃破時（真のクリアでない場合）、通常の1回の代わりに何連続でドラフトを行うか */
+  bossDraftRounds: number
+  groups: Record<string, string[]>
+  spawnWeightTiers: { minBattleIndex: number; weights: Record<string, number> }[]
+}
+
+/**
+ * スキルポイント制度（CLAUDE_TASKS.md 第7フェーズ）。数値は仮値（調整前提）
+ */
+export interface SkillPointsConfig {
+  /** index=レベル-1、値=そのレベルに達するまでの累計投資ポイント（Lv1は常に0） */
+  pointsForLevel: number[]
+  /** レベルごとの効果倍率の増分（levelMultiplier = 1 + (level-1) × この値）。第8フェーズでスキル側の伸びを緩やかにした */
+  levelMultiplierStep: number
+  /** 何戦ごとにスキル/ステータスポイント配分パネルを挟むか */
+  panelIntervalBattles: number
+  /** パネル出現の何回目かに応じて取得スキルポイントを繰り返す配列（1回目=index0、以降ループ）。第9フェーズ参照 */
+  panelSkillPointsCycle: number[]
+  panelStatPoints: number
+  /** 装備中アクティブの重複がドラフト候補に出現する重み（通常候補の何倍か） */
+  duplicateDraftWeight: number
+}
+
+/**
+ * コンプリートボーナス（CLAUDE_TASKS.md 第13フェーズ）。数値は仮値（調整前提）。
+ * thresholds[i] の比率（所持数/ドラフト対象総数）に達すると statBonusRates[i] が
+ * 6成長ステータス全てへ加算される（達成した最も高い段階のみが有効。積み上げではない）
+ */
+export interface CompleteBonusConfig {
+  thresholds: number[]
+  statBonusRates: number[]
+}
+
 /** survival.json — サバイバルゲーム固有パラメータ */
 export interface SurvivalConfig {
   maxHunger: number
@@ -719,6 +814,10 @@ export interface GameConfigMap {
   near_miss: NearMissConfig
   genre_defaults: GenreDefaultsConfig
   palette_defaults: PaletteDefaultsConfig
+  battle: BattleConfig
+  encounterGroups: EncounterGroupsConfig
+  skillPoints: SkillPointsConfig
+  completeBonus: CompleteBonusConfig
   aquatic: AquaticConfig
   gimmicks: GimmicksConfig
   bullet_hell: BulletHellConfig

@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_guard_shield",
+  "label": "護りの詞",
+  "flavorText": "相手と距離を取るには、壁で隔てるのが一番だ。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "aegis",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 3,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast"
+  ],
+  "effect": [
+    {
+      "op": "shield",
+      "element": "magical",
+      "scale": {
+        "stat": "int",
+        "rate": 0.6
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_guard",
+    "impact": "battle_shield_gain"
+  }
+}

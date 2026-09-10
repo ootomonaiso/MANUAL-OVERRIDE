@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_barrage",
+  "label": "弾幕",
+  "flavorText": "弾数が多いということは、強いということ。強いということは、勝つということ！",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "pierce",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 5,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "repeat",
+      "times": 20,
+      "body": [
+        {
+          "op": "damage",
+          "element": "magical",
+          "scale": {
+            "stat": "int",
+            "rate": 0.08
+          }
+        }
+      ]
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_hit_magical"
+  }
+}

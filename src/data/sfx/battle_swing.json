@@ -1,0 +1,17 @@
+{
+  "id": "battle_swing",
+  "$comment": "剣を振る音 — 帯域ノイズの上向きスweep。物理スキルの振りかぶりに使う",
+  "tracks": [
+    {
+      "kind": "noise",
+      "durationSec": 0.14,
+      "volume": 0.22,
+      "filter": {
+        "type": "bandpass",
+        "freq": 700,
+        "freqEnd": 2600,
+        "q": 1.6
+      }
+    }
+  ]
+}

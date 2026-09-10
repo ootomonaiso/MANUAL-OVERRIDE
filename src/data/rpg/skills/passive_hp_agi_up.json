@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "passive_hp_agi_up",
+  "label": "軽やかな体躯",
+  "flavorText": "重さを持たない者ほど、長く立っていられる。",
+  "kind": "passive",
+  "mainCategory": "vitality",
+  "subCategories": [],
+  "effect": [
+    { "op": "statBoost", "stat": "hp", "amount": 750 },
+    { "op": "statBoost", "stat": "agi", "amount": 90 }
+  ]
+}

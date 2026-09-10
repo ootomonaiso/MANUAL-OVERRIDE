@@ -1,0 +1,44 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_wild_swing",
+  "label": "大振り",
+  "flavorText": "ロマンを追求せよ。外れたときのことは、外れたときに考えたら良い。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "fatal",
+  "subCategories": [
+    "might"
+  ],
+  "cooldown": 3,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_slash"
+  ],
+  "effect": [
+    {
+      "op": "modifier",
+      "stat": "hitRate",
+      "rate": -0.75,
+      "scope": "thisHit"
+    },
+    {
+      "op": "damage",
+      "element": "physical",
+      "scale": {
+        "stat": "str",
+        "rate": 3.5
+      }
+    },
+    {
+      "op": "modifier",
+      "stat": "def",
+      "rate": -0.5,
+      "scope": "nextRound"
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing",
+    "impact": "battle_hit_physical"
+  }
+}

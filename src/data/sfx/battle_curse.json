@@ -1,0 +1,27 @@
+{
+  "id": "battle_curse",
+  "$comment": "呪詛系スキル — 下降する不協和な2音（skill_curse_bolt 専用）",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "sawtooth",
+      "freq": 300,
+      "freqEnd": 90,
+      "durationSec": 0.36,
+      "volume": 0.18,
+      "filter": {
+        "type": "lowpass",
+        "freq": 1400,
+        "freqEnd": 400
+      }
+    },
+    {
+      "kind": "osc",
+      "wave": "square",
+      "freq": 318,
+      "freqEnd": 95,
+      "durationSec": 0.36,
+      "volume": 0.1
+    }
+  ]
+}

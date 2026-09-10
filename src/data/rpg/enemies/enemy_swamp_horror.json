@@ -1,0 +1,42 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_swamp_horror",
+  "label": "澱み溜まりのスライム",
+  "flavorText": "流行によって生まれ、流行に滅ぼされた怨念が淀みとなった。",
+  "sprite": "battle_swamp_horror",
+  "stats": {
+    "hp": 39100,
+    "str": 505,
+    "def": 1500,
+    "int": 242,
+    "ref": 800,
+    "agi": 210,
+    "hitRate": 0.95,
+    "evadeRate": 0,
+    "critRate": 0.06,
+    "critDamageMultiplier": 1.6
+  },
+  "traits": [],
+  "activeSkills": [
+    {
+      "id": "skill_strike",
+      "level": 3
+    },
+    {
+      "id": "skill_flurry_shot",
+      "level": 2
+    },
+    {
+      "id": "skill_counter",
+      "level": 2
+    }
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_strike",
+    "skill_counter",
+    "skill_strike",
+    "skill_flurry_shot"
+  ],
+  "isBoss": true
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_combo_zenith",
+  "label": "連撃の真髄",
+  "flavorText": "手数こそが、正義だと知っている。",
+  "kind": "trait",
+  "unlockCondition": { "category": "combo", "points": 20 },
+  "effect": [
+    { "op": "statBoost", "stat": "agi", "rate": 0.15 },
+    { "op": "statBoost", "stat": "hitRate", "rate": 0.1 }
+  ]
+}

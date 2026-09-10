@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_orc_warlord_solo",
+  "label": "分厚い装丁の将",
+  "members": [{ "enemyId": "enemy_orc_warlord" }]
+}

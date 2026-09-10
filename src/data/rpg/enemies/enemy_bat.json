@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_bat",
+  "label": "魔障コウモリ",
+  "flavorText": "多くの魔力に当てられて暴走したコウモリ。さらに多くの魔力を当てれば限界を迎えるだろう。",
+  "sprite": "battle_bat",
+  "stats": {
+    "hp": 1800,
+    "str": 290,
+    "def": 260,
+    "int": 400,
+    "ref": 340,
+    "agi": 680,
+    "hitRate": 0.9,
+    "evadeRate": 0,
+    "critRate": 0.05,
+    "critDamageMultiplier": 1.5
+  },
+  "traits": [
+    "trait_weak_magical"
+  ],
+  "activeSkills": [
+    "skill_fireball"
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_fireball"
+  ],
+  "isBoss": false
+}

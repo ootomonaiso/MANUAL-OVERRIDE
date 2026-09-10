@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_magic_sword",
+  "label": "魔剣",
+  "flavorText": "刃に込めた魔力が、そのまま剛力に変わる。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "wisdom",
+  "subCategories": [
+    "might"
+  ],
+  "cooldown": 3,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "modifier",
+      "stat": "str",
+      "scale": {
+        "stat": "int",
+        "rate": 0.6
+      },
+      "scope": "thisBattle"
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_hit_magical"
+  }
+}

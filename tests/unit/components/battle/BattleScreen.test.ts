@@ -1,0 +1,623 @@
+import { describe, it, expect, afterEach, vi } from 'vitest'
+import { createApp, h, nextTick, toRaw, type App } from 'vue'
+import BattleScreen from '../../../../src/components/battle/BattleScreen.vue'
+import { useBattleState, type BattleScheduler } from '../../../../src/composables/useBattleState'
+import { BATTLE_CONTENT, BATTLE_EFFECTS } from '../../../../src/data/rpg/battleContent'
+import { soundManager } from '../../../../src/plugins/SoundManager'
+import { BATTLE, SKILL_POINTS } from '../../../../src/data/tunables'
+
+type Battle = ReturnType<typeof useBattleState>
+
+interface Harness {
+  host: HTMLElement
+  app: App
+  battle: Battle
+  act: () => Promise<void>
+}
+
+let current: Harness | null = null
+
+function seededPrng(seed: number): () => number {
+  let s = seed >>> 0
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0
+    return s / 0x100000000
+  }
+}
+
+/**
+ * 演出の途中で止めるためのスケジューラ。set() されたコールバックを溜めるだけで自動実行しない。
+ * これで「スキル名を出している最中」の画面を検証できる。
+ */
+function pausedScheduler(): BattleScheduler {
+  return { set: () => 0, clear: () => {} }
+}
+
+function mountBattle(battle: Battle, beforeAct: () => void = () => {}): Harness {
+  const host = document.createElement('div')
+  document.body.appendChild(host)
+  const app = createApp({ render: () => h(BattleScreen, { battle }) })
+  app.mount(host)
+
+  const act = async (): Promise<void> => {
+    beforeAct()
+    await openBattleMenu(host)
+    await selectSlot(slotButtons(host)[0])
+    await resolveFocusIfNeeded(host)
+  }
+  current = { host, app, battle, act }
+  return current
+}
+
+/**
+ * 敵セット導入により複数の敵が出現しうるようになったため、単体攻撃かつ敵が2体以上いる場合は
+ * 技選択のあとに対象選択（フォーカス）画面を挟む。生存している先頭の敵をクリックして確定する。
+ */
+async function resolveFocusIfNeeded(host: HTMLElement): Promise<void> {
+  if (!$(host, '.focus-hint')) return
+  const target = $$(host, '.char-unit.enemy:not(.defeated)')[0]
+  target?.click()
+  await nextTick()
+}
+
+/**
+ * useBattleState.test.ts と同じ「プレイヤーが必ず勝つ」rng を使って画面をマウントする。
+ * 行動はDOM上のボタンをクリックして行い、実際のUI経路を通す。
+ */
+function mount(seed = 4242, scheduler?: BattleScheduler): Harness {
+  const prng = seededPrng(seed)
+  let sinceAction = Number.POSITIVE_INFINITY
+  const battle = useBattleState({ scheduler })
+  battle.initRun(() => {
+    if (sinceAction < 2) { sinceAction++; return 0.94 }
+    return battle.state.enemies.some(e => e.alive) ? 0.99 : prng()
+  })
+  // 「act() 後の最初の2回のrng呼び出し=プレイヤーの命中/クリティカル判定」という前提のハーネスのため、
+  // 敵のAGIがプレイヤーより高いとその前提が崩れる（先に解決される敵の判定にこの値が渡ってしまう）。
+  // 第13フェーズの敵グループ再強化でAGIも引き上げたため、常にプレイヤーが先手になるようここで固定する
+  for (const e of toRaw(battle.state).enemies) e.baseStats = { ...e.baseStats, agi: 1 }
+  return mountBattle(battle, () => { sinceAction = 0 })
+}
+
+/** 敵の攻撃が必ず当たる盤面。被弾側の演出を見るために使う */
+function mountTakingHits(): Harness {
+  const battle = useBattleState()
+  battle.initRun(() => 0.5)
+  return mountBattle(battle)
+}
+
+afterEach(() => {
+  if (current) { current.app.unmount(); current.host.remove(); current = null }
+})
+
+function $(host: HTMLElement, sel: string): HTMLElement | null {
+  return host.querySelector(sel)
+}
+function $$(host: HTMLElement, sel: string): HTMLElement[] {
+  return [...host.querySelectorAll<HTMLElement>(sel)]
+}
+function commandItems(host: HTMLElement): HTMLButtonElement[] {
+  return [...host.querySelectorAll<HTMLButtonElement>('.command-menu .command-item')]
+}
+function slotButtons(host: HTMLElement): HTMLButtonElement[] {
+  return [...host.querySelectorAll<HTMLButtonElement>('.skill-command .skill-slot:not(.back)')]
+}
+/** 技の選択は2回クリック制（1回目で固定、2回目で発動）になったため、テストからもそれに合わせる */
+async function selectSlot(btn: HTMLButtonElement): Promise<void> {
+  btn.click()
+  await nextTick()
+  btn.click()
+  await nextTick()
+}
+function textOf(host: HTMLElement, sel: string): string {
+  return $(host, sel)?.textContent?.replace(/\s+/g, ' ').trim() ?? ''
+}
+
+/** COMMAND から BATTLE を選び、技の一覧を開く */
+async function openBattleMenu(host: HTMLElement): Promise<void> {
+  const battleCommand = commandItems(host).find(b => b.textContent?.includes('BATTLE'))
+  battleCommand?.click()
+  await nextTick()
+}
+
+/** 現在の戦闘が終わるまでUIから攻撃し続ける */
+async function fightUntilDraft(h: Harness): Promise<void> {
+  for (let i = 0; i < 400 && h.battle.state.status === 'battle'; i++) await h.act()
+}
+
+describe('BattleScreen: 初期描画', () => {
+  it('背景・敵・自キャラ・コマンドが揃って描画される', () => {
+    const h = mount()
+    expect($(h.host, '.battle-backdrop')).not.toBeNull()
+    expect($(h.host, '.char-unit.enemy')).not.toBeNull()
+    expect($(h.host, '.char-unit.player')).not.toBeNull()
+    expect($(h.host, '.command-menu')).not.toBeNull()
+    expect($(h.host, '.turn-badge')).not.toBeNull()
+  })
+
+  it('敵と自キャラがそれぞれのドット絵で描かれる', () => {
+    const h = mount()
+    const units = $$(h.host, '.char-unit')
+    expect(units.length).toBeGreaterThanOrEqual(2)
+    for (const u of units) expect(u.querySelector('.pixel-sprite')).not.toBeNull()
+  })
+
+  it('HPは身体に重ねたバーと数値で示される', () => {
+    const h = mount()
+    for (const unit of $$(h.host, '.char-unit')) {
+      expect(unit.querySelector('.hp-track')).not.toBeNull()
+      expect(unit.querySelector('.hp-num')?.textContent).toMatch(/\d+\/\d+/)
+    }
+  })
+
+  it('敵の頭上に次の技と被害の見込みが出る', () => {
+    const h = mount()
+    expect(textOf(h.host, '.char-unit.enemy .next-skill')).not.toBe('')
+    expect(textOf(h.host, '.char-unit.enemy .next-damage')).toMatch(/ダメージ|致命傷/)
+  })
+
+  it('左上にターン数が出る', () => {
+    const h = mount()
+    expect(textOf(h.host, '.turn-badge .turn-value')).toBe('1')
+  })
+
+  it('ドラフトも詳細もまだ開いていない', () => {
+    const h = mount()
+    expect($(h.host, '.draft-overlay')).toBeNull()
+    expect($(h.host, '.info-shell-overlay')).toBeNull()
+  })
+})
+
+describe('BattleScreen: コマンド操作', () => {
+  it('BATTLE を選ぶと技の一覧が開く', async () => {
+    const h = mount()
+    expect($(h.host, '.skill-command')).toBeNull()
+    await openBattleMenu(h.host)
+    expect($(h.host, '.skill-command')).not.toBeNull()
+  })
+
+  it('一覧は所持アクティブ + 守る + 様子を見るで構成される', async () => {
+    const h = mount()
+    await openBattleMenu(h.host)
+    const owned = h.battle.state.player.actives.filter(a => a.slotIndex !== null).length
+    expect(slotButtons(h.host)).toHaveLength(owned + 2)
+    const labels = slotButtons(h.host).map(b => b.textContent ?? '')
+    expect(labels.some(t => t.includes('守る'))).toBe(true)
+    expect(labels.some(t => t.includes('様子を見る'))).toBe(true)
+  })
+
+  it('所持スキルはラベルとレベルつきで並ぶ', async () => {
+    const h = mount()
+    await openBattleMenu(h.host)
+    const owned = h.battle.state.player.actives[0]
+    const label = BATTLE_CONTENT.skills.get(owned.id)?.label ?? ''
+    expect(slotButtons(h.host)[0].textContent).toContain(label)
+    expect(slotButtons(h.host)[0].textContent).toContain('Lv1')
+  })
+
+  it('選択中の技の効果とクールダウンが上に出る', async () => {
+    const h = mount()
+    await openBattleMenu(h.host)
+    expect(textOf(h.host, '.skill-tip')).toContain('クールダウン')
+  })
+
+  it('もどるで COMMAND へ戻れる', async () => {
+    const h = mount()
+    await openBattleMenu(h.host)
+    ;($(h.host, '.skill-command .skill-slot.back') as HTMLButtonElement).click()
+    await nextTick()
+    expect($(h.host, '.skill-command')).toBeNull()
+    expect($(h.host, '.command-menu')).not.toBeNull()
+  })
+
+  it('技を押すと敵のHP表示が減る', async () => {
+    // 表示HPはヒットの再生（later、実タイマー）に合わせて段階的に真の値へ近づく
+    // （多段ヒットを一気に反映しない仕様。下の『段階的に』のテスト参照）ので、
+    // ここではタイマーを進めてから最終的な表示を確認する。
+    vi.useFakeTimers()
+    try {
+      const h = mount()
+      const before = h.battle.state.enemies[0].hp
+      await h.act()
+      vi.advanceTimersByTime(BATTLE.multiHitIntervalMs)
+      await nextTick()
+      expect(h.battle.state.enemies[0].hp).toBeLessThan(before)
+      expect($(h.host, '.char-unit.enemy .hp-num')?.textContent)
+        .toContain(String(Math.max(0, Math.floor(h.battle.state.enemies[0].hp))))
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('守るを押すとクールタイムが表示され押せなくなる', async () => {
+    const h = mount()
+    await openBattleMenu(h.host)
+    const guard = slotButtons(h.host).find(b => b.textContent?.includes('守る')) as HTMLButtonElement
+    await selectSlot(guard)
+    await openBattleMenu(h.host)
+    const guardAfter = slotButtons(h.host).find(b => b.textContent?.includes('守る')) as HTMLButtonElement
+    expect(guardAfter.disabled).toBe(true)
+    expect(guardAfter.textContent).toMatch(/\d/)
+  })
+
+  it('手番でなくなるとコマンドが消える', async () => {
+    const h = mount()
+    await fightUntilDraft(h)
+    await nextTick()
+    expect($(h.host, '.command-area')).toBeNull()
+  })
+})
+
+describe('BattleScreen: 演出', () => {
+  it('行動を選ぶとスキル名が提示され、攻撃モーションに切り替わる', async () => {
+    const h = mount(4242, pausedScheduler())
+    await openBattleMenu(h.host)
+    await selectSlot(slotButtons(h.host)[0])
+    expect($(h.host, '.skill-cast-banner')).not.toBeNull()
+    expect($$(h.host, '.char-unit.player .sprite-box.attacking').length).toBe(1)
+  })
+
+  it('攻撃するとダメージポップアップが対象の上に出て、キューが掃ける', async () => {
+    vi.useFakeTimers()
+    try {
+      const h = mount()
+      await h.act()
+      await nextTick()
+      // popupMs を跨ぐと出た端から消えてしまうので、消える前の時点で見る
+      vi.advanceTimersByTime(BATTLE.multiHitIntervalMs * 2)
+      await nextTick()
+      const enemyUnit = $$(h.host, '.char-unit.enemy')[0]
+      expect(enemyUnit.querySelectorAll('.damage-popup').length).toBeGreaterThan(0)
+      expect(h.battle.effectQueue.value).toHaveLength(0)   // 引き取った分はキューから消えている
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+describe('BattleScreen: 被弾の見え方', () => {
+  it('敵に攻撃されると自キャラが一瞬だけ色を変える', async () => {
+    vi.useFakeTimers()
+    try {
+      const h = mountTakingHits()
+      await openBattleMenu(h.host)
+      const pass = slotButtons(h.host).find(b => b.textContent?.includes('様子を見る')) as HTMLButtonElement
+      await selectSlot(pass)
+      vi.advanceTimersByTime(BATTLE.multiHitIntervalMs)
+      await nextTick()
+      expect($(h.host, '.char-unit.player .sprite-box.flashing')).not.toBeNull()
+      expect($$(h.host, '.char-unit.player .damage-popup').length).toBeGreaterThan(0)
+
+      // フラッシュは一瞬で終わる（出しっぱなしにしない）
+      vi.advanceTimersByTime(BATTLE.presentation.flashMs + 50)
+      await nextTick()
+      expect($(h.host, '.char-unit.player .sprite-box.flashing')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+describe('BattleScreen: 常時表示のステータス・スキル一覧', () => {
+  it('ステータスとスキル一覧は最初から表示されている（INFOを押すまでもない）', () => {
+    const h = mount()
+    expect($(h.host, '.hud-left .status-panel')).not.toBeNull()
+    expect($(h.host, '.hud-left .skill-list-panel')).not.toBeNull()
+    expect($$(h.host, '.hud-left .stat-row')).toHaveLength(10)
+  })
+
+  it('基礎値と実効値の表示を切り替えられる', async () => {
+    const h = mount()
+    const modeButton = $$(h.host, '.status-panel .panel-controls button')[0] as HTMLButtonElement
+    expect(modeButton.textContent?.trim()).toBe('実効値')
+    modeButton.click()
+    await nextTick()
+    expect(($$(h.host, '.status-panel .panel-controls button')[0]).textContent?.trim()).toBe('基礎値')
+  })
+
+  it('バフ差分の表示を切り替えられる', async () => {
+    const h = mount()
+    const diffButton = $$(h.host, '.status-panel .panel-controls button')[1] as HTMLButtonElement
+    expect(diffButton.textContent?.trim()).toBe('バフオン')
+    diffButton.click()
+    await nextTick()
+    expect(($$(h.host, '.status-panel .panel-controls button')[1]).textContent?.trim()).toBe('バフオフ')
+  })
+
+  it('所持しているスキルは名前が見える', () => {
+    const h = mount()
+    const ownedId = h.battle.state.player.actives[0].id
+    const label = BATTLE_CONTENT.skills.get(ownedId)?.label ?? ''
+    expect(textOf(h.host, '.skill-list-panel')).toContain(label)
+  })
+
+  it('未入手かつ未閲覧のスキルは伏せ字で表示される', () => {
+    const h = mount()
+    expect($$(h.host, '.skill-item.unseen').length).toBeGreaterThan(0)
+    for (const el of $$(h.host, '.skill-item.unseen')) {
+      expect(el.textContent).toContain('？？？')
+    }
+  })
+
+  it('マウスを乗せただけでは効果文が開かない', async () => {
+    const h = mount()
+    const owned = $$(h.host, '.skill-item.owned')[0]
+    owned.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
+    owned.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+    await nextTick()
+    expect($$(h.host, '.skill-item.owned')[0].querySelector('.item-detail')).toBeNull()
+  })
+
+  it('項目をクリックすると効果文が開く', async () => {
+    const h = mount()
+    const owned = $$(h.host, '.skill-item.owned')[0]
+    expect(owned.querySelector('.item-detail')).toBeNull()
+    owned.click()
+    await nextTick()
+    expect($$(h.host, '.skill-item.owned')[0].querySelector('.item-detail')).not.toBeNull()
+  })
+})
+
+describe('BattleScreen: INFO', () => {
+  it('INFO を押すと大きな2ペインのINFOパネルが開き、プレイヤーステータスが初期表示される', async () => {
+    const h = mount()
+    const info = commandItems(h.host).find(b => b.textContent?.includes('INFO')) as HTMLButtonElement
+    info.click()
+    await nextTick()
+    expect($(h.host, '.info-shell-overlay')).not.toBeNull()
+    expect(textOf(h.host, '.info-shell-title')).toBe('INFO')
+    expect($$(h.host, '.info-shell-content .stat-cell')).toHaveLength(10)
+  })
+})
+
+describe('BattleScreen: INFOパネル', () => {
+  it('自キャラを押すとINFOが開き、閉じられる', async () => {
+    const h = mount()
+    ;($(h.host, '.char-unit.player') as HTMLElement).click()
+    await nextTick()
+    expect($(h.host, '.info-shell-overlay')).not.toBeNull()
+    expect($$(h.host, '.info-shell-content .stat-cell')).toHaveLength(10)
+    ;($(h.host, '.info-shell-close') as HTMLButtonElement).click()
+    await nextTick()
+    expect($(h.host, '.info-shell-overlay')).toBeNull()
+  })
+
+  it('左のナビからアクティブスキルを選ぶと効果文が表示される', async () => {
+    const h = mount()
+    ;($(h.host, '.char-unit.player') as HTMLElement).click()
+    await nextTick()
+    const ownedId = h.battle.state.player.actives[0].id
+    const label = BATTLE_CONTENT.skills.get(ownedId)?.label ?? ''
+
+    // 「アクティブスキル」グループ見出しを開かないと子のナビ項目は描画されない
+    const groupTitle = $$(h.host, '.info-shell-nav .nav-group-title')
+      .find(b => b.textContent?.includes('アクティブスキル')) as HTMLButtonElement
+    expect(groupTitle).toBeTruthy()
+    groupTitle.click()
+    await nextTick()
+
+    const navItems = $$(h.host, '.info-shell-nav .nav-item.child')
+    const activeNav = navItems.find(b => b.textContent?.trim() === label) as HTMLButtonElement
+    expect(activeNav).toBeTruthy()
+    activeNav.click()
+    await nextTick()
+    expect($(h.host, '.info-shell-content .skill-row')).not.toBeNull()
+    expect(textOf(h.host, '.info-shell-content .skill-row-head')).toContain(label)
+  })
+
+  it('敵を押すとその敵のセクションが初期表示され、ステータスが見える', async () => {
+    const h = mount()
+    ;($(h.host, '.char-unit.enemy') as HTMLElement).click()
+    await nextTick()
+    expect($(h.host, '.info-shell-overlay')).not.toBeNull()
+    const activeNav = $(h.host, '.info-shell-nav .nav-item.active')
+    expect(activeNav?.textContent?.trim()).toBe(h.battle.state.enemies[0].label)
+    expect($$(h.host, '.info-shell-content .stat-cell')).toHaveLength(10)
+  })
+})
+
+describe('BattleScreen: ドラフト', () => {
+  it('勝利するとカードが3枚出る', async () => {
+    const h = mount()
+    await fightUntilDraft(h)
+    await nextTick()
+    expect($$(h.host, '.draft-card')).toHaveLength(3)
+  })
+
+  it('各カードに種別・名前・効果文・フレーバーが載る', async () => {
+    const h = mount()
+    await fightUntilDraft(h)
+    await nextTick()
+    for (const card of $$(h.host, '.draft-card')) {
+      expect(card.querySelector('.card-kind')?.textContent).toMatch(/アクティブ|パッシブ|特性/)
+      expect(card.querySelector('.card-label')?.textContent?.trim()).not.toBe('')
+      expect(card.querySelector('.card-effect')?.textContent?.trim()).not.toBe('')
+      expect(card.querySelector('.card-flavor')?.textContent).toContain('「')
+    }
+  })
+
+  it('カードを押すと次の戦闘が始まりカードが消える', async () => {
+    const h = mount()
+    await fightUntilDraft(h)
+    await nextTick()
+    ;($$(h.host, '.draft-card')[0] as HTMLButtonElement).click()
+    await nextTick()
+    expect($(h.host, '.draft-overlay')).toBeNull()
+    expect(h.battle.state.status).toBe('battle')
+    expect(h.battle.state.enemies.every(e => e.alive)).toBe(true)
+  })
+
+  it('リロールを押すと専用の効果音が鳴り、カードの中身が変わる', async () => {
+    const h = mount()
+    await fightUntilDraft(h)
+    await nextTick()
+    expect(h.battle.state.rerollCharges).toBeGreaterThan(0)
+    const before = (h.battle.state.draftOptions ?? []).map(o => o.id)
+    const played: string[] = []
+    soundManager.register({ playSfx: (id: string) => { played.push(id) } })
+    ;($(h.host, '.draft-reroll') as HTMLButtonElement).click()
+    await nextTick()
+    expect(played).toContain('battle_draft_reroll')
+    const after = (h.battle.state.draftOptions ?? []).map(o => o.id)
+    expect(after).not.toEqual(before)
+    soundManager.register({})
+  })
+
+  it('リロール直後はカード一覧に演出用のクラスが付き、時間経過で消える', async () => {
+    vi.useFakeTimers()
+    try {
+      const h = mount()
+      await fightUntilDraft(h)
+      await nextTick()
+      ;($(h.host, '.draft-reroll') as HTMLButtonElement).click()
+      vi.advanceTimersByTime(16) // requestAnimationFrame 相当の1フレームぶん進める
+      await nextTick()
+      expect($(h.host, '.draft-cards')?.classList.contains('shuffling')).toBe(true)
+      vi.advanceTimersByTime(1000)
+      await nextTick()
+      expect($(h.host, '.draft-cards')?.classList.contains('shuffling')).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('リロール回数が0のときはボタンが無効化される', async () => {
+    const h = mount()
+    await fightUntilDraft(h)
+    await nextTick()
+    for (let i = 0; i < 10 && h.battle.state.rerollCharges > 0; i++) {
+      ;($(h.host, '.draft-reroll') as HTMLButtonElement).click()
+      await nextTick()
+    }
+    expect(h.battle.state.rerollCharges).toBe(0)
+    expect(($(h.host, '.draft-reroll') as HTMLButtonElement).disabled).toBe(true)
+  })
+})
+
+describe('BattleScreen: スキルパネル（5戦ごとのポイント配分、第7フェーズ）', () => {
+  /**
+   * 5戦ごとにスキルパネルへ遷移する条件は勝利数の節目（useBattleState.test.ts と同じ理由で
+   * 250戦近い実プレイは避け、toRaw 越しに battlesWon を書き換えてから通常のドラフトを1回
+   * 完了させ、実際の遷移ロジック・DOM描画を検証する）。
+   */
+  async function advanceToSkillPanel(h: Harness): Promise<void> {
+    await fightUntilDraft(h)
+    toRaw(h.battle.state).battlesWon = SKILL_POINTS.panelIntervalBattles
+    ;($$(h.host, '.draft-card')[0] as HTMLButtonElement).click()
+    await nextTick()
+  }
+
+  it('5戦ごとにスキルパネルが表示される', async () => {
+    const h = mount()
+    await advanceToSkillPanel(h)
+    expect(h.battle.state.status).toBe('skillPanel')
+    expect($(h.host, '.skill-panel-overlay')).not.toBeNull()
+  })
+
+  it('装備中のアクティブへ配分すると、ポイントが減って表示が更新される', async () => {
+    const h = mount()
+    await advanceToSkillPanel(h)
+    const before = h.battle.state.skillPoints
+    ;($(h.host, '.active-card .skill-point-inc') as HTMLButtonElement).click()
+    await nextTick()
+    expect(h.battle.state.skillPoints).toBe(before - 1)
+  })
+
+  it('配分済みのアクティブから引き戻すと、ポイントが戻って表示が更新される', async () => {
+    const h = mount()
+    await advanceToSkillPanel(h)
+    ;($(h.host, '.active-card .skill-point-inc') as HTMLButtonElement).click()
+    await nextTick()
+    const before = h.battle.state.skillPoints
+    ;($(h.host, '.active-card .skill-point-dec') as HTMLButtonElement).click()
+    await nextTick()
+    expect(h.battle.state.skillPoints).toBe(before + 1)
+  })
+
+  it('ステータスへ+1すると未配分ポイントが減る', async () => {
+    const h = mount()
+    await advanceToSkillPanel(h)
+    const before = h.battle.state.statPoints
+    ;($(h.host, '.stat-row .stepper:not(:disabled)') as HTMLButtonElement)?.click()
+    await nextTick()
+    expect(h.battle.state.statPoints).toBe(before - 1)
+  })
+
+  it('ステータスへ+1すると、同じパネル内の実効ステータス表示も即座に更新される', async () => {
+    const h = mount()
+    await advanceToSkillPanel(h)
+    const before = $(h.host, '.stat-effective')?.textContent
+    ;($(h.host, '.stat-row .stepper:not(:disabled)') as HTMLButtonElement).click()
+    await nextTick()
+    expect($(h.host, '.stat-effective')?.textContent).not.toBe(before)
+  })
+
+  it('セット中のアクティブを選ぶと、フレーバーテキストが表示される', async () => {
+    const h = mount()
+    await advanceToSkillPanel(h)
+    ;($(h.host, '.active-card') as HTMLElement).click()
+    await nextTick()
+    expect($(h.host, '.detail-flavor')).not.toBeNull()
+  })
+
+  it('パネルを閉じると戦闘が再開する', async () => {
+    const h = mount()
+    await advanceToSkillPanel(h)
+    ;($(h.host, '.panel-close') as HTMLButtonElement).click()
+    await nextTick()
+    expect(h.battle.state.status).toBe('battle')
+    expect($(h.host, '.skill-panel-overlay')).toBeNull()
+  })
+
+  // 「枠が全て埋まった状態で倉庫のスキルをセットしようとすると入れ替え画面になる」経路は
+  // useBattleState.test.ts（レンダリングを伴わないため toRaw 越しの状態組み立てが安全に効く）
+  // で検証済み。BattleScreen（実DOM）側では、readonly(state) 経由の computed が
+  // toRaw() 越しの生の配列差し替えを検知できず描画が更新されないため、ここでは
+  // 実際に描画されるUIの配線（表示・クリックで正しい composable 関数が呼ばれること）だけを確認する。
+})
+
+describe('BattleScreen: 効果音', () => {
+  afterEach(() => { soundManager.register({}) })
+
+  /** 鳴った SE の id を記録する差し替え実装 */
+  function recordSfx(): string[] {
+    const played: string[] = []
+    soundManager.register({ playSfx: (id: string) => { played.push(id) } })
+    return played
+  }
+
+  it('スキルJSONで指定した音が、発動時と着弾時にそれぞれ鳴る', async () => {
+    vi.useFakeTimers()
+    try {
+      const h = mount()
+      const skillId = h.battle.state.player.actives[0].id
+      const def = BATTLE_CONTENT.skills.get(skillId)
+      if (!def || def.kind !== 'active' || !def.sfx?.cast || !def.sfx?.impact) {
+        throw new Error(`${skillId} に sfx が定義されていません`)
+      }
+      const played = recordSfx()
+      await h.act()
+      await nextTick()
+      vi.advanceTimersByTime(BATTLE.multiHitIntervalMs * 4)
+      expect(played).toContain(def.sfx.cast)
+      expect(played).toContain(def.sfx.impact)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('スキル別の指定がない演出はエフェクトJSONの音を使う', async () => {
+    vi.useFakeTimers()
+    try {
+      const h = mount()
+      await openBattleMenu(h.host)
+      const played = recordSfx()
+      const guard = slotButtons(h.host).find(b => b.textContent?.includes('守る')) as HTMLButtonElement
+      await selectSlot(guard)
+      vi.advanceTimersByTime(BATTLE.multiHitIntervalMs * 4)
+      expect(played).toContain(BATTLE_EFFECTS.get('fx_guard')?.sfx)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})

@@ -3,6 +3,7 @@ import configFromJson from '../../../src/data/config/genre_defaults.json'
 import paletteFromJson from '../../../src/data/config/palette_defaults.json'
 import gbFromJson from '../../../src/data/config/game_balance.json'
 import diffFromJson from '../../../src/data/config/difficulty.json'
+import battleFromJson from '../../../src/data/config/battle.json'
 import { normalizeGenreDef } from '../../../src/framework/ConfigLoader'
 import { validateGameConfig } from '../../../src/framework/ConfigValidator'
 import type { GameConfigMap } from '../../../src/framework/config-types'
@@ -144,6 +145,7 @@ describe('ConfigValidator.REQUIRED_SECTIONS (#259 follow-up)', () => {
       pixelart: { size: 4, gradientSteps: 4, haloSteps: 3, haloAlphaFalloff: 0.6, alphaSteps: 8, ditherRatioSteps: 8, textScale: 2, textMinBakePx: 8, blockShadeAmount: 24, spriteCacheMax: 64, textCacheMax: 64 },
       genre_defaults: { scoreFormula: 'distance * 1.0 + survivedSec * 5', theme: 'plain', bgColor: '#1a1a2e' },
       palette_defaults: { danger: '#ff6b6b', dangerGlow: '#ff9999', safe: '#4ecdc4', safeGlow: '#80e8dd' },
+      battle: battleFromJson,
     } as unknown as GameConfigMap
     const result = validateGameConfig(mockConfig)
     expect(result.ok).toBe(true)

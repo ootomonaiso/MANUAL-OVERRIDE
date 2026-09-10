@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_swift_zenith",
+  "label": "疾風の真髄",
+  "flavorText": "「俺についてこれるかなっ！」(シュッシュッ)",
+  "kind": "trait",
+  "unlockCondition": {
+    "category": "swift",
+    "points": 20
+  },
+  "effect": [
+    {
+      "op": "statBoost",
+      "stat": "agi",
+      "rate": 0.25
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "passive_vitality_up",
+  "label": "健康的な生活",
+  "flavorText": "「野菜食べてて偉い!」",
+  "kind": "passive",
+  "mainCategory": "vitality",
+  "subCategories": [],
+  "effect": [
+    {
+      "op": "statBoost",
+      "stat": "hp",
+      "amount": 2200
+    }
+  ]
+}

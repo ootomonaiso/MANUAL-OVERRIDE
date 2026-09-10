@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_barrier_ward",
+  "label": "結界",
+  "flavorText": "祈りの分だけ、境界は厚くなる。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "aegis",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 4,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "shield",
+      "element": "magical",
+      "scale": {
+        "stat": "ref",
+        "rate": 0.8
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_shield_gain"
+  }
+}

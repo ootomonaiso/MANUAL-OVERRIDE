@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_slime_frost",
+  "label": "スカイブルースライム",
+  "flavorText": "一説では、太古の昔に製造された、「洗濯のりと食紅の混合物」に魔力が宿ったものとされている。",
+  "sprite": "battle_slime_frost",
+  "stats": {
+    "hp": 12820,
+    "str": 840,
+    "def": 2180,
+    "int": 960,
+    "ref": 1700,
+    "agi": 600,
+    "hitRate": 0.92,
+    "evadeRate": 0,
+    "critRate": 0.04,
+    "critDamageMultiplier": 1.5
+  },
+  "traits": [
+    "trait_resist_physical"
+  ],
+  "activeSkills": [
+    "skill_strike",
+    "skill_guard_shield"
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_strike",
+    "skill_guard_shield",
+    "skill_strike"
+  ],
+  "isBoss": false
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_night_wraith",
+  "label": "成れ果ての亡霊",
+  "flavorText": "なんで裏切ったのなんで裏切ったのなんで裏切ったのなんで裏切ったのなんで裏切ったのなんで裏切ったのなんで裏切ったの貴方に呪い(まじない)を掛けてあげる。",
+  "sprite": "battle_night_wraith",
+  "stats": {
+    "hp": 105400,
+    "str": 1233,
+    "def": 4560,
+    "int": 1592,
+    "ref": 5490,
+    "agi": 2750,
+    "hitRate": 0.95,
+    "evadeRate": 0,
+    "critRate": 0.12,
+    "critDamageMultiplier": 1.9
+  },
+  "traits": [],
+  "activeSkills": [
+    {
+      "id": "skill_boundary_erosion",
+      "level": 3
+    },
+    {
+      "id": "skill_binding_mist",
+      "level": 2
+    },
+    {
+      "id": "skill_spark",
+      "level": 3
+    },
+    {
+      "id": "skill_barrage",
+      "level": 3
+    },
+    {
+      "id": "skill_ambush",
+      "level": 4
+    }
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_ambush",
+    "skill_boundary_erosion",
+    "skill_binding_mist",
+    "skill_spark",
+    "skill_barrage"
+  ],
+  "isBoss": true
+}

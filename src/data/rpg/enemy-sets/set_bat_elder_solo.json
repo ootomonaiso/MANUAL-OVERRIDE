@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_bat_elder_solo",
+  "label": "古びた説明書コウモリ",
+  "members": [{ "enemyId": "enemy_bat_elder" }]
+}

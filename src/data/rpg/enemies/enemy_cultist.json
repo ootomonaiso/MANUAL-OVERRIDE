@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_cultist",
+  "label": "観測者",
+  "flavorText": "謎のオカルト集団「The Repository」に所属する。/役職名「Debuger」",
+  "sprite": "battle_cultist",
+  "stats": {
+    "hp": 13140,
+    "str": 840,
+    "def": 1100,
+    "int": 1340,
+    "ref": 1220,
+    "agi": 960,
+    "hitRate": 0.92,
+    "evadeRate": 0,
+    "critRate": 0.05,
+    "critDamageMultiplier": 1.5
+  },
+  "traits": [
+    "trait_weak_physical"
+  ],
+  "activeSkills": [
+    "skill_curse_bolt"
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_curse_bolt"
+  ],
+  "isBoss": false
+}

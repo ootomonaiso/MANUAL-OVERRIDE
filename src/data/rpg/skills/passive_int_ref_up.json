@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "passive_int_ref_up",
+  "label": "叡智の反射",
+  "flavorText": "考える速さが、身を守る速さになる。",
+  "kind": "passive",
+  "mainCategory": "wisdom",
+  "subCategories": [],
+  "effect": [
+    { "op": "statBoost", "stat": "int", "amount": 300 },
+    { "op": "statBoost", "stat": "ref", "amount": 300 }
+  ]
+}

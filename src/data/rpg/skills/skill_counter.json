@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_counter",
+  "label": "カウンター",
+  "flavorText": "「やられたらやり返す、1.5倍返しだ！」",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "guard",
+  "subCategories": [
+    "fatal"
+  ],
+  "cooldown": 4,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "alwaysActsFirst": true,
+  "effects": [
+    "fx_cast_physical"
+  ],
+  "effect": [
+    {
+      "op": "counterStance",
+      "scaleStat": "def",
+      "rate": 1.5,
+      "element": "physical"
+    }
+  ],
+  "sfx": {
+    "cast": "battle_guard"
+  }
+}

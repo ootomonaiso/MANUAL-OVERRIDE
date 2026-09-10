@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../../schemas/battle-effect.schema.json",
+  "id": "fx_slash",
+  "label": "斬撃",
+  "timing": "onCast",
+  "durationMs": 180,
+  "target": "target",
+  "visual": {
+    "kind": "slash",
+    "color": "var(--battle-element-physical)"
+  },
+  "sfx": "battle_swing"
+}

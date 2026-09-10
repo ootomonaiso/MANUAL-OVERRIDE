@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_iaido",
+  "label": "抜刀術",
+  "flavorText": "鞘に納まるまでが、一つの太刀筋。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "fatal",
+  "subCategories": [
+    "might"
+  ],
+  "cooldown": 3,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_slash"
+  ],
+  "effect": [
+    {
+      "op": "modifier",
+      "stat": "critDamageMultiplier",
+      "amount": 1,
+      "scope": "thisTurn"
+    },
+    {
+      "op": "damage",
+      "element": "physical",
+      "scale": {
+        "stat": "str",
+        "rate": 1.3
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing",
+    "impact": "battle_hit_physical"
+  }
+}

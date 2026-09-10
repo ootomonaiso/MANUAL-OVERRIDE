@@ -1,0 +1,23 @@
+{
+  "id": "battle_shield_gain",
+  "$comment": "シールド付与 — 金属質の澄んだ立ち上がり",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "triangle",
+      "freq": 440,
+      "freqEnd": 880,
+      "durationSec": 0.2,
+      "volume": 0.2
+    },
+    {
+      "kind": "noise",
+      "durationSec": 0.12,
+      "volume": 0.12,
+      "filter": {
+        "type": "highpass",
+        "freq": 3000
+      }
+    }
+  ]
+}

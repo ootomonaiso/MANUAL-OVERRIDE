@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_stance_watch",
+  "label": "避ける",
+  "flavorText": "体をひねり、相手の一撃をかわす。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "swift",
+  "subCategories": [],
+  "cooldown": 3,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "draftable": false,
+  "alwaysActsFirst": true,
+  "effect": [
+    { "op": "modifier", "stat": "evadeRate", "amount": 0.5, "scope": "thisTurn" }
+  ]
+}

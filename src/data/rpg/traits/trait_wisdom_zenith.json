@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_wisdom_zenith",
+  "label": "明晰の真髄",
+  "flavorText": "「見える、見えるぞ、遠くのほうで私の陰口を言っているのが！！」",
+  "kind": "trait",
+  "unlockCondition": {
+    "category": "wisdom",
+    "points": 20
+  },
+  "effect": [
+    {
+      "op": "statBoost",
+      "stat": "int",
+      "rate": 0.25
+    }
+  ]
+}

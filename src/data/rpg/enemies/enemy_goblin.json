@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_goblin",
+  "label": "ゴブリン",
+  "flavorText": "知能が低く、群れで行動することが多い。",
+  "sprite": "battle_goblin",
+  "stats": {
+    "hp": 2790,
+    "str": 460,
+    "def": 510,
+    "int": 160,
+    "ref": 260,
+    "agi": 450,
+    "hitRate": 0.92,
+    "evadeRate": 0,
+    "critRate": 0.05,
+    "critDamageMultiplier": 1.5
+  },
+  "traits": [],
+  "activeSkills": [
+    "skill_strike",
+    "skill_swift_slash"
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_strike",
+    "skill_swift_slash"
+  ],
+  "isBoss": false
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_binding_mist",
+  "label": "呪縛の霧",
+  "flavorText": "あまりにも重い愛は、やがて呪いとなる。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "curse",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 3,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "modifier",
+      "stat": "evadeRate",
+      "rate": -0.3,
+      "scope": "thisBattle",
+      "applyTo": "target"
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_curse"
+  }
+}

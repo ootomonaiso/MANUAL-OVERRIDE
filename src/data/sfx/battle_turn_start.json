@@ -1,0 +1,13 @@
+{
+  "id": "battle_turn_start",
+  "$comment": "手番の切り替わり — 小さな合図",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "triangle",
+      "freq": 660,
+      "durationSec": 0.07,
+      "volume": 0.14
+    }
+  ]
+}

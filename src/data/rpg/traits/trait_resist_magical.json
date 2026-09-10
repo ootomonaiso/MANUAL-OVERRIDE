@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_resist_magical",
+  "label": "魔法耐性",
+  "flavorText": "「創作の世界のものになんで夢中になっているの？」と冷笑しよう。",
+  "kind": "trait",
+  "draftable": false,
+  "effect": [
+    {
+      "op": "elementAffinity",
+      "element": "magical",
+      "affinity": "resist"
+    }
+  ]
+}

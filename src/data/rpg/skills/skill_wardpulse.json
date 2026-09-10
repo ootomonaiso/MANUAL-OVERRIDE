@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_wardpulse",
+  "label": "退魔の波動",
+  "flavorText": "弾いた力は、そのまま撃ち返す力になる。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "guard",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 3,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "magical",
+      "scale": {
+        "stat": "ref",
+        "rate": 1.3
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_hit_magical"
+  }
+}

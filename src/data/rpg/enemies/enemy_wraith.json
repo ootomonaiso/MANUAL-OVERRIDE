@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_wraith",
+  "label": "言霊",
+  "flavorText": "生前、ありとあらゆる人に「おまじない」を唱えた者。",
+  "sprite": "battle_wraith",
+  "stats": {
+    "hp": 11520,
+    "str": 1460,
+    "def": 3890,
+    "int": 1820,
+    "ref": 2900,
+    "agi": 1340,
+    "hitRate": 0.93,
+    "evadeRate": 0,
+    "critRate": 0.06,
+    "critDamageMultiplier": 1.5
+  },
+  "traits": [
+    "trait_weak_magical"
+  ],
+  "activeSkills": [
+    "skill_piercing_bolt",
+    "skill_double_bolt"
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_piercing_bolt",
+    "skill_double_bolt"
+  ],
+  "isBoss": false
+}

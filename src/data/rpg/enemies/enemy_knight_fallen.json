@@ -1,0 +1,36 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_knight_fallen",
+  "label": "失楽の騎士",
+  "flavorText": "かの帝国は、天災によって一夜で滅びた。",
+  "sprite": "battle_knight_fallen",
+  "stats": {
+    "hp": 14560,
+    "str": 2000,
+    "def": 4260,
+    "int": 880,
+    "ref": 2000,
+    "agi": 1120,
+    "hitRate": 0.93,
+    "evadeRate": 0,
+    "critRate": 0.06,
+    "critDamageMultiplier": 1.5
+  },
+  "traits": [
+    "trait_resist_physical"
+  ],
+  "activeSkills": [
+    {
+      "id": "skill_triple_strike",
+      "level": 2
+    },
+    "skill_guard_shield"
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_triple_strike",
+    "skill_guard_shield",
+    "skill_triple_strike"
+  ],
+  "isBoss": false
+}

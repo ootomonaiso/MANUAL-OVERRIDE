@@ -1,0 +1,17 @@
+{
+  "id": "battle_miss",
+  "$comment": "回避された — 空振りの短い風切り",
+  "tracks": [
+    {
+      "kind": "noise",
+      "durationSec": 0.13,
+      "volume": 0.16,
+      "filter": {
+        "type": "bandpass",
+        "freq": 2400,
+        "freqEnd": 900,
+        "q": 1.1
+      }
+    }
+  ]
+}

@@ -432,4 +432,11 @@ export interface ScoreVars {
   colorTouches: number     // 安全色に触れた回数（color_touch 評価）
   hitsOnBoss: number       // ボスへの命中数（bullet_hell）
   maxHitCombo: number      // 被弾せずに連続命中させた最大数（bullet_hell）
+  // ── rpg 戦闘（ローグライク）専用。Canvas 側の producer は供給しないため optional
+  //    （docs/genre/rpg/01-architecture.md「スコアの供給」） ─────────────
+  battlesWon?: number      // 勝利した戦闘数
+  bossDefeated?: number    // ラン中のボス撃破数の通算（battleEngine の bossesDefeatedCount）
+  maxSkillLevel?: number   // 到達した最大スキルレベル
+  traitsAcquired?: number  // 獲得した特性数
+  avgStat?: number         // 6成長ステータスの実効値平均（HPのみ/10）
 }

@@ -1,0 +1,23 @@
+{
+  "id": "battle_skill_select",
+  "$comment": "スキル選択の確定 — 硬めのクリック",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "square",
+      "freq": 880,
+      "freqEnd": 1200,
+      "durationSec": 0.06,
+      "volume": 0.16
+    },
+    {
+      "kind": "noise",
+      "durationSec": 0.04,
+      "volume": 0.1,
+      "filter": {
+        "type": "highpass",
+        "freq": 2600
+      }
+    }
+  ]
+}

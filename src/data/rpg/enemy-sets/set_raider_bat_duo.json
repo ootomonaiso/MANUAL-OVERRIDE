@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_raider_bat_duo",
+  "label": "掠め取る者&古びた説明書コウモリ",
+  "members": [
+    { "enemyId": "enemy_goblin_raider" },
+    { "enemyId": "enemy_bat_elder", "statsOverride": { "hp": 1900 } }
+  ]
+}

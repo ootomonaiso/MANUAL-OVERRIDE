@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_cultist_solo",
+  "label": "改訂者",
+  "members": [
+    { "enemyId": "enemy_cultist" }
+  ]
+}

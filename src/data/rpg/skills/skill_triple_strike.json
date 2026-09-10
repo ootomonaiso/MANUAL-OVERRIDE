@@ -1,0 +1,46 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_triple_strike",
+  "label": "三連撃",
+  "flavorText": "3撃目にすべてを賭けろ。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "combo",
+  "subCategories": [
+    "might"
+  ],
+  "cooldown": 4,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_slash"
+  ],
+  "effect": [
+    {
+      "op": "repeat",
+      "times": 3,
+      "body": [
+        {
+          "op": "damage",
+          "element": "physical",
+          "scale": {
+            "stat": "str",
+            "rate": 0.4
+          }
+        }
+      ],
+      "onLastIteration": [
+        {
+          "op": "modifier",
+          "stat": "critRate",
+          "amount": 0.5,
+          "scope": "thisHit"
+        }
+      ]
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing",
+    "impact": "battle_hit_physical"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_slime_lab_duo",
+  "label": "腐食&凍結インクのスライム",
+  "members": [
+    { "enemyId": "enemy_slime_acid", "statsOverride": { "hp": 10220 } },
+    { "enemyId": "enemy_slime_frost", "statsOverride": { "hp": 9530 } }
+  ]
+}

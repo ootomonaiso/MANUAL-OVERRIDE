@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_large_herb",
+  "label": "大きめの薬草",
+  "flavorText": "データ上でしか生きられないが、非常に広い生息域を持っている草。",
+  "kind": "active",
+  "element": "none",
+  "mainCategory": "heal",
+  "subCategories": [],
+  "cooldown": 3,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_none"
+  ],
+  "effect": [
+    {
+      "op": "heal",
+      "element": "none",
+      "scale": {
+        "stat": "hp",
+        "rate": 0.2
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_none",
+    "impact": "battle_heal"
+  }
+}

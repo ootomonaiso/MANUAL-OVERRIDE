@@ -1,0 +1,289 @@
+/**
+ * domain/battle/skillText.ts
+ * 効果文の自動生成（docs/genre/rpg/05-skills.md「効果文の表示」）。
+ * 表示される数値はスキルレベルの倍率を適用済みの実値にする。
+ */
+
+import type {
+  SkillDef, EffectNode, StatKey, Element, CategoryId, ModifierScope, TemporaryModifier,
+  FocusSide, FocusRange,
+} from './types'
+import { PERCENT_STAT_KEYS, isPercentStat } from './types'
+import { levelMultiplier, passiveLevelMultiplier } from './stats'
+
+export { PERCENT_STAT_KEYS }
+
+export const CATEGORY_LABEL: Record<CategoryId, string> = {
+  vitality: '頑強', guard: '守勢', might: '剛撃', wisdom: '明晰', swift: '疾風',
+  fatal: '致命', heal: '治癒', aegis: '加護', curse: '呪詛', pierce: '貫通', combo: '連撃',
+}
+
+/** カテゴリごとの目印色。実際の色値は battle-screen の CSS カスタムプロパティ側で定義する */
+export const CATEGORY_COLOR: Record<CategoryId, string> = {
+  vitality: 'var(--battle-category-vitality)',
+  guard: 'var(--battle-category-guard)',
+  might: 'var(--battle-category-might)',
+  wisdom: 'var(--battle-category-wisdom)',
+  swift: 'var(--battle-category-swift)',
+  fatal: 'var(--battle-category-fatal)',
+  heal: 'var(--battle-category-heal)',
+  aegis: 'var(--battle-category-aegis)',
+  curse: 'var(--battle-category-curse)',
+  pierce: 'var(--battle-category-pierce)',
+  combo: 'var(--battle-category-combo)',
+}
+
+export interface SkillTextToken {
+  type: 'plain' | 'stat' | 'element' | 'number'
+  text: string
+  /** type === 'element' のとき、色分けに使う具体的な属性 */
+  element?: Element
+}
+
+export const STAT_LABEL: Record<StatKey, string> = {
+  hp: 'HP', str: 'STR', def: 'DEF', int: 'INT', ref: 'REF', agi: 'AGI',
+  hitRate: '命中率', evadeRate: '回避率', critRate: 'クリティカル率',
+  critDamageMultiplier: 'クリティカルダメージ倍率',
+}
+
+export const ELEMENT_LABEL: Record<Element, string> = {
+  physical: '物理', magical: '魔法', special: '特殊', none: '無',
+}
+
+// PERCENT_STAT_KEYS / isPercentStat は types.ts へ移設した（execution側と表示側の
+// 両方で参照する必要があるため）。ここでは import した実体をそのまま使う。
+
+/** ステータス・ダメージの表示は必ず整数に丸める（第13フェーズ）。レベル倍率適用後は非整数になりうるため */
+function pct(n: number): string {
+  return `${Math.round(n * 100)}%`
+}
+
+/** 実数（flat）系の効果量表示。レベル倍率（levelMultiplier/passiveLevelMultiplier）を掛けた後は
+ * 非整数になりうるため、pct() と同じ理由で必ず整数に丸める */
+function flatNum(n: number): string {
+  return `+${Math.round(n)}`
+}
+
+function statTok(key: StatKey): SkillTextToken {
+  return { type: 'stat', text: STAT_LABEL[key] }
+}
+function elemTok(el: Element): SkillTextToken {
+  return { type: 'element', text: ELEMENT_LABEL[el], element: el }
+}
+function numTok(text: string): SkillTextToken {
+  return { type: 'number', text }
+}
+function plain(text: string): SkillTextToken {
+  return { type: 'plain', text }
+}
+
+function nodeToTokens(node: EffectNode, mult: number): SkillTextToken[] {
+  switch (node.op) {
+    case 'damage': {
+      const scale = node.scale as { stat?: StatKey; statOptions?: StatKey[]; rate: number }
+      const refTok: SkillTextToken[] = scale.statOptions && scale.statOptions.length > 0
+        ? [plain(scale.statOptions.map(s => STAT_LABEL[s]).join('/')), plain('の高い方')]
+        : [statTok(scale.stat as StatKey)]
+      return [
+        elemTok(node.element as Element), plain('属性ダメージ: '),
+        ...refTok, plain('の'), numTok(pct(scale.rate * mult)), plain('分'),
+      ]
+    }
+    case 'heal': {
+      const scale = node.scale as { stat: StatKey; rate: number } | undefined
+      const flat = node.flat as number | undefined
+      if (!scale) return [plain('回復: 固定値'), numTok(`${Math.round((flat ?? 0) * mult)}`)]
+      return [plain('回復: '), statTok(scale.stat), plain('の'), numTok(pct(scale.rate * mult)), plain('分')]
+    }
+    case 'shield': {
+      const scale = node.scale as { stat: StatKey; rate: number }
+      return [plain('シールド付与: '), statTok(scale.stat), plain('の'), numTok(pct(scale.rate * mult)), plain('分')]
+    }
+    case 'repeat': {
+      const times = node.times as number
+      const body = (node.body as EffectNode[]) ?? []
+      const onLast = node.onLastIteration as EffectNode[] | undefined
+      const out: SkillTextToken[] = [numTok(`${times}回`), plain('繰り返す（')]
+      for (const b of body) out.push(...nodeToTokens(b, mult), plain('。'))
+      out.push(plain('）'))
+      if (onLast) {
+        out.push(plain('最後の1回のみ: '))
+        for (const n of onLast) out.push(...nodeToTokens(n, mult), plain('。'))
+      }
+      return out
+    }
+    case 'modifier': {
+      const stat = node.stat as StatKey | 'cutRate'
+      const amount = node.amount as number | undefined
+      const rate = node.rate as number | undefined
+      const scale = node.scale as { stat: StatKey; rate: number } | undefined
+      const statLabel = stat === 'cutRate' ? plain('カット率') : statTok(stat)
+      const applyTo = (node.applyTo as string | undefined) === 'target' ? '対象' : '自分'
+      // 割合ステータス（クリティカル率等）はレベル倍率を掛けない（PERCENT_STAT_KEYS参照）。
+      // 表示側だけ倍率をかけないと実行結果とズレるため、execution側（modifier.ts の
+      // modifierOp）と必ず同じ判定を使う。
+      const effMult = isPercentStat(stat) ? 1 : mult
+      if (scale) {
+        // scale は発動時点の自分のステータスを参照するため、静的な効果文では具体的な数値を出せない
+        // （棘を纏う 等）。「自分のSTRの50%分」のような計算式のまま示す
+        return [
+          plain(`${applyTo}の`), statLabel, plain('を、自分の'), statTok(scale.stat), plain('の'),
+          numTok(pct(scale.rate * effMult)), plain('分'),
+          ...(amount !== undefined ? [plain('と'), numTok(flatNum(amount * effMult))] : []),
+          plain('変化させる'),
+        ]
+      }
+      const valueTok = amount !== undefined
+        ? (isPercentStat(stat) ? numTok(pct(amount * effMult)) : numTok(flatNum(amount * effMult)))
+        : numTok(pct((rate ?? 0) * effMult))
+      return [plain(`${applyTo}の`), statLabel, plain('を'), valueTok, plain('変化させる')]
+    }
+    case 'statBoost': {
+      const stat = node.stat as StatKey
+      const amount = node.amount as number | undefined
+      const rate = node.rate as number | undefined
+      // modifier と同じ理由で、割合ステータスにはレベル倍率を掛けない
+      // （execution側は stats.ts の accumulatePassiveStatBoosts）。
+      const effMult = isPercentStat(stat) ? 1 : mult
+      const valueTok = amount !== undefined
+        ? (isPercentStat(stat) ? numTok(pct(amount * effMult)) : numTok(flatNum(amount * effMult)))
+        : numTok(pct((rate ?? 0) * effMult))
+      return [statTok(stat), plain('を'), valueTok, plain('上昇させる')]
+    }
+    case 'elementAffinity': {
+      const affinity = node.affinity === 'weak' ? '弱点' : '耐性'
+      return [elemTok(node.element as Element), plain(`属性を${affinity}とする`)]
+    }
+    case 'cutRate': {
+      const amount = node.amount as number
+      return [plain('被ダメージを'), numTok(pct(amount)), plain('軽減する')]
+    }
+    case 'effectBoost': {
+      const el = node.element as Element | 'any'
+      const rate = node.rate as number
+      const head = el === 'any' ? plain('全属性') : elemTok(el)
+      return [head, plain('の効果量を'), numTok(pct(rate * mult)), plain('上昇させる')]
+    }
+    case 'healTaken': {
+      const rate = node.rate as number
+      return [plain('受ける回復量を'), numTok(pct(rate * mult)), plain('上昇させる')]
+    }
+    case 'replaceGuard':
+      return [plain('「守る」が「避ける」に変化する')]
+    case 'noop':
+      return [plain('様子を見る')]
+    case 'healBetweenBattles': {
+      const amount = node.amount as number | undefined
+      const rate = node.rate as number | undefined
+      const valueTok = amount !== undefined ? numTok(`${Math.round(amount)}`) : numTok(pct(rate ?? 0))
+      return [plain('戦闘終了時にHPを'), valueTok, plain('回復する')]
+    }
+    case 'counterStance': {
+      const scaleStat = node.scaleStat as StatKey
+      const rate = node.rate as number
+      const element = node.element as Element
+      return [
+        plain('反撃態勢に入る（次に'), elemTok(element), plain('属性で被弾した回数ぶん、自分の'), statTok(scaleStat), plain('の'),
+        numTok(pct(rate * mult)), plain('分の'), elemTok(element), plain('属性で反撃する）'),
+      ]
+    }
+    case 'periodicSelfDamage': {
+      const ratio = node.ratio as number
+      return [plain('毎ラウンド、自分の最大HPの'), numTok(pct(ratio)), plain('を防げずに失う')]
+    }
+    case 'cancelTargetAction': {
+      const chance = node.chance as number
+      return [numTok(pct(chance)), plain('の確率で、相手のこのラウンドの行動をキャンセルする')]
+    }
+    case 'selfDamageFromDealt': {
+      const rate = node.rate as number
+      return [
+        plain('この一撃で与えた合計ダメージの'), numTok(pct(rate)), plain('分の反動を自分が受ける'),
+        plain('（この一撃で相手を全滅させた場合は反動を受けない）'),
+      ]
+    }
+    case 'periodicTargetDamage': {
+      const scale = node.scale as { stat: StatKey; rate: number }
+      const duration = node.duration as number
+      return [
+        numTok(`${duration}ターン`), plain('の間、ラウンド終了時に自分の'), statTok(scale.stat), plain('の'),
+        numTok(pct(scale.rate * mult)), plain('分の'), elemTok(node.element as Element), plain('属性ダメージを相手に与える'),
+      ]
+    }
+    default:
+      return [plain(`(${node.op})`)]
+  }
+}
+
+/** 対象範囲の表示ラベル（'ally' は 'self' と同じ挙動のフォールバックのため同じ表記にする） */
+function focusRangeLabel(side: FocusSide, range: FocusRange): string {
+  if (side === 'self' || side === 'ally') return '自分'
+  switch (range) {
+    case 'all': return '敵全体'
+    case 'adjacent3': return '隣接する敵3体'
+    case 'random': return 'ランダムな敵1体'
+    case 'single': default: return '敵単体'
+  }
+}
+
+function endsWithPeriod(tokens: readonly SkillTextToken[]): boolean {
+  const last = tokens[tokens.length - 1]
+  return last?.type === 'plain' && last.text.endsWith('。')
+}
+
+// ─────────────────────────────────────────────────────────────
+// バフ・デバフ表示（一時効果を「今かかっているもの」として見せる）
+// ─────────────────────────────────────────────────────────────
+
+export const MODIFIER_SCOPE_LABEL: Record<ModifierScope, string> = {
+  thisHit: 'この一撃のみ', thisTurn: 'このターンのみ', thisBattle: 'この戦闘中', permanent: '永続',
+  nextRound: '次の自分の行動まで',
+  // 実際の残存ターン数は describeTemporaryModifier() が roundsRemaining から動的に組み立てるため、
+  // ここは roundsRemaining が取得できない場合のフォールバック表示にすぎない
+  rounds: '一定ターンの間',
+}
+
+export interface TemporaryModifierView {
+  label: string
+  isBuff: boolean
+  scopeLabel: string
+}
+
+/** 一時効果1件をバフ/デバフ表示用に変換する。BuffStrip・敵の状態表示の両方で使う */
+export function describeTemporaryModifier(m: TemporaryModifier): TemporaryModifierView {
+  const magnitude = m.flat ?? m.rate ?? 0
+  const isBuff = magnitude >= 0
+  const label = m.sourceId === 'guard' ? '防御態勢'
+    : m.sourceId === 'dodge' ? '回避態勢'
+      : m.stat === 'cutRate' ? 'ダメージ軽減'
+        : `${STAT_LABEL[m.stat]}${isBuff ? '上昇' : '低下'}`
+  // scope: 'rounds' は付与量が可変のため、静的なMODIFIER_SCOPE_LABELではなく
+  // 実際の残存ラウンド数（roundsRemaining）から都度組み立てる
+  const scopeLabel = m.scope === 'rounds' ? `残り${m.roundsRemaining ?? 0}ターン` : MODIFIER_SCOPE_LABEL[m.scope]
+  return { label, isBuff, scopeLabel }
+}
+
+/** 効果データから表示文を自動生成する。レベル倍率を適用済みの実値で表示する */
+export function buildSkillText(def: SkillDef, level: number): SkillTextToken[] {
+  const mult = def.kind === 'trait' ? 1 : def.kind === 'passive' ? passiveLevelMultiplier(level) : levelMultiplier(level)
+  const out: SkillTextToken[] = []
+  def.effect.forEach((node, i) => {
+    if (i > 0 && !endsWithPeriod(out)) out.push(plain('。'))
+    out.push(...nodeToTokens(node, mult))
+  })
+  if (!endsWithPeriod(out)) out.push(plain('。'))
+  // 攻撃範囲（対象）は効果の数値だけでは分からないため明記する（全体攻撃・隣接3体等の把握漏れ対策）
+  if (def.kind === 'active') {
+    out.push(plain('対象: '), plain(focusRangeLabel(def.defaultFocus, def.focusRange)), plain('。'))
+  }
+  // minRound はゲーム上の制約（いつから使えるか）なので、演出用の flavorText ではなく
+  // 効果テキストの側に明記する（flavorText に役割を持たせ始めると際限がなくなるため）
+  if (def.kind === 'active' && def.minRound !== undefined) {
+    out.push(numTok(`${def.minRound + 1}ターン目`), plain('から使用可能。'))
+  }
+  // alwaysActsFirst も minRound と同じ理由（ゲーム上の制約）で効果テキスト側に明記する
+  if (def.kind === 'active' && def.alwaysActsFirst) {
+    out.push(plain('AGIに関わらず必ず先手を取る。'))
+  }
+  return out
+}

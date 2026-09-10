@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_imaginary_bullet",
+  "label": "虚数弾",
+  "flavorText": "存在しないはずの弾丸が、確かに命中する。",
+  "kind": "active",
+  "element": "special",
+  "mainCategory": "fatal",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 3,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_special"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "special",
+      "scale": {
+        "stat": "int",
+        "rate": 1.3
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_special",
+    "impact": "battle_bolt"
+  }
+}

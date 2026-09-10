@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "passive_combo_mastery",
+  "label": "連撃の極意",
+  "flavorText": "しつこいくらいに相手を追い詰めよう。",
+  "kind": "passive",
+  "mainCategory": "combo",
+  "subCategories": [],
+  "unlockCondition": {
+    "category": "combo",
+    "points": 10
+  },
+  "effect": [
+    {
+      "op": "statBoost",
+      "stat": "agi",
+      "rate": 0.15
+    }
+  ]
+}

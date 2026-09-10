@@ -1,0 +1,15 @@
+{
+  "$schema": "../../../../schemas/battle-trait.schema.json",
+  "id": "trait_weak_magical",
+  "label": "魔法弱点",
+  "flavorText": "痛いところを突かれた。",
+  "kind": "trait",
+  "draftable": false,
+  "effect": [
+    {
+      "op": "elementAffinity",
+      "element": "magical",
+      "affinity": "weak"
+    }
+  ]
+}

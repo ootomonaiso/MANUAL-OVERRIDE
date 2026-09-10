@@ -1,0 +1,36 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_goblin_chief",
+  "label": "ゴブリンマネージャー",
+  "flavorText": "知能の低い部下と無茶を言うリーダーに挟まれる苦労人",
+  "sprite": "battle_goblin_chief",
+  "stats": {
+    "hp": 15540,
+    "str": 3355,
+    "def": 4260,
+    "int": 1240,
+    "ref": 2120,
+    "agi": 1950,
+    "hitRate": 0.94,
+    "evadeRate": 0,
+    "critRate": 0.08,
+    "critDamageMultiplier": 1.6
+  },
+  "traits": [
+    "trait_savage_blow"
+  ],
+  "activeSkills": [
+    {
+      "id": "skill_triple_strike",
+      "level": 2
+    },
+    "skill_wild_swing"
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_triple_strike",
+    "skill_wild_swing",
+    "skill_triple_strike"
+  ],
+  "isBoss": false
+}

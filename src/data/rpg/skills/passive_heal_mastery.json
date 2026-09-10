@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "passive_heal_mastery",
+  "label": "治癒の心得",
+  "flavorText": "「ありがとうスイッチ、ポチ！！！」",
+  "kind": "passive",
+  "mainCategory": "heal",
+  "subCategories": [],
+  "unlockCondition": {
+    "category": "heal",
+    "points": 10
+  },
+  "effect": [
+    {
+      "op": "statBoost",
+      "stat": "int",
+      "rate": 0.15
+    }
+  ]
+}

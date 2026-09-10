@@ -1,0 +1,20 @@
+{
+  "id": "battle_draft_reroll",
+  "$comment": "ドラフトのリロールボタン — カードを切り直す「シュッ」という一瞬の風切り音。バンドパスの中心周波数を高→低へ掃引したノイズに、柔らかい低音の芯を薄く重ねている。",
+  "tracks": [
+    {
+      "kind": "noise",
+      "durationSec": 0.16,
+      "volume": 0.22,
+      "filter": { "type": "bandpass", "freq": 2200, "freqEnd": 900, "q": 1.4 }
+    },
+    {
+      "kind": "osc",
+      "wave": "sine",
+      "freq": 500,
+      "freqEnd": 220,
+      "durationSec": 0.12,
+      "volume": 0.08
+    }
+  ]
+}

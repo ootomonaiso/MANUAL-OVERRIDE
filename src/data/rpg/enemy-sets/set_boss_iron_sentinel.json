@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_boss_iron_sentinel",
+  "label": "鋼綴じの番人",
+  "members": [{ "enemyId": "enemy_iron_sentinel" }]
+}

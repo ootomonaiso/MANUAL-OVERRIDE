@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_shockwave",
+  "label": "衝撃波",
+  "flavorText": "拳の余波で地を割ろう。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "might",
+  "subCategories": [
+    "pierce"
+  ],
+  "cooldown": 4,
+  "defaultFocus": "enemy",
+  "focusRange": "all",
+  "effects": [
+    "fx_slash"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "physical",
+      "scale": {
+        "stat": "str",
+        "rate": 0.9
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing",
+    "impact": "battle_hit_physical"
+  }
+}

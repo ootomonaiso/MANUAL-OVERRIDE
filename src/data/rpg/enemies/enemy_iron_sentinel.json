@@ -1,0 +1,53 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_iron_sentinel",
+  "label": "隕烙の魔法騎士",
+  "flavorText": "かの帝国が滅びたその日、領土すべてを覆い尽くさん星が降った。",
+  "sprite": "battle_iron_sentinel",
+  "stats": {
+    "hp": 128000,
+    "str": 4380,
+    "def": 13980,
+    "int": 2900,
+    "ref": 12800,
+    "agi": 2310,
+    "hitRate": 0.95,
+    "evadeRate": 0,
+    "critRate": 0.08,
+    "critDamageMultiplier": 1.8
+  },
+  "traits": [],
+  "activeSkills": [
+    {
+      "id": "skill_triple_strike",
+      "level": 3
+    },
+    {
+      "id": "skill_wild_swing",
+      "level": 2
+    },
+    {
+      "id": "skill_meteor",
+      "level": 1
+    },
+    {
+      "id": "skill_magic_sword",
+      "level": 2
+    },
+    {
+      "id": "skill_counter",
+      "level": 2
+    }
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_magic_sword",
+    "skill_triple_strike",
+    "skill_counter",
+    "skill_wild_swing",
+    "skill_counter",
+    "skill_magic_sword",
+    "skill_meteor"
+  ],
+  "isBoss": true
+}

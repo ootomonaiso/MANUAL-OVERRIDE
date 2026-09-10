@@ -1,0 +1,21 @@
+{
+  "id": "battle_weakness",
+  "$comment": "弱点を突いた — 明るく上がる2音",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "triangle",
+      "freq": 700,
+      "durationSec": 0.08,
+      "volume": 0.16
+    },
+    {
+      "kind": "osc",
+      "wave": "triangle",
+      "freq": 1050,
+      "durationSec": 0.12,
+      "volume": 0.16,
+      "delaySec": 0.07
+    }
+  ]
+}

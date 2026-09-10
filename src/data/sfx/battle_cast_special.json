@@ -1,0 +1,28 @@
+{
+  "id": "battle_cast_special",
+  "$comment": "特殊属性の詠唱 — 不安定に揺れる sawtooth",
+  "tracks": [
+    {
+      "kind": "osc",
+      "wave": "sawtooth",
+      "freq": 180,
+      "freqEnd": 320,
+      "durationSec": 0.3,
+      "volume": 0.16,
+      "filter": {
+        "type": "lowpass",
+        "freq": 900,
+        "freqEnd": 2200
+      }
+    },
+    {
+      "kind": "osc",
+      "wave": "sine",
+      "freq": 460,
+      "freqEnd": 300,
+      "durationSec": 0.24,
+      "volume": 0.14,
+      "delaySec": 0.08
+    }
+  ]
+}

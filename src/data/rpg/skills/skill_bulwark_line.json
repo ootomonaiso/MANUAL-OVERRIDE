@@ -1,0 +1,37 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_bulwark_line",
+  "label": "防衛陣地",
+  "flavorText": "この先へは一歩も通さない",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "guard",
+  "subCategories": [
+    "aegis"
+  ],
+  "cooldown": 5,
+  "defaultFocus": "ally",
+  "focusRange": "all",
+  "effects": [
+    "fx_cast_physical"
+  ],
+  "effect": [
+    {
+      "op": "modifier",
+      "stat": "def",
+      "rate": 0.2,
+      "scope": "thisBattle",
+      "applyTo": "target"
+    },
+    {
+      "op": "modifier",
+      "stat": "ref",
+      "rate": 0.2,
+      "scope": "thisBattle",
+      "applyTo": "target"
+    }
+  ],
+  "sfx": {
+    "cast": "battle_guard"
+  }
+}

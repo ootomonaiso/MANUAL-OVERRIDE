@@ -1,0 +1,42 @@
+{
+  "$comment": "rpg ジャンル（ローグライク戦闘）のバランス定数。docs/genre/rpg/*.md 準拠",
+  "section": "battle",
+  "initialStats": {
+    "hpMin": 6000,
+    "hpMax": 8000,
+    "baseMin": 600,
+    "baseMax": 800,
+    "favoredMin": 700,
+    "favoredMax": 900,
+    "hitRate": 0.95,
+    "critRate": 0.05,
+    "critDamageMultiplier": 2.0
+  },
+  "cut": { "anchor": 1000, "divisor": 20000, "max": 0.8 },
+  "evade": { "anchor": 1000, "divisor": 50000, "max": 0.8 },
+  "affinity": { "weakStage": 1, "resistStage": -1 },
+  "guard": { "cutRate": 0.5, "cooldown": 3 },
+  "dodge": { "evadeBonus": 0.5, "cooldown": 3 },
+  "shield": { "cutRate": 0.2, "cutRateVsSpecial": 0.4, "decayPerTurn": 0.25, "decayPerBattle": 0.5 },
+  "categoryUnlockThresholds": [10, 20, 35],
+  "$comment_fallbackStatBoost": "第8フェーズでスキルレベルの伸びを緩める代わりに引き上げた（旧: hp400/other40）。ステータスパネル(SKILL_POINTS.panelStatPoints)の1ポイントあたりの増加量も兼ねる",
+  "fallbackStatBoost": { "hp": 1000, "other": 100 },
+  "postBattleHealRate": 0.2,
+  "multiHitIntervalMs": 180,
+  "playerSprite": "battle_heroine",
+  "presentation": {
+    "$comment": "1手番の演出尺。announce=スキル名の提示 / impact=効果の解決から次の手番まで。attackPoseMs/screenCriticalFlashMsはCSS側のアニメーション時間と一致させること（CharacterFrame.vue/BattleScreen.vueのvar(--lunge-dur)/var(--flash-dur)のフォールバック値も同じ値にする）",
+    "announceMs": 620,
+    "impactMs": 760,
+    "popupMs": 900,
+    "flashMs": 220,
+    "attackPoseMs": 420,
+    "screenCriticalFlashMs": 380,
+    "battleEndMs": 700
+  },
+  "enemyScaleByCount": {
+    "$comment": "同時出現する敵の体数に応じたスプライトの縮小率・横幅の圧縮率（画面外へのはみ出し防止）",
+    "spriteScale": { "1": 1.0, "2": 1.0, "3": 0.85, "4": 0.72, "5": 0.6 },
+    "gapPx": { "1": 40, "2": 40, "3": 32, "4": 20, "5": 12 }
+  }
+}

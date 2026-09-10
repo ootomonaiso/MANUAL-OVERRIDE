@@ -1,0 +1,168 @@
+/**
+ * domain/battle/stats.ts
+ * 実効値の算出（docs/genre/rpg/02-stats.md）。
+ */
+
+import { BATTLE, SKILL_POINTS } from '../../data/tunables'
+import type {
+  BattleStats, EffectiveStats, StatKey, StatModifier,
+  Combatant, SkillDef, EffectNode, Element, BattleContent,
+} from './types'
+import { isPercentStat } from './types'
+import { MAX_PASSIVE_LEVEL } from './skillDraft'
+
+export function clamp(v: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, v))
+}
+
+/** 実効値 = (基礎値 + 実数バフ) × 倍率バフ */
+export function computeEffective(base: number, mod: StatModifier): number {
+  return (base + mod.flat) * Math.max(0, mod.mult)
+}
+
+/** 倍率バフは加算スタック: 1 + Σ(各倍率分) */
+export function stackMultipliers(rates: readonly number[]): number {
+  return 1 + rates.reduce((sum, r) => sum + r, 0)
+}
+
+/**
+ * レベルによる効果量倍率: 1 + (Lv-1) × levelMultiplierStep（既定0.25なら Lv1〜4: ×1,×1.25,×1.5,×1.75）。
+ * 特性は常に Lv1 相当。第8フェーズで見直し: 当初 2^Lv-1（×1/×3/×7/×15）は
+ * スキルレベルだけで戦力が跳ね上がりすぎたため大幅に緩め、代わりにステータス側
+ * （5戦ごとのスキルパネルの statPoints・fallbackStatBoost の係数）を強化する方針にした
+ * （CLAUDE_TASKS.md 第8フェーズ Z-9参照）。
+ */
+export function levelMultiplier(level: number): number {
+  return 1 + (level - 1) * SKILL_POINTS.levelMultiplierStep
+}
+
+/**
+ * パッシブの重複強化専用の倍率（第13フェーズ）。重複を引くたびにLv+1（1:1、ポイント制ではない）、
+ * Lv4でちょうど2倍になる直線的な式。アクティブ用の levelMultiplier（ポイント制・
+ * levelMultiplierStep ベースで第8フェーズにあえて伸びを緩めた経緯がある）とは狙いが異なるため、
+ * 式を共有せず専用に用意した
+ */
+export function passiveLevelMultiplier(level: number): number {
+  return 1 + (level - 1) / (MAX_PASSIVE_LEVEL - 1)
+}
+
+/**
+ * 対象の実効ステータスをまとめて算出する。
+ * modifiers はステータスごとに事前集計した補正（呼び出し側が passives/traits を解決して渡す）。
+ */
+export function computeEffectiveStats(
+  base: BattleStats,
+  modifiers: Partial<Record<StatKey, StatModifier>>,
+): EffectiveStats {
+  const result = {} as EffectiveStats
+  for (const key of Object.keys(base) as StatKey[]) {
+    if (key === 'evadeRate') continue   // 導出値。下で別途計算
+    const mod = modifiers[key] ?? { flat: 0, mult: 1 }
+    result[key] = computeEffective(base[key], mod)
+  }
+  // hitRate はクランプしない（100%超えを許容。実効命中率の算出時にのみクランプする）
+  // critRate / critDamageMultiplier もクランプなし（仕様上、上限規定なし）
+
+  const agiEffective = result.agi
+  const evadeBase = deriveEvadeBase(agiEffective)
+  const evadeMod = modifiers.evadeRate ?? { flat: 0, mult: 1 }
+  const evadeRaw = computeEffective(evadeBase, evadeMod)
+  result.evadeRate = clamp(evadeRaw, 0, BATTLE.evade.max)
+
+  return result
+}
+
+/** 回避率の基礎値: (AGIの実効値 - anchor) / divisor */
+export function deriveEvadeBase(agiEffective: number): number {
+  return (agiEffective - BATTLE.evade.anchor) / BATTLE.evade.divisor
+}
+
+/**
+ * skill/trait/passive の効果ノードから、対象キャラの一時/恒常補正を再構築するための
+ * 集計器。実際の実効値計算は computeEffectiveStats に委譲する。
+ */
+export interface FlatRateAccumulator {
+  flat: Partial<Record<StatKey, number[]>>
+  rate: Partial<Record<StatKey, number[]>>
+}
+
+export function newAccumulator(): FlatRateAccumulator {
+  return { flat: {}, rate: {} }
+}
+
+export function addFlat(acc: FlatRateAccumulator, stat: StatKey, amount: number): void {
+  (acc.flat[stat] ??= []).push(amount)
+}
+
+export function addRate(acc: FlatRateAccumulator, stat: StatKey, rate: number): void {
+  (acc.rate[stat] ??= []).push(rate)
+}
+
+export function toModifiers(acc: FlatRateAccumulator): Partial<Record<StatKey, StatModifier>> {
+  const out: Partial<Record<StatKey, StatModifier>> = {}
+  const keys = new Set([...Object.keys(acc.flat), ...Object.keys(acc.rate)]) as Set<StatKey>
+  for (const key of keys) {
+    const flats = acc.flat[key] ?? []
+    const rates = acc.rate[key] ?? []
+    out[key] = {
+      flat: flats.reduce((a, b) => a + b, 0),
+      mult: stackMultipliers(rates),
+    }
+  }
+  return out
+}
+
+/**
+ * パッシブによる statBoost 効果を集計する（effectOps から独立して参照できるよう
+ * skillDraft/battleEngine 双方から使う純粋関数として stats.ts に置く）。
+ */
+export function accumulatePassiveStatBoosts(
+  owned: ReadonlyArray<{ level: number; def: SkillDef }>,
+  acc: FlatRateAccumulator,
+): void {
+  for (const { level, def } of owned) {
+    const baseMult = def.kind === 'trait' ? 1 : def.kind === 'passive' ? passiveLevelMultiplier(level) : levelMultiplier(level)
+    for (const node of def.effect) {
+      if (node.op !== 'statBoost') continue
+      const stat = node.stat as StatKey
+      // 割合ステータス（クリティカル率等）はレベル倍率を掛けない
+      // （effectOps/modifier.ts の modifierOp と同じ理由。PERCENT_STAT_KEYS参照）。
+      const mult = isPercentStat(stat) ? 1 : baseMult
+      if (typeof node.amount === 'number') addFlat(acc, stat, node.amount * mult)
+      if (typeof node.rate === 'number') addRate(acc, stat, node.rate * mult)
+    }
+  }
+}
+
+/**
+ * 発動元が持つ特性・パッシブから「効果倍率」（例:「物理攻撃+50%」）を集計する。
+ * 加算スタックしたものを1回だけ乗算する形の倍率として返す（既定1）。
+ * element を指定した attack と "any"（全属性）の両方を合算する。
+ */
+export function collectEffectMultiplier(
+  source: Combatant, element: Element, content: BattleContent,
+): number {
+  const rates: number[] = []
+  const scan = (nodes: readonly EffectNode[], mult: number) => {
+    for (const n of nodes) {
+      if (n.op !== 'effectBoost') continue
+      const el = n.element as Element | 'any'
+      if (el !== 'any' && el !== element) continue
+      if (typeof n.rate === 'number') rates.push(n.rate * mult)
+    }
+  }
+  for (const t of source.traits) {
+    const def = content.traits.get(t.id)
+    if (def) scan(def.effect, 1)
+  }
+  for (const p of source.passives) {
+    const def = content.skills.get(p.id)
+    if (def && def.kind === 'passive') scan(def.effect, passiveLevelMultiplier(p.level))
+  }
+  return stackMultipliers(rates)
+}
+
+/** 最大HPが変化した際、現在HPを新しい最大HPでクランプする */
+export function clampHpToMax(c: Combatant, newMaxHp: number): void {
+  if (c.hp > newMaxHp) c.hp = newMaxHp
+}

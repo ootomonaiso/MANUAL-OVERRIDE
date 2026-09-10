@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "passive_def_ref_up",
+  "label": "鉄壁の反応",
+  "flavorText": "固さと速さ、両方を少しずつ。",
+  "kind": "passive",
+  "mainCategory": "aegis",
+  "subCategories": [],
+  "effect": [
+    { "op": "statBoost", "stat": "def", "amount": 300 },
+    { "op": "statBoost", "stat": "ref", "amount": 300 }
+  ]
+}

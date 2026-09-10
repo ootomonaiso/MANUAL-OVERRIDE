@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "passive_brawn",
+  "label": "筋力勝負",
+  "flavorText": "Power is Power,Power of Power,Power is Justice!!!",
+  "kind": "passive",
+  "mainCategory": "might",
+  "subCategories": [],
+  "effect": [
+    {
+      "op": "statBoost",
+      "stat": "str",
+      "amount": 900
+    }
+  ]
+}

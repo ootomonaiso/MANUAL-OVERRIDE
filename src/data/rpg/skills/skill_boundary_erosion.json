@@ -1,0 +1,41 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_boundary_erosion",
+  "label": "境界侵食",
+  "flavorText": "触れた場所から、少しずつ、境界が溶けていく。",
+  "kind": "active",
+  "element": "special",
+  "mainCategory": "curse",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 5,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_special"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "special",
+      "scale": {
+        "stat": "int",
+        "rate": 0.6
+      }
+    },
+    {
+      "op": "periodicTargetDamage",
+      "element": "special",
+      "scale": {
+        "stat": "int",
+        "rate": 0.3
+      },
+      "duration": 3
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_special",
+    "impact": "battle_curse"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_typhoon",
+  "label": "タイフーン",
+  "flavorText": "巻き起こる暴風が、戦場ごと飲み込んでいく。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "swift",
+  "subCategories": [
+    "combo"
+  ],
+  "cooldown": 4,
+  "defaultFocus": "enemy",
+  "focusRange": "all",
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "magical",
+      "scale": {
+        "stat": "agi",
+        "rate": 0.9
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_hit_magical"
+  }
+}

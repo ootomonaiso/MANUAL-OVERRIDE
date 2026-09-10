@@ -1,0 +1,37 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_leadership",
+  "label": "リーダーシップ",
+  "flavorText": "先頭に立つ者の声は、それだけで力になる。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "might",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 5,
+  "defaultFocus": "ally",
+  "focusRange": "all",
+  "effects": [
+    "fx_cast_physical"
+  ],
+  "effect": [
+    {
+      "op": "modifier",
+      "stat": "str",
+      "rate": 0.2,
+      "scope": "thisBattle",
+      "applyTo": "target"
+    },
+    {
+      "op": "modifier",
+      "stat": "int",
+      "rate": 0.2,
+      "scope": "thisBattle",
+      "applyTo": "target"
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing"
+  }
+}

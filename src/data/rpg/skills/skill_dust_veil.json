@@ -1,0 +1,29 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_dust_veil",
+  "label": "砂煙",
+  "flavorText": "「姑息な真似を...」",
+  "kind": "active",
+  "element": "none",
+  "mainCategory": "curse",
+  "subCategories": [],
+  "cooldown": 3,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_none"
+  ],
+  "effect": [
+    {
+      "op": "modifier",
+      "stat": "hitRate",
+      "rate": -0.3,
+      "scope": "thisBattle",
+      "applyTo": "target"
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_none",
+    "impact": "battle_hit_none"
+  }
+}

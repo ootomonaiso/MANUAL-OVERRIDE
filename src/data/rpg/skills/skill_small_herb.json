@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_small_herb",
+  "label": "小さな薬草",
+  "flavorText": "アスファルトを割って生える、たくましい草。",
+  "kind": "active",
+  "element": "none",
+  "mainCategory": "heal",
+  "subCategories": [],
+  "cooldown": 2,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_none"
+  ],
+  "effect": [
+    {
+      "op": "heal",
+      "element": "none",
+      "scale": {
+        "stat": "hp",
+        "rate": 0.1
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_none",
+    "impact": "battle_heal"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_tsumo",
+  "label": "自摸",
+  "flavorText": "「ツモにゃ！！」",
+  "kind": "active",
+  "element": "none",
+  "mainCategory": "fatal",
+  "subCategories": [
+    "combo"
+  ],
+  "cooldown": 0,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "draftable": false,
+  "transformsInto": "skill_riichi",
+  "effects": [
+    "fx_cast_none"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "none",
+      "scale": {
+        "statOptions": [
+          "str",
+          "int"
+        ],
+        "rate": 2
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_none",
+    "impact": "battle_hit_none"
+  }
+}

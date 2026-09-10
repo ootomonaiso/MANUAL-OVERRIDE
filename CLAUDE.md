@@ -119,14 +119,23 @@ src/
 │   ├── ParticleSystem.ts # パーティクル生成・更新・描画
 │   ├── entities.ts       # Player・Hazard・Bullet・Item
 │   └── systems/          # FeatureSystem 実装（10種: Shoot / Movement / Rhythm / Rpg / Puzzle / Special / Tetris / Survival / MeleeKill / NearMissCombo）
-├── composables/     # Vue ViewModel（useGameState, useManual, useScoreAnimation）
-├── components/      # Vue UI コンポーネント
+├── composables/     # Vue ViewModel（useGameState, useManual, useScoreAnimation, useBattleState 等）
+├── components/      # Vue UI コンポーネント（battle/ に rpg 戦闘UI）
 ├── tutorial/        # チュートリアル画面
 └── data/
-    ├── config/      # 設定JSON（27ファイル: score.json, genres.json, physics.json 等）
-    ├── genres/      # ジャンル定義JSON（23ファイル: 22ジャンル + glitch）
-    └── cards/       # カードデッキJSON（starter-cards.json 等）
+    ├── config/      # 設定JSON（30ファイル: score.json, genres.json, physics.json 等。大半は全ジャンル共通だが battle.json / encounter_groups.json / skill_points.json は rpg 専用）
+    ├── genres/      # ジャンル定義JSON（23ファイル: 22ジャンル + glitch。全ジャンル共通）
+    ├── cards/       # カードデッキJSON（starter-cards.json 等。全ジャンル共通）
+    ├── sprites/     # ドット絵JSON（横スクロール用 + 戦闘用 battle_*.json。全ジャンル共通）
+    ├── sfx/         # 効果音JSON（76件。全ジャンル共通）
+    └── rpg/         # rpg ジャンルの戦闘専用データ（他ジャンルからは参照しない）
+        ├── skills/ traits/ enemies/ enemy-sets/ battle-effects/   # 戦闘コンテンツ（1ファイル1件、import.meta.glob で自動収集）
+        ├── battle-backgrounds/  # 戦闘背景JSON（草原・砂漠・遺跡・荒れ地・ボス専用）
+        ├── battle-guide.json    # 遊び方ガイド・用語集（HelpGuide.vue / GlossaryTerm.vue が参照）
+        └── battleContent.ts battleBackgrounds.ts battleGuide.ts   # 上記の読み込みローダ（TS）
 ```
+
+`rpg/` 配下は他ジャンルが一切参照しない、rpg 専用のデータ・ローダをまとめたサブディレクトリ。新しいジャンル専用データが増える場合も、同様に `src/data/<genre>/` 配下へ切り出す（ジャンル横断の共通データとは分ける）。
 
 ### 主要クラス・モジュール
 
@@ -206,6 +215,9 @@ src/
 | `near_miss.json` | near-miss combo パラメータ |
 | `palette_defaults.json` | JSONGenrePlugin のパレットフォールバック |
 | `survival.json` | survival ジャンル固有パラメータ |
+| `battle.json` | rpg専用。初期ステータス範囲・カット率/回避率の係数・ガード/シールド値・敵体数によるスプライト縮小率 等 |
+| `encounter_groups.json` | rpg専用。敵グループA〜E・出現重みの段階・ボス周回間隔・真クリアまでの周回数 |
+| `skill_points.json` | rpg専用。スキルレベルに必要な累計ポイント・レベル倍率の増分・スキル/ステータスパネルの配分数 |
 
 ### ジャンル定義 (`src/data/genres/stg.json` 等)
 
@@ -237,7 +249,7 @@ src/
 
 ### 効果音 (`src/data/sfx/`)
 
-効果音1つにつきJSON 1ファイル（51件）。周波数・長さ・音量をコードに直書きしない。`tracks` 配列で「1つの効果音に複数の音を内包」でき、`delaySec` で重なり方（同時／時間差）を制御する。
+効果音1つにつきJSON 1ファイル（76件）。周波数・長さ・音量をコードに直書きしない。`tracks` 配列で「1つの効果音に複数の音を内包」でき、`delaySec` で重なり方（同時／時間差）を制御する。
 
 ```json
 {
@@ -253,6 +265,22 @@ src/
 既存の音を差し替えるだけならJSON編集のみで完結する（コード変更不要）。`npm run sfx-test` で試聴できる。
 
 詳細: [docs/sound-system.md](docs/sound-system.md)（スキーマ・音色設計ガイドライン・追加手順） / [docs/sfx-test-mode.md](docs/sfx-test-mode.md)（試聴ツール）
+
+---
+
+## content-editor（rpgコンテンツのGUIエディタ）
+
+`src/data/rpg/{skills,traits,enemies,battle-effects,battle-backgrounds}/*.json` をGUIで編集する開発専用ツール。`npm run content-editor` で起動する。
+
+- アクティブ・パッシブ（別タブ）・特性・敵（ステータス・所持スキル・行動パターン）・戦闘エフェクト・戦闘背景を、`schemas/battle-*.schema.json` から自動生成したフォームで編集する
+- `effect[]`（スキル・特性の効果ロジック）は op ごとの型付きフォーム（`EFFECT_OP_FIELDS`）で編集する。「ダメージを、何に基づいて、何%与えるか」を直接触れる。`repeat` の中の効果も再帰的に編集できる
+- 一覧はタブごとに「属性で分ける」「カテゴリで分ける」等のセクション分けを選べる（選択は保持される）。`mainCategory`/`element`/stat 等は日本語ラベルを添えて表示する（値は英語キーのまま）
+- 敵のドット絵・エフェクトの色/種別は一覧・編集画面にその場で表示する（見た目の編集はしない）
+- 保存は dev サーバー側の Vite plugin（[scripts/contentEditorPlugin.mjs](scripts/contentEditorPlugin.mjs)、`apply: 'serve'` で本番ビルドには含まれない）が ajv でスキーマ検証してから `src/data/rpg/` へ書き込む。検証に失敗すると書き込まれず、エラー内容がGUIに出る
+- フォームが扱いにくい箇所は「JSONとして直接編集」で生JSONに切り替えられる
+- 保存は1ファイル単位のスキーマ検証のみ行う。他ファイルからのID参照整合性までは見ないため、**保存後は `npm run validate` も実行すること**
+
+詳細: [docs/content-editor.md](docs/content-editor.md)
 
 ---
 
@@ -289,7 +317,7 @@ src/
 - [x] InputManager 分離（キー入力ロジックを SideScroller から独立）
 - [x] ParticleSystem 分離（パーティクル処理を SideScroller から独立）
 - [x] FeatureSystem インターフェース（Feature 追加が1ファイル+1行で完結）
-- [x] JSON駆動設計（config/ 27ファイル、genres/ 23ファイル）
+- [x] JSON駆動設計（config/ 30ファイル、genres/ 23ファイル）
 - [x] テーマカラーの完全JSON駆動化（CSS ハードコードなし）
 - [x] オフライン完全動作
 - [x] CI/CDパイプライン整備

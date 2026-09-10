@@ -1,0 +1,6 @@
+{
+  "$schema": "../../../../schemas/battle-enemy-set.schema.json",
+  "id": "set_boss_swamp_horror",
+  "label": "澱み溜まりの怪",
+  "members": [{ "enemyId": "enemy_swamp_horror" }]
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_arch_cultist",
+  "label": "開発者",
+  "flavorText": "我々は間違った世界を正さなければならない。/肩書「Developer」",
+  "sprite": "battle_arch_cultist",
+  "stats": {
+    "hp": 67600,
+    "str": 840,
+    "def": 2360,
+    "int": 2360,
+    "ref": 2030,
+    "agi": 1020,
+    "hitRate": 0.95,
+    "evadeRate": 0,
+    "critRate": 0.1,
+    "critDamageMultiplier": 1.8
+  },
+  "traits": [],
+  "activeSkills": [
+    {
+      "id": "skill_curse_bolt",
+      "level": 3
+    },
+    {
+      "id": "skill_override",
+      "level": 2
+    },
+    {
+      "id": "skill_weird_wave",
+      "level": 2
+    },
+    {
+      "id": "skill_magic_circle",
+      "level": 3
+    },
+    {
+      "id": "skill_double_bolt",
+      "level": 3
+    }
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_magic_circle",
+    "skill_override",
+    "skill_weird_wave",
+    "skill_curse_bolt",
+    "skill_double_bolt"
+  ],
+  "isBoss": true
+}

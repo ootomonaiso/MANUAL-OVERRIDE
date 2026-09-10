@@ -1,0 +1,10 @@
+{
+  "$comment": "スキルポイント制度。CLAUDE_TASKS.md 第7・8・9フェーズ参照。数値は仮値（調整前提）。第8フェーズでスキルレベルの伸びを緩やかにし、代わりにステータス側（statPoints・fallbackStatBoost）を強化する方針に転換した。第9フェーズで panelSkillPoints を廃止し panelSkillPointsCycle に置き換え: 5戦目終了時点でLv3(pointsForLevel[2]=3)が確定してしまうのが強すぎたため、1回目のパネルの取得量を1へ下げ、以降1,2を交互に繰り返す仕様にした",
+  "section": "skillPoints",
+  "pointsForLevel": [0, 1, 3, 7],
+  "levelMultiplierStep": 0.25,
+  "panelIntervalBattles": 5,
+  "panelSkillPointsCycle": [1, 2],
+  "panelStatPoints": 5,
+  "duplicateDraftWeight": 3
+}

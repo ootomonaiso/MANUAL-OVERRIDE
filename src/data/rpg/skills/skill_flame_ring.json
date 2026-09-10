@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_flame_ring",
+  "label": "大火輪",
+  "flavorText": "周囲を巻き込んで「大炎上」させよう！",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "wisdom",
+  "subCategories": [
+    "might"
+  ],
+  "cooldown": 4,
+  "defaultFocus": "enemy",
+  "focusRange": "all",
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "magical",
+      "scale": {
+        "stat": "int",
+        "rate": 0.8
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_hit_magical"
+  }
+}

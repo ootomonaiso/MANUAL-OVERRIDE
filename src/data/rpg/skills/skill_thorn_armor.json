@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_thorn_armor",
+  "label": "棘を纏う",
+  "flavorText": "美しい花には棘がある。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "guard",
+  "subCategories": [
+    "might"
+  ],
+  "cooldown": 4,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_physical"
+  ],
+  "effect": [
+    {
+      "op": "modifier",
+      "stat": "def",
+      "scale": {
+        "stat": "str",
+        "rate": 0.5
+      },
+      "scope": "thisBattle"
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing"
+  }
+}

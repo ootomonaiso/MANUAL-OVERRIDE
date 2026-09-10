@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_heal_light",
+  "label": "小回復",
+  "flavorText": "小さな「ありがとう」の積み重ねが、人を豊かにする。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "heal",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 2,
+  "defaultFocus": "self",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "heal",
+      "element": "magical",
+      "scale": {
+        "stat": "int",
+        "rate": 0.6
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_heal"
+  }
+}

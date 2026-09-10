@@ -75,3 +75,37 @@ node tests/feature-boss.test.mjs   # 個別実行
 新しい Feature を追加したら、対応する `feature-<id>.test.mjs` をここに追加し、
 `npm run test:features` で拾われることを確認する（ファイル名は自動列挙されるため
 `package.json` 側の追記は不要）。
+
+## ユニットテスト（`tests/unit/**/*.test.ts`）
+
+vitest + happy-dom。開発サーバー不要。
+
+```bash
+npm run test:unit                                  # 全件
+npx vitest run tests/unit/domain/battle            # ディレクトリ単位
+```
+
+### rpg ジャンル（ローグライク戦闘）のテスト
+
+戦闘システムは層ごとにテストを分けてある。仕様は `docs/genre/rpg/*.md`。
+
+| ファイル | 対象 |
+|---|---|
+| `unit/domain/battle/stats.test.ts` | 実効値の算出・効果倍率の集計 |
+| `unit/domain/battle/damageCalc.test.ts` | カット率・相性段階・命中・HP反映（設計書の計算例を含む） |
+| `unit/domain/battle/turnQueue.test.ts` | 行動順・隣接3体・敵の行動パターン |
+| `unit/domain/battle/effectOps.test.ts` | 各オペレーションとレジストリ |
+| `unit/domain/battle/battleEngine.test.ts` | 初期化・ターン進行・勝敗・戦闘間処理 |
+| `unit/domain/battle/skillDraft.test.ts` | ドラフト抽選・レベルアップ・カテゴリポイント |
+| `unit/domain/battle/skillText.test.ts` | 効果文の自動生成 |
+| `unit/data/battleContent.test.ts` | JSON コンテンツの整合性（ID・参照・op の同期） |
+| `unit/data/rpgGenre.test.ts` | ジャンル定義とスコア式 |
+| `unit/composables/useBattleState.test.ts` | ViewModel。リアクティビティの退行検知を含む |
+| `unit/components/battle/BattleScreen.test.ts` | 戦闘UIをDOM操作で通しで動かす |
+| `unit/components/AppBattleMode.test.ts` | App.vue の戦闘モード分岐（Canvas非表示・投擲への接続） |
+
+`_helpers.ts`（`tests/unit/domain/battle/`）に Combatant・スキル定義などのファクトリがある。
+`*.test.ts` ではないため vitest の収集対象にはならない。
+
+戦闘の進行を伴うテストでは、決定的な rng を渡して「プレイヤーが必ず勝つ／必ず負ける」
+状況を作っている（`winningHarness` / `losingHarness` のコメントを参照）。

@@ -1,0 +1,36 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_cultist_zealot",
+  "label": "校閲者",
+  "flavorText": "この世界が間違っているというのは、概ね正しそうだ。/役職名「Reviewer」",
+  "sprite": "battle_cultist_zealot",
+  "stats": {
+    "hp": 10400,
+    "str": 1120,
+    "def": 1510,
+    "int": 2130,
+    "ref": 1640,
+    "agi": 1250,
+    "hitRate": 0.93,
+    "evadeRate": 0,
+    "critRate": 0.06,
+    "critDamageMultiplier": 1.6
+  },
+  "traits": [
+    "trait_weak_physical"
+  ],
+  "activeSkills": [
+    {
+      "id": "skill_curse_bolt",
+      "level": 2
+    },
+    "skill_flame_ring"
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_curse_bolt",
+    "skill_flame_ring",
+    "skill_curse_bolt"
+  ],
+  "isBoss": false
+}

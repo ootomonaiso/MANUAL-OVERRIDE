@@ -1,0 +1,74 @@
+{
+  "$schema": "../../../../schemas/battle-enemy.schema.json",
+  "id": "enemy_manual_keeper",
+  "label": "説明書の番人",
+  "flavorText": "最後のページを、誰にも読ませない。",
+  "sprite": "battle_keeper",
+  "stats": {
+    "hp": 256000,
+    "str": 11560,
+    "def": 25600,
+    "int": 11560,
+    "ref": 25600,
+    "agi": 7680,
+    "hitRate": 0.95,
+    "evadeRate": 0,
+    "critRate": 0.1,
+    "critDamageMultiplier": 2
+  },
+  "traits": [
+    "trait_stone_skin"
+  ],
+  "activeSkills": [
+    {
+      "id": "skill_boundary_erosion",
+      "level": 3
+    },
+    {
+      "id": "skill_dimension_cut",
+      "level": 2
+    },
+    {
+      "id": "skill_dust_veil",
+      "level": 2
+    },
+    {
+      "id": "skill_wild_thrust",
+      "level": 2
+    },
+    {
+      "id": "skill_spark",
+      "level": 2
+    },
+    {
+      "id": "skill_wind_wrap",
+      "level": 3
+    },
+    {
+      "id": "skill_meteor",
+      "level": 1
+    },
+    {
+      "id": "skill_imaginary_bullet",
+      "level": 2
+    },
+    {
+      "id": "skill_dragon_scale",
+      "level": 1
+    }
+  ],
+  "passiveSkills": [],
+  "actionPattern": [
+    "skill_dust_veil",
+    "skill_boundary_erosion",
+    "skill_wind_wrap",
+    "skill_dimension_cut",
+    "skill_spark",
+    "skill_wind_wrap",
+    "skill_boundary_erosion",
+    "skill_imaginary_bullet",
+    "skill_dragon_scale",
+    "skill_meteor"
+  ],
+  "isBoss": true
+}

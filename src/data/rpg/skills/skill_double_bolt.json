@@ -1,0 +1,38 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_double_bolt",
+  "label": "連弾",
+  "flavorText": "一度言って伝わらないなら、二度伝えたら良い。",
+  "kind": "active",
+  "element": "magical",
+  "mainCategory": "combo",
+  "subCategories": [
+    "wisdom"
+  ],
+  "cooldown": 2,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_magical"
+  ],
+  "effect": [
+    {
+      "op": "repeat",
+      "times": 2,
+      "body": [
+        {
+          "op": "damage",
+          "element": "magical",
+          "scale": {
+            "stat": "int",
+            "rate": 0.7
+          }
+        }
+      ]
+    }
+  ],
+  "sfx": {
+    "cast": "battle_cast_magical",
+    "impact": "battle_bolt"
+  }
+}

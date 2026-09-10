@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "skill_strike",
+  "label": "殴る",
+  "flavorText": "古今東西において、最も原始的かつ、最も手っ取り早い解決法。",
+  "kind": "active",
+  "element": "physical",
+  "mainCategory": "might",
+  "subCategories": [],
+  "cooldown": 0,
+  "defaultFocus": "enemy",
+  "focusRange": "single",
+  "effects": [
+    "fx_cast_physical"
+  ],
+  "effect": [
+    {
+      "op": "damage",
+      "element": "physical",
+      "scale": {
+        "stat": "str",
+        "rate": 1
+      }
+    }
+  ],
+  "sfx": {
+    "cast": "battle_swing",
+    "impact": "battle_hit_physical"
+  }
+}

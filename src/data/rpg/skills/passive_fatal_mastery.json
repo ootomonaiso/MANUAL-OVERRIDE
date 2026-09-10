@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../schemas/battle-skill.schema.json",
+  "id": "passive_fatal_mastery",
+  "label": "致命の極意",
+  "flavorText": "脆弱性について詳しくなった。",
+  "kind": "passive",
+  "mainCategory": "fatal",
+  "subCategories": [],
+  "unlockCondition": {
+    "category": "fatal",
+    "points": 10
+  },
+  "effect": [
+    {
+      "op": "statBoost",
+      "stat": "critDamageMultiplier",
+      "rate": 0.15
+    }
+  ]
+}
