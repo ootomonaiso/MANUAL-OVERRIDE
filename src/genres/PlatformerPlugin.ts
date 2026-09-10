@@ -11,7 +11,6 @@ import type { SpawnEntry, MutableWorld } from '../engine/types'
 import type { GenreId } from '../domain/types'
 import type { Hazard } from '../game/entities'
 import { PixelCanvas } from '../game/render'
-import { GIMMICKS } from '../data/tunables'
 
 // プレイヤーの走りアニメーションのフレーム数（run_a / run_b の2枚）
 const PLATFORMER_RUN_FRAME_COUNT = 2
@@ -55,41 +54,15 @@ export class PlatformerPlugin implements GenrePlugin {
     land:  'rgba(180,140,90,0.55)',
   }
 
-  // 足場（isPlatform）・移動足場（driftEnabled）・コンベア（conveyorVx）・バネ（isSpring）。
-  // すべて direction:'left'（下から出現し上へ流れる = climb で使う方向）、safeChance:1、
-  // isGimmick:true（弾は無いが将来の混在ジャンルに備えて明示）。
-  readonly spawnTable: readonly SpawnEntry[] = [
-    {
-      shape: 'rect', placement: 'ground', weightStart: 8, weightEnd: 6,
-      wRange: [110, 180], hRange: [18, 18], direction: 'left', safeChance: 1,
-      isPlatform: true, isGimmick: true,
-      colorOverride: '#6b5744', safeColorOverride: '#4a3c2e',
-    },
-    {
-      shape: 'rect', placement: 'ground', weightStart: 2, weightEnd: 4,
-      wRange: [90, 140], hRange: [18, 18], direction: 'left', safeChance: 1,
-      isPlatform: true, isGimmick: true, driftEnabled: true,
-      colorOverride: '#5a6b57', safeColorOverride: '#3c4a3a',
-    },
-    {
-      shape: 'rect', placement: 'ground', weightStart: 1, weightEnd: 3,
-      wRange: [100, 150], hRange: [18, 18], direction: 'left', safeChance: 1,
-      isPlatform: true, isGimmick: true, conveyorVx: GIMMICKS.conveyorDefaultSpeed,
-      colorOverride: '#5a5a70', safeColorOverride: '#3c3c50',
-    },
-    {
-      shape: 'rect', placement: 'ground', weightStart: 1, weightEnd: 3,
-      wRange: [100, 150], hRange: [18, 18], direction: 'left', safeChance: 1,
-      isPlatform: true, isGimmick: true, conveyorVx: -GIMMICKS.conveyorDefaultSpeed,
-      colorOverride: '#5a5a70', safeColorOverride: '#3c3c50',
-    },
-    {
-      shape: 'diamond', placement: 'ground', weightStart: 1, weightEnd: 2,
-      wRange: [34, 34], hRange: [16, 16], direction: 'left', safeChance: 1,
-      isSpring: true, isGimmick: true,
-      colorOverride: '#ff8844', safeColorOverride: '#cc5522',
-    },
-  ]
+  // platformer はパターン方式（_seedClimbRoom/_buildClimbHazard、sideScroller.ts）で
+  // 自前生成するため、spawnTable による重み付きランダム生成は使わない（plan/spec-platformer.md）。
+  readonly spawnTable: readonly SpawnEntry[] = []
+
+  // パターン系ギミックの配色（足場=石材色、バネ=橙金）
+  readonly gimmickPalette: GenrePlugin['gimmickPalette'] = {
+    platform: { color: '#6b5744', glow: '#4a3c2e' },
+    spring:   { color: '#ff8844', glow: '#cc5522' },
+  }
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
     const px = new PixelCanvas(ctx)
@@ -155,9 +128,19 @@ export class PlatformerPlugin implements GenrePlugin {
       return true
     }
 
+    // 部屋の出口: 他の足場と明確に区別できるよう金色の発光縁取りを加える
+    if (hazard.isRoomExit) {
+      const t = performance.now() / 300
+      const pulse = 0.6 + Math.sin(t) * 0.25
+      px.withAlpha(pulse, () => {
+        px.halo((expand, c) => px.rect(sx - expand, y - expand, w + expand * 2, h + expand * 2, c),
+          '#ffdd66', 5)
+      })
+    }
+
     // 石畳の足場本体
     px.rect(sx, y, w, h, hazard.color)
-    px.line(sx, y, sx + w, y, '#ffffff33', 1)
+    px.line(sx, y, sx + w, y, hazard.isRoomExit ? '#ffdd66' : '#ffffff33', hazard.isRoomExit ? 2 : 1)
     const brickW = 24
     for (let bx = 0; bx < w; bx += brickW) {
       px.line(sx + bx, y, sx + bx, y + h, '#00000033', 1)
@@ -181,11 +164,17 @@ export class PlatformerPlugin implements GenrePlugin {
     return true
   }
 
-  /** 画面下端に迫る溶岩帯（climb フィーチャーの死亡判定と対応する高さ） */
-  drawForeground(ctx: CanvasRenderingContext2D, _offsetX: number, W: number, H: number): void {
+  /**
+   * 画面下端から迫り上がる溶岩（climb フィーチャーの死亡判定 world.climbLavaTopY と同じ
+   * 位置を塗る）。上限はなく、プレイヤーが登り続けない限りいずれ画面全体を埋める。
+   * 開始直後の数秒間は画面下端ぎりぎり（climbLavaTopY===H）で事実上見えない。
+   */
+  drawForeground(ctx: CanvasRenderingContext2D, _offsetX: number, W: number, H: number, _gY: number, world: MutableWorld): void {
+    const y0 = Math.max(0, Math.min(H, world.climbLavaTopY))
+    const lavaH = H - y0
+    if (lavaH <= 0) return
+
     const px = new PixelCanvas(ctx)
-    const lavaH = GIMMICKS.lavaBandHeightPx
-    const y0 = H - lavaH
     const t = performance.now() / 400
 
     px.bandGradient(0, y0, W, lavaH, [[0, '#ff8822'], [0.4, '#ff4400'], [1, '#7a0e00']], 'v', 6)

@@ -163,6 +163,144 @@ function validateSprites() {
 // Required keys for manual branch files
 const MANUAL_REQUIRED = ['id', 'entries']
 
+// ── パターン定義 (src/data/patterns/*.json) ──────────────────────────────
+// runner_patterns（区間パターン本体）と bullet_runner_enemy_overlay（敵オーバーレイ）の
+// 2種類が混在する。section で振り分け、後者は前者の patternId 参照整合性も検証する。
+function validatePatterns() {
+  const runnerPatternIds = new Set()
+
+  for (const file of walkJson('src/data/patterns')) {
+    const rel = relPath(file)
+    const { data, error } = parseJson(file)
+    if (data === null) { fail(rel, `JSON parse error: ${error}`); continue }
+    if (data.section !== 'runner_patterns') continue
+
+    const problems = []
+    const schemaValid = validatePatternSchema(data)
+    if (!schemaValid && validatePatternSchema.errors) {
+      for (const err of validatePatternSchema.errors) {
+        const path = err.instancePath || '(root)'
+        problems.push(`schema: ${path} ${err.message}`)
+      }
+    }
+
+    if (schemaValid) {
+      for (const pattern of data.patterns) {
+        if (runnerPatternIds.has(pattern.id)) {
+          problems.push(`パターンID "${pattern.id}" が重複しています`)
+        }
+        runnerPatternIds.add(pattern.id)
+        for (const entry of pattern.entries) {
+          if (entry.x + entry.w > data.patternLengthPx) {
+            problems.push(`パターン "${pattern.id}": entry (kind=${entry.kind}, x=${entry.x}, w=${entry.w}) が patternLengthPx=${data.patternLengthPx} をはみ出しています`)
+          }
+        }
+      }
+    }
+
+    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    else ok(rel)
+  }
+
+  for (const file of walkJson('src/data/patterns')) {
+    const rel = relPath(file)
+    const { data, error } = parseJson(file)
+    if (data === null) continue  // 上のループで既に fail 済み
+    if (data.section !== 'bullet_runner_enemy_overlay') continue
+
+    const problems = []
+    const schemaValid = validateEnemyOverlaySchema(data)
+    if (!schemaValid && validateEnemyOverlaySchema.errors) {
+      for (const err of validateEnemyOverlaySchema.errors) {
+        const path = err.instancePath || '(root)'
+        problems.push(`schema: ${path} ${err.message}`)
+      }
+    }
+
+    if (schemaValid) {
+      const seenPatternIds = new Set()
+      for (const overlay of data.overlays) {
+        if (seenPatternIds.has(overlay.patternId)) {
+          problems.push(`patternId "${overlay.patternId}" のオーバーレイが重複しています`)
+        }
+        seenPatternIds.add(overlay.patternId)
+        if (!runnerPatternIds.has(overlay.patternId)) {
+          problems.push(`patternId "${overlay.patternId}" は runner.json に存在しません`)
+        }
+      }
+    }
+
+    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    else ok(rel)
+  }
+
+  for (const file of walkJson('src/data/patterns')) {
+    const rel = relPath(file)
+    const { data, error } = parseJson(file)
+    if (data === null) continue  // 上のループで既に fail 済み
+    if (data.section !== 'platformer_patterns') continue
+
+    const problems = []
+    const schemaValid = validatePlatformerPatternSchema(data)
+    if (!schemaValid && validatePlatformerPatternSchema.errors) {
+      for (const err of validatePlatformerPatternSchema.errors) {
+        const path = err.instancePath || '(root)'
+        problems.push(`schema: ${path} ${err.message}`)
+      }
+    }
+
+    if (schemaValid) {
+      const seenRoomIds = new Set()
+      for (const room of data.patterns) {
+        if (seenRoomIds.has(room.id)) {
+          problems.push(`部屋ID "${room.id}" が重複しています`)
+        }
+        seenRoomIds.add(room.id)
+      }
+    }
+
+    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    else ok(rel)
+  }
+
+  for (const file of walkJson('src/data/patterns')) {
+    const rel = relPath(file)
+    const { data, error } = parseJson(file)
+    if (data === null) continue  // 上のループで既に fail 済み
+    if (data.section !== 'aquatic_patterns') continue
+
+    const problems = []
+    const schemaValid = validateAquaticPatternSchema(data)
+    if (!schemaValid && validateAquaticPatternSchema.errors) {
+      for (const err of validateAquaticPatternSchema.errors) {
+        const path = err.instancePath || '(root)'
+        problems.push(`schema: ${path} ${err.message}`)
+      }
+    }
+
+    if (schemaValid) {
+      const seenIds = new Set()
+      for (const pattern of data.patterns) {
+        if (seenIds.has(pattern.id)) {
+          problems.push(`パターンID "${pattern.id}" が重複しています`)
+        }
+        seenIds.add(pattern.id)
+        for (const entry of pattern.entries) {
+          if (entry.y + entry.h > data.segmentLengthPx) {
+            problems.push(`パターン "${pattern.id}": entry (kind=${entry.kind}, y=${entry.y}, h=${entry.h}) が segmentLengthPx=${data.segmentLengthPx} をはみ出しています`)
+          }
+          if (entry.x + entry.w > data.referenceWidthPx) {
+            problems.push(`パターン "${pattern.id}": entry (kind=${entry.kind}, x=${entry.x}, w=${entry.w}) が referenceWidthPx=${data.referenceWidthPx} をはみ出しています`)
+          }
+        }
+      }
+    }
+
+    if (problems.length > 0) fail(rel, problems.join('\n       '))
+    else ok(rel)
+  }
+}
+
 // ── Axis / theme lists from the JSON schema (single source of truth) ─────
 const _genreSchema = JSON.parse(readFileSync('schemas/genre.schema.json', 'utf8'))
 const VALID_AXES   = Object.keys(_genreSchema.properties.thresholds.properties)
@@ -171,6 +309,22 @@ const VALID_THEMES = _genreSchema.properties.theme.enum
 // JSON Schema validator for genre definitions (draft-07)
 const ajv = new Ajv({ strict: false, allErrors: true })
 const validateGenreSchema = ajv.compile(_genreSchema)
+
+// パターン定義スキーマ (src/data/patterns/*.json)
+const _patternSchema = JSON.parse(readFileSync('schemas/pattern.schema.json', 'utf8'))
+const validatePatternSchema = ajv.compile(_patternSchema)
+
+// Bullet Runner 敵オーバーレイスキーマ (src/data/patterns/bullet_runner_enemies.json)
+const _enemyOverlaySchema = JSON.parse(readFileSync('schemas/bullet-runner-enemies.schema.json', 'utf8'))
+const validateEnemyOverlaySchema = ajv.compile(_enemyOverlaySchema)
+
+// Platformer 部屋パターンスキーマ (src/data/patterns/platformer.json)
+const _platformerPatternSchema = JSON.parse(readFileSync('schemas/platformer-pattern.schema.json', 'utf8'))
+const validatePlatformerPatternSchema = ajv.compile(_platformerPatternSchema)
+
+// Aquatic セグメントパターンスキーマ (src/data/patterns/aquatic.json)
+const _aquaticPatternSchema = JSON.parse(readFileSync('schemas/aquatic-pattern.schema.json', 'utf8'))
+const validateAquaticPatternSchema = ajv.compile(_aquaticPatternSchema)
 
 const GENRE_ID_PATTERN = /^[a-z][a-z0-9_]*$/
 
@@ -474,6 +628,9 @@ validateManualDeckRefs()
 
 // SFX definitions
 validateSfx()
+
+// パターン定義 (runner / bullet_runner)
+validatePatterns()
 
 // 説明書ツリー（後方互換データ）の参照整合性: すべての choices[].next が
 // マージ後デッキ内の実在キーを指すか検証する。1.0 からの到達性は検査しない

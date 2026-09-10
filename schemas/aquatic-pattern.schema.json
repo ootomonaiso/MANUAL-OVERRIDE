@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "aquatic-pattern.schema.json",
+  "title": "Aquatic 手作りパターン集",
+  "description": "src/data/patterns/aquatic.json のスキーマ。全パターン共通の固定長 segmentLengthPx（縦方向）の中に、手作りのギミック配置（岩=oneWayPlatform・敵=spike・流れゾーン=current）を持つ。地形は常に「無い＝落下」がデフォルトで、岩に乗ってのみ着地できる（Runner/Platformerの『地面』に相当するものは存在しない）。plan/spec-aquatic.md 参照。",
+  "type": "object",
+  "required": ["section", "segmentLengthPx", "referenceWidthPx", "patterns"],
+  "additionalProperties": false,
+  "properties": {
+    "$comment": { "type": "string" },
+    "section": { "const": "aquatic_patterns" },
+    "segmentLengthPx": {
+      "type": "number",
+      "description": "全パターン共通の固定長 (px、縦方向)。各パターンの entries[].y はこの範囲内に収まっていること",
+      "exclusiveMinimum": 0
+    },
+    "referenceWidthPx": {
+      "type": "number",
+      "description": "entries[].x / w の基準幅 (px)。実行時に実際の可動域帯幅へスケーリングする",
+      "exclusiveMinimum": 0
+    },
+    "patterns": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/pattern" }
+    }
+  },
+  "definitions": {
+    "pattern": {
+      "type": "object",
+      "required": ["id", "entries"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "パターンの一意識別子（英小文字・数字・_のみ）"
+        },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/entry" }
+        }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "required": ["kind", "x", "y", "w", "h"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "enum": ["oneWayPlatform", "spike", "current"] },
+        "x": { "type": "number", "minimum": 0, "description": "可動域帯内のローカル座標px（referenceWidthPx基準）" },
+        "y": { "type": "number", "minimum": 0, "description": "セグメント起点（浅い側）からの深さpx" },
+        "w": { "type": "number", "exclusiveMinimum": 0 },
+        "h": { "type": "number", "exclusiveMinimum": 0 },
+        "driftEnabled": { "type": "boolean", "description": "左右往復する移動足場にする（oneWayPlatform のみ。ふわふわ足場ギミック）" },
+        "currentVx": { "type": "number", "description": "水平方向の押し流し速度 px/sec（+右 / -左、kind:'current' のみ）" }
+      }
+    }
+  }
+}

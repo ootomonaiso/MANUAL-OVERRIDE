@@ -2,8 +2,10 @@
  * genres/AquaticPlugin.ts
  * 'aquatic' ジャンル（水中アドベンチャー）のプラグイン。
  *
- * 深海の静寂。暗い青緑・生物発光・珊瑚礁。
- * ダイバーが深淵へ潜る探索スタイル。地形は岩、危険生物・回復サンゴが下から迫り上げる。
+ * 深海の静寂。暗い青緑・生物発光・珊瑚礁（背景装飾）。
+ * ダイバーが重力小さめ・小ジャンプで岩を乗り継ぎながら深海へ潜り続ける
+ * 縦エンドレス潜行スタイル（plan/spec-aquatic.md）。地形（岩）・敵・流れゾーンは
+ * 全て AquaticFeature が手作りパターン（src/data/patterns/aquatic.json）から生成する。
  */
 
 import { GenrePluginBase } from '../engine/GenrePluginBase'
@@ -11,6 +13,10 @@ import type { SpawnEntry, MutableWorld } from '../engine/types'
 import type { GenreId } from '../domain/types'
 import type { Hazard } from '../game/entities'
 import { PixelCanvas } from '../game/render'
+
+// 岩の描画に使う色。ふわふわ足場は同じ形状で少し明るい色にして見分けられるようにする
+const ROCK_COLOR = { base: '#4d453a', shade: '#332d24', highlight: '#665c4c' }
+const DRIFT_PLATFORM_COLOR = { base: '#5a6a5a', shade: '#3a4a3a', highlight: '#7a8a78' }
 
 // ダイバーのフィン（バタ足）アニメーションのフレーム数
 const SWIM_FRAME_COUNT = 2
@@ -53,36 +59,15 @@ export class AquaticPlugin extends GenrePluginBase {
     land:  'rgba(0,120,160,0.45)',
   }
 
-  // 岩（地形・押し戻し）・危険生物（酸素大幅減少）・サンゴ（酸素回復）。
-  // すべて direction:'left' = 画面下から出現し上へ流れる（sideScroller._updateVertical）。
-  // すべて safeChance:1（isSafe扱いにして通常の即死経路を迂回し、AquaticFeature が処理する）。
-  readonly spawnTable: readonly SpawnEntry[] = [
-    {
-      shape: 'rect', placement: 'ground', weightStart: 6, weightEnd: 7,
-      wRange: [40, 90], hRange: [50, 110], direction: 'left', safeChance: 1,
-      colorOverride: '#5a5248', safeColorOverride: '#3a342c', interactionKind: 'terrain',
-    },
-    {
-      shape: 'pillar', placement: 'ground', weightStart: 3, weightEnd: 4,
-      wRange: [20, 34], hRange: [70, 140], direction: 'left', safeChance: 1,
-      colorOverride: '#4a4238', safeColorOverride: '#2e2a22', interactionKind: 'terrain',
-    },
-    {
-      shape: 'spike', placement: 'air', weightStart: 2, weightEnd: 5,
-      wRange: [26, 40], hRange: [30, 48], direction: 'left', safeChance: 1,
-      colorOverride: '#ff2255', safeColorOverride: '#aa1133', interactionKind: 'creature',
-    },
-    {
-      shape: 'diamond', placement: 'air', weightStart: 1, weightEnd: 3,
-      wRange: [30, 44], hRange: [30, 44], direction: 'left', safeChance: 1,
-      colorOverride: '#ff4477', safeColorOverride: '#cc2255', interactionKind: 'creature',
-    },
-    {
-      shape: 'diamond', placement: 'air', weightStart: 3, weightEnd: 2,
-      wRange: [26, 36], hRange: [26, 36], direction: 'left', safeChance: 1,
-      colorOverride: '#22ffcc', safeColorOverride: '#11cc99', interactionKind: 'heal',
-    },
-  ]
+  // 地形・敵・流れゾーンは全て src/data/patterns/aquatic.json の手作りパターンから
+  // AquaticFeature が生成する（plan/spec-aquatic.md）。spawnTable による重み付き
+  // ランダム生成は使わない。
+  readonly spawnTable: readonly SpawnEntry[] = []
+
+  readonly gimmickPalette = {
+    platform: { color: ROCK_COLOR.base, glow: '#8899aa' },
+    spike:    { color: '#ff2255', glow: '#ff88aa' },
+  }
 
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
     const px = new PixelCanvas(ctx)
@@ -172,17 +157,15 @@ export class AquaticPlugin extends GenrePluginBase {
     })
   }
 
-  /** 地形（岩）だけ独自の岩肌ファセット描画にする。危険生物・サンゴはデフォルト形状描画に任せる */
+  /** 岩・ふわふわ足場だけ独自の岩肌ファセット描画にする。敵・流れゾーンはデフォルト形状描画に任せる */
   override drawHazard(ctx: CanvasRenderingContext2D, hazard: Hazard, sx: number, _world: MutableWorld): boolean {
-    if (hazard.interactionKind !== 'terrain') return false
+    if (!hazard.isPlatform) return false
 
     const px = new PixelCanvas(ctx)
     const { w, h } = hazard
     const y = hazard.rect.y
     const seed = _hashOf(hazard.x + hazard.y)
-    const base = '#4d453a'
-    const shade = '#332d24'
-    const highlight = '#665c4c'
+    const { base, shade, highlight } = hazard.driftEnabled ? DRIFT_PLATFORM_COLOR : ROCK_COLOR
 
     px.rect(sx, y, w, h, base)
     // 岩肌のファセット（ハザードごとに決定論的な位置・サイズで安定表示）

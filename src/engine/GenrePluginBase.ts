@@ -64,6 +64,7 @@ export abstract class GenrePluginBase implements GenrePlugin {
     _W: number,
     _H: number,
     _gY: number,
+    _world: MutableWorld,
   ): void { }
   drawGenreHUD(
     _ctx: CanvasRenderingContext2D,

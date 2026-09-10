@@ -217,7 +217,7 @@ export interface GenreDef {
   scrollDirection?: ScrollDirection
   /** 重力加速度 px/s²。省略時は 1600。0 で無重力 */
   gravity?: number
-  /** 最大HP/ゲージ上限（hp/oxygen Feature 有効時）。省略時は 3 */
+  /** 最大HP/ゲージ上限（hp Feature 有効時）。省略時は 3 */
   playerMaxHp?: number
   /** エンディングのフレーバーテキスト（EndingPanel に表示） */
   endingFlavor?: string

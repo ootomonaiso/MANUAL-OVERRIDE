@@ -40,6 +40,10 @@ export interface MutableWorld {
   readonly scrollMode: 'x' | 'y'
   /** stealth_mode 隠密中フラグ（衝突判定で被弾回避に使用。SpecialFeature が毎フレーム更新） */
   readonly stealthHidden: boolean
+  /** pattern_climb フィーチャー: 溶岩上端のスクリーンY座標（上限なく上昇。pattern_climb 以外は常に +Infinity） */
+  readonly climbLavaTopY: number
+  /** pattern_climb フィーチャー: クリアした部屋数（スコア・溶岩速度の計算に使用。pattern_climb 以外は常に0） */
+  readonly patternRoomsCleared: number
 
   // ─ ステルス状態更新（SpecialFeature 専用） ────────────────────
   /** 隠密中フラグを更新（衝突判定で参照される） */
@@ -47,6 +51,11 @@ export interface MutableWorld {
 
   // ─ スコア / UI ───────────────────────────────────────────────
   addScore(amount: number): void
+  /**
+   * distance（ScoreVars.distance）を直接加算する。連続スクロールしないジャンル
+   * （pattern_climb の部屋クリア時など）が「高度」を distance に相乗りさせるために使う。
+   */
+  addDistance(amount: number): void
   addScorePopup(x: number, y: number, text: string, color: string): void
   triggerShake(intensity: number): void
   addParticle(
@@ -260,8 +269,6 @@ export interface SpawnEntry {
   conveyorVx?: number
   /** 水平ドリフト対象にする（climb の移動足場用） */
   driftEnabled?: boolean
-  /** aquatic専用: isSafe な地形・生物・回復オブジェクトの意味分け */
-  interactionKind?: 'terrain' | 'creature' | 'heal'
 }
 
 /** distance に基づいて SpawnEntry の重みを補間して返す */

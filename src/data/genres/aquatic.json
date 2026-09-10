@@ -3,22 +3,19 @@
   "id": "aquatic",
   "label": "水中アドベンチャー",
   "thresholds": { "vertical": 3, "aerial": 3, "survive": 4 },
-  "enableFeatures": ["oxygen", "movement"],
-  "disableFeatures": ["auto_run", "shoot", "boss", "beat_hazard", "hp", "item_pickup", "slow_precise"],
-  "scoreFormula": "distance * 0.8 + survivedSec * 12",
-  "manualReveal": "これは水中アドベンチャーになりました。深海を探索してください。",
+  "enableFeatures": ["pattern_descend"],
+  "disableFeatures": ["auto_run", "shoot", "boss", "beat_hazard", "item_pickup", "slow_precise"],
+  "scoreFormula": "distance",
+  "manualReveal": "これは水中アドベンチャーになりました。岩を乗り継いで深海へ潜ってください。",
   "theme": "aquatic",
   "bgColor": "#000f2a",
   "environment": "ocean",
   "scrollDirection": "vertical",
-  "playerMaxHp": 100,
   "controls": {
     "jump": "Space",
     "moveLeft": "ArrowLeft",
-    "moveRight": "ArrowRight",
-    "moveUp": "ArrowUp",
-    "moveDown": "ArrowDown"
+    "moveRight": "ArrowRight"
   },
-  "gravity": 0,
+  "gravity": 220,
   "endingFlavor": "あなたは深淵へ到達した。説明書のインクは水に滲んで消えた。"
 }

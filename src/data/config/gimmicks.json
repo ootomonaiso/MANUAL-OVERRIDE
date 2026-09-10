@@ -1,11 +1,14 @@
 {
-  "$comment": "runner / bullet_runner / platformer 共通ギミック（穴・足場・バネ・コンベア・溶岩）",
+  "$comment": "runner / bullet_runner / platformer 共通ギミック（足場・バネ・コンベア）+ platformer 専用の部屋床・溶岩設定",
   "section": "gimmicks",
   "holeDeathMarginPx": 120,
-  "platformLandToleranceUpPx": 18,
-  "platformLandToleranceDownPx": 48,
   "springBounceVelocity": -980,
   "conveyorDefaultSpeed": 90,
-  "lavaBandHeightPx": 46,
-  "movingPlatformDriftAmp": 70
+  "movingPlatformDriftAmp": 70,
+  "climbFloorHeightPx": 24,
+  "climbFloorBottomMarginPx": 40,
+  "lavaSpeedBasePxPerSec": 40,
+  "lavaSpeedGrowthPerRoomPxPerSec": 6,
+  "lavaSpeedMaxPxPerSec": 140,
+  "climbInitialGraceSec": 5
 }

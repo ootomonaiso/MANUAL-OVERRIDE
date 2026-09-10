@@ -23,6 +23,7 @@ import { SurvivalFeature }   from './SurvivalFeature'
 import { MeleeKillFeature }  from './MeleeKillFeature'
 import { NearMissComboFeature } from './NearMissComboFeature'
 import { AquaticFeature }    from './AquaticFeature'
+import { PatternRunnerFeature } from './PatternRunnerFeature'
 
 registerFeature(new ShootFeature())
 registerFeature(new RhythmFeature())
@@ -35,3 +36,4 @@ registerFeature(new SurvivalFeature())
 registerFeature(new MeleeKillFeature())
 registerFeature(new NearMissComboFeature())
 registerFeature(new AquaticFeature())
+registerFeature(new PatternRunnerFeature())

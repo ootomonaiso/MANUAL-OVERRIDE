@@ -102,6 +102,16 @@ export interface GenrePlugin {
   }
 
   /**
+   * パターン系ジャンル（runner / bullet_runner / platformer）のギミック別配色。
+   * 省略時は palette.safe/danger にフォールバックする（PatternRunnerFeature 等が参照）。
+   */
+  readonly gimmickPalette?: {
+    platform?: { color: string; glow: string }
+    spring?:   { color: string; glow: string }
+    spike?:    { color: string; glow: string }
+  }
+
+  /**
    * 地面ラインの透明度（デフォルト BACKGROUND.groundLineAlpha = 0.08）。
    */
   readonly groundLineAlpha?: number
@@ -205,6 +215,7 @@ export interface GenrePlugin {
    * すべてのワールド要素より手前に追加の前景レイヤーを描くフック。
    * プレイヤー描画の後・shake 変換内で呼ばれる（走査線・ビネット・HUD枠などの画面装飾に使う）。
    * @param offsetX 現在のカメラX（前景パララックスに使用）
+   * @param world climb の溶岩演出など、world 状態を参照する描画に使う
    * 省略可。
    */
   drawForeground?(
@@ -213,6 +224,7 @@ export interface GenrePlugin {
     W: number,
     H: number,
     gY: number,
+    world: MutableWorld,
   ): void
 
   /**

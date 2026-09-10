@@ -117,8 +117,9 @@
           "survival_level",
           "survival_melee",
           "tetris_mode",
-          "climb",
-          "oxygen"
+          "pattern_runner",
+          "pattern_climb",
+          "pattern_descend"
         ]
       }
     },
@@ -160,8 +161,9 @@
           "survival_level",
           "survival_melee",
           "tetris_mode",
-          "climb",
-          "oxygen"
+          "pattern_runner",
+          "pattern_climb",
+          "pattern_descend"
         ]
       }
     },

@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "bullet-runner-enemies.schema.json",
+  "title": "Bullet Runner 敵オーバーレイ",
+  "description": "src/data/patterns/bullet_runner_enemies.json のスキーマ。Runner の区間パターン（runner_patterns）に敵の出現候補を重ねる。patternId は runner.json の patterns[].id を参照する。plan/spec-bullet-runner.md 参照。",
+  "type": "object",
+  "required": ["section", "overlays"],
+  "additionalProperties": false,
+  "properties": {
+    "$comment": { "type": "string" },
+    "section": { "const": "bullet_runner_enemy_overlay" },
+    "overlays": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/overlay" }
+    }
+  },
+  "definitions": {
+    "overlay": {
+      "type": "object",
+      "required": ["patternId", "spots"],
+      "additionalProperties": false,
+      "properties": {
+        "patternId": {
+          "type": "string",
+          "description": "src/data/patterns/runner.json の patterns[].id への参照"
+        },
+        "spots": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/spot" }
+        }
+      }
+    },
+    "spot": {
+      "type": "object",
+      "required": ["x", "y", "w", "h", "hpOverride", "spawnChance"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number", "minimum": 0, "description": "パターン起点からの水平距離px" },
+        "y": { "type": "number", "description": "地面からの高さpx（0=地面、正の値=上）" },
+        "w": { "type": "number", "exclusiveMinimum": 0 },
+        "h": { "type": "number", "exclusiveMinimum": 0 },
+        "hpOverride": { "type": "number", "minimum": 1, "description": "この敵のHP" },
+        "spawnChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "パターンがスポーンされるたびにこの敵が出現する確率" }
+      }
+    }
+  }
+}

@@ -1,9 +1,11 @@
 {
-  "$comment": "aquatic ジャンル固有パラメータ。酸素ゲージは genres/aquatic.json の playerMaxHp=100 として player.hp を流用する",
+  "$comment": "aquatic ジャンル固有パラメータ。重力小さめ・小ジャンプで岩を乗り継ぐ縦エンドレス潜行（plan/spec-aquatic.md）。重力自体は genres/aquatic.json の gravity（小さい値）を流用し、ここではジャンプ初速度・自動スクロール速度・流れゾーン既定値・reach-sim用の到達可能性検証定数を定義する。",
   "section": "aquatic",
-  "oxygenDecayRate": 4,
-  "terrainPushSpeed": 220,
-  "creatureDamageRate": 40,
-  "healRate": 26,
-  "bubbleIntervalSec": 0.12
+  "aquaticJumpVelocityPxPerSec": -260,
+  "scrollSpeedBasePxPerSec": 36,
+  "scrollSpeedGrowthPxPerSec2": 0.6,
+  "scrollSpeedMaxPxPerSec": 90,
+  "currentVxPxPerSec": 100,
+  "maxFallGapPx": 260,
+  "maxFallDriftPx": 200
 }

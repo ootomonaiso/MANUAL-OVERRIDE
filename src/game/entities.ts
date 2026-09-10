@@ -72,8 +72,14 @@ export class Hazard {
   conveyorVx = 0
   /** 水平ドリフト（climb の移動足場用）。MovementFeature の vertical_scroll ドリフト対象 */
   driftEnabled = false
-  /** aquatic専用: isSafe な地形・生物・回復オブジェクトの意味分け */
-  interactionKind: 'terrain' | 'creature' | 'heal' | undefined = undefined
+  /** 一方通行足場（上昇中は素通り、下降中のみ着地）。パターン系ジャンル（runner/bullet_runner/platformer）で使用 */
+  isOneWay = false
+  /** platformer専用: 部屋の出口足場。到達すると部屋クリアとして次の部屋へ切り替わる */
+  isRoomExit = false
+  /** aquatic専用: 流れゾーン（非接触・重なり判定のみ）。true の場合 currentVx を水平位置へ加算する */
+  isCurrentZone = false
+  /** aquatic専用: 流れゾーンの水平方向の押し流し速度 px/sec（+右 / -左、isCurrentZone のみ有効） */
+  currentVx = 0
 
   constructor(
     x: number, y: number, w: number, h: number,

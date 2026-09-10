@@ -31,11 +31,17 @@ export function drawGimmickHazard(ctx: CanvasRenderingContext2D, hazard: Hazard,
   }
 
   if (hazard.isSpring) {
+    // 台座（茶色の土台）+ 反発面（ジャンル配色）+ 上方向へ跳ねることを示す矢印。
+    // 足場・穴と混同されないよう、台座を狭く・反発面を目立たせて「バネらしさ」を強調する
     const y = hazard.rect.y
-    px.rect(sx, y + hazard.h * 0.4, hazard.w, hazard.h * 0.6, '#5a4636')
-    px.rect(sx + hazard.w * 0.1, y, hazard.w * 0.8, hazard.h * 0.5, hazard.color)
-    px.line(sx + hazard.w * 0.1, y, sx + hazard.w * 0.9, y, '#ffffffaa', 1)
-    px.line(sx + hazard.w * 0.1, y + hazard.h * 0.25, sx + hazard.w * 0.9, y + hazard.h * 0.25, hazard.glowColor, 1)
+    const baseY = y + hazard.h * 0.55
+    px.rect(sx + hazard.w * 0.15, baseY, hazard.w * 0.7, hazard.h * 0.45, '#5a4636')
+    px.rect(sx, y, hazard.w, hazard.h * 0.55, hazard.color)
+    px.line(sx, y, sx + hazard.w, y, '#ffffffcc', 1)
+    px.line(sx + hazard.w * 0.1, y + hazard.h * 0.22, sx + hazard.w * 0.9, y + hazard.h * 0.22, hazard.glowColor, 1)
+    // 反発方向を示す上向き矢印（穏やかに上下するアニメーション）
+    const bob = Math.sin(performance.now() / 220) * hazard.h * 0.12
+    px.tri(sx + hazard.w * 0.5 - hazard.w * 0.22, y - hazard.h * 0.55 + bob, hazard.w * 0.44, hazard.h * 0.4, 'up', hazard.glowColor)
     return true
   }
 
