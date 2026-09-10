@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pattern.schema.json",
+  "title": "手作りパターン集（runner / bullet_runner）",
+  "description": "src/data/patterns/runner.json のスキーマ。全パターン共通の固定長 patternLengthPx の中に、手作りのギミック配置（一方通行足場・バネ・トゲ）を持つ。地面は常に連続し、穴（地面の欠落）は仕様変更で撤廃済み。plan/spec-pattern-system.md 参照。",
+  "type": "object",
+  "required": ["section", "patternLengthPx", "patterns"],
+  "additionalProperties": false,
+  "properties": {
+    "$comment": { "type": "string" },
+    "section": { "const": "runner_patterns" },
+    "patternLengthPx": {
+      "type": "number",
+      "description": "全パターン共通の固定長 (px)。各パターンの entries[].x はこの範囲内に収まっていること",
+      "exclusiveMinimum": 0
+    },
+    "patterns": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/pattern" }
+    }
+  },
+  "definitions": {
+    "pattern": {
+      "type": "object",
+      "required": ["id", "entries"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "パターンの一意識別子（英小文字・数字・_のみ）"
+        },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/entry" }
+        }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "required": ["kind", "x", "y", "w", "h"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "enum": ["oneWayPlatform", "spring", "spike"] },
+        "x": { "type": "number", "minimum": 0, "description": "パターン起点からの水平距離px" },
+        "y": { "type": "number", "description": "地面からの高さpx（0=地面、正の値=上）" },
+        "w": { "type": "number", "exclusiveMinimum": 0 },
+        "h": { "type": "number", "exclusiveMinimum": 0 },
+        "driftEnabled": { "type": "boolean", "description": "左右往復する移動足場にする（oneWayPlatform のみ）" },
+        "conveyorVx": { "type": "number", "description": "コンベア速度 px/sec（+右 / -左、oneWayPlatform のみ）" }
+      }
+    }
+  }
+}

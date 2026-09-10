@@ -2,112 +2,189 @@
  * genres/PlatformerPlugin.ts
  * 'platformer' ジャンル（プラットフォームアクション）のプラグイン。
  *
- * 明るい青空と浮かぶ雲。軽快な二段ジャンプとコンボが主軸。
- * プレイヤーはアクロバティックなアクション感を演出。
+ * 砦の最下層から無限に登り続ける縦スクロールクライミング。石造りの足場・
+ * 移動足場・コンベア・バネを飛び継ぎ、画面下端から迫る溶岩から逃げる。
  */
 
 import type { GenrePlugin } from '../engine/GenrePlugin'
-import type { SpawnEntry } from '../engine/types'
+import type { SpawnEntry, MutableWorld } from '../engine/types'
 import type { GenreId } from '../domain/types'
-import { DarkThemePlugin } from './BasePlugin'
+import type { Hazard } from '../game/entities'
 import { PixelCanvas } from '../game/render'
 
 // プレイヤーの走りアニメーションのフレーム数（run_a / run_b の2枚）
 const PLATFORMER_RUN_FRAME_COUNT = 2
 
-export class PlatformerPlugin extends DarkThemePlugin {
+export class PlatformerPlugin implements GenrePlugin {
   readonly id: GenreId = 'platformer'
 
-  readonly skyColors: readonly [string, string] = ['#1a88e8', '#4db8ff']
-  readonly groundColors: readonly [string, string] = ['#2d7a2d', '#1a5c1a']
-  readonly farLayerColor  = '#5da5e8'
-  readonly midLayerColor  = '#4a9040'
+  readonly skyColors: readonly [string, string] = ['#100a08', '#241a14']
+  readonly groundColors: readonly [string, string] = ['#241a14', '#100a08']
+  readonly farLayerColor  = '#2e2118'
+  readonly midLayerColor  = '#3a2a1e'
   readonly starColor: string | undefined = undefined
 
+  // 縦スクロールでも遠景（要塞の壁）・中景（松明）レイヤーを描画する
+  readonly verticalBackgroundLayers = true
+
   readonly palette: GenrePlugin['palette'] = {
-    danger: '#e84040', dangerGlow: '#ff6666',
-    safe:   '#ffcc00', safeGlow:   '#ffee88',
+    danger: '#ff5522', dangerGlow: '#ffaa44',
+    safe:   '#c9a876', safeGlow:   '#ffdd99',
   }
 
   readonly parallax = {
     stars: 0,
-    far:   0.05,
+    far:   0.08,
     mid:   0.2,
   }
 
   readonly hazardConfig = {
-    glowBlur: 10,
-    pulseSpeed: 1.2,
-    pulseAmplitude: 0.1,
+    glowBlur: 8,
+    pulseSpeed: 1.0,
+    pulseAmplitude: 0.06,
   }
 
   readonly groundLineAlpha = 0.2
   readonly groundDashAlpha = 0.1
 
   readonly particleColors: GenrePlugin['particleColors'] = {
-    hit:   '#ff4444',
-    death: ['#ff4444', '#ff8800', '#ffcc00', '#ffffff'] as readonly string[],
-    jump:  'rgba(255,220,60,0.7)',
-    land:  'rgba(80,200,60,0.6)',
+    hit:   '#ff8844',
+    death: ['#ff5522', '#ffaa44', '#ffee88', '#ffffff'] as readonly string[],
+    jump:  'rgba(255,220,150,0.6)',
+    land:  'rgba(180,140,90,0.55)',
   }
 
-  readonly spawnTable: readonly SpawnEntry[] = [
-    { shape: 'rect',   placement: 'ground', weightStart: 6, weightEnd: 5, wRange: [28, 52], hRange: [30, 55] },
-    { shape: 'rect',   placement: 'air',    weightStart: 4, weightEnd: 6, wRange: [32, 56], hRange: [22, 36], safeChance: 0.3 },
-    { shape: 'spike',  placement: 'ground', weightStart: 2, weightEnd: 4, wRange: [25, 42], hRange: [30, 45] },
-    { shape: 'diamond', placement: 'float', weightStart: 1, weightEnd: 3, wRange: [28, 38], hRange: [28, 38], safeChance: 0.4 },
-  ]
+  // platformer はパターン方式（_seedClimbRoom/_buildClimbHazard、sideScroller.ts）で
+  // 自前生成するため、spawnTable による重み付きランダム生成は使わない（plan/spec-platformer.md）。
+  readonly spawnTable: readonly SpawnEntry[] = []
 
-  override drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
+  // パターン系ギミックの配色（足場=石材色、バネ=橙金）
+  readonly gimmickPalette: GenrePlugin['gimmickPalette'] = {
+    platform: { color: '#6b5744', glow: '#4a3c2e' },
+    spring:   { color: '#ff8844', glow: '#cc5522' },
+  }
+
+  drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
     const px = new PixelCanvas(ctx)
 
-    // 雲（白いふわふわ）→ cloud_fluffy スプライトをサイズ違いで使い回す。
-    // 配置の計算式は無変更
-    const cloudData = [
-      { x: 0.1, y: 0.15, r: 55 },
-      { x: 0.35, y: 0.08, r: 70 },
-      { x: 0.62, y: 0.18, r: 50 },
-      { x: 0.82, y: 0.06, r: 65 },
-    ]
-    const scroll = offsetX * 0.05
-    px.withAlpha(0.9, () => {
-      for (const c of cloudData) {
-        const cx = ((c.x * W * 1.4 - scroll) % (W * 1.4) + W * 1.4) % (W * 1.4) - W * 0.2
-        const cy = c.y * gY
-        const w = c.r * 2.3, h = c.r * 1.3
-        px.sprite('cloud_fluffy', cx - w / 2, cy - h / 2, w, h)
+    // 遠景: 要塞の石壁シルエット（階段状のブロックパターン）
+    px.withAlpha(0.4, () => {
+      const blockW = 60
+      const sector = Math.floor(offsetX / blockW)
+      for (let s = sector - 1; s <= sector + Math.ceil(W / blockW) + 1; s++) {
+        const h2 = (s * 2477) & 0xffff
+        const bx = s * blockW - offsetX
+        const bh = 40 + (h2 % 60)
+        px.rect(bx, gY - bh, blockW - 4, bh, this.farLayerColor)
       }
     })
   }
 
-  override drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
+  drawMidLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
     const px = new PixelCanvas(ctx)
 
-    // 草地の丘（丸い丘 → ブロック半円）。配置・サイズの計算式は無変更
-    const sector = Math.floor(offsetX / 350)
-    px.withAlpha(0.55, () => {
-      for (let s = sector - 1; s <= sector + 3; s++) {
-        const h2 = (s * 2239) & 0xffff
-        const bx = s * 350 - offsetX + (h2 % 200)
-        const bw = 40 + (h2 >> 8) % 60
-        const hillR = bw / 2
-        px.halfCircle(bx + hillR, gY, hillR, 'up', this.midLayerColor)
-        // 丘の頂点に明色ハイライトを添えて立体感を出す
-        px.rect(bx + hillR - hillR * 0.15, gY - hillR, hillR * 0.3, hillR * 0.12, 'rgba(255,255,255,0.35)')
+    // 中景: 松明（一定間隔・揺らめく炎）
+    const sector = Math.floor(offsetX / 220)
+    const t = performance.now() / 300
+    px.withAlpha(0.85, () => {
+      for (let s = sector - 1; s <= sector + Math.ceil(W / 220) + 1; s++) {
+        const h2 = (s * 3121) & 0xffff
+        const bx = s * 220 - offsetX + (h2 % 100)
+        const by = gY - 60 - (h2 >> 4) % (gY - 120)
+        const flicker = 0.7 + Math.sin(t + s) * 0.3
+        px.rect(bx, by, 6, 20, '#3a2a1e')
+        px.withAlpha(flicker, () => {
+          px.halo((expand, c) => px.rect(bx - 3 - expand, by - 12 - expand, 12 + expand * 2, 14 + expand * 2, c),
+            '#ff9944', 3)
+          px.rect(bx - 3, by - 12, 12, 14, '#ffcc66')
+        })
       }
     })
   }
 
-  override drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, onGround: boolean, runCycle: number): void {
+  drawPlayer(ctx: CanvasRenderingContext2D, w: number, h: number, onGround: boolean, runCycle: number): void {
     const px = new PixelCanvas(ctx)
 
-    // 影
-    px.ellipse(w / 2, h + 2, w * 0.4, 4, 'rgba(0,80,0,0.25)')
+    px.ellipse(w / 2, h + 2, w * 0.4, 4, 'rgba(0,0,0,0.3)')
 
     const frame = onGround
       ? (Math.floor(runCycle * PLATFORMER_RUN_FRAME_COUNT) % 2 === 0 ? 'run_a' : 'run_b')
       : 'jump'
     px.sprite('player_platformer', 0, 0, w, h, { frame })
+  }
+
+  /** 足場・移動足場・コンベア・バネを石材の見た目で描く */
+  drawHazard(ctx: CanvasRenderingContext2D, hazard: Hazard, sx: number, _world: MutableWorld): boolean | void {
+    if (!hazard.isPlatform && !hazard.isSpring) return false
+
+    const px = new PixelCanvas(ctx)
+    const { w, h } = hazard
+    const y = hazard.rect.y
+
+    if (hazard.isSpring) {
+      px.rect(sx, y, w, h, '#4a3020')
+      px.rect(sx + w * 0.15, y - 6, w * 0.7, 8, hazard.color)
+      px.line(sx + w * 0.15, y - 6, sx + w * 0.85, y - 6, '#ffcc99', 1)
+      return true
+    }
+
+    // 部屋の出口: 他の足場と明確に区別できるよう金色の発光縁取りを加える
+    if (hazard.isRoomExit) {
+      const t = performance.now() / 300
+      const pulse = 0.6 + Math.sin(t) * 0.25
+      px.withAlpha(pulse, () => {
+        px.halo((expand, c) => px.rect(sx - expand, y - expand, w + expand * 2, h + expand * 2, c),
+          '#ffdd66', 5)
+      })
+    }
+
+    // 石畳の足場本体
+    px.rect(sx, y, w, h, hazard.color)
+    px.line(sx, y, sx + w, y, hazard.isRoomExit ? '#ffdd66' : '#ffffff33', hazard.isRoomExit ? 2 : 1)
+    const brickW = 24
+    for (let bx = 0; bx < w; bx += brickW) {
+      px.line(sx + bx, y, sx + bx, y + h, '#00000033', 1)
+    }
+
+    if (hazard.conveyorVx !== 0) {
+      // コンベア: 進行方向を示す矢印を流す
+      const dir = hazard.conveyorVx > 0 ? 1 : -1
+      const t = (performance.now() / 200) % brickW
+      px.withAlpha(0.8, () => {
+        for (let bx = -brickW; bx < w + brickW; bx += brickW) {
+          const ax = sx + bx + (dir > 0 ? t : brickW - t)
+          px.tri(ax, y + h / 2 - 4, 8, 8, dir > 0 ? 'right' : 'left', '#ffee88')
+        }
+      })
+    } else if (hazard.driftEnabled) {
+      // 移動足場: 縁を強調して区別する
+      px.line(sx, y, sx, y + h, '#ffffff55', 2)
+      px.line(sx + w, y, sx + w, y + h, '#ffffff55', 2)
+    }
+    return true
+  }
+
+  /**
+   * 画面下端から迫り上がる溶岩（climb フィーチャーの死亡判定 world.climbLavaTopY と同じ
+   * 位置を塗る）。上限はなく、プレイヤーが登り続けない限りいずれ画面全体を埋める。
+   * 開始直後の数秒間は画面下端ぎりぎり（climbLavaTopY===H）で事実上見えない。
+   */
+  drawForeground(ctx: CanvasRenderingContext2D, _offsetX: number, W: number, H: number, _gY: number, world: MutableWorld): void {
+    const y0 = Math.max(0, Math.min(H, world.climbLavaTopY))
+    const lavaH = H - y0
+    if (lavaH <= 0) return
+
+    const px = new PixelCanvas(ctx)
+    const t = performance.now() / 400
+
+    px.bandGradient(0, y0, W, lavaH, [[0, '#ff8822'], [0.4, '#ff4400'], [1, '#7a0e00']], 'v', 6)
+    px.withAlpha(0.6 + Math.sin(t) * 0.15, () => {
+      const waveW = 40
+      for (let x = -waveW; x < W + waveW; x += waveW) {
+        const wobble = Math.sin(t * 2 + x * 0.05) * 6
+        px.rect(x, y0 + wobble, waveW - 4, 6, '#ffcc66')
+      }
+    })
   }
 }
 

@@ -142,6 +142,16 @@ export const PIXELART = _c.pixelart
 export const NEAR_MISS = _c.near_miss
 
 // ─────────────────────────────────────────────────────────────
+// AQUATIC_TUNING — aquatic ジャンル固有パラメータ
+// ─────────────────────────────────────────────────────────────
+export const AQUATIC_TUNING = _c.aquatic
+
+// ─────────────────────────────────────────────────────────────
+// GIMMICKS — runner/bullet_runner/platformer 共通ギミック
+// ─────────────────────────────────────────────────────────────
+export const GIMMICKS = _c.gimmicks
+
+// ─────────────────────────────────────────────────────────────
 // BULLET_HELL — 弾幕STGジャンル（ボス位置・弾幕パターン・弾速・カラー等）
 // ─────────────────────────────────────────────────────────────
 export const BULLET_HELL = _c.bullet_hell as BulletHellConfig

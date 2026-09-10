@@ -117,6 +117,9 @@
           "survival_level",
           "survival_melee",
           "tetris_mode",
+          "pattern_runner",
+          "pattern_climb",
+          "pattern_descend",
           "boss_stationary",
           "power_up"
         ]
@@ -160,6 +163,9 @@
           "survival_level",
           "survival_melee",
           "tetris_mode",
+          "pattern_runner",
+          "pattern_climb",
+          "pattern_descend",
           "boss_stationary",
           "power_up"
         ]
@@ -227,6 +233,11 @@
       "description": "重力加速度（px/s²）。省略時は 1600。水中など特殊環境では小さくする",
       "default": 1600,
       "minimum": 0
+    },
+    "playerMaxHp": {
+      "type": "number",
+      "description": "最大HP/ゲージ上限（hp/oxygen Feature 有効時）。省略時は3",
+      "minimum": 1
     },
     "controls": {
       "type": "object",

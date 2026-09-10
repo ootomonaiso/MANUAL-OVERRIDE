@@ -56,7 +56,7 @@ export function buildRuntimeRules(
     gravity:         rc?.gravity         ?? genreDef?.gravity ?? RULE_DEFAULTS.gravity,
     scrollDirection,
     environment:     rc?.environment     ?? genreDef?.environment ?? 'ground',
-    playerMaxHp:     rc?.playerMaxHp     ?? RULE_DEFAULTS.playerMaxHp,
+    playerMaxHp:     rc?.playerMaxHp     ?? genreDef?.playerMaxHp ?? RULE_DEFAULTS.playerMaxHp,
     timescale:       rc?.timescale       ?? DEFAULT_TIMESCALE,
     scrollAxis:      scrollDirection === 'vertical' ? 'y' : 'x',
     colorTouchScore: rc?.colorTouchScore ?? RULE_DEFAULTS.colorTouchScore,

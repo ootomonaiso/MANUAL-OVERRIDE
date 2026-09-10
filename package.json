@@ -13,6 +13,7 @@
     "lint": "eslint src --ext .ts,.vue",
     "lint:fix": "eslint src --ext .ts,.vue --fix",
     "validate": "node scripts/validate-json.mjs",
+    "validate:patterns": "node scripts/pattern-reach-sim.mjs .",
     "check-doc-links": "node scripts/check-doc-links.mjs",
     "bundle-size": "node scripts/check-bundle-size.mjs",
     "new-genre": "node scripts/new-genre.mjs",
@@ -26,7 +27,7 @@
     "test:infinite": "node tests/test_infinite_choices.mjs",
     "test:massive": "node tests/test_massive_choices.mjs",
     "test:unit:ci": "vitest run tests/unit",
-    "ci": "npm run typecheck && npm run lint && npm run validate && npm run check-doc-links && npm run test:features && npm run build && npm run bundle-size && npm run test:unit:ci"
+    "ci": "npm run typecheck && npm run lint && npm run validate && npm run validate:patterns && npm run check-doc-links && npm run test:features && npm run build && npm run bundle-size && npm run test:unit:ci"
   },
   "dependencies": {
     "vue": "^3.5.41"

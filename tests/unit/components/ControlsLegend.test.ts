@@ -75,4 +75,20 @@ describe('ControlsLegend', () => {
     const texts = chipTexts(host)
     expect(texts.some(t => t.includes('上移動'))).toBe(false)
   })
+
+  it('pattern_descend（aquatic）は縦スクロールでも上下移動を出さない', () => {
+    // 重力・ジャンプで岩を乗り継ぐため、自由な上下キー入力は受け付けない
+    const { host } = mount(['pattern_descend'], 'y')
+    const texts = chipTexts(host)
+    expect(texts.some(t => t.includes('上移動'))).toBe(false)
+    expect(texts.some(t => t.includes('下移動'))).toBe(false)
+    expect(texts.some(t => t.includes('ジャンプ'))).toBe(true)
+  })
+
+  it('pattern_climb（platformer）は縦スクロールでも上下移動を出さない', () => {
+    const { host } = mount(['pattern_climb'], 'y')
+    const texts = chipTexts(host)
+    expect(texts.some(t => t.includes('上移動'))).toBe(false)
+    expect(texts.some(t => t.includes('下移動'))).toBe(false)
+  })
 })

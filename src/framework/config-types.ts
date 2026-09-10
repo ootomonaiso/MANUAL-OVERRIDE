@@ -502,6 +502,49 @@ export interface HudSafezoneConfig {
   boundaryLineAlpha: number
 }
 
+/** aquatic.json — aquatic ジャンル固有パラメータ（重力小さめ・小ジャンプで岩を乗り継ぐ縦エンドレス潜行） */
+export interface AquaticConfig {
+  /** ジャンプ初速度 px/sec（負値）。physics.json の jumpVelocity とは別に、Aquatic専用の小さい値を使う */
+  aquaticJumpVelocityPxPerSec: number
+  /** 自動縦スクロールの初期速度 (px/sec) */
+  scrollSpeedBasePxPerSec: number
+  /** 自動縦スクロール速度の時間経過による増加量 (px/sec^2)。survivedSec に比例して加速する */
+  scrollSpeedGrowthPxPerSec2: number
+  /** 自動縦スクロール速度の上限 (px/sec) */
+  scrollSpeedMaxPxPerSec: number
+  /** 流れゾーンの水平押し流し速度の既定値 (px/sec)。パターンJSON側で entry ごとに上書き可能 */
+  currentVxPxPerSec: number
+  /** reach-sim: 連続する岩の間で許容する最大の落下ギャップ (px) */
+  maxFallGapPx: number
+  /** reach-sim: 落下ギャップの間に到達可能な最大の水平移動距離 (px) */
+  maxFallDriftPx: number
+}
+
+/** gimmicks.json — runner/bullet_runner/platformer 共通ギミック（足場・バネ・コンベア）+ platformer 専用の部屋床・溶岩設定 */
+export interface GimmicksConfig {
+  /** 穴に落下し画面外(下)へ抜けたと判定する余白 (px) */
+  holeDeathMarginPx: number
+  /** バネ着地時の反発速度 (px/sec, 負値で上方向) */
+  springBounceVelocity: number
+  /** コンベアのデフォルト水平速度 (px/sec) */
+  conveyorDefaultSpeed: number
+  /** 移動足場の水平ドリフト振幅 (px) */
+  movingPlatformDriftAmp: number
+  /** pattern_climb: 部屋の床（起点）の高さ (px) */
+  climbFloorHeightPx: number
+  /** pattern_climb: 部屋の床の下端から画面下端までの余白 (px) */
+  climbFloorBottomMarginPx: number
+  /** pattern_climb: 溶岩の基本上昇速度 (px/sec)。部屋クリアのたびに加速する */
+  lavaSpeedBasePxPerSec: number
+  /** pattern_climb: 部屋クリア1回あたりの溶岩上昇速度の増加量 (px/sec) */
+  lavaSpeedGrowthPerRoomPxPerSec: number
+  /** pattern_climb: 溶岩上昇速度の上限 (px/sec)。どれだけ部屋をクリアしても超えない */
+  lavaSpeedMaxPxPerSec: number
+  /** pattern_climb: ジャンル確定（GenreRevealOverlay 表示）直後、溶岩が上昇を始めるまでの
+   * 猶予秒数。演出中は画面が見えず操作もままならないため、演出時間より長めに取る */
+  climbInitialGraceSec: number
+}
+
 /** genre_params.json — ジャンルパラメータ設計支援 */
 export interface GenreParamsConfig {
   recommendedSingleChoice: number
@@ -581,6 +624,8 @@ export interface GenreDefJSON {
   environment?: string
   scrollDirection?: string
   gravity?: number
+  /** 最大HP/ゲージ上限（hp Feature 有効時）。省略時は RULE_DEFAULTS.playerMaxHp（3） */
+  playerMaxHp?: number
   controls?: Partial<Controls>
   /** TSプラグインなしでビジュアルをカスタマイズする場合に指定。省略時はthemeから自動決定。 */
   visual?: GenreVisualConfig
@@ -674,6 +719,8 @@ export interface GameConfigMap {
   near_miss: NearMissConfig
   genre_defaults: GenreDefaultsConfig
   palette_defaults: PaletteDefaultsConfig
+  aquatic: AquaticConfig
+  gimmicks: GimmicksConfig
   bullet_hell: BulletHellConfig
 }
 

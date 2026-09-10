@@ -195,7 +195,8 @@ export class ShootFeature implements FeatureSystem {
       for (const h of world.hazards) {
         // 死亡済みハザードをスキップ。同一フレームで複数弾が同一ハザードに命中する場合（three_way / spread_shot 等）、
         // hp<=0 のハザードへの追加ヒットで kills/combo/score/SE が多重発生するのを防ぐ。
-        if (h.isSafe || h.hp <= 0 || !rectsOverlap(b.rect, h.rect, 0)) continue
+        // isGimmick（穴・足場・バネ・障害物）は弾で破壊できない対象として除外する（bullet_runner）。
+        if (h.isSafe || h.isGimmick || h.hp <= 0 || !rectsOverlap(b.rect, h.rect, 0)) continue
         b.alive = false
         if (hasEnemyHp) {
           h.hp--

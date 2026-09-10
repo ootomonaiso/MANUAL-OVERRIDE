@@ -29,10 +29,16 @@ describe('classifyHudLayout', () => {
     expect(classifyHudLayout(input({ genre: 'runner', features: new Set(['auto_run', 'double_jump']) }))).toBe('hbase')
   })
 
-  it('aquatic(縦だが shoot なし)は vstg にならず other', () => {
+  it('aquatic(縦だが shoot なし)は genre 名の明示チェックで vstg になる', () => {
     expect(classifyHudLayout(input({
-      scrollAxis: 'y', gravity: 1600, genre: 'aquatic', features: new Set(['hp', 'item_pickup']),
-    }))).toBe('other')
+      scrollAxis: 'y', gravity: 220, genre: 'aquatic', features: new Set(['pattern_descend']),
+    }))).toBe('vstg')
+  })
+
+  it('platformer(縦だが shoot なし)は genre 名の明示チェックで vstg になる', () => {
+    expect(classifyHudLayout(input({
+      scrollAxis: 'y', gravity: 1600, genre: 'platformer', features: new Set(['pattern_climb']),
+    }))).toBe('vstg')
   })
 
   it('tetris(無重力だが shoot なし)は hstg にならず other', () => {

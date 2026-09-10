@@ -33,9 +33,12 @@ const entries = computed<Entry[]>(() => {
     list.push({ id: 'moveLeft', key: keyLabel(c.moveLeft), action: '左移動' })
     list.push({ id: 'moveRight', key: keyLabel(c.moveRight), action: '右移動' })
   }
-  // 上下移動は縦スクロール時のみ実際に効く。判定は vertical_scroll フィーチャーではなく
-  // scrollAxis を見る（aquatic は scrollDirection:vertical だが vertical_scroll を持たない）。
-  if (props.scrollAxis === 'y') {
+  // 上下移動は「縦スクロール、かつ自由な上下入力を受け付ける」場合のみ実際に効く。
+  // 判定は vertical_scroll フィーチャーではなく scrollAxis を見る（aerial_stg 等は
+  // vertical_scroll を持たないため）が、pattern_climb（platformer）/ pattern_descend
+  // （aquatic）は縦スクロールでも重力・ジャンプで進むため上下キーを受け付けない
+  // （plan/spec-aquatic.md）。
+  if (props.scrollAxis === 'y' && !has('pattern_climb') && !has('pattern_descend')) {
     list.push({ id: 'moveUp',   key: keyLabel(c.moveUp   ?? 'ArrowUp'),   action: '上移動' })
     list.push({ id: 'moveDown', key: keyLabel(c.moveDown ?? 'ArrowDown'), action: '下移動' })
   }

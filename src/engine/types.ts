@@ -40,6 +40,10 @@ export interface MutableWorld {
   readonly scrollMode: 'x' | 'y'
   /** stealth_mode 隠密中フラグ（衝突判定で被弾回避に使用。SpecialFeature が毎フレーム更新） */
   readonly stealthHidden: boolean
+  /** pattern_climb フィーチャー: 溶岩上端のスクリーンY座標（上限なく上昇。pattern_climb 以外は常に +Infinity） */
+  readonly climbLavaTopY: number
+  /** pattern_climb フィーチャー: クリアした部屋数（スコア・溶岩速度の計算に使用。pattern_climb 以外は常に0） */
+  readonly patternRoomsCleared: number
 
   // ─ ステルス状態更新（SpecialFeature 専用） ────────────────────
   /** 隠密中フラグを更新（衝突判定で参照される） */
@@ -47,6 +51,11 @@ export interface MutableWorld {
 
   // ─ スコア / UI ───────────────────────────────────────────────
   addScore(amount: number): void
+  /**
+   * distance（ScoreVars.distance）を直接加算する。連続スクロールしないジャンル
+   * （pattern_climb の部屋クリア時など）が「高度」を distance に相乗りさせるために使う。
+   */
+  addDistance(amount: number): void
   addScorePopup(x: number, y: number, text: string, color: string): void
   triggerShake(intensity: number): void
   addParticle(
@@ -250,9 +259,24 @@ export interface SpawnEntry {
   /**
     * ハザードの移動方向。'right' = 右から左へ（デフォルト）、
     * 'left' = 左から右へ（サバイバルの両方向攻撃対応）。
+    * 縦スクロールでは 'left' = 画面下から出現し上へ流れる（aquatic / platformer の climb 用）。
     * 省略時は 'right'。
     */
   direction?: HazardDirection
+
+  // ── ギミック用フィールド（runner / bullet_runner / platformer / aquatic） ──
+  /** true の場合、弾の当たり判定から除外する（障害物・ギミックは弾で壊れない） */
+  isGimmick?: boolean
+  /** true の場合、上から乗ると着地できる足場になる */
+  isPlatform?: boolean
+  /** true の場合、着地時に強く跳ね返すバネになる（isPlatform 相当の着地判定 + 反発） */
+  isSpring?: boolean
+  /** true の場合、横スクロールの地面欠落マーカー（穴）になる */
+  isHole?: boolean
+  /** 足場上のプレイヤーに与える水平速度（コンベア用。px/sec）。省略時 0 */
+  conveyorVx?: number
+  /** 水平ドリフト対象にする（climb の移動足場用） */
+  driftEnabled?: boolean
 }
 
 /** distance に基づいて SpawnEntry の重みを補間して返す */
