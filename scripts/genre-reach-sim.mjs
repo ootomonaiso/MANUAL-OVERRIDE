@@ -36,15 +36,16 @@ function posteriors(acc) {
   const un = {}
   for (const g of genres) {
     if (g.resolvable === false) continue
+    const prior = bayes.genrePriors?.[g.id] ?? 1
     const entries = Object.entries(g.thresholds)
     if (entries.length === 0) {
       const total = Object.values(acc).reduce((s, v) => s + v, 0)
-      un[g.id] = Math.exp(-bayes.baseDecay * total)
+      un[g.id] = prior * Math.exp(-bayes.baseDecay * total)
       continue
     }
     let dev = 0
     for (const [axis, th] of entries) dev += Math.max(0, th - (acc[axis] ?? 0))
-    un[g.id] = Math.exp(-bayes.decayRate * dev)
+    un[g.id] = prior * Math.exp(-bayes.decayRate * dev)
   }
   const sum = Object.values(un).reduce((s, v) => s + v, 0)
   const post = {}

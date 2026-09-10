@@ -3,6 +3,7 @@ import {
   computeBayesianPosteriors,
   resolveGenre,
   resolveGenreProgress,
+  resolveHighestProbGenre,
   DEFAULT_BAYES_CONFIG,
 } from '../../../src/domain/genreResolver'
 import { GENRES } from '../../../src/data/genres'
@@ -89,6 +90,7 @@ describe('genreResolver - convergence', () => {
     baseDecay: bayesConfig.baseDecay,
     minProb: bayesConfig.minProb,
     dominanceRatio: bayesConfig.dominanceRatio,
+    genrePriors: bayesConfig.genrePriors,
   }
 
   // ── ベイズ設定の整合性 ────────────────────────────────────
@@ -126,7 +128,7 @@ describe('genreResolver - convergence', () => {
   it('runner (tempo: 8) が tempo 特化カードで収束する', () => {
     const params = buildParamsFromCards(cardPools.tempo)
     expect(params.tempo).toBeGreaterThanOrEqual(8)
-    const result = resolveGenre(params, GENRES, undefined, undefined, config)
+    const result = resolveGenre(params, GENRES, config)
     expect(result).toBe('runner')
   })
 
@@ -143,14 +145,14 @@ describe('genreResolver - convergence', () => {
   it('rpg (growth: 8) が growth 特化カードで収束する', () => {
     const params = buildParamsFromCards(cardPools.growth)
     expect(params.growth).toBeGreaterThanOrEqual(8)
-    const result = resolveGenre(params, GENRES, undefined, undefined, config)
+    const result = resolveGenre(params, GENRES, config)
     expect(result).toBe('rpg')
   })
 
   it('puzzle (combo: 6) が combo 特化カードで収束する', () => {
     const params = buildParamsFromCards(cardPools.combo)
     expect(params.combo).toBeGreaterThanOrEqual(6)
-    const result = resolveGenre(params, GENRES, undefined, undefined, config)
+    const result = resolveGenre(params, GENRES, config)
     expect(result).toBe('puzzle')
   })
 
@@ -163,24 +165,36 @@ describe('genreResolver - convergence', () => {
       { rhythm: 2 },
       { rhythm: 2 },
     ])
-    // rhythm=12, tempo=3。tempo:6が不足だが、rhythmが突出
-    // rhythm方向に確率が上がるはず（収束しなくてもdirectionは正しい）
+    // rhythm=12, tempo=3。rhythm/sportsはresolvable:falseで収束候補から除外されているため、
+    // 収束候補に残るのはtempo軸を持つrunner（未達）かbaseのみ
     const progress = resolveGenreProgress(params, GENRES, config)
-    expect(['rhythm', 'runner', 'sports', 'glitch', 'base']).toContain(progress.closestGenre)
+    expect(['runner', 'base']).toContain(progress.closestGenre)
   })
 
-  it('stealth_action (stealth: 7) が stealth 特化カードで収束する', () => {
-    const params = buildParamsFromCards(cardPools.stealth)
-    expect(params.stealth).toBeGreaterThanOrEqual(7)
-    const result = resolveGenre(params, GENRES, undefined, undefined, config)
-    expect(result).toBe('stealth_action')
-  })
+  // ── 未実装ジャンル(12種)は resolvable:false で収束候補から除外されている ──
 
-  it('idle (craft: 7) が craft 特化カードで収束する', () => {
-    const params = buildParamsFromCards(cardPools.craft)
-    expect(params.craft).toBeGreaterThanOrEqual(7)
-    const result = resolveGenre(params, GENRES, undefined, undefined, config)
-    expect(result).toBe('idle')
+  it('resolvable:false の12ジャンルは、閾値を大幅に満たす累積パラメータでも一切選ばれない', () => {
+    const disabledIds = [
+      'arena', 'hack_slash', 'aquatic', 'survival', 'dungeon', 'tower_def',
+      'idle', 'horror', 'rhythm', 'racing', 'sports', 'stealth_action',
+    ]
+    for (const id of disabledIds) {
+      const genre = GENRES.find(g => g.id === id)!
+      expect(genre.resolvable).toBe(false)
+
+      // 閾値を大幅に超過させても、resolvable:false なら尤度計算自体から除外される
+      const params: Record<string, number> = {}
+      for (const [axis, val] of Object.entries(genre.thresholds)) {
+        params[axis] = val * 5
+      }
+
+      const posteriors = computeBayesianPosteriors(params, GENRES, config)
+      expect(posteriors[id] ?? 0).toBe(0)
+      expect(resolveGenre(params, GENRES, config)).not.toBe(id)
+      // 収束条件(minProb/dominanceRatio)を満たさず未収束時でも、
+      // 最尤ジャンル(resolveHighestProbGenre)として選ばれてはならない
+      expect(resolveHighestProbGenre(params, GENRES, config)).not.toBe(id)
+    }
   })
 
   it('tetris (combo: 5, craft: 3) が combo + craft カードで収束する', () => {
@@ -195,10 +209,10 @@ describe('genreResolver - convergence', () => {
     expect(params.combo).toBeGreaterThanOrEqual(5)
     expect(params.craft).toBeGreaterThanOrEqual(3)
     // tetrisのthresholdsはcombo:5, craft:3。deviation=0でL=1.0。
-    // ただし他のジャンル（idle: craft:7, puzzle: combo:6）もdeviation=0になる可能性がある
+    // ただし他のジャンル（puzzle: combo:6）もdeviation=0になる可能性がある
     // 収束するか確率確認
     const progress = resolveGenreProgress(params, GENRES, config)
-    expect(['tetris', 'idle', 'puzzle']).toContain(progress.closestGenre)
+    expect(['tetris', 'puzzle']).toContain(progress.closestGenre)
   })
 
   // ── 収束進捗の計算 ─────────────────────────────────────────

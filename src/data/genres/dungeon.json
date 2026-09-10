@@ -3,6 +3,7 @@
   "id": "dungeon",
   "label": "ダンジョン探索",
   "thresholds": { "growth": 6, "craft": 5 },
+  "resolvable": false,
   "enableFeatures": ["hp", "exp", "item_pickup", "slow_precise", "melee_kill"],
   "disableFeatures": ["auto_run", "beat_hazard", "vertical_scroll"],
   "scoreFormula": "exp * 3 + kills * 70 + itemsCollected * 60 + distance * 0.2",

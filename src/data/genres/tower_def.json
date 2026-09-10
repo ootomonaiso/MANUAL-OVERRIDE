@@ -3,6 +3,7 @@
   "id": "tower_def",
   "label": "タワーディフェンス",
   "thresholds": { "craft": 6, "enemy": 6 },
+  "resolvable": false,
   "enableFeatures": ["tower", "enemy_hp", "item_pickup"],
   "disableFeatures": ["auto_run", "beat_hazard", "vertical_scroll", "stealth_mode"],
   "scoreFormula": "kills * 90 + maxCombo * 110 + survivedSec * 8",

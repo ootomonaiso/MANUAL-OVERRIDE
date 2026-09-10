@@ -3,6 +3,7 @@
   "id": "idle",
   "label": "放置ゲーム",
   "thresholds": { "craft": 7 },
+  "resolvable": false,
   "enableFeatures": ["item_pickup", "exp", "tower"],
   "disableFeatures": ["auto_run", "shoot", "beat_hazard", "boss", "stealth_mode"],
   "scoreFormula": "itemsCollected * 200 + exp * 4 + survivedSec * 5",

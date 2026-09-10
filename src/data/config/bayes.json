@@ -1,8 +1,20 @@
 {
   "$comment": "ベイズ収束ハイパーパラメータ。decayRateを0.50に引き上げにより少ない選択で収束可能に。",
+  "$comment_genrePriors": "有効ジャンル(base/stg/aerial_stg/puzzle/tetris/rpg/runner/bullet_runner/platformer/bullet_hell)の出現率をほぼ均等化するための尤度倍率。scripts/calibrate-genre-priors.mjs のモンテカルロ較正で算出（ランダムプレイ20000回×30イテレーションのIPF風反復更新、直近平均化）。閾値到達が難しいジャンル（例: bullet_runnerはtempo+enemyの2軸同時到達が必要）ほど倍率が大きい。thresholdsやカードプールを変更した場合は再較正すること。resolvable:falseのジャンルは尤度計算から除外されるため値は不要。",
   "section": "bayes",
   "minProb": 0.30,
   "dominanceRatio": 1.5,
   "decayRate": 0.50,
-  "baseDecay": 0.10
+  "baseDecay": 0.10,
+  "genrePriors": {
+    "stg": 0.783,
+    "aerial_stg": 0.990,
+    "puzzle": 0.578,
+    "tetris": 0.605,
+    "rpg": 1.126,
+    "runner": 1.155,
+    "bullet_runner": 5.471,
+    "platformer": 1.234,
+    "bullet_hell": 2.886
+  }
 }

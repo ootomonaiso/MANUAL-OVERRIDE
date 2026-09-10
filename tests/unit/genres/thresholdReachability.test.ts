@@ -8,10 +8,13 @@ import { describe, it, expect } from 'vitest'
  * reach-sim (モンテカルロシミュレータ) と同じロジックをテスト用に再現し、
  * 各ジャンルの閾値がカードプール内で到達可能かどうかを検証する。
  *
+ * 有効ジャンルは base/stg/aerial_stg/puzzle/tetris/rpg/runner/bullet_runner/
+ * platformer/bullet_hell の10種（他12種は resolvable:false で無効化）。
+ *
  * 目標:
- *   - hack_slash / tetris: ランダム到達率 >= 2%
- *   - puzzle:              ランダム到達率 >= 15%
- *   - 主要ジャンル:        5ポイント以上の低下がないこと
+ *   - tetris / puzzle: ランダム到達率 >= 2%
+ *   - 有効な全ジャンル: 到達率が0%近くまで壊れていないこと
+ *   - 有効な全ジャンル: bayes.json の genrePriors によりランダム到達率がほぼ均等（1/9 ≈ 11.1%）
  */
 
 // ── reach-sim と同じロジック（Node 用に簡略化） ─────────────────
@@ -43,17 +46,18 @@ function posteriors(
   const un: Record<string, number> = {}
   for (const g of genres) {
     if (g.resolvable === false) continue
+    const prior = bayes.genrePriors?.[g.id] ?? 1
     const th = customThresholds?.[g.id] ?? g.thresholds
     const entries = Object.entries(th)
     if (entries.length === 0) {
       const total = Object.values(acc).reduce((s: number, v: number) => s + v, 0)
-      un[g.id] = Math.exp(-bayes.baseDecay * total)
+      un[g.id] = prior * Math.exp(-bayes.baseDecay * total)
       continue
     }
     let dev = 0
     for (const [axis, val] of entries)
       dev += Math.max(0, val - (acc[axis] ?? 0))
-    un[g.id] = Math.exp(-bayes.decayRate * dev)
+    un[g.id] = prior * Math.exp(-bayes.decayRate * dev)
   }
   const sum = Object.values(un).reduce((s: number, v: number) => s + v, 0)
   const post: Record<string, number> = {}
@@ -150,25 +154,29 @@ function playOnce(
 const N_RANDOM = 20000
 const N_FOCUS = 5000
 
+// 有効ジャンル（base を除く9種。他12種は resolvable:false）
+const ACTIVE_GENRES = [
+  'stg', 'aerial_stg', 'puzzle', 'tetris', 'rpg',
+  'runner', 'bullet_runner', 'platformer', 'bullet_hell',
+] as const
+
 describe('thresholdReachability', () => {
-  it('hack_slash, tetris, puzzle の閾値が到達可能である (ランダム)', () => {
+  it('tetris, puzzle の閾値が到達可能である (ランダム)', () => {
     const dist: Record<string, number> = {}
     for (let i = 0; i < N_RANDOM; i++) {
       const g = playOnce(randomPicker)
       dist[g] = (dist[g] ?? 0) + 1
     }
-    const hsPct = (dist.hack_slash ?? 0) / N_RANDOM * 100
     const tetPct = (dist.tetris ?? 0) / N_RANDOM * 100
     const puzzlePct = (dist.puzzle ?? 0) / N_RANDOM * 100
 
-    expect(hsPct).toBeGreaterThanOrEqual(2)
     expect(tetPct).toBeGreaterThanOrEqual(2)
-    expect(puzzlePct).toBeGreaterThanOrEqual(15)
+    expect(puzzlePct).toBeGreaterThanOrEqual(2)
   })
 
-  it('hack_slash, tetris, puzzle の閾値が到達可能である (狙い撃ち)', () => {
+  it('tetris, puzzle の閾値が到達可能である (狙い撃ち)', () => {
     const focusResults: Record<string, number> = {}
-    for (const target of ['hack_slash', 'tetris', 'puzzle'] as const) {
+    for (const target of ['tetris', 'puzzle'] as const) {
       let hit = 0
       const picker = focusedPickerFor(target)
       for (let i = 0; i < N_FOCUS; i++) {
@@ -179,23 +187,37 @@ describe('thresholdReachability', () => {
 
     // 狙い撃ちでも一定の到達率があること
     // （カードプールの偏りにより100%にはならないが、方向性は正しい）
-    expect(focusResults.hack_slash).toBeGreaterThan(10)
     expect(focusResults.tetris).toBeGreaterThan(5)
     expect(focusResults.puzzle).toBeGreaterThan(20)
   })
 
-  it('主要ジャンルの到達率が大幅に壊れていない (ランダム)', () => {
+  it('有効な全ジャンルの到達率が大幅に壊れていない (ランダム)', () => {
     const dist: Record<string, number> = {}
     for (let i = 0; i < N_RANDOM; i++) {
       const g = playOnce(randomPicker)
       dist[g] = (dist[g] ?? 0) + 1
     }
 
-    // 主要ジャンルの到達率が0%にならないこと
-    const majorGenres = ['stg', 'idle', 'puzzle', 'runner', 'aerial_stg', 'aquatic'] as const
-    for (const g of majorGenres) {
+    // 有効ジャンルの到達率が0%にならないこと
+    for (const g of ACTIVE_GENRES) {
       const pct = (dist[g] ?? 0) / N_RANDOM * 100
       expect(pct).toBeGreaterThan(1, `${g} の到達率が低すぎます`)
+    }
+  })
+
+  it('有効な全ジャンルのランダム到達率が genrePriors によりほぼ均等である', () => {
+    const dist: Record<string, number> = {}
+    for (let i = 0; i < N_RANDOM; i++) {
+      const g = playOnce(randomPicker)
+      dist[g] = (dist[g] ?? 0) + 1
+    }
+
+    // 目標は 1/9 ≈ 11.1%。統計的なブレを許容し 6%〜18% の範囲に収まることを確認する
+    // （N_RANDOM=20000 なら標準偏差 ≈0.2pt なので、この範囲を外れれば較正崩れとみなせる）
+    for (const g of ACTIVE_GENRES) {
+      const pct = (dist[g] ?? 0) / N_RANDOM * 100
+      expect(pct).toBeGreaterThan(6, `${g} の到達率が均等分布から大きく下振れしています`)
+      expect(pct).toBeLessThan(18, `${g} の到達率が均等分布から大きく上振れしています`)
     }
   })
 
