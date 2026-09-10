@@ -27,12 +27,10 @@ for (const key of ['wallJumpPushSpeed', 'playerMinX', 'playerMaxXRatio']) {
   assert.strictEqual(typeof physics[key], 'number', `physics.json.${key} は number である必要があります`)
 }
 
-// src/data/genres/*.json: 影響ジャンルが wall_jump を有効化していること
+// src/data/genres/*.json: どのジャンルが wall_jump を有効化しているかの一覧（platformer は
+// pattern_climb ベースの縦スクロール構成に移行したため、特定ジャンルへの紐付けは強制しない）
 const genres = loadGenres(root)
 const wallJumpGenres = genres.filter(g => g.enableFeatures.includes('wall_jump')).map(g => g.id)
-for (const id of ['platformer']) {
-  assert.ok(wallJumpGenres.includes(id), `ジャンル "${id}" は wall_jump を有効化している必要があります`)
-}
 
 console.log('✓ wall_jump: MovementFeature に実装あり（未実装警告リストから除外済み）')
 console.log('✓ wall_jump: physics.json に wallJumpPushSpeed/playerMinX/playerMaxXRatio あり')
