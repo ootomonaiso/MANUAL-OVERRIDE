@@ -116,7 +116,8 @@
           "survival_hunger",
           "survival_level",
           "survival_melee",
-          "tetris_mode"
+          "tetris_mode",
+          "power_up"
         ]
       }
     },
@@ -157,7 +158,8 @@
           "survival_hunger",
           "survival_level",
           "survival_melee",
-          "tetris_mode"
+          "tetris_mode",
+          "power_up"
         ]
       }
     },

@@ -3,7 +3,7 @@
   "id": "aerial_stg",
   "label": "縦スクロールシューティング",
   "thresholds": { "vertical": 3, "range": 3, "enemy": 4 },
-  "enableFeatures": ["shoot", "vertical_scroll", "enemy_hp", "spread_shot"],
+  "enableFeatures": ["shoot", "vertical_scroll", "enemy_hp", "spread_shot", "power_up"],
   "disableFeatures": ["grid_stop", "puzzle_solve", "auto_run"],
   "scoreFormula": "kills * 130 + maxCombo * 90 + survivedSec * 3",
   "manualReveal": "これは縦スクロールシューティングになりました。上を目指してください。",
@@ -20,5 +20,10 @@
     "shoot": "z"
   },
   "gravity": 1600,
-  "endingFlavor": "あなたは空へと昇った。説明書は地上に落ちていった。"
+  "endingFlavor": "あなたは空へと昇った。説明書は地上に落ちていった。",
+  "spawnDensity": {
+    "baseInterval": 1100,
+    "minInterval": 450,
+    "decayRate": 0.0002
+  }
 }

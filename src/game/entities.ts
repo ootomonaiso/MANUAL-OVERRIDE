@@ -103,11 +103,11 @@ export class Bullet {
 export class Item {
   x: number; y: number
   w = 22; h = 22
-  type: 'exp' | 'hp' | 'food' | 'weapon'
+  type: 'exp' | 'hp' | 'food' | 'weapon' | 'power'
   alive = true
   pulse = Math.random() * Math.PI * 2  // ランダム位相
 
-  constructor(x: number, y: number, type: 'exp' | 'hp' | 'food' | 'weapon') {
+  constructor(x: number, y: number, type: 'exp' | 'hp' | 'food' | 'weapon' | 'power') {
     this.x = x; this.y = y; this.type = type
   }
 

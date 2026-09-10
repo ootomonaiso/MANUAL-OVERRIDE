@@ -3,7 +3,7 @@
   "id": "stg",
   "label": "シューティングゲーム",
   "thresholds": { "range": 4, "enemy": 4 },
-  "enableFeatures": ["shoot", "three_way", "enemy_hp"],
+  "enableFeatures": ["shoot", "three_way", "enemy_hp", "power_up"],
   "disableFeatures": ["grid_stop", "puzzle_solve"],
   "scoreFormula": "kills * 120 + distance * 0.5 + maxCombo * 80",
   "manualReveal": "これはシューティングゲームになりました。敵を倒してください。",
@@ -21,8 +21,8 @@
   "gravity": 0,
   "endingFlavor": "あなたはすべてを撃ち抜いた。説明書は弾除けにでも使えばよかった。",
   "spawnDensity": {
-    "baseInterval": 1800,
-    "minInterval": 600,
+    "baseInterval": 1100,
+    "minInterval": 450,
     "decayRate": 0.0002
   }
 }
