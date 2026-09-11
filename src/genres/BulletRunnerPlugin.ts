@@ -4,6 +4,7 @@
  *
  * ネオンで輝くサイバーシティの夜。自動走行 + 射撃。
  * 高速感・スタイリッシュ・カラフルなビジュアル。
+ * drawGenreHUD — 敵の頭上のHPバー（緑/黄/赤3色）
  */
 
 import { GenrePluginBase } from '../engine/GenrePluginBase'
@@ -115,6 +116,25 @@ export class BulletRunnerPlugin extends GenrePluginBase {
   // 背景装飾（巨大なネオンムーン）の位置・色
   private readonly moonConfig = { x: 0.16, yRatio: 0.22, r: 50, color: '#ff88ff', haloColor: '#cc44ff' }
 
+  // 自前 HP バー（drawGenreHUD）を描くため、エンジン汎用バーの二重描画を抑制する
+  readonly drawsOwnHpBar = true
+
+  // 敵HPバー（drawGenreHUD）。縦モードの cull 範囲は sideScroller のハザード cull と揃える。
+  // 水平方向のマージン（±50）は最大ハザード幅（42）以上であるため、本体が見える領域では必ずバーも描画される。
+  private readonly enemyHpBar = {
+    height: 4,
+    offsetY: 8,
+    cullMargin: 50,
+    vertMarginTop: 200,
+    vertMarginBottom: 100,
+    ratioGreen: 0.6,
+    ratioYellow: 0.3,
+    bg: 'rgba(0,0,0,0.6)',
+    green: '#44ff44',
+    yellow: '#ffff44',
+    red: '#ff4444',
+  }
+
   drawFarLayer(ctx: CanvasRenderingContext2D, offsetX: number, W: number, gY: number): void {
     const px = new PixelCanvas(ctx)
 
@@ -201,6 +221,26 @@ export class BulletRunnerPlugin extends GenrePluginBase {
 
     const frame = Math.floor(runCycle * RUNNER_RUN_FRAME_COUNT) % 2 === 0 ? 'run_a' : 'run_b'
     px.sprite('player_cyber_runner', 0, 0, w, h, { frame })
+  }
+
+  // ─── ジャンル固有HUD: 敵HPバー ─────────────────────────────────────────
+  drawGenreHUD(ctx: CanvasRenderingContext2D, world: MutableWorld, W: number, H: number): void {
+    const px = new PixelCanvas(ctx)
+    const bar = this.enemyHpBar
+    for (const h of world.hazards) {
+      if (h.maxHp <= 1) continue
+      const sx = world.getHazardScreenX(h)
+      if (sx < -bar.cullMargin || sx > W + bar.cullMargin) continue
+      // 縦モードでは h.y がそのまま画面Y（cameraX=0）なので Y 方向もチェックする
+      if (world.rules.scrollAxis === 'y' && (h.rect.y < -bar.vertMarginTop || h.rect.y > H + bar.vertMarginBottom)) continue
+
+      const ratio = h.hp / h.maxHp
+      const barY = h.rect.y - bar.offsetY
+      // 仕様: >60% 緑 / 30〜60% 黄 / <30% 赤（0.3 ちょうどは黄側）
+      const color = ratio > bar.ratioGreen ? bar.green : ratio >= bar.ratioYellow ? bar.yellow : bar.red
+      px.rect(sx, barY, h.w, bar.height, bar.bg)
+      px.rect(sx, barY, h.w * ratio, bar.height, color)
+    }
   }
 }
 

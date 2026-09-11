@@ -241,6 +241,13 @@ export interface GenrePlugin {
   ): void
 
   /**
+   * drawGenreHUD が自前で敵 HP バーを描くプラグインは true を設定する。
+   * true の場合、sideScroller._drawHazard の汎用 HP バー（HAZARD_VFX 設定）は
+   * 二重描画になるためスキップされる。
+   */
+  drawsOwnHpBar?: boolean
+
+  /**
    * プレイヤーがジャンプした瞬間に呼ばれる。
    * ジャンプエフェクトや音響キューの追加に使う。
    * 省略可。
