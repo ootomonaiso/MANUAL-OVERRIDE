@@ -3,6 +3,7 @@
   "id": "arena",
   "label": "アリーナバトル",
   "thresholds": { "enemy": 7, "combo": 5 },
+  "resolvable": false,
   "enableFeatures": ["shoot", "enemy_hp", "boss", "dash"],
   "disableFeatures": ["auto_run", "grid_stop", "puzzle_solve", "stealth_mode"],
   "scoreFormula": "kills * 110 + bossKills * 500 + maxCombo * 130",

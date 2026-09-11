@@ -100,6 +100,10 @@
 
 > `glitch` は `resolvable: false` の特殊ジャンルで、矛盾カードのトリガー専用。通常の収束では到達できない。
 
+> **現在有効なジャンル（10種）**: `base` / `stg` / `aerial_stg` / `puzzle` / `tetris` / `rpg` / `runner` / `bullet_runner` / `platformer` / `bullet_hell` のみが通常プレイで収束可能。
+> それ以外（`arena` / `hack_slash` / `aquatic` / `survival` / `dungeon` / `tower_def` / `idle` / `horror` / `rhythm` / `racing` / `sports` / `stealth_action`）は未実装コンテンツのため `resolvable: false` で一時的に収束候補から除外している。ジャンル定義・プラグイン自体は残っているため、実装が揃い次第 `resolvable` を外せば復帰できる。
+> 有効な10ジャンルの出現率は `src/data/config/bayes.json` の `genrePriors`（`scripts/calibrate-genre-priors.mjs` で較正）によりほぼ均等化されている。ジャンルの有効/無効を変更した場合は再較正が必要。
+
 ---
 
 ## スコア式で使える変数（ScoreVars）

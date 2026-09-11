@@ -336,6 +336,11 @@ export interface BayesConfig {
   decayRate: number
   /** base ジャンルの decay 率（累積パラメータ増大とともに base の尤度が低下） */
   baseDecay: number
+  /**
+   * ジャンルごとの尤度倍率（省略時 1）。閾値の到達しやすさの差を補正し、
+   * 有効なジャンル間の収束確率を均す用途。genreId をキーとする。
+   */
+  genrePriors?: Record<GenreId, number>
 }
 
 /** ベイズデバッグログで表示する上位ジャンル数 */
