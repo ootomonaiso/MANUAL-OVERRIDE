@@ -175,3 +175,8 @@ export const GIMMICKS = _c.gimmicks
 // BULLET_HELL — 弾幕STGジャンル（ボス位置・弾幕パターン・弾速・カラー等）
 // ─────────────────────────────────────────────────────────────
 export const BULLET_HELL = _c.bullet_hell as BulletHellConfig
+
+// ─────────────────────────────────────────────────────────────
+// BGM — ジャンル非依存の共通BGM設定
+// ─────────────────────────────────────────────────────────────
+export const BGM = _c.bgm

@@ -1,0 +1,5 @@
+{
+  "$comment": "ジャンル非依存の共通BGM設定",
+  "section": "bgm",
+  "tutorial": { "src": "bgm/denso_8bit.mp3", "loop": true, "volume": 0.5, "fadeInMs": 1200 }
+}

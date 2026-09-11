@@ -22,6 +22,7 @@ import { GENRE_LOCKED_BOOST } from './data/gameBalance'
 import type { ThrowResult, RuntimeRules } from './domain/types'
 import { TUTORIAL_ENABLED, TutorialScreen } from './tutorial'
 import { soundManager } from './plugins/SoundManager'
+import { BGM } from './data/tunables'
 import LoadingScreen from './components/LoadingScreen.vue'
 import { DEBUG_MODE } from './debug/const'
 import { useDebugSettings } from './debug/useDebugSettings'
@@ -157,6 +158,7 @@ function startTutorial() {
   if (TUTORIAL_ENABLED) {
     gameState.startTutorial()
     scroller?.setPaused(false)
+    soundManager.playBgm(BGM.tutorial)
   }
 }
 
@@ -195,6 +197,8 @@ function beginSnapshotLoop() {
     if (snapshot.value.dead && p !== 'throwing' && p !== 'ending' && p !== 'updating'
         && deathBeatTimer === null) {
       reviewPaused.value = false  // 死亡時はレビューを解除
+      // 死亡判定の時点でBGMを止める（効果音は止めない）。GAME OVER演出の間は無音にする。
+      soundManager.stopBgm()
       deathBeatTimer = window.setTimeout(() => {
         deathBeatTimer = null
         const cur = gameState.phase.value
@@ -399,6 +403,12 @@ function onKeyDown(e: KeyboardEvent) {
 
 watch(shouldPause, (paused) => {
   scroller?.setPaused(paused)
+})
+
+// 投擲フェーズ突入時にBGMを止める（死亡経路は既にstopBgm済みだが、
+// ギブアップ・rpg戦闘終了などdeath判定を経ない経路もここで一括して拾う）
+watch(() => gameState.phase.value, (p) => {
+  if (p === 'throwing') soundManager.stopBgm()
 })
 
 // ─── ジャンル確定オーバーレイ ────

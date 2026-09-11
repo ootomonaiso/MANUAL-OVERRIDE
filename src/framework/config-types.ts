@@ -787,6 +787,12 @@ export interface BulletHellConfig {
   }
 }
 
+/** bgm.json — ジャンル非依存の共通BGM設定 */
+export interface BgmSectionConfig {
+  /** チュートリアルカード「わかった、プレイする」押下時にフェードイン再生する共通BGM */
+  tutorial: import('../domain/types').BgmConfig
+}
+
 /** GameConfigMap: セクション名 → 設定オブジェクトのマッピング */
 export interface GameConfigMap {
   physics: PhysicsConfig
@@ -823,6 +829,7 @@ export interface GameConfigMap {
   aquatic: AquaticConfig
   gimmicks: GimmicksConfig
   bullet_hell: BulletHellConfig
+  bgm: BgmSectionConfig
 }
 
 export type GameConfigSection = keyof GameConfigMap
