@@ -348,6 +348,8 @@ onUnmounted(() => {
   padding: 30px 38px 24px;
   max-width: 460px;
   width: 92%;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow:
     0 0 20px var(--genre-glow, var(--green-glow)),
     0 0 60px rgba(0, 0, 0, 0.6);
@@ -357,6 +359,21 @@ onUnmounted(() => {
   animation: cardIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
   position: relative;
   transition: border-color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease, color 0.4s ease;
+  scrollbar-width: thin;
+  scrollbar-color: var(--genre-border, var(--green-dim)) transparent;
+}
+
+.ending-card::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ending-card::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ending-card::-webkit-scrollbar-thumb {
+  background: var(--genre-border, var(--green-dim));
+  border-radius: 3px;
 }
 
 @keyframes cardIn {
