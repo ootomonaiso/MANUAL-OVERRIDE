@@ -9,6 +9,7 @@ export const DEFAULT_BAYES_CONFIG: BayesConfig = {
   dominanceRatio: BAYES.dominanceRatio,
   decayRate:      BAYES.decayRate,
   baseDecay:      BAYES.baseDecay,
+  genrePriors:    BAYES.genrePriors,
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -37,18 +38,19 @@ export function computeBayesianPosteriors(
   genres: GenreDef[],
   config: BayesConfig = DEFAULT_BAYES_CONFIG,
 ): Record<GenreId, number> {
-  const { decayRate } = config
+  const { decayRate, genrePriors } = config
   const unnormalized: Record<GenreId, number> = {}
 
   for (const genre of genres) {
     // 特殊ジャンル(glitch 等)は尤度計算から除外（正規化の分母にも入れない）
     if (genre.resolvable === false) continue
 
+    const prior = genrePriors?.[genre.id] ?? 1
     const entries = Object.entries(genre.thresholds) as [GenreParam, number][]
 
     if (entries.length === 0) {
       const totalAccumulated = Object.values(accumulated).reduce((s, v) => s + v, 0)
-      unnormalized[genre.id] = Math.exp(-config.baseDecay * totalAccumulated)
+      unnormalized[genre.id] = prior * Math.exp(-config.baseDecay * totalAccumulated)
       continue
     }
 
@@ -57,7 +59,7 @@ export function computeBayesianPosteriors(
       const have = accumulated[axis] ?? 0
       deviation += Math.max(0, thresholdVal - have)
     }
-    unnormalized[genre.id] = Math.exp(-decayRate * deviation)
+    unnormalized[genre.id] = prior * Math.exp(-decayRate * deviation)
   }
 
   const sum = genres.reduce((acc, g) => acc + (unnormalized[g.id] ?? 0), 0)
