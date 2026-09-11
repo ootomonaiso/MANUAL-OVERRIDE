@@ -3,6 +3,7 @@
   "id": "aquatic",
   "label": "水中アドベンチャー",
   "thresholds": { "vertical": 3, "aerial": 3, "survive": 4 },
+  "resolvable": false,
   "enableFeatures": ["pattern_descend"],
   "disableFeatures": ["auto_run", "shoot", "boss", "beat_hazard", "item_pickup", "slow_precise"],
   "scoreFormula": "distance",

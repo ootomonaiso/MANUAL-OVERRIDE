@@ -315,6 +315,8 @@ export interface BayesConfig {
   dominanceRatio: number
   decayRate: number
   baseDecay: number
+  /** ジャンルごとの尤度倍率（省略時 1）。genreId をキーとする */
+  genrePriors?: Record<string, number>
 }
 
 /** special.json — 特殊フィーチャー (タワー / ボス撃破 / タイムボーナス) */
